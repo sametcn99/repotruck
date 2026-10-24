@@ -1,4 +1,3 @@
-import { ChangelogSection } from "./components/ChangelogSection.tsx";
 import { DocsBody } from "./components/DocsBody.tsx";
 import { Faq } from "./components/Faq.tsx";
 import { FeatureGrid } from "./components/FeatureGrid.tsx";
@@ -56,7 +55,6 @@ export default function App() {
           <a href="#cli">CLI</a>
           <a href="#shortcuts">Shortcuts</a>
           <a href="#faq">FAQ</a>
-          <a href="#changelog">Changelog</a>
         </nav>
       </header>
       <main id="main">
@@ -69,7 +67,6 @@ export default function App() {
         <DocsBody />
         <ShortcutsTable />
         <Faq />
-        <ChangelogSection />
       </main>
       <Footer />
     </>
