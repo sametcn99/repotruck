@@ -1,5 +1,9 @@
 # repotruck
 
+[![npm version](https://img.shields.io/npm/v/repotruck.svg)](https://www.npmjs.com/package/repotruck)
+[![npm downloads](https://img.shields.io/npm/dm/repotruck.svg)](https://www.npmjs.com/package/repotruck)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+
 Clone and mirror your GitHub repositories into organized local directory layouts, with an `AGENTS.md` workspace map and a built-in MCP server for coding agents.
 
 ## Overview
@@ -14,6 +18,8 @@ repotruck bulk-clones your GitHub repositories into a predictable directory layo
 - Optional: the [GitHub CLI](https://cli.github.com) (`gh`) for the easiest authentication path.
 
 ## Install
+
+Published on [npm](https://www.npmjs.com/package/repotruck):
 
 ```bash
 npx repotruck

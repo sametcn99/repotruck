@@ -11,7 +11,13 @@ export function InstallBox() {
   return (
     <section className="section" id="install" aria-label="Install">
       <h2>Install</h2>
-      <p className="section-sub">Run it straight from the registry, or install it globally.</p>
+      <p className="section-sub">
+        Available on{" "}
+        <a href="https://www.npmjs.com/package/repotruck" target="_blank" rel="noreferrer">
+          npm
+        </a>
+        . Run it straight from the registry, or install it globally.
+      </p>
       <div className="panel terminal">
         <span className="panel-label">shell</span>
         {COMMANDS.map((command) => (

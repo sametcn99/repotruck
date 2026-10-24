@@ -24,7 +24,7 @@ suite("site nav", () => {
     expect(screen.getByText("repotruck", { selector: ".brand" })).toBeInTheDocument();
   });
 
-  test("footer links to the GitHub repository", () => {
+  test("footer links to the GitHub repository and npm package", () => {
     render(<App />);
     const footer = document.querySelector(".site-footer");
     expect(footer).not.toBeNull();
@@ -32,6 +32,7 @@ suite("site nav", () => {
       link.getAttribute("href"),
     );
     expect(hrefs).toContain("https://github.com/sametcn99/repotruck");
+    expect(hrefs).toContain("https://www.npmjs.com/package/repotruck");
     for (const href of hrefs) {
       expect(href?.startsWith("/")).toBe(false);
     }
