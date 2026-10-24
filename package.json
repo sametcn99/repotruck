@@ -5,6 +5,9 @@
   "type": "module",
   "license": "MIT",
   "repository": "github:sametcn99/repotruck",
+  "publishConfig": {
+    "access": "public"
+  },
   "bin": {
     "repotruck": "./bin/repotruck.js"
   },
