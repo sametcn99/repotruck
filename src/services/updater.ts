@@ -233,7 +233,7 @@ export async function performSelfUpdate(
   } catch {
     entry = options.entryPath ?? process.argv[1] ?? "";
   }
-  const normalized = entry.split(path.sep).join("/").toLowerCase();
+  const normalized = entry.replace(/\\/g, "/").toLowerCase();
 
   if (
     NPX_MARKERS.some((marker) => normalized.includes(marker)) ||
@@ -275,7 +275,7 @@ export async function performSelfUpdate(
     } catch {
       whichReal = whichResolved;
     }
-    const normWhich = whichReal.split(path.sep).join("/").toLowerCase();
+    const normWhich = whichReal.replace(/\\/g, "/").toLowerCase();
     if (normWhich === normalized) {
       return runGlobalUpdate();
     }

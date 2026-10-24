@@ -1,5 +1,13 @@
 import { afterAll, describe, expect, test } from "bun:test";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -20,7 +28,7 @@ function runCli(args: string[], env?: Record<string, string>) {
 const tempRoots: string[] = [];
 
 function tempDir(prefix: string): string {
-  const dir = mkdtempSync(path.join(tmpdir(), prefix));
+  const dir = realpathSync(mkdtempSync(path.join(tmpdir(), prefix)));
   tempRoots.push(dir);
   return dir;
 }

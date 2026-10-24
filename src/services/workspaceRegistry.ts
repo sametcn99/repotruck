@@ -332,10 +332,11 @@ export async function resolveWorkspaceRoot(
   env?: EnvLike,
 ): Promise<{ root: string; found: boolean }> {
   const entries = await readWorkspaceEntries(env);
-  let dir = path.resolve(startDir);
+  let dir = await realpathSafe(startDir);
   for (;;) {
-    if (entries.some((entry) => pathsEqual(entry.root, dir))) {
-      return { root: dir, found: true };
+    const match = entries.find((entry) => pathsEqual(entry.root, dir));
+    if (match !== undefined) {
+      return { root: match.root, found: true };
     }
     if (existsSync(path.join(dir, CONFIG_FILENAME))) {
       return { root: dir, found: true };

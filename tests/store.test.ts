@@ -1,5 +1,13 @@
 import { afterAll, afterEach, beforeAll, describe, expect, test } from "bun:test";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import {
@@ -35,7 +43,7 @@ const REAL_STORE = path.join(appConfigDir(process.env), "repotruck.json");
 
 beforeAll(() => {
   savedConfigDir = process.env.REPOTRUCK_CONFIG_DIR;
-  isolatedConfigDir = mkdtempSync(path.join(tmpdir(), "repotruck-store-cfg-"));
+  isolatedConfigDir = realpathSync(mkdtempSync(path.join(tmpdir(), "repotruck-store-cfg-")));
   process.env.REPOTRUCK_CONFIG_DIR = isolatedConfigDir;
   try {
     realStoreBefore = readFileSync(REAL_STORE, "utf8");
@@ -89,7 +97,7 @@ afterAll(() => {
 });
 
 function tempWorkspace(preset = "categorized"): string {
-  const dir = mkdtempSync(path.join(tmpdir(), "repotruck-tui-store-"));
+  const dir = realpathSync(mkdtempSync(path.join(tmpdir(), "repotruck-tui-store-")));
   tempRoots.push(dir);
   writeFileSync(
     path.join(dir, "repotruck.json"),
@@ -119,7 +127,11 @@ function readCentralEntry(root: string): Record<string, unknown> | null {
   const store = JSON.parse(
     readFileSync(path.join(isolatedConfigDir, "repotruck.json"), "utf8"),
   ) as { workspaces?: Array<{ root: string }> };
-  const entry = store.workspaces?.find((item) => item.root.toLowerCase() === root.toLowerCase());
+  const target = root.toLowerCase();
+  const entry = store.workspaces?.find(
+    (item) =>
+      item.root.toLowerCase() === target || path.resolve(item.root).toLowerCase() === target,
+  );
   return entry ?? null;
 }
 
@@ -903,7 +915,7 @@ describe("start preview modal", () => {
 describe("root modal", () => {
   test("shows the effective root labeled, saves an override and re-resolves", async () => {
     const root = tempWorkspace();
-    const target = mkdtempSync(path.join(tmpdir(), "repotruck-root-target-"));
+    const target = realpathSync(mkdtempSync(path.join(tmpdir(), "repotruck-root-target-")));
     tempRoots.push(target);
     const h = makeStore(root, []);
     await h.store.init();
@@ -1498,7 +1510,7 @@ describe("store lifecycle actions", () => {
 });
 
 function makeUndoableWorkspace(prefix: string): { root: string; repoDir: string } {
-  const root = mkdtempSync(path.join(tmpdir(), prefix));
+  const root = realpathSync(mkdtempSync(path.join(tmpdir(), prefix)));
   tempRoots.push(root);
   const repoDir = path.join(root, "acme", "source", "api");
   mkdirSync(repoDir, { recursive: true });

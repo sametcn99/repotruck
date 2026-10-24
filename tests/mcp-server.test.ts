@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { Client } from "@modelcontextprotocol/client";
@@ -23,7 +23,7 @@ let cwd: string;
 let wsRoot: string;
 
 function tempDir(prefix: string): string {
-  const dir = mkdtempSync(path.join(tmpdir(), prefix));
+  const dir = realpathSync(mkdtempSync(path.join(tmpdir(), prefix)));
   tempRoots.push(dir);
   return dir;
 }

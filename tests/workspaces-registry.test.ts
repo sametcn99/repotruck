@@ -34,7 +34,7 @@ let configDir: string;
 let env: EnvLike;
 
 function tempDir(prefix: string): string {
-  const dir = mkdtempSync(path.join(tmpdir(), prefix));
+  const dir = realpathSync(mkdtempSync(path.join(tmpdir(), prefix)));
   tempRoots.push(dir);
   return dir;
 }
