@@ -52,8 +52,22 @@ export async function listWorkspaceSnapshots(root: string): Promise<WorkspaceBac
       entries.push({ file: name, absPath, createdAt: createdAtFromName(name), repoCount: 0 });
     }
   }
-  entries.sort((a, b) => (a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : 0));
+  entries.sort((a, b) => compareBackupFilenames(b.file, a.file));
   return entries;
+}
+
+function counterFromName(name: string): number {
+  const match = name.match(/-(\d+)\.json$/);
+  return match ? Number.parseInt(match[1]!, 10) : 0;
+}
+
+function compareBackupFilenames(a: string, b: string): number {
+  const stampA = createdAtFromName(a);
+  const stampB = createdAtFromName(b);
+  if (stampA !== stampB) {
+    return stampA < stampB ? -1 : 1;
+  }
+  return counterFromName(a) - counterFromName(b);
 }
 
 function createdAtFromName(name: string): string {
@@ -107,7 +121,7 @@ export async function writeWorkspaceSnapshot(
     throw error;
   }
 
-  const existing = (await readdir(dir)).filter(isBackupFilename).sort();
+  const existing = (await readdir(dir)).filter(isBackupFilename).sort(compareBackupFilenames);
   const excess = existing.length - generations;
   for (let i = 0; i < excess; i += 1) {
     try {
