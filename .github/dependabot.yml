@@ -1,0 +1,22 @@
+version: 2
+updates:
+  - package-ecosystem: bun
+    directory: "/"
+    schedule:
+      interval: weekly
+    groups:
+      root-dependencies:
+        patterns:
+          - "*"
+  - package-ecosystem: bun
+    directory: "/website"
+    schedule:
+      interval: weekly
+    groups:
+      website-dependencies:
+        patterns:
+          - "*"
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: monthly

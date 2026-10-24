@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://sametcn99.github.io/repotruck/sitemap.xml

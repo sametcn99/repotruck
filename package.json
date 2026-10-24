@@ -1,0 +1,56 @@
+{
+  "name": "repotruck",
+  "version": "0.1.0",
+  "description": "Clone and mirror your GitHub repositories into organized local directory layouts, with an AGENTS.md workspace map and a built-in MCP server for coding agents.",
+  "type": "module",
+  "license": "MIT",
+  "repository": "github:sametcn99/repotruck",
+  "bin": {
+    "repotruck": "./bin/repotruck.js"
+  },
+  "files": [
+    "bin",
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "build": "bun build src/cli.ts --target=node --format=esm --packages=external --outfile=dist/cli.js && bun build src/index.tsx --target=node --format=esm --packages=external --outfile=dist/index.js && bun scripts/copy-grammars.ts",
+    "start": "bun run src/cli.ts",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome lint",
+    "lint:fix": "biome lint --write",
+    "format": "biome format --write",
+    "format:check": "biome format",
+    "check": "biome check",
+    "check:fix": "biome check --write",
+    "docs:check": "bun scripts/docs-check.ts",
+    "prepack": "bun run build"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.6.2",
+    "@modelcontextprotocol/client": "^2.3.1",
+    "@types/bun": "latest",
+    "@types/node": "^26.6.5",
+    "@types/react": "^19.3.0",
+    "typescript": "^7.0.2"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/node": "2.1.1",
+    "@modelcontextprotocol/server": "^2.3.1",
+    "@octokit/auth-oauth-device": "^8.0.5",
+    "@octokit/rest": "^22.0.1",
+    "@opentui/core": "^0.6.6",
+    "@opentui/react": "^0.6.6",
+    "commander": "^15.0.0",
+    "p-limit": "^7.3.3",
+    "react": "^19.3.1",
+    "simple-git": "^4.0.2",
+    "web-tree-sitter": "0.25.10",
+    "zod": "^4.2.0"
+  }
+}
