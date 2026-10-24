@@ -137,10 +137,15 @@ describe("workspace registry", () => {
     const store = JSON.parse(readFileSync(storePath, "utf8")) as {
       workspaces: Array<{ root: string; lastUsed: string }>;
     };
-    const olderResolved = realpathSync(older).toLowerCase();
-    const newerResolved = realpathSync(newer).toLowerCase();
+    const olderResolved = (realpathSync.native ?? realpathSync)(older).toLowerCase();
+    const newerResolved = (realpathSync.native ?? realpathSync)(newer).toLowerCase();
     for (const entry of store.workspaces) {
-      const normalized = entry.root.toLowerCase();
+      let normalized = entry.root.toLowerCase();
+      try {
+        normalized = (realpathSync.native ?? realpathSync)(entry.root).toLowerCase();
+      } catch {
+        /* fallback */
+      }
       if (normalized === olderResolved) entry.lastUsed = "2020-01-01T00:00:00.000Z";
       if (normalized === newerResolved) entry.lastUsed = "2030-01-01T00:00:00.000Z";
     }
