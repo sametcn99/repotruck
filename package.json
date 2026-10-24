@@ -32,25 +32,25 @@
     "prepack": "bun run build"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.6.2",
-    "@modelcontextprotocol/client": "^2.3.1",
-    "@types/bun": "latest",
+    "@biomejs/biome": "2.6.3",
+    "@modelcontextprotocol/client": "^2.4.0",
+    "@types/bun": "^1.4.4",
     "@types/node": "^26.6.5",
     "@types/react": "^19.3.0",
     "typescript": "^7.0.2"
   },
   "dependencies": {
-    "@modelcontextprotocol/node": "2.1.1",
-    "@modelcontextprotocol/server": "^2.3.1",
+    "@modelcontextprotocol/node": "2.1.2",
+    "@modelcontextprotocol/server": "^2.4.0",
     "@octokit/auth-oauth-device": "^8.0.5",
     "@octokit/rest": "^22.0.1",
-    "@opentui/core": "^0.6.6",
-    "@opentui/react": "^0.6.6",
+    "@opentui/core": "^0.6.8",
+    "@opentui/react": "^0.6.8",
     "commander": "^15.0.0",
     "p-limit": "^7.3.3",
     "react": "^19.3.1",
     "simple-git": "^4.0.2",
-    "web-tree-sitter": "0.25.10",
-    "zod": "^4.2.0"
+    "web-tree-sitter": "0.27.1",
+    "zod": "^4.6.7"
   }
 }
