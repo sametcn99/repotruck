@@ -97,7 +97,9 @@ afterAll(() => {
 });
 
 function tempWorkspace(preset = "categorized"): string {
-  const dir = realpathSync(mkdtempSync(path.join(tmpdir(), "repotruck-tui-store-")));
+  const dir = (realpathSync.native ?? realpathSync)(
+    mkdtempSync(path.join(tmpdir(), "repotruck-tui-store-")),
+  );
   tempRoots.push(dir);
   writeFileSync(
     path.join(dir, "repotruck.json"),
@@ -128,10 +130,18 @@ function readCentralEntry(root: string): Record<string, unknown> | null {
     readFileSync(path.join(isolatedConfigDir, "repotruck.json"), "utf8"),
   ) as { workspaces?: Array<{ root: string }> };
   const target = root.toLowerCase();
-  const entry = store.workspaces?.find(
-    (item) =>
-      item.root.toLowerCase() === target || path.resolve(item.root).toLowerCase() === target,
-  );
+  const entry = store.workspaces?.find((item) => {
+    if (item.root.toLowerCase() === target || path.resolve(item.root).toLowerCase() === target) {
+      return true;
+    }
+    try {
+      const nr = (realpathSync.native ?? realpathSync)(root).toLowerCase();
+      const ni = (realpathSync.native ?? realpathSync)(item.root).toLowerCase();
+      return ni === nr;
+    } catch {
+      return false;
+    }
+  });
   return entry ?? null;
 }
 

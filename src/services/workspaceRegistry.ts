@@ -1,4 +1,4 @@
-import { existsSync } from "node:fs";
+import { existsSync, realpathSync } from "node:fs";
 import { copyFile, mkdir, readFile, realpath, rm, stat } from "node:fs/promises";
 import path from "node:path";
 import { isPresetRef, type PresetRef } from "../presets/index.ts";
@@ -48,8 +48,18 @@ export function centralStorePath(env?: EnvLike): string {
 }
 
 function pathsEqual(a: string, b: string): boolean {
-  if (process.platform === "win32") return a.toLowerCase() === b.toLowerCase();
-  return a === b;
+  if (a === b) return true;
+  if (process.platform === "win32") {
+    if (a.toLowerCase() === b.toLowerCase()) return true;
+    try {
+      const na = realpathSync.native ? realpathSync.native(a).toLowerCase() : a.toLowerCase();
+      const nb = realpathSync.native ? realpathSync.native(b).toLowerCase() : b.toLowerCase();
+      return na === nb;
+    } catch {
+      return false;
+    }
+  }
+  return false;
 }
 
 async function realpathSafe(target: string): Promise<string> {

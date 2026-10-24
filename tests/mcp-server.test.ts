@@ -23,7 +23,7 @@ let cwd: string;
 let wsRoot: string;
 
 function tempDir(prefix: string): string {
-  const dir = realpathSync(mkdtempSync(path.join(tmpdir(), prefix)));
+  const dir = (realpathSync.native ?? realpathSync)(mkdtempSync(path.join(tmpdir(), prefix)));
   tempRoots.push(dir);
   return dir;
 }
@@ -160,9 +160,16 @@ describe("repotruck MCP server", () => {
     const result = jsonOf<{ workspaces: Array<{ path: string; repoCount: number }> }>(
       await call(client, "repotruck_list_workspaces", {}),
     );
-    const match = result.workspaces.find(
-      (item) => item.path.toLowerCase() === wsRoot.toLowerCase(),
-    );
+    const match = result.workspaces.find((item) => {
+      if (item.path.toLowerCase() === wsRoot.toLowerCase()) return true;
+      try {
+        const ni = (realpathSync.native ?? realpathSync)(item.path).toLowerCase();
+        const nw = (realpathSync.native ?? realpathSync)(wsRoot).toLowerCase();
+        return ni === nw;
+      } catch {
+        return false;
+      }
+    });
     expect(match).toBeDefined();
     expect(match!.repoCount).toBe(2);
   });

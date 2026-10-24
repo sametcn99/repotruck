@@ -28,7 +28,7 @@ function runCli(args: string[], env?: Record<string, string>) {
 const tempRoots: string[] = [];
 
 function tempDir(prefix: string): string {
-  const dir = realpathSync(mkdtempSync(path.join(tmpdir(), prefix)));
+  const dir = (realpathSync.native ?? realpathSync)(mkdtempSync(path.join(tmpdir(), prefix)));
   tempRoots.push(dir);
   return dir;
 }

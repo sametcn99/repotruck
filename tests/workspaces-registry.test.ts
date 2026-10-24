@@ -34,7 +34,7 @@ let configDir: string;
 let env: EnvLike;
 
 function tempDir(prefix: string): string {
-  const dir = realpathSync(mkdtempSync(path.join(tmpdir(), prefix)));
+  const dir = (realpathSync.native ?? realpathSync)(mkdtempSync(path.join(tmpdir(), prefix)));
   tempRoots.push(dir);
   return dir;
 }
@@ -51,8 +51,16 @@ afterAll(() => {
 });
 
 function findByResolvedPath<T extends { path: string }>(listing: T[], root: string): T[] {
-  const resolved = realpathSync(root);
-  return listing.filter((record) => record.path.toLowerCase() === resolved.toLowerCase());
+  const resolved = (realpathSync.native ?? realpathSync)(root);
+  return listing.filter((record) => {
+    if (record.path.toLowerCase() === resolved.toLowerCase()) return true;
+    try {
+      const nr = (realpathSync.native ?? realpathSync)(record.path);
+      return nr.toLowerCase() === resolved.toLowerCase();
+    } catch {
+      return false;
+    }
+  });
 }
 
 describe("workspace registry", () => {

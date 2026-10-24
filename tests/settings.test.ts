@@ -1,5 +1,5 @@
 import { afterAll, afterEach, describe, expect, test } from "bun:test";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { CONFIG_FILENAME } from "../src/services/config.ts";
@@ -19,7 +19,7 @@ const tempRoots: string[] = [];
 const pendingTempDirs: string[] = [];
 
 function tempDir(prefix: string): string {
-  const dir = mkdtempSync(path.join(tmpdir(), prefix));
+  const dir = (realpathSync.native ?? realpathSync)(mkdtempSync(path.join(tmpdir(), prefix)));
   tempRoots.push(dir);
   return dir;
 }
@@ -185,24 +185,24 @@ describe("validateRootInput", () => {
 
   test("~ expands to the platform home", () => {
     const result = validateRootInput("~/repotruck", { HOME: "/home/x" }, "linux");
-    expect(result).toEqual({ ok: true, root: path.resolve("/home/x/repotruck") });
+    expect(result).toEqual({ ok: true, root: path.posix.resolve("/home/x/repotruck") });
     const bare = validateRootInput("~", { HOME: "/home/x" }, "linux");
-    expect(bare).toEqual({ ok: true, root: path.resolve("/home/x") });
+    expect(bare).toEqual({ ok: true, root: path.posix.resolve("/home/x") });
   });
 
   test("~ on windows expands from USERPROFILE", () => {
     const result = validateRootInput("~\\repos", { USERPROFILE: "C:\\Users\\x" }, "win32");
-    expect(result).toEqual({ ok: true, root: path.resolve("C:\\Users\\x\\repos") });
+    expect(result).toEqual({ ok: true, root: path.win32.resolve("C:\\Users\\x\\repos") });
   });
 
   test("absolute paths pass through resolved", () => {
     const result = validateRootInput("C:\\Users\\x\\repos", {}, "win32");
-    expect(result).toEqual({ ok: true, root: path.resolve("C:\\Users\\x\\repos") });
+    expect(result).toEqual({ ok: true, root: path.win32.resolve("C:\\Users\\x\\repos") });
   });
 
   test("input is trimmed before validation", () => {
     const result = validateRootInput("  ~/repos  ", { HOME: "/home/x" }, "linux");
-    expect(result).toEqual({ ok: true, root: path.resolve("/home/x/repos") });
+    expect(result).toEqual({ ok: true, root: path.posix.resolve("/home/x/repos") });
   });
 });
 
@@ -219,7 +219,7 @@ describe("effectiveRoot", () => {
     await writeSettings(env, { defaultRoot: "/tmp/chosen-root" });
     const result = await effectiveRoot(env, "linux");
     expect(result).toEqual({
-      root: path.resolve("/tmp/chosen-root"),
+      root: path.posix.resolve("/tmp/chosen-root"),
       fromOverride: true,
     });
   });
@@ -307,7 +307,9 @@ describe("resolveRootForSession", () => {
     const configDir = tempDir("rt-session-cfg2-");
     const env = { HOME: "/home/x", REPOTRUCK_CONFIG_DIR: configDir };
     await writeSettings(env, { defaultRoot: "/tmp/chosen" });
-    expect(await resolveRootForSession(env, empty, "linux")).toBe(path.resolve("/tmp/chosen"));
+    expect(await resolveRootForSession(env, empty, "linux")).toBe(
+      path.posix.resolve("/tmp/chosen"),
+    );
   });
 
   test("outside any workspace with no settings the OS default applies", async () => {

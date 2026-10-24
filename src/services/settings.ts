@@ -270,17 +270,18 @@ export function validateRootInput(
       error: "invalid root: path is required (example: ~/repotruck)",
     };
   }
+  const p = platform === "win32" ? path.win32 : path.posix;
   let candidate = trimmed;
   if (candidate === "~" || candidate.startsWith("~/") || candidate.startsWith("~\\")) {
-    candidate = path.join(homeDirFrom(env, platform, homedirImpl), candidate.slice(1));
+    candidate = p.join(homeDirFrom(env, platform, homedirImpl), candidate.slice(1));
   }
-  if (!path.isAbsolute(candidate)) {
+  if (!p.isAbsolute(candidate)) {
     return {
       ok: false,
       error: `invalid root: path must be absolute (got ${trimmed}); use an absolute path or ~`,
     };
   }
-  return { ok: true, root: path.resolve(candidate) };
+  return { ok: true, root: p.resolve(candidate) };
 }
 
 export interface EffectiveRoot {
