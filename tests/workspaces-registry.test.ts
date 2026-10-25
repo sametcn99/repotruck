@@ -18,8 +18,10 @@ import {
   type RepotruckConfig,
 } from "../src/services/config.ts";
 import {
+  _clearStoreReadCache,
   LEGACY_WORKSPACES_FILENAME,
   listWorkspaces,
+  pathsEqual,
   readLegacyWorkspaceConfig,
   readWorkspaceConfig,
   readWorkspaceEntries,
@@ -129,30 +131,26 @@ describe("workspace registry", () => {
   });
 
   test("listWorkspaces sorts by lastUsed descending", async () => {
+    const sortConfigDir = tempDir("repotruck-registry-sort-cfg-");
+    const sortEnv = { REPOTRUCK_CONFIG_DIR: sortConfigDir };
     const older = tempDir("repotruck-ws-older-");
     const newer = tempDir("repotruck-ws-newer-");
-    await writeWorkspaceConfig(older, defaultConfig(older, "categorized"), env);
-    await writeWorkspaceConfig(newer, defaultConfig(newer, "categorized"), env);
-    const storePath = path.join(configDir, CONFIG_FILENAME);
+    await writeWorkspaceConfig(older, defaultConfig(older, "categorized"), sortEnv);
+    await writeWorkspaceConfig(newer, defaultConfig(newer, "categorized"), sortEnv);
+    const storePath = path.join(sortConfigDir, CONFIG_FILENAME);
     const store = JSON.parse(readFileSync(storePath, "utf8")) as {
       workspaces: Array<{ root: string; lastUsed: string }>;
     };
-    const olderResolved = (realpathSync.native ?? realpathSync)(older).toLowerCase();
-    const newerResolved = (realpathSync.native ?? realpathSync)(newer).toLowerCase();
     for (const entry of store.workspaces) {
-      let normalized = entry.root.toLowerCase();
-      try {
-        normalized = (realpathSync.native ?? realpathSync)(entry.root).toLowerCase();
-      } catch {
-        /* fallback */
-      }
-      if (normalized === olderResolved) entry.lastUsed = "2020-01-01T00:00:00.000Z";
-      if (normalized === newerResolved) entry.lastUsed = "2030-01-01T00:00:00.000Z";
+      if (pathsEqual(entry.root, older)) entry.lastUsed = "2020-01-01T00:00:00.000Z";
+      if (pathsEqual(entry.root, newer)) entry.lastUsed = "2030-01-01T00:00:00.000Z";
     }
     writeFileSync(storePath, JSON.stringify(store, null, 2), "utf8");
-    const listing = await listWorkspaces(env);
-    expect(listing[0]!.path.toLowerCase()).toBe(newerResolved);
-    expect(listing[listing.length - 1]!.path.toLowerCase()).toBe(olderResolved);
+    _clearStoreReadCache();
+    const listing = await listWorkspaces(sortEnv);
+    expect(listing.length).toBe(2);
+    expect(pathsEqual(listing[0]!.path, newer)).toBe(true);
+    expect(pathsEqual(listing[1]!.path, older)).toBe(true);
   });
 
   test("removeWorkspace deletes the record", async () => {

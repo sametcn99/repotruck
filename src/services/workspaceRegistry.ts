@@ -47,7 +47,7 @@ export function centralStorePath(env?: EnvLike): string {
   return path.join(appConfigDir(env ?? process.env), CONFIG_FILENAME);
 }
 
-function pathsEqual(a: string, b: string): boolean {
+export function pathsEqual(a: string, b: string): boolean {
   if (a === b) return true;
   if (process.platform === "win32") {
     if (a.toLowerCase() === b.toLowerCase()) return true;
@@ -64,7 +64,7 @@ function pathsEqual(a: string, b: string): boolean {
 
 async function realpathSafe(target: string): Promise<string> {
   try {
-    return await realpath(target);
+    return realpathSync.native ? realpathSync.native(target) : await realpath(target);
   } catch {
     return path.resolve(target);
   }
@@ -138,6 +138,10 @@ export interface ReadWorkspaceEntriesDeps {
  * another process's). Skipped entirely when a test injects readFile.
  */
 let storeReadCache: { file: string; mtimeMs: number; entries: WorkspaceEntry[] } | null = null;
+
+export function _clearStoreReadCache(): void {
+  storeReadCache = null;
+}
 
 async function storeMtimeMs(file: string): Promise<number> {
   try {
