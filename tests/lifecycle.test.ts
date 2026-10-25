@@ -1,15 +1,16 @@
-import { deleteRepo, archiveRepo, pruneRepos } from "../src/core/repos.ts";
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { simpleGit } from "simple-git";
+import { archiveRepo, deleteRepo, pruneRepos } from "../src/core/repos.ts";
 import {
   defaultConfig,
   type EnvLike,
   type RepotruckConfig,
   readAgentsMd,
 } from "../src/services/config.ts";
+import type { GitHubService } from "../src/services/github.ts";
 import {
   archiveRepository,
   deleteRepository,
@@ -659,7 +660,7 @@ describe("core/repos functions", () => {
       makeEntry("acme", "api", "acme/source/api"),
     ]);
     const github = fakeGithub({});
-    const res = await archiveRepo(root, "acme/api", github as any, env);
+    const res = await archiveRepo(root, "acme/api", github as unknown as GitHubService, env);
     expect(res.ok).toBe(true);
     expect(github.archiveCalls).toEqual(["acme/api"]);
   });
@@ -669,7 +670,7 @@ describe("core/repos functions", () => {
       makeEntry("acme", "api", "acme/source/api"),
     ]);
     const github = fakeGithub({ "acme/api": "gone" });
-    const res = await pruneRepos(root, github as any, { dryRun: true }, env);
+    const res = await pruneRepos(root, github as unknown as GitHubService, { dryRun: true }, env);
     expect(res.ok).toBe(true);
     expect(res.message).toContain("would be pruned");
   });
