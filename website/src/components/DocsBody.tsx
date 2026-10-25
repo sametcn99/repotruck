@@ -65,7 +65,7 @@ export function DocsBody() {
           six groups; run <code>repotruck &lt;command&gt; --help</code> for the live flag list.
         </p>
         {COMMAND_GROUPS.map((group) => (
-          <div className="command-group" key={group.id} id={group.id}>
+          <div className="command-group" key={group.id} id={group.id} data-toc-sub={group.title}>
             <h3>{group.title}</h3>
             <p className="section-sub">{group.blurb}</p>
             {group.commands.map((command) => (

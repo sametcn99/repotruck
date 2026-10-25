@@ -7,7 +7,7 @@ import { repoKeyEquals } from "./fsUtils.ts";
 import type { RepoInfo } from "./github.ts";
 import { resolveRepoRef } from "./launcher.ts";
 import { moveDir } from "./mover.ts";
-import { saveWorkspace, targetDirFor, toPosixRelative } from "./workspace.ts";
+import { targetDirFor, toPosixRelative, updateWorkspace } from "./workspace.ts";
 import { centralStorePath } from "./workspaceRegistry.ts";
 
 function notTrackedMessage(ref: string, env?: EnvLike): string {
@@ -55,8 +55,14 @@ export async function forgetRepository(
   if (match === null) {
     return { ok: false, message: notTrackedMessage(ref, env) };
   }
-  const { repos, aliases } = removeEntry(config, match.entry);
-  await saveWorkspace(root, { ...config, repos, aliases }, env);
+  await updateWorkspace(
+    root,
+    (current) => {
+      const { repos, aliases } = removeEntry(current, match.entry);
+      return { config: { ...current, repos, aliases }, result: undefined };
+    },
+    env,
+  );
   return {
     ok: true,
     message: `forgot ${entryKey(match.entry)} (kept on disk at ${match.entry.relativePath})`,
@@ -141,11 +147,17 @@ export async function pruneWorkspace(
       lines,
     };
   }
-  let next = config;
-  for (const entry of gone) {
-    next = { ...next, ...removeEntry(next, entry) };
-  }
-  await saveWorkspace(root, next, env);
+  await updateWorkspace(
+    root,
+    (current) => {
+      let next = current;
+      for (const entry of gone) {
+        next = { ...next, ...removeEntry(next, entry) };
+      }
+      return { config: next, result: undefined };
+    },
+    env,
+  );
   lines.push(...gone.map((entry) => `[prune] ${entryKey(entry)} untracked`));
   const prunedSummary = `pruned ${gone.length} of ${config.repos.length} tracked`;
   if (unclear.length > 0) {
@@ -234,8 +246,14 @@ export async function deleteRepository(
       };
     }
   }
-  const { repos, aliases } = removeEntry(config, entry);
-  await saveWorkspace(root, { ...config, repos, aliases }, env);
+  await updateWorkspace(
+    root,
+    (current) => {
+      const { repos, aliases } = removeEntry(current, entry);
+      return { config: { ...current, repos, aliases }, result: undefined };
+    },
+    env,
+  );
   return {
     ok: true,
     ...(trashPath !== undefined ? { trashPath } : {}),
@@ -300,14 +318,17 @@ export async function archiveRepository(
       try {
         move(currentDir, targetDir);
       } catch (error) {
-        await saveWorkspace(
+        await updateWorkspace(
           root,
-          {
-            ...config,
-            repos: config.repos.map((item) =>
-              repoKeyEquals(item, entry.owner, entry.name) ? updated : item,
-            ),
-          },
+          (current) => ({
+            config: {
+              ...current,
+              repos: current.repos.map((item) =>
+                repoKeyEquals(item, entry.owner, entry.name) ? updated : item,
+              ),
+            },
+            result: undefined,
+          }),
           env,
         );
         return {
@@ -316,26 +337,43 @@ export async function archiveRepository(
         };
       }
     }
-    const aliases: Record<string, string> = { ...(config.aliases ?? {}) };
-    for (const [alias, target] of Object.entries(aliases)) {
-      if (target.toLowerCase() === entry.relativePath.toLowerCase()) {
-        aliases[alias] = targetRel;
-      }
-    }
-    const repos = config.repos.map((item) =>
-      repoKeyEquals(item, entry.owner, entry.name) ? { ...updated, relativePath: targetRel } : item,
+    await updateWorkspace(
+      root,
+      (current) => {
+        const aliases: Record<string, string> = { ...(current.aliases ?? {}) };
+        for (const [alias, target] of Object.entries(aliases)) {
+          if (target.toLowerCase() === entry.relativePath.toLowerCase()) {
+            aliases[alias] = targetRel;
+          }
+        }
+        const repos = current.repos.map((item) =>
+          repoKeyEquals(item, entry.owner, entry.name)
+            ? { ...updated, relativePath: targetRel }
+            : item,
+        );
+        return { config: { ...current, repos, aliases }, result: undefined };
+      },
+      env,
     );
-    await saveWorkspace(root, { ...config, repos, aliases }, env);
     return {
       ok: true,
       message: `archived ${entryKey(entry)} (category: ${entry.category} -> archived, moved to ${targetRel})`,
     };
   }
 
-  const repos = config.repos.map((item) =>
-    repoKeyEquals(item, entry.owner, entry.name) ? updated : item,
+  await updateWorkspace(
+    root,
+    (current) => ({
+      config: {
+        ...current,
+        repos: current.repos.map((item) =>
+          repoKeyEquals(item, entry.owner, entry.name) ? updated : item,
+        ),
+      },
+      result: undefined,
+    }),
+    env,
   );
-  await saveWorkspace(root, { ...config, repos }, env);
   return {
     ok: true,
     message: `archived ${entryKey(entry)} (category: ${entry.category} -> archived, already at ${entry.relativePath})`,

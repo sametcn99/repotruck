@@ -1,11 +1,23 @@
 import type { Dirent, Stats } from "node:fs";
 import { mkdir, readdir, readFile, stat } from "node:fs/promises";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { Language, type Node, Parser } from "web-tree-sitter";
 import { firstErrorLine } from "./cloner.ts";
+import { type GrammarLang, LANG_ALIASES, type SymbolKind } from "./codeSearchLang.ts";
 import type { RepotruckConfig } from "./config.ts";
 import { writeFileAtomic } from "./fsUtils.ts";
+
+export type { GrammarLang, SymbolKind } from "./codeSearchLang.ts";
+export { LANG_ALIASES, SYMBOL_KINDS } from "./codeSearchLang.ts";
+
+import {
+  GrammarDownloadError,
+  GrammarIntegrityError,
+  GrammarOfflineError,
+  type GrammarStoreOptions,
+  GrammarUnavailableError,
+  resolveGrammar,
+} from "./grammarStore.ts";
 
 export const CODE_INDEX_VERSION = 1;
 export const MAX_INDEXED_FILE_BYTES = 1024 * 1024;
@@ -35,20 +47,6 @@ const EXTENSION_LANGS: Record<string, GrammarLang> = {
 
 export const GRAMMAR_LANGS: readonly GrammarLang[] = Object.keys(GRAMMAR_FILES) as GrammarLang[];
 
-export const LANG_ALIASES: Record<string, GrammarLang> = {
-  ts: "ts",
-  typescript: "ts",
-  tsx: "tsx",
-  js: "js",
-  javascript: "js",
-  py: "python",
-  python: "python",
-  go: "go",
-  golang: "go",
-  rs: "rust",
-  rust: "rust",
-};
-
 const SYMBOL_TYPES: Record<string, SymbolKind> = {
   function_declaration: "function",
   class_declaration: "class",
@@ -75,19 +73,6 @@ const SKIP_DIRS: ReadonlySet<string> = new Set([
   "coverage",
   "site-packages",
 ]);
-
-export type GrammarLang = "ts" | "tsx" | "js" | "python" | "go" | "rust";
-export type SymbolKind = "function" | "class" | "interface" | "type" | "enum" | "method" | "const";
-
-export const SYMBOL_KINDS: readonly SymbolKind[] = [
-  "function",
-  "class",
-  "interface",
-  "type",
-  "enum",
-  "method",
-  "const",
-];
 
 export type GrammarResolver = (lang: GrammarLang) => Promise<Uint8Array | null>;
 
@@ -137,24 +122,15 @@ export interface CodeSearchResult {
   index: CodeIndexStats;
 }
 
-const MODULE_DIR = path.dirname(fileURLToPath(import.meta.url));
-
-export function defaultGrammarResolver(dirs?: readonly string[]): GrammarResolver {
-  const candidates = dirs ?? [
-    path.join(MODULE_DIR, "grammars"),
-    path.join(MODULE_DIR, "..", "..", "vendor", "grammars"),
-  ];
+export function defaultGrammarResolver(
+  dirs?: readonly string[],
+  options?: GrammarStoreOptions,
+): GrammarResolver {
   return async (lang: GrammarLang): Promise<Uint8Array | null> => {
-    const file = GRAMMAR_FILES[lang];
-    if (file === undefined) return null;
-    for (const dir of candidates) {
-      try {
-        return new Uint8Array(await readFile(path.join(dir, file)));
-      } catch {
-        /* try the next candidate directory */
-      }
-    }
-    return null;
+    return await resolveGrammar(lang, {
+      ...options,
+      bundledDirs: dirs ?? options?.bundledDirs,
+    });
   };
 }
 
@@ -183,7 +159,15 @@ async function loadLanguage(
       await ensureParserInit();
       loaded = await Language.load(bytes);
     }
-  } catch {
+  } catch (error) {
+    if (
+      error instanceof GrammarOfflineError ||
+      error instanceof GrammarDownloadError ||
+      error instanceof GrammarIntegrityError ||
+      error instanceof GrammarUnavailableError
+    ) {
+      throw error;
+    }
     loaded = null;
   }
   languageCache.set(lang, loaded);
@@ -387,6 +371,7 @@ export interface BuildCodeIndexOptions {
   config: RepotruckConfig;
   resolver?: GrammarResolver;
   force?: boolean;
+  offline?: boolean;
 }
 
 export async function buildCodeIndex(options: BuildCodeIndexOptions): Promise<{
@@ -394,7 +379,11 @@ export async function buildCodeIndex(options: BuildCodeIndexOptions): Promise<{
   stats: CodeIndexStats;
 }> {
   const startedAt = Date.now();
-  const resolver = options.resolver ?? defaultGrammarResolver();
+  const resolver =
+    options.resolver ??
+    defaultGrammarResolver(undefined, {
+      offline: options.offline,
+    });
   const previous = options.force === true ? null : await readCodeIndex(options.root);
   const previousByPath = new Map((previous?.files ?? []).map((file) => [file.path, file]));
   const languages = new Map<GrammarLang, Language | null>();
@@ -513,6 +502,7 @@ export interface SearchCodeOptions {
   /** Treat `pattern` as a case-insensitive regular expression. */
   regex?: boolean;
   resolver?: GrammarResolver;
+  offline?: boolean;
 }
 
 export function formatCodeSearchMatch(match: Omit<CodeSearchMatch, "formatted">): string {
@@ -526,6 +516,7 @@ export async function searchCode(options: SearchCodeOptions): Promise<CodeSearch
     config: options.config,
     resolver: options.resolver,
     force: options.rebuild === true,
+    offline: options.offline,
   });
   const index = built.index;
   const stats = built.stats;

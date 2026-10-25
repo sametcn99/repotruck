@@ -13,7 +13,7 @@ import {
 import type { RepotruckConfig } from "../src/services/config.ts";
 import { APPS_FILENAME } from "../src/services/launcher.ts";
 import { createProgressHub } from "../src/services/progressHub.ts";
-import { saveWorkspace } from "../src/services/workspace.ts";
+import { updateWorkspace } from "../src/services/workspace.ts";
 
 const tempRoots: string[] = [];
 let configDir: string;
@@ -66,7 +66,7 @@ async function makeFixtureWorkspace(): Promise<void> {
     "export function demoHelper(): void {\n  return;\n}\n\nclass DemoInternal {\n}\n",
     "utf8",
   );
-  await saveWorkspace(wsRoot, config);
+  await updateWorkspace(wsRoot, () => ({ config, result: undefined }));
 }
 
 async function connect(options: Partial<McpServerOptions> = {}): Promise<Client> {

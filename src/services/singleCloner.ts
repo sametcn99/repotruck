@@ -4,9 +4,9 @@ import { type CloneProgress, cloneOrUpdate, type EmitProgress } from "./cloner.t
 import type { GitHubRepoReader, RepoInfo } from "./github.ts";
 import {
   loadWorkspace,
-  saveWorkspace,
   targetDirFor,
   toPosixRelative,
+  updateWorkspace,
   upsertInventory,
 } from "./workspace.ts";
 
@@ -186,7 +186,9 @@ export async function cloneSingleRepository(
     throw new Error(progress.message ?? `failed to clone ${repo.owner}/${repo.name}`);
   }
   const relativePath = toPosixRelative(options.root, destDir);
-  const next = upsertInventory(config, repo, relativePath, internal);
-  await saveWorkspace(options.root, { ...next, lastSync: new Date().toISOString() });
+  await updateWorkspace(options.root, (current) => {
+    const next = upsertInventory(current, repo, relativePath, internal);
+    return { config: { ...next, lastSync: new Date().toISOString() }, result: undefined };
+  });
   return { repo, destDir, internal, preset: config.preset, progress };
 }

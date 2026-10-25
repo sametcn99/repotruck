@@ -1,10 +1,34 @@
 {
   "name": "repotruck",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "description": "Clone and mirror your GitHub repositories into organized local directory layouts, with an AGENTS.md workspace map and a built-in MCP server for coding agents.",
+  "keywords": [
+    "github",
+    "cli",
+    "git",
+    "clone",
+    "mirror",
+    "backup",
+    "sync",
+    "workspace",
+    "repository-management",
+    "mcp",
+    "model-context-protocol",
+    "coding-agent",
+    "agentic",
+    "developer-tools"
+  ],
   "type": "module",
   "license": "MIT",
-  "repository": "github:sametcn99/repotruck",
+  "author": "sametcn99 (https://github.com/sametcn99)",
+  "homepage": "https://sametcn99.github.io/repotruck/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sametcn99/repotruck.git"
+  },
+  "bugs": {
+    "url": "https://github.com/sametcn99/repotruck/issues"
+  },
   "publishConfig": {
     "access": "public"
   },
@@ -15,13 +39,14 @@
     "bin",
     "dist",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "SECURITY.md"
   ],
   "engines": {
     "node": ">=20.0.0"
   },
   "scripts": {
-    "build": "bun build src/cli.ts --target=node --format=esm --packages=external --outfile=dist/cli.js && bun build src/index.tsx --target=node --format=esm --packages=external --outfile=dist/index.js && bun scripts/copy-grammars.ts",
+    "build": "bun build src/cli.ts --target=node --format=esm --packages=external --outfile=dist/cli.js && bun build src/index.tsx --target=node --format=esm --packages=external --outfile=dist/index.js",
     "start": "bun run src/cli.ts",
     "test": "bun test",
     "typecheck": "tsc --noEmit",

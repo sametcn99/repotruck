@@ -1,4 +1,6 @@
+import { existsSync, readdirSync } from "node:fs";
 import { rename, rm, writeFile } from "node:fs/promises";
+import path from "node:path";
 
 let atomicWriteCounter = 0;
 
@@ -32,4 +34,35 @@ export function repoKeyEquals(
     entry.owner.toLowerCase() === owner.toLowerCase() &&
     entry.name.toLowerCase() === name.toLowerCase()
   );
+}
+
+/**
+ * Resolves the actual casing of a relative path on disk starting from root.
+ * Returns null if any segment does not exist.
+ */
+export function getActualCasingOnDisk(
+  root: string,
+  relPath: string,
+  readdirSyncFn: (dir: string) => string[] = readdirSync,
+  existsSyncFn: (p: string) => boolean = existsSync,
+): string | null {
+  const normalized = relPath.replace(/\\/g, "/");
+  const segments = normalized.split("/").filter(Boolean);
+  let currentAbs = root;
+  const actualSegments: string[] = [];
+
+  for (const seg of segments) {
+    if (!existsSyncFn(currentAbs)) return null;
+    let entries: string[];
+    try {
+      entries = readdirSyncFn(currentAbs);
+    } catch {
+      return null;
+    }
+    const match = entries.find((e) => e.toLowerCase() === seg.toLowerCase());
+    if (!match) return null;
+    actualSegments.push(match);
+    currentAbs = path.join(currentAbs, match);
+  }
+  return actualSegments.join("/");
 }

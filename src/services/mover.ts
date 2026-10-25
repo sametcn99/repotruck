@@ -1,13 +1,33 @@
-import { cpSync, existsSync, mkdirSync, renameSync, rmSync } from "node:fs";
+import { randomUUID } from "node:crypto";
+import { cpSync, existsSync, mkdirSync, renameSync, rmdirSync, rmSync } from "node:fs";
 import path from "node:path";
 import { sanitizeSegment } from "../presets/index.ts";
+import { firstErrorLine } from "./cloner.ts";
 import type { RepotruckConfig } from "./config.ts";
-import { saveWorkspace } from "./workspace.ts";
+import { repoKeyEquals } from "./fsUtils.ts";
+import { updateWorkspace } from "./workspace.ts";
 
-export function moveDir(src: string, dest: string): void {
-  mkdirSync(path.dirname(dest), { recursive: true });
+export interface MoveFsDeps {
+  renameSync?: typeof renameSync;
+  mkdirSync?: typeof mkdirSync;
+  cpSync?: typeof cpSync;
+  rmSync?: typeof rmSync;
+  existsSync?: typeof existsSync;
+  rmdirSync?: typeof rmdirSync;
+}
+
+export function moveDir(src: string, dest: string, deps: MoveFsDeps = {}): void {
+  const mkdirFn = deps.mkdirSync ?? mkdirSync;
+  const renameFn = deps.renameSync ?? renameSync;
+  const cpFn = deps.cpSync ?? cpSync;
+  const rmFn = deps.rmSync ?? rmSync;
+  const existsFn = deps.existsSync ?? existsSync;
+  const rmdirFn = deps.rmdirSync ?? rmdirSync;
+
+  const destParent = path.dirname(dest);
+  mkdirFn(destParent, { recursive: true });
   try {
-    renameSync(src, dest);
+    renameFn(src, dest);
   } catch (error) {
     if (
       typeof error === "object" &&
@@ -15,17 +35,33 @@ export function moveDir(src: string, dest: string): void {
       (error as { code?: unknown }).code === "EXDEV"
     ) {
       try {
-        cpSync(src, dest, { recursive: true });
+        cpFn(src, dest, { recursive: true });
       } catch (copyError) {
         // Never leave a half-copied destination behind; the source is intact.
         try {
-          rmSync(dest, { recursive: true, force: true });
+          rmFn(dest, { recursive: true, force: true });
+        } catch {
+          /* best effort cleanup */
+        }
+        // Best-effort cleanup of empty parent directories created for destination
+        try {
+          let cur = destParent;
+          while (cur && cur !== path.dirname(cur)) {
+            if (existsFn(cur)) {
+              try {
+                rmdirFn(cur);
+              } catch {
+                break; // Stop climbing if directory is not empty or can't be removed
+              }
+            }
+            cur = path.dirname(cur);
+          }
         } catch {
           /* best effort cleanup */
         }
         throw copyError;
       }
-      rmSync(src, { recursive: true, force: true });
+      rmFn(src, { recursive: true, force: true });
       return;
     }
     throw error;
@@ -52,6 +88,8 @@ export interface MoveResult {
 
 export interface MoveOptions {
   emit?: (message: string) => void;
+  moveDirImpl?: typeof moveDir;
+  deps?: MoveFsDeps;
 }
 
 export async function moveRepository(
@@ -81,8 +119,9 @@ export async function moveRepository(
     return { ok: false, message: `${key} is not tracked by repotruck` };
   }
 
+  const existsFn = options.deps?.existsSync ?? existsSync;
   const sourceDir = path.join(root, ...entry.relativePath.split("/"));
-  if (!existsSync(sourceDir)) {
+  if (!existsFn(sourceDir)) {
     return { ok: false, message: `${key} is not on disk` };
   }
 
@@ -95,43 +134,85 @@ export async function moveRepository(
   }
   const destDir = path.join(root, ...segments);
   const destRel = segments.join("/");
-  const alreadyThere = entry.relativePath.toLowerCase() === destRel.toLowerCase();
-  if (alreadyThere) {
+
+  const isExactSame = entry.relativePath === destRel;
+  const isCaseOnly = entry.relativePath.toLowerCase() === destRel.toLowerCase() && !isExactSame;
+
+  if (isExactSame) {
     return { ok: true, message: "already there" };
   }
 
-  const occupiedByOther = config.repos.some(
-    (item) =>
-      !(
-        item.owner.toLowerCase() === entry.owner.toLowerCase() &&
-        item.name.toLowerCase() === entry.name.toLowerCase()
-      ) && item.relativePath.toLowerCase() === destRel.toLowerCase(),
-  );
-  if (occupiedByOther) {
-    return {
-      ok: false,
-      message: `destination is already tracked by another repository: ${destRel}`,
-    };
-  }
-  if (existsSync(destDir)) {
-    return { ok: false, message: `destination already exists on disk: ${destRel}` };
+  if (!isCaseOnly) {
+    const occupiedByOther = config.repos.some(
+      (item) =>
+        !repoKeyEquals(item, entry.owner, entry.name) &&
+        item.relativePath.toLowerCase() === destRel.toLowerCase(),
+    );
+    if (occupiedByOther) {
+      return {
+        ok: false,
+        message: `destination is already tracked by another repository: ${destRel}`,
+      };
+    }
+    if (existsFn(destDir)) {
+      return { ok: false, message: `destination already exists on disk: ${destRel}` };
+    }
   }
 
   options.emit?.(`moving ${key} to ${destRel}`);
-  moveDir(sourceDir, destDir);
+  const moveFn = options.moveDirImpl ?? ((s: string, d: string) => moveDir(s, d, options.deps));
 
-  const repos = config.repos.map((item) =>
-    item.owner.toLowerCase() === entry.owner.toLowerCase() &&
-    item.name.toLowerCase() === entry.name.toLowerCase()
-      ? { ...item, relativePath: destRel, custom: true }
-      : item,
-  );
-  const aliases: Record<string, string> = { ...(config.aliases ?? {}) };
-  for (const [alias, target] of Object.entries(aliases)) {
-    if (target.toLowerCase() === entry.relativePath.toLowerCase()) {
-      aliases[alias] = destRel;
+  if (isCaseOnly) {
+    const tempDir = `${sourceDir}.tmp-${randomUUID().slice(0, 8)}`;
+    try {
+      moveFn(sourceDir, tempDir);
+    } catch (phase1Error) {
+      return {
+        ok: false,
+        message: `failed to move repository to ${destRel}: ${firstErrorLine(phase1Error)}`,
+      };
+    }
+
+    try {
+      moveFn(tempDir, destDir);
+    } catch (phase2Error) {
+      try {
+        moveFn(tempDir, sourceDir);
+      } catch (rollbackError) {
+        return {
+          ok: false,
+          message: `phase 2 failed (${firstErrorLine(phase2Error)}); rollback failed (${firstErrorLine(rollbackError)})`,
+        };
+      }
+      return {
+        ok: false,
+        message: `failed to move repository to ${destRel}: ${firstErrorLine(phase2Error)}`,
+      };
+    }
+  } else {
+    try {
+      moveFn(sourceDir, destDir);
+    } catch (error) {
+      return {
+        ok: false,
+        message: `failed to move repository to ${destRel}: ${firstErrorLine(error)}`,
+      };
     }
   }
-  await saveWorkspace(root, { ...config, repos, aliases });
+
+  await updateWorkspace(root, (current) => {
+    const repos = current.repos.map((item) =>
+      repoKeyEquals(item, entry.owner, entry.name)
+        ? { ...item, relativePath: destRel, custom: true }
+        : item,
+    );
+    const aliases: Record<string, string> = { ...(current.aliases ?? {}) };
+    for (const [alias, target] of Object.entries(aliases)) {
+      if (target.toLowerCase() === entry.relativePath.toLowerCase()) {
+        aliases[alias] = destRel;
+      }
+    }
+    return { config: { ...current, repos, aliases }, result: undefined };
+  });
   return { ok: true, message: `moved to ${destRel}` };
 }

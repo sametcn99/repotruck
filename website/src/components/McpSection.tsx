@@ -62,7 +62,7 @@ export function McpSection() {
         </div>
         <ConfigBlock />
       </div>
-      <div className="panel">
+      <div className="panel" id="mcp-tools" data-toc-sub="Tools">
         <span className="panel-label">Tools</span>
         <table className="data-table">
           <thead>
@@ -83,7 +83,7 @@ export function McpSection() {
           </tbody>
         </table>
       </div>
-      <div className="panel">
+      <div className="panel" id="mcp-resources" data-toc-sub="Resources">
         <span className="panel-label">Resources</span>
         <p className="section-sub">
           Three fixed URIs over the resolved workspace, plus a matching resource-template pair per

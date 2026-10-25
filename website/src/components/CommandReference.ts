@@ -204,6 +204,10 @@ export const COMMAND_GROUPS: readonly CommandGroup[] = [
             flag: "--keep-custom",
             description: "keep manually placed (custom) repositories where they are",
           },
+          {
+            flag: "--resume",
+            description: "resume an interrupted reorganization from its journal",
+          },
           { flag: "--json", description: "machine-readable JSON output" },
         ],
       },
@@ -302,6 +306,10 @@ export const COMMAND_GROUPS: readonly CommandGroup[] = [
             description: "filter by language (typescript, javascript, python, rust, go)",
           },
           { flag: "-l, --limit <n>", description: "maximum number of matches (default 50)" },
+          {
+            flag: "--offline",
+            description: "disable automatic grammar downloads and require local/cached grammars",
+          },
           { flag: "--rebuild", description: "force rebuild of the tree-sitter symbol index" },
           {
             flag: "--regex",
@@ -405,7 +413,7 @@ export const COMMAND_GROUPS: readonly CommandGroup[] = [
     ],
   },
   {
-    id: "settings",
+    id: "cli-settings",
     title: "Settings, updates and agents",
     blurb: "Persist defaults, stay current, and expose the workspace to coding agents.",
     commands: [

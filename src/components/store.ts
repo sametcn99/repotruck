@@ -1,5 +1,6 @@
 import { existsSync } from "node:fs";
 import path from "node:path";
+import { setWorkspaceAlias } from "../core/aliases.ts";
 import {
   type CustomPreset,
   isInternalOwner,
@@ -17,13 +18,7 @@ import { warnQuiet } from "../services/diagnostics.ts";
 import type { CreateRepoOptions, GitHubRepoReader, RepoInfo } from "../services/github.ts";
 import { GitHubService } from "../services/github.ts";
 import type { AppEntry, ResolvedApp, SpawnImpl } from "../services/launcher.ts";
-import {
-  detectApps,
-  resolveApp,
-  resolveRepoRef,
-  runAppInRepo,
-  setAlias,
-} from "../services/launcher.ts";
+import { detectApps, resolveApp, resolveRepoRef, runAppInRepo } from "../services/launcher.ts";
 import { deleteRepository, forgetRepository } from "../services/lifecycle.ts";
 import { moveDir, moveRepository, validateMoveDestination } from "../services/mover.ts";
 import { type ReorganizeResult, reorganizeWorkspace } from "../services/reorganizer.ts";
@@ -41,8 +36,8 @@ import {
   loadWorkspace,
   type SyncReposOptions,
   type SyncReposResult,
-  saveWorkspace,
   syncRepos,
+  updateWorkspace,
 } from "../services/workspace.ts";
 import {
   centralStorePath,
@@ -686,12 +681,27 @@ export class Store {
         const fromAbs = path.join(this.rootValue, ...action.to.split("/"));
         const backAbs = path.join(this.rootValue, ...action.from.split("/"));
         this.deps.moveDirImpl(fromAbs, backAbs);
-        await saveWorkspace(this.rootValue, action.config);
+        await updateWorkspace(this.rootValue, (currentConfig) => {
+          const index = currentConfig.repos.findIndex((r) => `${r.owner}/${r.name}` === action.key);
+          if (index < 0) return { config: currentConfig, result: undefined };
+          const repos = currentConfig.repos.map((r, i) =>
+            i === index ? { ...r, relativePath: action.from } : r,
+          );
+          return { config: { ...currentConfig, repos }, result: undefined };
+        });
         this.pushStatus("DONE", "[undo]", `moved ${action.key} back to ${action.from}`);
       } else {
         const backAbs = path.join(this.rootValue, ...action.relativePath.split("/"));
         this.deps.moveDirImpl(action.trashPath, backAbs);
-        await saveWorkspace(this.rootValue, action.config);
+        const restoredRepo = action.config.repos.find((r) => `${r.owner}/${r.name}` === action.key);
+        await updateWorkspace(this.rootValue, (currentConfig) => {
+          if (!restoredRepo) return { config: currentConfig, result: undefined };
+          const repos = currentConfig.repos.filter((r) => `${r.owner}/${r.name}` !== action.key);
+          return {
+            config: { ...currentConfig, repos: [...repos, restoredRepo] },
+            result: undefined,
+          };
+        });
         this.pushStatus(
           "DONE",
           "[undo]",
@@ -1380,15 +1390,18 @@ export class Store {
   };
 
   submitAlias = async (key: string, alias: string): Promise<boolean> => {
-    const config = await loadWorkspace(this.rootValue);
-    const result = setAlias(config, alias, key);
-    if (!result.ok) {
-      this.set({ modalError: result.message });
+    try {
+      const res = await setWorkspaceAlias(this.rootValue, alias, key);
+      if (!res.ok) {
+        this.set({ modalError: res.message });
+        return false;
+      }
+      this.closeModal();
+      return true;
+    } catch (error) {
+      this.set({ modalError: error instanceof Error ? error.message : String(error) });
       return false;
     }
-    await saveWorkspace(this.rootValue, result.config);
-    this.closeModal();
-    return true;
   };
 
   runOpenApp = async (appName: string): Promise<number> => {

@@ -7,7 +7,7 @@ import type { RepotruckConfig } from "./config.ts";
 import { repoKeyEquals } from "./fsUtils.ts";
 import type { GitHubRepoCreator, RepoInfo } from "./github.ts";
 import { moveDir, validateMoveDestination } from "./mover.ts";
-import { saveWorkspace, upsertInventory } from "./workspace.ts";
+import { updateWorkspace, upsertInventory } from "./workspace.ts";
 
 const NAME_PATTERN = /^[A-Za-z0-9._-]+$/;
 
@@ -215,29 +215,31 @@ export async function createRepository(input: CreateRepositoryInput): Promise<Cr
     }
   }
 
-  let next = upsertInventory(
-    config,
-    {
-      owner: repo.owner,
-      name: repo.name,
-      isArchived: false,
-      isFork: false,
-      language: repo.language,
-      updatedAt: repo.updatedAt,
-    },
-    destRel,
-    true,
-  );
-  if (options.customPath !== undefined) {
-    next = {
-      ...next,
-      repos: next.repos.map((entry) =>
-        repoKeyEquals(entry, repo.owner, repo.name) ? { ...entry, custom: true } : entry,
-      ),
-    };
-  }
-  next = { ...next, lastSync: new Date().toISOString() };
-  await saveWorkspace(root, next);
+  await updateWorkspace(root, (current) => {
+    let next = upsertInventory(
+      current,
+      {
+        owner: repo.owner,
+        name: repo.name,
+        isArchived: false,
+        isFork: false,
+        language: repo.language,
+        updatedAt: repo.updatedAt,
+      },
+      destRel,
+      true,
+    );
+    if (options.customPath !== undefined) {
+      next = {
+        ...next,
+        repos: next.repos.map((entry) =>
+          repoKeyEquals(entry, repo.owner, repo.name) ? { ...entry, custom: true } : entry,
+        ),
+      };
+    }
+    return { config: { ...next, lastSync: new Date().toISOString() }, result: undefined };
+  });
+
   emit(`created ${repo.owner}/${repo.name} at ${destRel}`);
   return {
     ok: true,

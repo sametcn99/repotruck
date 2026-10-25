@@ -186,7 +186,7 @@ function buildTree(preset: PresetId): TreeRow[] {
 
 export function PresetTrees() {
   return (
-    <section className="section" aria-label="Preset example trees">
+    <section className="section" id="trees" aria-label="Preset example trees">
       <h2>Example trees</h2>
       <p className="section-sub">
         The same four repositories — two of yours, two community — filed under every preset.

@@ -16,12 +16,22 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".."
 const cliPath = path.join(repoRoot, "src", "cli.ts");
 
 function runCli(args: string[], env?: Record<string, string>) {
+  const mergedEnv: Record<string, string | undefined> = { ...process.env, ...env };
+  if (env) {
+    for (const key of Object.keys(env)) {
+      for (const existingKey of Object.keys(mergedEnv)) {
+        if (existingKey.toLowerCase() === key.toLowerCase() && existingKey !== key) {
+          delete mergedEnv[existingKey];
+        }
+      }
+    }
+  }
   return Bun.spawnSync([process.execPath, "run", cliPath, ...args], {
     cwd: repoRoot,
     stdout: "pipe",
     stderr: "pipe",
     stdin: "ignore",
-    env: { ...process.env, ...env },
+    env: mergedEnv as Record<string, string>,
   });
 }
 
@@ -429,6 +439,7 @@ describe("CLI lifecycle commands", () => {
     const env = {
       REPOTRUCK_CONFIG_DIR: configDir,
       PATH: configDir,
+      REPOTRUCK_TOKEN: "",
       REPOTRUCK_OAUTH_CLIENT_ID: "",
     };
     for (const command of [

@@ -188,16 +188,23 @@ describe("checkForUpdate", () => {
       });
     }) as unknown as typeof fetch;
     await checkForUpdate(env, { fetchImpl: counting });
+    // Pick a version that is guaranteed newer than the current package version
+    // so this test keeps working as the package version advances.
+    const currentMajor = Number.parseInt(
+      JSON.parse(readFileSync(path.join(import.meta.dir, "..", "package.json"), "utf8")).version,
+      10,
+    );
+    const newerVersion = `${currentMajor + 1}.0.0`;
     const state: UpdateState = {
       lastCheck: new Date().toISOString(),
-      latestVersion: "0.2.0",
+      latestVersion: newerVersion,
       dismissedVersion: null,
     };
     writeFileSync(updateStatePath(env), JSON.stringify(state), "utf8");
     const second = await checkForUpdate(env, { fetchImpl: counting });
     expect(fetchCount).toBe(1);
     expect(second.fromCache).toBe(true);
-    expect(second.latestVersion).toBe("0.2.0");
+    expect(second.latestVersion).toBe(newerVersion);
     expect(second.updateAvailable).toBe(true);
   });
 

@@ -161,7 +161,11 @@ export function defaultExecImpl(command: string, args: string[]): Promise<void> 
   const useShell = process.platform === "win32";
   return new Promise((resolve, reject) => {
     const child = useShell
-      ? spawn(quoteForShell(command, args), { stdio: "inherit", shell: true, windowsHide: true })
+      ? spawn(quoteForShell(command, args, { cmdShim: command === "npm" }), {
+          stdio: "inherit",
+          shell: true,
+          windowsHide: true,
+        })
       : spawn(command, args, { stdio: "inherit", windowsHide: true });
     child.on("error", reject);
     child.on("exit", (code) => {

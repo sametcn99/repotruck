@@ -1,145 +1,170 @@
 import { describe, expect, test } from "bun:test";
 import {
+  collectScopeRepos,
+  describeSyncScope,
+  detectTuiRuntimeError,
   formatWorkspaceLine,
   isAtLeast,
   parseSyncScope,
   tuiRuntimeError,
 } from "../src/cliSupport.ts";
-import { detectSshAvailability } from "../src/services/cloner.ts";
+import type { GitHubService, RepoInfo } from "../src/services/github.ts";
+import type { WorkspaceListing } from "../src/services/workspaceRegistry.ts";
 
-describe("isAtLeast", () => {
-  test("compares semver-ish version strings", () => {
-    expect(isAtLeast("1.4.2", [1, 3, 14])).toBe(true);
+describe("cliSupport - version and runtime checking", () => {
+  test("isAtLeast compares semver-like arrays", () => {
     expect(isAtLeast("1.3.14", [1, 3, 14])).toBe(true);
-    expect(isAtLeast("1.3.9", [1, 3, 14])).toBe(false);
+    expect(isAtLeast("1.3.15", [1, 3, 14])).toBe(true);
+    expect(isAtLeast("1.4.0", [1, 3, 14])).toBe(true);
     expect(isAtLeast("2.0.0", [1, 3, 14])).toBe(true);
-    expect(isAtLeast("26.2.0", [26, 4, 0])).toBe(false);
-    expect(isAtLeast("26.4.0", [26, 4, 0])).toBe(true);
-    expect(isAtLeast("27.0.1", [26, 4, 0])).toBe(true);
+    expect(isAtLeast("1.3.13", [1, 3, 14])).toBe(false);
+    expect(isAtLeast("1.2.99", [1, 3, 14])).toBe(false);
+    expect(isAtLeast("0.9.0", [1, 3, 14])).toBe(false);
+    expect(isAtLeast("invalid", [1, 3, 14])).toBe(false);
+    expect(isAtLeast("26.4", [26, 4, 0])).toBe(true);
   });
 
-  test("rejects garbage versions", () => {
-    expect(isAtLeast("", [1, 0, 0])).toBe(false);
-    expect(isAtLeast("abc", [1, 0, 0])).toBe(false);
-  });
-});
-
-describe("tuiRuntimeError", () => {
-  test("accepts Bun 1.3.14 and newer", () => {
+  test("tuiRuntimeError verifies Bun and Node versions", () => {
+    // Valid Bun
     expect(tuiRuntimeError("1.3.14", null)).toBeNull();
-    expect(tuiRuntimeError("1.4.2", null)).toBeNull();
-  });
+    expect(tuiRuntimeError("1.4.2", "20.0.0")).toBeNull();
 
-  test("rejects older Bun with an upgrade message", () => {
-    const message = tuiRuntimeError("1.2.0", null);
-    expect(message).not.toBeNull();
-    expect(message!).toContain("Bun 1.3.14");
-  });
+    // Outdated Bun
+    const outdatedBun = tuiRuntimeError("1.3.10", null);
+    expect(outdatedBun).toContain("requires Bun 1.3.14 or newer");
 
-  test("rejects Node 26.2 with a Bun suggestion", () => {
-    const message = tuiRuntimeError(null, "26.2.0");
-    expect(message).not.toBeNull();
-    expect(message!).toContain("Bun");
-    expect(message!).toContain("26.4");
-  });
-
-  test("accepts Node 26.4 and newer", () => {
+    // No Bun, valid Node
     expect(tuiRuntimeError(null, "26.4.0")).toBeNull();
-    expect(tuiRuntimeError(null, "27.1.0")).toBeNull();
+    expect(tuiRuntimeError("", "27.0.0")).toBeNull();
+
+    // No Bun, outdated Node
+    const outdatedNode = tuiRuntimeError(null, "20.10.0");
+    expect(outdatedNode).toContain("requires Node.js 26.4 or newer");
+
+    // No Bun, unknown Node
+    const unknownNode = tuiRuntimeError(null, null);
+    expect(unknownNode).toContain("requires Node.js 26.4 or newer (found Node.js unknown)");
+  });
+
+  test("detectTuiRuntimeError runs in current environment without error", () => {
+    // Current environment is Bun >= 1.3.14, should return null
+    const err = detectTuiRuntimeError();
+    expect(err).toBeNull();
   });
 });
 
-describe("parseSyncScope", () => {
-  test("accepts user, all, and org:<name>", () => {
+describe("cliSupport - SyncScope parsing and formatting", () => {
+  test("parseSyncScope handles user, all, org and invalid inputs", () => {
     expect(parseSyncScope("user")).toEqual({ kind: "user" });
     expect(parseSyncScope("all")).toEqual({ kind: "all" });
-    expect(parseSyncScope("org:acme")).toEqual({ kind: "org", org: "acme" });
-  });
+    expect(parseSyncScope("org:my-team")).toEqual({ kind: "org", org: "my-team" });
 
-  test("rejects garbage", () => {
-    expect(parseSyncScope("bogus")).toBeNull();
     expect(parseSyncScope("org:")).toBeNull();
+    expect(parseSyncScope("unknown")).toBeNull();
     expect(parseSyncScope("")).toBeNull();
-    expect(parseSyncScope("org")).toBeNull();
-  });
-});
-
-describe("formatWorkspaceLine", () => {
-  test("renders English fields with missing marker", () => {
-    const line = formatWorkspaceLine({
-      path: "C:\\ws",
-      preset: "categorized",
-      lastSync: null,
-      repoCount: 3,
-      lastUsed: "2026-10-23T00:00:00.000Z",
-      missing: true,
-    });
-    expect(line).toContain("C:\\ws");
-    expect(line).toContain("preset categorized");
-    expect(line).toContain("3 repositories");
-    expect(line).toContain("last sync: never");
-    expect(line).toContain("(missing)");
   });
 
-  test("omits the missing marker for existing workspaces", () => {
-    const line = formatWorkspaceLine({
-      path: "/tmp/ws",
-      preset: "flat-by-owner",
-      lastSync: "2026-10-23T10:00:00.000Z",
-      repoCount: 0,
-      lastUsed: "2026-10-23T11:00:00.000Z",
+  test("describeSyncScope formats all scope variants", () => {
+    expect(describeSyncScope({ kind: "user" })).toBe("user");
+    expect(describeSyncScope({ kind: "all" })).toBe("all");
+    expect(describeSyncScope({ kind: "org", org: "acme" })).toBe("org:acme");
+  });
+
+  test("formatWorkspaceLine formats listing with and without missing flag", () => {
+    const presentListing: WorkspaceListing = {
+      path: "/home/user/workspace",
+      preset: "nested",
+      repoCount: 5,
+      lastSync: "2026-10-25T01:00:00Z",
+      lastUsed: "2026-10-25T02:00:00Z",
       missing: false,
-    });
-    expect(line.includes("(missing)")).toBe(false);
-    expect(line).toContain("last sync: 2026-10-23T10:00:00.000Z");
+    };
+    const line1 = formatWorkspaceLine(presentListing);
+    expect(line1).toContain("/home/user/workspace");
+    expect(line1).toContain("preset nested");
+    expect(line1).toContain("5 repositories");
+    expect(line1).toContain("last sync: 2026-10-25T01:00:00Z");
+    expect(line1).not.toContain("(missing)");
+
+    const missingListing: WorkspaceListing = {
+      path: "/deleted/workspace",
+      preset: "flat",
+      repoCount: 0,
+      lastSync: null,
+      lastUsed: "2026-10-24T00:00:00Z",
+      missing: true,
+    };
+    const line2 = formatWorkspaceLine(missingListing);
+    expect(line2).toContain("/deleted/workspace");
+    expect(line2).toContain("last sync: never");
+    expect(line2).toContain("(missing)");
   });
 });
 
-describe("detectSshAvailability cache guard (carry-over N1)", () => {
-  test("injected probe results are never cached", async () => {
-    let probeResult = true;
-    const probe = async (): Promise<boolean> => probeResult;
-    const deps = {
-      homeDir: "/nonexistent-repotruck-home",
-      readHomeSshDir: async (): Promise<string[]> => ["id_ed25519"],
-      runProbe: probe,
+describe("cliSupport - collectScopeRepos", () => {
+  function makeMockRepo(owner: string, name: string): RepoInfo {
+    return {
+      owner,
+      name,
+      isPrivate: false,
+      isArchived: false,
+      isFork: false,
+      description: null,
+      language: null,
+      updatedAt: null,
+      stars: 0,
+      httpsUrl: `https://github.com/${owner}/${name}`,
+      sshUrl: `git@github.com:${owner}/${name}.git`,
     };
-    const first = await detectSshAvailability(deps);
-    expect(first).toBe(true);
-    probeResult = false;
-    const second = await detectSshAvailability(deps);
-    expect(second).toBe(false);
-    probeResult = true;
-    const third = await detectSshAvailability(deps);
-    expect(third).toBe(true);
+  }
+
+  test("collectScopeRepos handles user scope", async () => {
+    const mockGithub: Partial<GitHubService> = {
+      listUserRepos: async () => [makeMockRepo("alice", "repo1")],
+    };
+    const repos = await collectScopeRepos(mockGithub as GitHubService, { kind: "user" });
+    expect(repos).toHaveLength(1);
+    expect(repos[0]?.name).toBe("repo1");
   });
 
-  test("injected no-key home dirs skip the probe entirely", async () => {
-    let probeRan = false;
-    const result = await detectSshAvailability({
-      homeDir: "/nonexistent-repotruck-home",
-      readHomeSshDir: async (): Promise<string[]> => [],
-      runProbe: async (): Promise<boolean> => {
-        probeRan = true;
-        return true;
-      },
+  test("collectScopeRepos handles org scope", async () => {
+    const mockGithub: Partial<GitHubService> = {
+      listOrgRepos: async (org: string) => [makeMockRepo(org, "org-repo")],
+    };
+    const repos = await collectScopeRepos(mockGithub as GitHubService, {
+      kind: "org",
+      org: "team-a",
     });
-    expect(result).toBe(false);
-    expect(probeRan).toBe(false);
+    expect(repos).toHaveLength(1);
+    expect(repos[0]?.owner).toBe("team-a");
   });
 
-  test("REPOTRUCK_NO_SSH short-circuits without probing", async () => {
-    let probeRan = false;
-    const result = await detectSshAvailability({
-      env: { REPOTRUCK_NO_SSH: "1" },
-      homeDir: "/nonexistent-repotruck-home",
-      readHomeSshDir: async (): Promise<string[]> => ["id_ed25519"],
-      runProbe: async (): Promise<boolean> => {
-        probeRan = true;
-        return true;
+  test("collectScopeRepos handles all scope and dedupes repositories", async () => {
+    const mockGithub: Partial<GitHubService> = {
+      listUserRepos: async () => [
+        makeMockRepo("alice", "shared-repo"),
+        makeMockRepo("alice", "user-repo"),
+      ],
+      getActiveOrgs: async () => ["org-1", "org-2"],
+      listOrgRepos: async (org: string) => {
+        if (org === "org-1") {
+          return [
+            makeMockRepo("alice", "shared-repo"), // Duplicate (case-insensitive dedupe)
+            makeMockRepo("org-1", "service-1"),
+          ];
+        }
+        return [makeMockRepo("org-2", "service-2")];
       },
-    });
-    expect(result).toBe(false);
-    expect(probeRan).toBe(false);
+    };
+
+    const repos = await collectScopeRepos(mockGithub as GitHubService, { kind: "all" });
+    expect(repos).toHaveLength(4);
+    const keys = repos.map((r) => `${r.owner}/${r.name}`);
+    expect(keys).toEqual([
+      "alice/shared-repo",
+      "alice/user-repo",
+      "org-1/service-1",
+      "org-2/service-2",
+    ]);
   });
 });

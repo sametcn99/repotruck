@@ -1,0 +1,22 @@
+name: Release Grammars
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release-grammars:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+      - run: bun install
+      - name: Verify grammar manifest matches vendor binaries
+        run: bun scripts/generate-grammar-manifest.ts --check
+      - name: Upload grammar assets to release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload grammars-v1 vendor/grammars/*.wasm --clobber || gh release create grammars-v1 vendor/grammars/*.wasm --title "grammars-v1" --notes "Tree-sitter WebAssembly grammar assets for repotruck"

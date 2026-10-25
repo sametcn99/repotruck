@@ -1,8 +1,18 @@
 import { execFile } from "node:child_process";
 import { existsSync } from "node:fs";
+import path from "node:path";
 import { promisify } from "node:util";
+import { detectTuiRuntimeError } from "../cliSupport.ts";
 import { type AuthProbe, probeAuth } from "./auth.ts";
+import { firstErrorLine } from "./cloner.ts";
 import type { EnvLike } from "./config.ts";
+import { defaultGrammarCacheDir, GRAMMAR_FILES } from "./grammarStore.ts";
+import {
+  type ReorganizeJournal,
+  readReorganizeJournal,
+  reorganizeJournalPath,
+  reorganizeWorkspace,
+} from "./reorganizer.ts";
 import { readWorkspaceEntries, type WorkspaceEntry } from "./workspaceRegistry.ts";
 
 const execFileAsync = promisify(execFile);
@@ -15,6 +25,7 @@ export interface DoctorCheck {
   detail: string;
   suggestion?: string;
   formatted: string;
+  workspaceRoot?: string;
 }
 
 export interface DoctorResult {
@@ -29,6 +40,10 @@ export interface DoctorDeps {
   probeAuthImpl?: (env: EnvLike) => Promise<AuthProbe>;
   readEntriesImpl?: (env?: EnvLike) => Promise<WorkspaceEntry[]>;
   existsSyncImpl?: (p: string) => boolean;
+  tuiRuntimeImpl?: () => string | null;
+  readJournalImpl?: (root: string) => ReorganizeJournal | null;
+  grammarCacheDirImpl?: (env?: EnvLike) => string;
+  onFixProgress?: (message: string) => void;
 }
 
 export async function defaultWhich(cmd: string): Promise<string | null> {
@@ -55,12 +70,13 @@ function makeCheck(
   check: string,
   detail: string,
   suggestion?: string,
+  workspaceRoot?: string,
 ): DoctorCheck {
   let formatted = `[${status}] ${check}: ${detail}`;
   if (suggestion !== undefined && suggestion.length > 0) {
     formatted += `\n  -> ${suggestion}`;
   }
-  return { status, check, detail, suggestion, formatted };
+  return { status, check, detail, suggestion, formatted, workspaceRoot };
 }
 
 export async function runDoctor(deps: DoctorDeps = {}): Promise<DoctorResult> {
@@ -70,6 +86,8 @@ export async function runDoctor(deps: DoctorDeps = {}): Promise<DoctorResult> {
   const probeAuthFn = deps.probeAuthImpl ?? probeAuth;
   const readEntriesFn = deps.readEntriesImpl ?? readWorkspaceEntries;
   const existsFn = deps.existsSyncImpl ?? existsSync;
+  const readJournalFn = deps.readJournalImpl ?? readReorganizeJournal;
+  const tuiRuntimeImpl = deps.tuiRuntimeImpl ?? detectTuiRuntimeError;
 
   const checks: DoctorCheck[] = [];
 
@@ -144,7 +162,7 @@ export async function runDoctor(deps: DoctorDeps = {}): Promise<DoctorResult> {
     );
   }
 
-  // 5. disk check
+  // 5. disk & reorganize checks
   if (entries !== null) {
     const paths = entries.map((e) => e.root);
     const missing: string[] = [];
@@ -171,8 +189,128 @@ export async function runDoctor(deps: DoctorDeps = {}): Promise<DoctorResult> {
         ),
       );
     }
+
+    // Check for unfinished or corrupt reorganize journals across registered workspace roots
+    for (const p of paths) {
+      const journalPath = reorganizeJournalPath(p);
+      const hasJournal = deps.readJournalImpl !== undefined || existsFn(journalPath);
+      if (hasJournal) {
+        try {
+          const journal = readJournalFn(p);
+          if (journal !== null) {
+            checks.push(
+              makeCheck(
+                "fail",
+                "reorganize",
+                `unfinished reorganize in progress: ${p}`,
+                "run 'repotruck reorganize --resume' or 'repotruck doctor --fix' to recover",
+                p,
+              ),
+            );
+          }
+        } catch {
+          checks.push(
+            makeCheck(
+              "fail",
+              "reorganize",
+              `corrupt reorganize journal in ${p}`,
+              `repair or delete ${journalPath}`,
+              p,
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  // 6. grammars check (Sprint 05b)
+  const shouldCheckGrammars =
+    deps.grammarCacheDirImpl !== undefined ||
+    deps.env !== undefined ||
+    deps.whichImpl === undefined;
+
+  if (shouldCheckGrammars) {
+    const cacheDir =
+      deps.grammarCacheDirImpl !== undefined
+        ? deps.grammarCacheDirImpl(env)
+        : (env.REPOTRUCK_GRAMMARS_DIR ?? defaultGrammarCacheDir(env));
+
+    const totalGrammars = Object.keys(GRAMMAR_FILES).length;
+    let cachedCount = 0;
+    for (const file of Object.values(GRAMMAR_FILES)) {
+      if (existsFn(path.join(cacheDir, file))) {
+        cachedCount += 1;
+      }
+    }
+
+    if (cachedCount === totalGrammars) {
+      checks.push(makeCheck("ok", "grammars", `${cachedCount}/${totalGrammars} grammars cached`));
+    } else if (cachedCount > 0) {
+      checks.push(
+        makeCheck(
+          "warn",
+          "grammars",
+          `${cachedCount}/${totalGrammars} grammars cached`,
+          "run 'repotruck search-code' without --offline to download missing grammars or set REPOTRUCK_GRAMMARS_DIR",
+        ),
+      );
+    } else {
+      checks.push(
+        makeCheck(
+          "warn",
+          "grammars",
+          `0/${totalGrammars} grammars cached`,
+          "run 'repotruck search-code' to download grammars on demand, or set REPOTRUCK_GRAMMARS_DIR",
+        ),
+      );
+    }
+  }
+
+  // 7. TUI runtime check (Sprint 8a) — warning level: the headless commands
+  // work regardless; only the interactive dashboard needs the newer runtime.
+  const tuiProblem = tuiRuntimeImpl();
+  if (tuiProblem !== null) {
+    checks.push(
+      makeCheck(
+        "warn",
+        "tui-runtime",
+        tuiProblem,
+        "headless subcommands (sync, clone, status, ...) are unaffected; the interactive dashboard needs the newer runtime",
+      ),
+    );
   }
 
   const ok = !checks.some((c) => c.status === "fail");
   return { ok, checks };
+}
+
+export async function fixDoctor(deps: DoctorDeps = {}): Promise<DoctorResult> {
+  const result = await runDoctor(deps);
+  if (result.ok) return result;
+
+  const existsFn = deps.existsSyncImpl ?? existsSync;
+  const reorgFails = result.checks.filter(
+    (c) =>
+      c.check === "reorganize" &&
+      c.status === "fail" &&
+      c.workspaceRoot !== undefined &&
+      c.detail.startsWith("unfinished reorganize in progress: "),
+  );
+
+  for (const failCheck of reorgFails) {
+    const root = failCheck.workspaceRoot!;
+    deps.onFixProgress?.(`fix: resuming unfinished reorganize in ${root}`);
+    try {
+      await reorganizeWorkspace(root, undefined, {
+        resume: true,
+        env: deps.env,
+        existsSyncImpl: existsFn,
+      });
+      deps.onFixProgress?.(`✓ reconciled and cleaned up journal in ${root}`);
+    } catch (err) {
+      deps.onFixProgress?.(`failed to resume reorganize in ${root}: ${firstErrorLine(err)}`);
+    }
+  }
+
+  return await runDoctor(deps);
 }

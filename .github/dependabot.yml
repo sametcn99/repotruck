@@ -1,0 +1,55 @@
+version: 2
+
+updates:
+  # Root dependencies managed with Bun
+  - package-ecosystem: "bun"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps)"
+    # Freeze web-tree-sitter to avoid breaking WebAssembly ABI 0.25.10 grammar compatibility
+    ignore:
+      - dependency-name: "web-tree-sitter"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+    groups:
+      dev-dependencies:
+        dependency-type: "development"
+      opentui:
+        patterns:
+          - "@opentui/*"
+      mcp:
+        patterns:
+          - "@modelcontextprotocol/*"
+      octokit:
+        patterns:
+          - "@octokit/*"
+
+  # Website dependencies managed with Bun
+  - package-ecosystem: "bun"
+    directory: "/website"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      dev-dependencies:
+        dependency-type: "development"
+
+  # GitHub Actions workflow dependencies
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      actions:
+        patterns:
+          - "*"

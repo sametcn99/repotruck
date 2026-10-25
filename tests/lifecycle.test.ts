@@ -17,7 +17,7 @@ import {
   pruneWorkspace,
   workspaceStatus,
 } from "../src/services/lifecycle.ts";
-import { loadWorkspace, saveWorkspace } from "../src/services/workspace.ts";
+import { loadWorkspace, updateWorkspace } from "../src/services/workspace.ts";
 import { centralStorePath, readWorkspaceConfig } from "../src/services/workspaceRegistry.ts";
 
 const tempDirs: string[] = [];
@@ -63,7 +63,7 @@ async function makeWorkspace(
     mkdirSync(dir, { recursive: true });
   }
   const config: RepotruckConfig = { ...defaultConfig(root, "categorized"), repos, aliases };
-  await saveWorkspace(root, config, env);
+  await updateWorkspace(root, () => ({ config, result: undefined }), env);
   return { root, env, config };
 }
 
@@ -369,7 +369,7 @@ describe("deleteRepository", () => {
       ...defaultConfig(root, "categorized"),
       repos: [makeEntry("acme", "api", "acme/source/api")],
     };
-    await saveWorkspace(root, config, env);
+    await updateWorkspace(root, () => ({ config, result: undefined }), env);
     const result = await deleteRepository(root, config, "acme/api", { yes: true }, env);
     expect(result.ok).toBe(true);
     expect(result.message).toContain("directory was already missing");
@@ -615,7 +615,7 @@ describe("workspaceStatus", () => {
         ],
         aliases: { clean: cleanRel },
       };
-      await saveWorkspace(root, config, env);
+      await updateWorkspace(root, () => ({ config, result: undefined }), env);
     }, 60_000);
 
     test("labels every repository state and the workspace lastSync", async () => {

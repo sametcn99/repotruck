@@ -4,7 +4,7 @@ import path from "node:path";
 import { firstErrorLine } from "./cloner.ts";
 import type { RepoInventoryEntry, RepotruckConfig } from "./config.ts";
 import { appConfigDir, type EnvLike } from "./config.ts";
-import { quoteForShell } from "./shellQuote.ts";
+import { isCmdShim, quoteForShell } from "./shellQuote.ts";
 
 export const APPS_FILENAME = "apps.json";
 
@@ -273,7 +273,9 @@ export type SpawnImpl = (request: SpawnRequest) => Promise<number>;
 export function defaultSpawnImpl(request: SpawnRequest): Promise<number> {
   const attempt = (useShell: boolean): Promise<number> =>
     new Promise((resolve, reject) => {
-      const command = useShell ? quoteForShell(request.command, request.args) : request.command;
+      const command = useShell
+        ? quoteForShell(request.command, request.args, { cmdShim: isCmdShim(request.command) })
+        : request.command;
       const args = useShell ? [] : request.args;
       const child = spawn(command, args, {
         cwd: request.cwd,

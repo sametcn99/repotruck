@@ -4,7 +4,7 @@ import path from "node:path";
 import { createCloneLimiter, DEFAULT_CONCURRENCY, firstErrorLine } from "./cloner.ts";
 import type { RepoInventoryEntry, RepotruckConfig } from "./config.ts";
 import { resolveRepoRef } from "./launcher.ts";
-import { quoteForShell } from "./shellQuote.ts";
+import { isCmdShim, quoteForShell } from "./shellQuote.ts";
 
 /** Caps buffered per-repo output so runaway commands cannot exhaust memory. */
 export const MAX_CAPTURED_OUTPUT_CHARS = 200_000;
@@ -27,7 +27,9 @@ export type RunCommandImpl = (request: RunCommandRequest) => Promise<RunCommandO
 export function defaultRunCommandImpl(request: RunCommandRequest): Promise<RunCommandOutcome> {
   const run = (useShell: boolean): Promise<RunCommandOutcome> =>
     new Promise((resolve, reject) => {
-      const command = useShell ? quoteForShell(request.command, request.args) : request.command;
+      const command = useShell
+        ? quoteForShell(request.command, request.args, { cmdShim: isCmdShim(request.command) })
+        : request.command;
       const args = useShell ? [] : [...request.args];
       const child = spawn(command, args, {
         cwd: request.cwd,

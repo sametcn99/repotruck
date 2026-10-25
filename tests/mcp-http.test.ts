@@ -8,6 +8,9 @@ import {
   MCP_HTTP_DEFAULT_PORT,
   validateHttpBindOptions,
 } from "../src/mcp/server.ts";
+import { defaultConfig } from "../src/services/config.ts";
+import { updateWorkspace } from "../src/services/workspace.ts";
+import { readWorkspaceConfig } from "../src/services/workspaceRegistry.ts";
 
 const cleanupDirs: string[] = [];
 let configDir: string;
@@ -178,5 +181,64 @@ describe("HTTP handler serves tools over the stateless leg", () => {
     expect(names).toContain("repotruck_forget");
     expect(names).toContain("repotruck_open");
     expect(names).toContain("repotruck_search_code");
+  });
+});
+
+describe("concurrent tool calls over HTTP (C18)", () => {
+  test("10 concurrent repotruck_alias_set requests all succeed and persist", async () => {
+    const wsRoot = mkdtempSync(path.join(tmpdir(), "repotruck-mcp-http-ws-"));
+    cleanupDirs.push(wsRoot);
+
+    await updateWorkspace(
+      wsRoot,
+      () => ({
+        config: {
+          ...defaultConfig(wsRoot),
+          repos: [
+            {
+              owner: "acme",
+              name: "api",
+              relativePath: "acme/source/api",
+              category: "source",
+              internal: true,
+              language: "TypeScript",
+              updatedAt: null,
+            },
+          ],
+        },
+        result: undefined,
+      }),
+      env,
+    );
+
+    const requests = Array.from({ length: 10 }, (_, i) => {
+      const body = {
+        jsonrpc: "2.0",
+        id: 100 + i,
+        method: "tools/call",
+        params: {
+          name: "repotruck_alias_set",
+          arguments: {
+            root: wsRoot,
+            alias: `httpalias${i}`,
+            repo: "acme/api",
+          },
+        },
+      };
+      return post(plainHandler, { host: "127.0.0.1:3100" }, body);
+    });
+
+    const responses = await Promise.all(requests);
+    for (const res of responses) {
+      expect(res.status).toBe(200);
+      const { json } = await rpc(res);
+      expect((json?.result as Record<string, unknown> | undefined)?.isError).toBeFalsy();
+    }
+
+    const finalConfig = await readWorkspaceConfig(wsRoot, env);
+    expect(finalConfig).not.toBeNull();
+    for (let i = 0; i < 10; i++) {
+      expect(finalConfig?.aliases?.[`httpalias${i}`]).toBe("acme/source/api");
+    }
   });
 });

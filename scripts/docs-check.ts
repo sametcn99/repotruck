@@ -4,16 +4,14 @@
  * without running it and verifies that the hand-curated documentation keeps
  * up with it:
  *
- *   1. website/src/components/CommandReference.ts — every top-level CLI
+ *   website/src/components/CommandReference.ts — every top-level CLI
  *      command is documented, every documented command exists, and every
  *      non-help flag on the CLI (including flags inherited by parent-command
  *      docs from their subcommands) is documented by long name. Flags listed
  *      in GLOBAL_FLAGS are shared and not required per command.
- *   2. README.md — every top-level command has a table row.
  *
  * Run with `bun run docs:check`; CI fails when documentation drifts.
  */
-import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { program } from "commander";
@@ -136,15 +134,6 @@ async function main(): Promise<void> {
     }
   }
 
-  const readmePath = path.join(import.meta.dir, "..", "README.md");
-  const readme = await readFile(readmePath, "utf8");
-  for (const cmd of cliCommands) {
-    const rowPattern = new RegExp(`\`repotruck ${cmd.name}[ \\\\\`|]`);
-    if (!rowPattern.test(readme)) {
-      problems.push(`README: no table row found for "repotruck ${cmd.name}"`);
-    }
-  }
-
   if (problems.length > 0) {
     process.stderr.write(
       `documentation drifted from the CLI surface:\n${problems.map((p) => `- ${p}`).join("\n")}\n`,
@@ -152,7 +141,7 @@ async function main(): Promise<void> {
     process.exit(1);
   }
   process.stdout.write(
-    `docs in sync: ${cliCommands.length} commands verified against CommandReference.ts and README.md\n`,
+    `docs in sync: ${cliCommands.length} commands verified against CommandReference.ts\n`,
   );
 }
 

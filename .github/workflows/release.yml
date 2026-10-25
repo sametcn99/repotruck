@@ -9,21 +9,31 @@ permissions:
   contents: write
   id-token: write
 
+concurrency: release
+
 jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+
   publish:
+    needs: ci
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Verify release tag matches package.json version
+        run: test "${GITHUB_REF_NAME}" = "v$(node -p "require('./package.json').version")"
+      - name: Verify CHANGELOG contains entry for this version
+        run: VERSION="$(node -p "require('./package.json').version")" && (grep -E "^## \[${VERSION}\]" CHANGELOG.md || grep -E "^## \[v${VERSION}\]" CHANGELOG.md)
       - name: Configure Git identity for tests
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-      - uses: oven-sh/setup-bun@v2
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
       - run: bun install
       - run: bun run typecheck
       - run: bun test
       - run: bun run build
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a # v4.2.0
         with:
           node-version: 26
           registry-url: https://registry.npmjs.org
@@ -35,9 +45,13 @@ jobs:
           npm init -y >/dev/null
           npm install "../$tarball"
           npx --yes repotruck --version
-      - run: npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Publish to npm with provenance
+        run: |
+          EXTRA_ARGS=()
+          if [[ "${GITHUB_REF_NAME}" == *-* ]]; then
+            EXTRA_ARGS+=(--tag next)
+          fi
+          npm publish --provenance --access public "${EXTRA_ARGS[@]}"
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ github.token }}

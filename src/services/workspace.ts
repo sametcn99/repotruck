@@ -77,16 +77,38 @@ export function upsertInventory(
   return { ...config, repos };
 }
 
-export async function saveWorkspace(
+/**
+ * Atomically updates a workspace's configuration under a file lock.
+ * Loads the current config, applies the `mutate` function, writes the updated config
+ * and regenerated AGENTS.md, and returns the resulting config and any custom result.
+ *
+ * RULE: No network calls or git operations are permitted inside `mutate`.
+ * Long-running work (like git clone or network fetch) MUST happen outside the lock,
+ * with only the in-memory config transformations performed inside `mutate`.
+ */
+export async function updateWorkspace<T = void>(
   root: string,
-  config: RepotruckConfig,
+  mutate: (
+    current: RepotruckConfig,
+  ) => { config: RepotruckConfig; result: T } | Promise<{ config: RepotruckConfig; result: T }>,
   env?: EnvLike,
-): Promise<void> {
-  await withWorkspaceLock(
+): Promise<{ config: RepotruckConfig; result: T }> {
+  return await withWorkspaceLock(
     async () => {
-      const next: RepotruckConfig = { ...config, root };
-      await writeWorkspaceConfig(root, next, env);
-      await writeAgentsMd(root, next.repos, next.preset, next.lastSync, next.aliases);
+      const current = await readWorkspaceConfig(root, env);
+      const baseConfig = current ?? defaultConfig(root);
+      const { config: nextConfig, result } = await mutate(baseConfig);
+
+      const resolved: RepotruckConfig = { ...nextConfig, root };
+      await writeWorkspaceConfig(root, resolved, env);
+      await writeAgentsMd(
+        root,
+        resolved.repos,
+        resolved.preset,
+        resolved.lastSync,
+        resolved.aliases,
+      );
+      return { config: resolved, result };
     },
     { env },
   );
@@ -100,10 +122,21 @@ export async function loadWorkspace(
   const central = await readWorkspaceConfig(root, env);
   const legacy = await readLegacyWorkspaceConfig(root);
   if (legacy !== null && (central === null || central.repos.length === 0)) {
-    const imported: RepotruckConfig = { ...legacy, root };
-    await writeWorkspaceConfig(root, imported, env);
-    await deleteLegacyWorkspaceConfig(root);
-    return presetOverride === undefined ? imported : { ...imported, preset: presetOverride };
+    return await withWorkspaceLock(
+      async () => {
+        const currentCentral = await readWorkspaceConfig(root, env);
+        if (currentCentral !== null && currentCentral.repos.length > 0) {
+          return presetOverride === undefined
+            ? currentCentral
+            : { ...currentCentral, preset: presetOverride };
+        }
+        const imported: RepotruckConfig = { ...legacy, root };
+        await writeWorkspaceConfig(root, imported, env);
+        await deleteLegacyWorkspaceConfig(root);
+        return presetOverride === undefined ? imported : { ...imported, preset: presetOverride };
+      },
+      { env },
+    );
   }
   if (central !== null) {
     return presetOverride === undefined ? central : { ...central, preset: presetOverride };
@@ -128,6 +161,7 @@ export interface SyncReposOptions {
   emit?: EmitProgress;
   hub?: ProgressHub;
   customPresets?: readonly CustomPreset[];
+  cloneOrUpdateImpl?: typeof cloneOrUpdate;
 }
 
 export interface SyncedEntry {
@@ -146,7 +180,6 @@ export async function syncRepos(options: SyncReposOptions): Promise<SyncReposRes
   const { root, config, repos, userLogin, orgs, token } = options;
   const preferSsh = options.preferSsh ?? (token ? await detectSshAvailability() : false);
   const limit = createCloneLimiter(options.concurrency ?? DEFAULT_CONCURRENCY);
-  let current = config;
   const done: SyncedEntry[] = [];
   const failed: SyncReposResult["failed"] = [];
   const skipped: SyncReposResult["skipped"] = [];
@@ -158,7 +191,7 @@ export async function syncRepos(options: SyncReposOptions): Promise<SyncReposRes
         const destDir = targetDirFor(
           root,
           repo,
-          current.preset,
+          config.preset,
           internal,
           options.customPresets ?? [],
         );
@@ -175,7 +208,8 @@ export async function syncRepos(options: SyncReposOptions): Promise<SyncReposRes
                 hub.publish({ ...progress, index: index + 1, total: repos.length });
               }
             : undefined;
-        const final = await cloneOrUpdate(
+        const cloneFn = options.cloneOrUpdateImpl ?? cloneOrUpdate;
+        const final = await cloneFn(
           {
             owner: repo.owner,
             name: repo.name,
@@ -196,7 +230,6 @@ export async function syncRepos(options: SyncReposOptions): Promise<SyncReposRes
         const key = `${repo.owner}/${repo.name}`;
         if (final.phase === "done") {
           const relativePath = toPosixRelative(root, destDir);
-          current = upsertInventory(current, repo, relativePath, internal);
           done.push({ key, relativePath, internal });
         } else if (final.phase === "skipped") {
           skipped.push({ key, message: final.message ?? "divergence skip" });
@@ -207,8 +240,21 @@ export async function syncRepos(options: SyncReposOptions): Promise<SyncReposRes
     ),
   );
 
-  current = { ...current, lastSync: new Date().toISOString() };
-  await saveWorkspace(root, current, options.env);
+  await updateWorkspace(
+    root,
+    (freshConfig) => {
+      let updated = freshConfig;
+      for (const entry of done) {
+        const repo = repos.find((r) => `${r.owner}/${r.name}` === entry.key);
+        if (repo) {
+          updated = upsertInventory(updated, repo, entry.relativePath, entry.internal);
+        }
+      }
+      return { config: { ...updated, lastSync: new Date().toISOString() }, result: undefined };
+    },
+    options.env,
+  );
+
   options.hub?.publish({
     kind: "sync-summary",
     done: done.length,
