@@ -60,6 +60,7 @@ Every dashboard action is also a plain subcommand — scriptable, CI-friendly, n
 - `repotruck clone <url>` — clone or update a single repository into the layout
 - `repotruck create <name>` — create a repository on GitHub, fresh or imported from a local directory (`--from`)
 - `repotruck reorganize <preset>` — re-file everything into a new layout (`--dry-run`, `--scan`, `--keep-custom`)
+- `repotruck scan [dir]` — discover unregistered git repositories and optionally adopt/move them into the layout (`--move`, `--dry-run`)
 
 **Repository lifecycle**
 
@@ -71,7 +72,7 @@ Every dashboard action is also a plain subcommand — scriptable, CI-friendly, n
 
 **Inspection & bulk operations**
 
-- `repotruck status` — per-repository git health: dirty, ahead/behind, missing on disk
+- `repotruck status` — per-repository git health: dirty, ahead/behind, diff stats with visual bars (`-D`), filter (`-f`), CI exit check (`-c`)
 - `repotruck stats` — languages, categories, stale repositories, disk footprint
 - `repotruck search-code <pattern>` — tree-sitter symbol search across the workspace
 - `repotruck run <command...>` — run a shell command across every (or selected) repository in parallel

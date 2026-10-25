@@ -61,7 +61,7 @@ export function DocsBody() {
         <h2>Headless CLI</h2>
         <p className="section-sub">
           The dashboard is optional. Every workspace operation is a plain subcommand — scriptable,
-          CI-friendly and happy without a TTY. The full reference below covers all 26 commands in
+          CI-friendly and happy without a TTY. The full reference below covers all 27 commands in
           six groups; run <code>repotruck &lt;command&gt; --help</code> for the live flag list.
         </p>
         {COMMAND_GROUPS.map((group) => (

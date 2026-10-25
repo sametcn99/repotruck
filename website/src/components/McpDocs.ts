@@ -72,4 +72,22 @@ export const MCP_RESOURCE_ROWS: readonly McpResourceDoc[] = [
   },
 ];
 
+export interface McpPromptDoc {
+  readonly prompt: string;
+  readonly description: string;
+}
+
+export const MCP_PROMPT_ROWS: readonly McpPromptDoc[] = [
+  {
+    prompt: "sync-and-summarize",
+    description:
+      "Run a workspace sync and summarize newly arrived vs updated vs failed repositories, languages, and paths.",
+  },
+  {
+    prompt: "suggest-agent-rules",
+    description:
+      "Inspect the AGENTS.md workspace map and inventory to propose 5-10 grounded agent rules (categories, dominant languages, safe directories).",
+  },
+];
+
 export const CLAUDE_CODE_ADD_COMMAND = "claude mcp add repotruck -- repotruck mcp";

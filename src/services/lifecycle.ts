@@ -5,6 +5,7 @@ import { aheadBehindCount, createCloneLimiter, firstErrorLine } from "./cloner.t
 import type { EnvLike, RepoInventoryEntry, RepotruckConfig } from "./config.ts";
 import { repoKeyEquals } from "./fsUtils.ts";
 import type { RepoInfo } from "./github.ts";
+import { collectDetailedGitStatus, type DetailedGitStatus } from "./gitState.ts";
 import { resolveRepoRef } from "./launcher.ts";
 import { moveDir } from "./mover.ts";
 import { targetDirFor, toPosixRelative, updateWorkspace } from "./workspace.ts";
@@ -383,6 +384,16 @@ export async function archiveRepository(
 export interface RepoStatusLine {
   key: string;
   line: string;
+  dirty?: boolean;
+  ahead?: number;
+  behind?: number;
+  missing?: boolean;
+  details?: DetailedGitStatus;
+}
+
+export interface WorkspaceStatusOptions {
+  concurrency?: number;
+  detail?: boolean;
 }
 
 export interface WorkspaceStatus {
@@ -393,7 +404,7 @@ export interface WorkspaceStatus {
 export async function workspaceStatus(
   root: string,
   config: RepotruckConfig,
-  options: { concurrency?: number } = {},
+  options: WorkspaceStatusOptions = {},
 ): Promise<WorkspaceStatus> {
   const aliasByPath = new Map<string, string[]>();
   for (const [alias, target] of Object.entries(config.aliases ?? {})) {
@@ -408,7 +419,7 @@ export async function workspaceStatus(
         const key = entryKey(entry);
         const dir = path.join(root, ...entry.relativePath.split("/"));
         if (!existsSync(dir)) {
-          return { key, line: `${key} — MISSING on disk` };
+          return { key, line: `${key} — MISSING on disk`, missing: true };
         }
         const git = simpleGit(dir);
         let inside: string;
@@ -418,17 +429,23 @@ export async function workspaceStatus(
           inside = "";
         }
         const parts: string[] = [];
+        let isDirty = false;
+        let aheadNum = 0;
+        let behindNum = 0;
         if (inside !== "true") {
           parts.push("not a git repository");
         } else {
           try {
             const status = await git.raw(["status", "--porcelain"]);
-            parts.push(status.trim().length > 0 ? "dirty" : "clean");
+            isDirty = status.trim().length > 0;
+            parts.push(isDirty ? "dirty" : "clean");
           } catch {
             parts.push("unknown git status");
           }
           try {
             const { ahead, behind } = await aheadBehindCount(git);
+            aheadNum = ahead;
+            behindNum = behind;
             parts.push(`ahead ${ahead}`, `behind ${behind}`);
           } catch {
             parts.push("no upstream");
@@ -440,7 +457,23 @@ export async function workspaceStatus(
         if (aliases !== undefined && aliases.length > 0) {
           parts.push(`alias ${aliases.join(", ")}`);
         }
-        return { key, line: `${key} — ${parts.join(", ")}` };
+        let details: DetailedGitStatus | undefined;
+        if (options.detail && inside === "true") {
+          try {
+            details = await collectDetailedGitStatus(git);
+          } catch {
+            // ignore detail collection failure
+          }
+        }
+        return {
+          key,
+          line: `${key} — ${parts.join(", ")}`,
+          dirty: isDirty,
+          ahead: aheadNum,
+          behind: behindNum,
+          missing: false,
+          details,
+        };
       }),
     ),
   );

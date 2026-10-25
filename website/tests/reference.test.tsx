@@ -24,9 +24,10 @@ suite("command reference on the landing page", () => {
   });
 
   test("documents every committed CLI command exactly once", () => {
-    expect(ALL_COMMAND_NAMES.length).toBe(26);
+    expect(ALL_COMMAND_NAMES.length).toBe(27);
     expect(ALL_COMMAND_NAMES).toContain("preset");
     expect(ALL_COMMAND_NAMES).toContain("backup");
+    expect(ALL_COMMAND_NAMES).toContain("scan");
     const { container } = render(<App />);
     const rendered = Array.from(
       container.querySelectorAll<HTMLElement>(".command-doc h3 code"),

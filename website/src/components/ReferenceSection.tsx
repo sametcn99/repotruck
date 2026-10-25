@@ -65,6 +65,10 @@ const ENV_ROWS: readonly { variable: string; effect: string }[] = [
     effect:
       "Disables the GitHub conditional-request cache (github-cache.json); every API call hits the network.",
   },
+  {
+    variable: "REPOTRUCK_GRAMMARS_DIR",
+    effect: "Overrides the local directory for Tree-sitter WASM grammars used by search-code.",
+  },
 ];
 
 const INVENTORY_SNIPPET = `{
@@ -89,6 +93,14 @@ const INVENTORY_SNIPPET = `{
     }
   ]
 }`;
+
+const APPS_SNIPPET = `[
+  {
+    "name": "my-agent",
+    "command": "agent-cli",
+    "args": ["--workspace"]
+  }
+]`;
 
 export function ReferenceSection() {
   return (
@@ -155,7 +167,7 @@ export function ReferenceSection() {
           </tbody>
         </table>
         <p className="ref-note">
-          The config dir follows your platform convention (<code>%APPDATA%\repotruck</code> on
+          The config dir follows your platform convention (<code>%APPDATA%\\repotruck</code> on
           Windows, <code>~/Library/Application Support/repotruck</code> on macOS,{" "}
           <code>$XDG_CONFIG_HOME/repotruck</code> or <code>~/.config/repotruck</code> on Linux);
           <code>REPOTRUCK_CONFIG_DIR</code> overrides it. The current directory is never turned into
@@ -168,7 +180,7 @@ export function ReferenceSection() {
       <div className="grid-2">
         <div className="panel ref-panel" id="ref-backups" data-toc-sub="Backups">
           <span className="panel-label">backups</span>
-          <h3>Backups</h3>
+          <h3>Backups and trash safety</h3>
           <ul>
             <li>
               A corrupted or unreadable <code>repotruck.json</code> is preserved as{" "}
@@ -181,6 +193,11 @@ export function ReferenceSection() {
             <li>
               <code>repotruck backup list</code> shows the snapshots;{" "}
               <code>repotruck backup restore &lt;snapshot&gt; --yes</code> restores one.
+            </li>
+            <li>
+              Deletes initiated from the dashboard park clones in{" "}
+              <code>&lt;root&gt;/.repotruck/trash</code>; press <code>z</code> on the dashboard to
+              undo moves and deletes immediately.
             </li>
           </ul>
         </div>
@@ -281,6 +298,25 @@ export function ReferenceSection() {
             instance.
           </li>
         </ul>
+      </div>
+
+      <div className="panel ref-panel" id="ref-apps" data-toc-sub="Custom apps">
+        <span className="panel-label">apps</span>
+        <h3>Custom application launchers</h3>
+        <p>
+          <code>repotruck open &lt;repo&gt; [app]</code> launches built-in editors and coding agents
+          (<code>claude</code>, <code>codex</code>, <code>gemini</code>, <code>aider</code>,{" "}
+          <code>vscode</code>, <code>cursor</code>) or any executable on your <code>PATH</code>. To
+          register custom editors or tools with fixed flags, create an <code>apps.json</code> file
+          in the app config dir:
+        </p>
+        <div className="panel terminal">
+          <div className="copy-row">
+            <pre className="copy-command config-snippet">
+              <code>{APPS_SNIPPET}</code>
+            </pre>
+          </div>
+        </div>
       </div>
 
       <div className="panel ref-panel" id="ref-env" data-toc-sub="Environment variables">

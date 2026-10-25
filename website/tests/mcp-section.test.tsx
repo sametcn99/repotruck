@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, test, vi } from "vitest";
-import { MCP_RESOURCE_ROWS, MCP_TOOL_ROWS } from "../src/components/McpDocs.ts";
+import { MCP_PROMPT_ROWS, MCP_RESOURCE_ROWS, MCP_TOOL_ROWS } from "../src/components/McpDocs.ts";
 import { McpSection } from "../src/components/McpSection.tsx";
 
 const hasDom = typeof document !== "undefined";
@@ -63,6 +63,15 @@ suite("McpSection", () => {
       "repotruck://tree/{root}",
     ]) {
       expect(screen.getByText(uri)).toBeInTheDocument();
+    }
+  });
+
+  test("lists pre-built prompt workflows", () => {
+    render(<McpSection />);
+    expect(MCP_PROMPT_ROWS.length).toBe(2);
+    for (const row of MCP_PROMPT_ROWS) {
+      expect(screen.getByText(row.prompt)).toBeInTheDocument();
+      expect(screen.getByText(row.description)).toBeInTheDocument();
     }
   });
 

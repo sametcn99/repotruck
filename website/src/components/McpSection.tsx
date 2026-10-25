@@ -1,6 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { CopyButton } from "./CopyButton.tsx";
-import { CLAUDE_CODE_ADD_COMMAND, MCP_RESOURCE_ROWS, MCP_TOOL_ROWS } from "./McpDocs.ts";
+import {
+  CLAUDE_CODE_ADD_COMMAND,
+  MCP_PROMPT_ROWS,
+  MCP_RESOURCE_ROWS,
+  MCP_TOOL_ROWS,
+} from "./McpDocs.ts";
 
 const MCP_SERVERS_CONFIG = `{
   "mcpServers": {
@@ -104,6 +109,31 @@ export function McpSection() {
                   {row.uri}
                 </td>
                 <td data-label="Content">{row.content}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="panel" id="mcp-prompts" data-toc-sub="Prompts">
+        <span className="panel-label">Prompts</span>
+        <p className="section-sub">
+          Pre-built prompt workflows coding agents can execute directly for workspace sync and rule
+          generation.
+        </p>
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th scope="col">Prompt</th>
+              <th scope="col">Workflow description</th>
+            </tr>
+          </thead>
+          <tbody>
+            {MCP_PROMPT_ROWS.map((row) => (
+              <tr key={row.prompt}>
+                <td data-label="Prompt" className="path">
+                  {row.prompt}
+                </td>
+                <td data-label="Workflow description">{row.description}</td>
               </tr>
             ))}
           </tbody>

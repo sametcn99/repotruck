@@ -97,19 +97,57 @@ export function TocRail() {
 
   return (
     <nav className="toc-rail" aria-label="Sections">
-      {items.map((item) => (
-        <a
-          key={item.id}
-          href={`#${item.id}`}
-          className={[item.id === activeId ? "active" : "", item.level === 2 ? "toc-rail-sub" : ""]
-            .filter(Boolean)
-            .join(" ")}
-          data-level={item.level}
-        >
-          <span className="toc-rail-bar" aria-hidden="true" />
-          <span className="toc-rail-label">{item.label}</span>
+      <div className="toc-rail-header">
+        <a href="#main" className="toc-brand" aria-label="repotruck home">
+          <svg
+            className="toc-brand-logo"
+            viewBox="0 0 32 32"
+            width="18"
+            height="18"
+            aria-hidden="true"
+            focusable="false"
+          >
+            <rect
+              x="4"
+              y="8"
+              width="15"
+              height="11"
+              rx="1.5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            />
+            <path
+              d="M19 12h5l4 4v3h-9z"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinejoin="round"
+            />
+            <circle cx="10" cy="22.5" r="2.5" fill="currentColor" />
+            <circle cx="23" cy="22.5" r="2.5" fill="currentColor" />
+          </svg>
+          <span className="toc-brand-name">repotruck</span>
         </a>
-      ))}
+      </div>
+      <div className="toc-rail-list">
+        {items.map((item) => (
+          <a
+            key={item.id}
+            href={`#${item.id}`}
+            className={[
+              item.id === activeId ? "active" : "",
+              item.level === 2 ? "toc-rail-sub" : "",
+            ]
+              .filter(Boolean)
+              .join(" ")}
+            data-level={item.level}
+          >
+            <span className="toc-rail-bar" aria-hidden="true" />
+            <span className="toc-rail-label">{item.label}</span>
+          </a>
+        ))}
+      </div>
     </nav>
   );
 }

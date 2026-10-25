@@ -8,6 +8,7 @@ import { PresetTable } from "./components/PresetTable.tsx";
 import { PresetTrees } from "./components/PresetTrees.tsx";
 import { ReferenceSection } from "./components/ReferenceSection.tsx";
 import { ShortcutsTable } from "./components/ShortcutsTable.tsx";
+import { SiteNav } from "./components/SiteNav.tsx";
 import { TerminalHero } from "./components/TerminalHero.tsx";
 import { TocRail } from "./components/TocRail.tsx";
 
@@ -51,16 +52,7 @@ export default function App() {
             </svg>
             repotruck
           </span>
-          <nav className="site-nav" aria-label="Site">
-            <a href="#features">Features</a>
-            <a href="#presets">Presets</a>
-            <a href="#mcp">MCP</a>
-            <a href="#install">Install</a>
-            <a href="#cli">CLI</a>
-            <a href="#shortcuts">Shortcuts</a>
-            <a href="#reference">Reference</a>
-            <a href="#faq">FAQ</a>
-          </nav>
+          <SiteNav />
         </div>
       </header>
       <main id="main">

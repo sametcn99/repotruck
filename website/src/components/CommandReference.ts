@@ -13,7 +13,7 @@ export interface CommandGroup {
   readonly commands: readonly CommandDoc[];
 }
 
-// 26 top-level commands across 6 logical groups.
+// 27 top-level commands across 6 logical groups.
 export const COMMAND_GROUPS: readonly CommandGroup[] = [
   {
     id: "sync-and-clone",
@@ -142,10 +142,31 @@ export const COMMAND_GROUPS: readonly CommandGroup[] = [
       },
       {
         name: "status",
-        summary: "Show per-repository health: dirty state, ahead/behind, category, aliases.",
+        summary:
+          "Show per-repository health: dirty state, ahead/behind, category, aliases, and detailed diff stats.",
         usage: "repotruck status [options]",
-        examples: ["repotruck status", "repotruck status --json"],
-        flags: [{ flag: "--json", description: "machine-readable JSON output" }],
+        examples: [
+          "repotruck status",
+          "repotruck status -D",
+          "repotruck status --filter dirty",
+          "repotruck status --check",
+          "repotruck status --json",
+        ],
+        flags: [
+          {
+            flag: "-D, --detail",
+            description: "show detailed unpushed commits and modified files with diff stats",
+          },
+          {
+            flag: "-f, --filter <type>",
+            description: "filter repos by status: dirty, uncommitted, unpushed, unpulled, all",
+          },
+          {
+            flag: "-c, --check",
+            description: "exit non-zero if any repo has uncommitted/unpushed changes or is missing",
+          },
+          { flag: "--json", description: "machine-readable JSON output" },
+        ],
       },
     ],
   },
@@ -184,6 +205,32 @@ export const COMMAND_GROUPS: readonly CommandGroup[] = [
           "Move a tracked repository to a custom path; the inventory, AGENTS.md map and aliases follow. Moved repositories are marked manually placed.",
         usage: "repotruck move <repo> <destination>",
         examples: ["repotruck move monalisa/api active/api"],
+      },
+      {
+        name: "scan",
+        summary:
+          "Scan directory recursively for git repositories, detect unregistered repos, and optionally move them into preset layout.",
+        usage: "repotruck scan [directory] [options]",
+        examples: [
+          "repotruck scan",
+          "repotruck scan ~/code",
+          "repotruck scan --move --dry-run",
+          "repotruck scan --move",
+          "repotruck scan --json",
+        ],
+        flags: [
+          {
+            flag: "-m, --move",
+            description:
+              "adopt and move unregistered repositories into their target preset directory",
+          },
+          {
+            flag: "--dry-run",
+            description:
+              "preview planned moves for unregistered repositories without modifying files",
+          },
+          { flag: "--json", description: "machine-readable JSON output" },
+        ],
       },
       {
         name: "reorganize",
@@ -271,7 +318,7 @@ export const COMMAND_GROUPS: readonly CommandGroup[] = [
       {
         name: "open",
         summary:
-          "Open a tracked repository (alias, relative path or owner/name) in an app; omit the app to list what is detected. Builtins: claude, codex, gemini, aider, vscode, cursor.",
+          "Open a tracked repository (alias, relative path or owner/name) in an app; omit the app to list what is detected. Builtins: claude, codex, gemini, aider, vscode, cursor, custom entries in apps.json, or any bare PATH executable.",
         usage: "repotruck open <repo> [app]",
         examples: [
           "repotruck open api claude",
@@ -299,11 +346,11 @@ export const COMMAND_GROUPS: readonly CommandGroup[] = [
         flags: [
           {
             flag: "--kind <kind>",
-            description: "filter symbols: function, class, interface, type, variable, constant",
+            description: "filter symbols: function, class, interface, type, enum, method, const",
           },
           {
             flag: "--lang <lang>",
-            description: "filter by language (typescript, javascript, python, rust, go)",
+            description: "filter by language (ts, tsx, js, py, go, rs, or aliases)",
           },
           { flag: "-l, --limit <n>", description: "maximum number of matches (default 50)" },
           {
@@ -379,13 +426,14 @@ export const COMMAND_GROUPS: readonly CommandGroup[] = [
       {
         name: "doctor",
         summary:
-          "Check system dependencies (git, gh), configuration, GitHub auth, central registry, and workspace health. --fix starts auth login when no token is found.",
+          "Check system dependencies (git, gh), configuration, GitHub auth, central registry, and workspace health. --fix starts auth login when no token is found and resumes interrupted reorganizations.",
         usage: "repotruck doctor [options]",
         examples: ["repotruck doctor", "repotruck doctor --fix"],
         flags: [
           {
             flag: "--fix",
-            description: "start repotruck auth login when no token is found",
+            description:
+              "start repotruck auth login when no token is found and resume interrupted reorganizations",
           },
           { flag: "--json", description: "machine-readable JSON output" },
         ],
