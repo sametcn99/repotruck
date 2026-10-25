@@ -1,0 +1,19 @@
+{
+  "$schema": "https://schemas.agentskills.io/discovery/0.2.0/schema.json",
+  "skills": [
+    {
+      "name": "repotruck-workspace",
+      "type": "skill-md",
+      "description": "Manage and navigate GitHub workspace repositories, 16 presets, Tree-sitter code search, batch execution, and AGENTS.md maps using repotruck.",
+      "url": "https://sametcn99.github.io/repotruck/.well-known/agent-skills/repotruck-workspace/SKILL.md",
+      "digest": "sha256:e7bfd33a65363737d35add59248d40094dca79835b2f7622df3d9e719f5c71f9"
+    },
+    {
+      "name": "repotruck-mcp",
+      "type": "skill-md",
+      "description": "Interact with the Repotruck Model Context Protocol (MCP) server, utilizing its 25 tools, 6 resources, and 2 prompts for workspace orchestration.",
+      "url": "https://sametcn99.github.io/repotruck/.well-known/agent-skills/repotruck-mcp/SKILL.md",
+      "digest": "sha256:d8cc918b291f3c4badfaa1456c37a05b9fc55d718b0a3e958ffb6e9c8e1150be"
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "specVersion": "1.0",
+  "host": {
+    "displayName": "Repotruck",
+    "identifier": "did:web:sametcn99.github.io"
+  },
+  "entries": [
+    {
+      "identifier": "urn:air:sametcn99.github.io:server:repotruck-mcp",
+      "displayName": "Repotruck MCP Server",
+      "type": "application/mcp-server-card+json",
+      "url": "https://sametcn99.github.io/repotruck/.well-known/mcp/server-card.json",
+      "representativeQueries": [
+        "bulk clone all repositories for a github user",
+        "organize git repositories into categorized folders",
+        "generate AGENTS.md workspace map for AI coding agents",
+        "reorganize workspace layout using presets",
+        "manage github workspace repositories with MCP"
+      ]
+    },
+    {
+      "identifier": "urn:air:sametcn99.github.io:skill:repotruck-workspace",
+      "displayName": "Repotruck Workspace Management Skill",
+      "type": "text/markdown",
+      "url": "https://sametcn99.github.io/repotruck/.well-known/agent-skills/repotruck-workspace/SKILL.md",
+      "representativeQueries": [
+        "how to clone multiple repositories at once",
+        "configure AGENTS.md rules for AI coding assistants",
+        "check git status across all local repositories"
+      ]
+    },
+    {
+      "identifier": "urn:air:sametcn99.github.io:skill:repotruck-mcp",
+      "displayName": "Repotruck MCP Server Skill",
+      "type": "text/markdown",
+      "url": "https://sametcn99.github.io/repotruck/.well-known/agent-skills/repotruck-mcp/SKILL.md",
+      "representativeQueries": [
+        "connect repotruck to claude code mcp",
+        "mcp tools for github repository automation"
+      ]
+    }
+  ]
+}

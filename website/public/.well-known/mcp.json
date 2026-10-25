@@ -1,0 +1,99 @@
+{
+  "$schema": "https://modelcontextprotocol.io/schemas/server-card/v1.json",
+  "serverInfo": {
+    "name": "repotruck",
+    "version": "0.3.0",
+    "description": "Repotruck Model Context Protocol server for GitHub repository management, cloning, and workspace orchestration."
+  },
+  "transport": {
+    "type": "stdio",
+    "command": "npx",
+    "args": [
+      "-y",
+      "repotruck",
+      "mcp"
+    ]
+  },
+  "capabilities": {
+    "tools": {
+      "listChanged": true
+    },
+    "prompts": {
+      "listChanged": true
+    },
+    "resources": {
+      "subscribe": false,
+      "listChanged": true
+    }
+  },
+  "tools": [
+    {
+      "name": "repotruck_list_workspaces",
+      "description": "Discover every registered workspace in repotruck."
+    },
+    {
+      "name": "repotruck_workspace_status",
+      "description": "Get workspace preset, repository counts, aliases, and last sync timestamp."
+    },
+    {
+      "name": "repotruck_list_repos",
+      "description": "List tracked repositories with their absolute filesystem paths and metadata."
+    },
+    {
+      "name": "repotruck_search_repos",
+      "description": "Search repositories by owner, path, language, category, or alias."
+    },
+    {
+      "name": "repotruck_resolve_repo",
+      "description": "Resolve an alias or owner/name to an absolute filesystem path."
+    },
+    {
+      "name": "repotruck_agents_md",
+      "description": "Read the AGENTS.md workspace layout and rule map for coding agents."
+    },
+    {
+      "name": "repotruck_status",
+      "description": "Check per-repository Git working tree health and upstream synchronization status."
+    },
+    {
+      "name": "repotruck_sync",
+      "description": "Bulk-clone and update repositories with scope, concurrency, stash, and divergence options."
+    },
+    {
+      "name": "repotruck_clone",
+      "description": "Clone or update a single repository into the workspace."
+    },
+    {
+      "name": "repotruck_create",
+      "description": "Create a GitHub repository, optionally publishing from a local directory."
+    },
+    {
+      "name": "repotruck_move",
+      "description": "Relocate a repository to a custom path and update aliases and AGENTS.md."
+    },
+    {
+      "name": "repotruck_reorganize",
+      "description": "Re-file repositories according to a new preset layout."
+    },
+    {
+      "name": "repotruck_forget",
+      "description": "Untrack a repository from the workspace while leaving disk files untouched."
+    },
+    {
+      "name": "repotruck_delete",
+      "description": "Untrack a repository and delete its directory from disk (confirmation required)."
+    },
+    {
+      "name": "repotruck_prune",
+      "description": "Untrack repositories that have been deleted or archived on GitHub."
+    },
+    {
+      "name": "repotruck_archive",
+      "description": "Archive a repository on GitHub and re-file it under the archived directory."
+    },
+    {
+      "name": "repotruck_doctor",
+      "description": "Verify git, gh, GitHub token, central store, and workspace health."
+    }
+  ]
+}

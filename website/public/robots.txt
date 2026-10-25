@@ -1,4 +1,65 @@
+# repotruck robots.txt per RFC 9309 and Content Signals
+
+# AI Search Crawlers
+User-agent: OAI-SearchBot
+Allow: /
+Content-Signal: ai-train=yes, search=yes, ai-input=yes
+
+User-agent: Claude-SearchBot
+Allow: /
+Content-Signal: ai-train=yes, search=yes, ai-input=yes
+
+User-agent: PerplexityBot
+Allow: /
+Content-Signal: ai-train=yes, search=yes, ai-input=yes
+
+# AI Training Crawlers
+User-agent: GPTBot
+Allow: /
+Content-Signal: ai-train=yes, search=yes, ai-input=yes
+
+User-agent: ClaudeBot
+Allow: /
+Content-Signal: ai-train=yes, search=yes, ai-input=yes
+
+User-agent: Google-Extended
+Allow: /
+Content-Signal: ai-train=yes, search=yes, ai-input=yes
+
+User-agent: Applebot-Extended
+Allow: /
+Content-Signal: ai-train=yes, search=yes, ai-input=yes
+
+User-agent: CCBot
+Allow: /
+Content-Signal: ai-train=yes, search=yes, ai-input=yes
+
+User-agent: Bytespider
+Allow: /
+Content-Signal: ai-train=yes, search=yes, ai-input=yes
+
+User-agent: Amazonbot
+Allow: /
+Content-Signal: ai-train=yes, search=yes, ai-input=yes
+
+# User-Triggered Crawlers
+User-agent: ChatGPT-User
+Allow: /
+Content-Signal: ai-train=yes, search=yes, ai-input=yes
+
+User-agent: Claude-User
+Allow: /
+Content-Signal: ai-train=yes, search=yes, ai-input=yes
+
+User-agent: Perplexity-User
+Allow: /
+Content-Signal: ai-train=yes, search=yes, ai-input=yes
+
+# Default Crawlers
 User-agent: *
 Allow: /
+Content-Signal: ai-train=yes, search=yes, ai-input=yes
 
+# Sitemaps and Agent Discovery
 Sitemap: https://sametcn99.github.io/repotruck/sitemap.xml
+Agentmap: https://sametcn99.github.io/repotruck/.well-known/ai-catalog.json

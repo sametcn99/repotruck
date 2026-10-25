@@ -1,0 +1,138 @@
+# Repotruck
+
+> Bulk-clone and organize your GitHub repositories into predictable preset layouts with an AGENTS.md map and a built-in MCP server for AI coding agents.
+
+Repotruck is an open-source CLI and Model Context Protocol (MCP) server for Windows, macOS, and Linux that mirrors GitHub accounts and organizations into structured local workspaces. It keeps repositories synchronized, tracks Git health, provides Tree-sitter symbol search, and generates an `AGENTS.md` map for AI coding agents.
+
+## Quickstart
+
+```bash
+# Run headless commands without installing
+npx repotruck sync
+npx repotruck status
+npx repotruck clone owner/name
+npx repotruck reorganize categorized --dry-run
+npx repotruck search-code "handleAuth" --kind function
+npx repotruck mcp
+
+# Connect MCP server to Claude Code
+claude mcp add repotruck -- repotruck mcp
+```
+
+## Runtimes & Surfaces
+
+- **Headless CLI & MCP Server**: Runs on Node.js >= 20.0 or any modern Bun. Scriptable, CI-friendly, no TTY required.
+- **Interactive TUI Dashboard**: Runs with `repotruck` (no args). Requires Node.js >= 26.4 or Bun >= 1.3.14. Three-pane interface with scope selection, repository list, and real-time status log.
+
+## 27 CLI Commands by Category
+
+### Sync & Clone
+- `sync`: Bulk clone and fast-forward-update repositories (`--scope <user|org:<name>|all>`, `--limit <n>`, `-c <concurrency>`, `--depth <n>`, `--blobless`, `--stash`, `--divergence <strategy>`, `--include <glob>`, `--exclude <glob>`, `--watch [seconds]`).
+- `clone <url>`: Clone or update a single repository into the workspace preset (`--depth`, `--blobless`).
+- `create <name>`: Create a GitHub repository and register in workspace (`--from <dir>`, `--at <path>`, `--public`, `--private`, `--org <name>`, `--description <text>`).
+- `scan [directory]`: Recursively discover untracked Git repositories on disk and optionally adopt/move them into preset layout (`--move`, `--dry-run`).
+- `reorganize <preset>`: Re-file all tracked repositories into a new preset layout (`--dry-run`, `--scan`, `--keep-custom`, `--resume`).
+
+### Repository Lifecycle
+- `move <repo> <path>`: Relocate a repository to a custom relative path; inventory, aliases, and AGENTS.md follow.
+- `forget <repo>`: Untrack a repository from workspace inventory; files remain untouched on disk.
+- `delete <repo> --yes`: Untrack and permanently remove repository directory from disk.
+- `archive <repo>`: Archive repository on GitHub and move local directory under `archived/`.
+- `prune`: Untrack repositories deleted on GitHub (returns 404).
+
+### Status, Search & Batch Run
+- `status`: Per-repository Git health: dirty status, ahead/behind, diff stats (`-D, --detail`), filter (`-f <dirty|uncommitted|unpushed|unpulled|all>`), CI check (`-c, --check`).
+- `stats`: Workspace metrics: language distribution, category breakdown, stale repositories (>=180 days), total disk footprint.
+- `search-code <pattern>`: Tree-sitter symbol search across all tracked repositories (`--kind <function|class|interface|type|enum|method|const>`, `--lang <ts|tsx|js|py|go|rs>`, `--limit <n>`, `--regex`, `--offline`, `--rebuild`).
+- `run <command...>`: Execute shell commands across all or selected repositories in parallel (`-r <repo>`, `-c <concurrency>`).
+- `open <repo> [app]`: Launch an editor or coding agent (`claude`, `cursor`, `vscode`, `codex`, `gemini`, `aider`) in a repository directory.
+- `alias <set|remove|list>`: Assign and manage short aliases for repositories.
+
+### Workspace Memory & Settings
+- `workspaces [list|remove]`: Manage the central machine-wide workspace registry.
+- `root [path]`: View or set the fallback default workspace root (`--reset`).
+- `config <get|set|unset|list>`: View and edit settings in `settings.json`.
+- `preset <list|add|remove>`: Manage custom layouts composed of `owner`, `category`, `language`, and `name` tokens.
+- `backup [list|restore <snapshot>]`: List or restore automated workspace snapshots (5 generations kept, `--yes`).
+- `instructions template [name]`: Manage AGENTS.md template blocks (`node`, `python`, `monorepo`, `--clear`).
+
+### Platform & Housekeeping
+- `auth <status|login|logout>`: Manage GitHub credentials (GitHub CLI `gh`, cached device-flow token, `REPOTRUCK_TOKEN`).
+- `doctor`: Health diagnostics for git, gh, GitHub token, central store, and workspace roots (`--fix`).
+- `mcp`: Launch Model Context Protocol server on stdio (default) or Streamable HTTP (`--http`, `--port`, `--token`, `--base-url`).
+- `update`: Self-update via npm/bun package managers.
+- `completions <bash|zsh|fish|powershell>`: Generate shell auto-completion scripts.
+
+## The 16 Built-in Presets
+
+External / non-owned repositories automatically receive a `community/` directory prefix:
+1. `categorized` (default): `[owner, category, name]` (categories: `source`, `forks`, `archived`)
+2. `flat-by-owner`: `[owner, name]`
+3. `topic-focused`: `[owner, language, name]`
+4. `language-first`: `[language, owner, name]`
+5. `category-first`: `[category, owner, name]`
+6. `language-categorized`: `[owner, category, language, name]`
+7. `flat`: `[name]`
+8. `category-flat`: `[category, name]`
+9. `language-flat`: `[language, name]`
+10. `category-language`: `[category, language, name]`
+11. `language-category`: `[language, category, name]`
+12. `owner-language-category`: `[owner, language, category, name]`
+13. `category-owner-language`: `[category, owner, language, name]`
+14. `category-language-owner`: `[category, language, owner, name]`
+15. `language-owner-category`: `[language, owner, category, name]`
+16. `language-category-owner`: `[language, category, owner, name]`
+
+## Model Context Protocol (MCP)
+
+Launch on stdio:
+```bash
+repotruck mcp
+```
+Or Streamable HTTP:
+```bash
+repotruck mcp --http --port 3000 --token "your-secret-token"
+```
+
+### 25 MCP Tools
+- **Navigation & Metadata**: `repotruck_list_workspaces`, `repotruck_workspace_status`, `repotruck_list_repos`, `repotruck_search_repos`, `repotruck_resolve_repo`, `repotruck_agents_md`
+- **Sync & Creation**: `repotruck_sync`, `repotruck_clone`, `repotruck_create`, `repotruck_move`, `repotruck_reorganize`
+- **Lifecycle**: `repotruck_forget`, `repotruck_delete`, `repotruck_prune`, `repotruck_archive`
+- **Execution & Inspection**: `repotruck_status`, `repotruck_stats`, `repotruck_run`, `repotruck_search_code`, `repotruck_search_github`, `repotruck_open`
+- **Diagnostics & Aliases**: `repotruck_doctor`, `repotruck_workspaces_remove`, `repotruck_alias_set`, `repotruck_alias_remove`
+
+### MCP Resources
+- `repotruck://agents-md`: AGENTS.md markdown map.
+- `repotruck://inventory`: Workspace inventory JSON.
+- `repotruck://tree`: Depth-limited directory tree.
+- `repotruck://agents-md/{root}`, `repotruck://inventory/{root}`, `repotruck://tree/{root}`: Root-specific resources.
+
+### MCP Prompts
+- `sync-and-summarize`: Run sync and summarize changed repositories.
+- `suggest-agent-rules`: Analyze workspace inventory to propose project-specific agent guidelines.
+
+## AGENTS.md Map & Agent Rules
+
+Every workspace root contains an `AGENTS.md` map generated and updated by repotruck:
+1. **Independent Git Projects**: Every directory is an isolated repository. Always execute Git and build commands from inside the repository directory, never from the workspace root.
+2. **Search Exclusions**: Exclude `.git/`, `node_modules/`, `.repotruck/`, and `dist/` from global searches.
+3. **Community Repositories**: Repositories under `community/` are third-party references. Treat them as read-only.
+4. **Custom Instructions Preservation**: Text between `<!-- repotruck:custom-instructions begin -->` and `<!-- repotruck:custom-instructions end -->` is preserved verbatim across all rewrites.
+
+## Settings & Divergence Strategies
+
+Configured via `repotruck config set <key> <value>`:
+- `sync.concurrency` (default: `3`): Number of repositories updated in parallel.
+- `sync.divergence` (default: `fail`): Ahead-of-origin strategy: `fail`, `rebase`, `reset`, or `skip`.
+- `sync.stash` (default: `false`): Automatically stash uncommitted changes before updating and re-apply afterwards.
+- `sync.depth` (default: off): Shallow clone commit depth for new clones.
+- `sync.blobless` (default: `false`): Blobless clone filter (`git clone --filter=blob:none`).
+- `github.baseUrl` (default: `https://api.github.com`): Custom GitHub Enterprise API URL.
+
+## Documentation Links
+
+- [Full Comprehensive Documentation](https://sametcn99.github.io/repotruck/index.md)
+- [Agent Authentication Guide](https://sametcn99.github.io/repotruck/auth.md)
+- [MCP Server Card (SEP-1649)](https://sametcn99.github.io/repotruck/.well-known/mcp/server-card.json)
+- [Agent Skills Discovery](https://sametcn99.github.io/repotruck/.well-known/agent-skills/index.json)
+- [GitHub Repository](https://github.com/sametcn99/repotruck)
