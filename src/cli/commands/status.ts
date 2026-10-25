@@ -68,7 +68,9 @@ export function register(program: Command, _ctx: CliContext): void {
               process.stdout.write(`${JSON.stringify(payload)}\n`);
             } else {
               process.stdout.write(`last sync (workspace): ${status.lastSync ?? "never"}\n`);
-              if (repos.length === 0) {
+              if (status.repos.length === 0) {
+                process.stdout.write("no repositories tracked\n");
+              } else if (repos.length === 0) {
                 process.stdout.write("no repositories match\n");
               } else {
                 for (const repo of repos) {
