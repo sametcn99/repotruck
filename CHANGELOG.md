@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `scan` CLI command: remote repository discovery and search across user or organization accounts without cloning (`repotruck scan [--limit <n>] [--min-stars <n>] [--archived] [--forks] [--topics <list>] [--sort <criteria>]`).
+- `status -D, --detail` flag: per-repository diff statistics for dirty repositories detailing insertions, deletions, modified files, and untracked status.
+- MCP prompts: added `daily-sync` and `triage-changes` prompts for agentic orchestration.
 - Modular CLI architecture: the monolithic `cli.ts` is split into `cli/` (program setup, shared helpers, one file per command), each command registering via `register(program, ctx)`.
 - `core/` use-case layer unifying repeated flows across CLI, MCP, and TUI: typed alias operations (`setWorkspaceAlias`, `removeWorkspaceAlias`), lifecycle operations (`moveRepo`, `forgetRepo`, `deleteRepo`, `archiveRepo`, `pruneRepos`), and workspace status (`getWorkspaceStatus`), all built on the atomic `updateWorkspace` pattern.
 - Modular MCP server: `mcp/server.ts` is split into `mcp/tools/*` (workspace, repos, sync, lifecycle, aliases, github, search, prompts) over a shared `ToolContext`.
