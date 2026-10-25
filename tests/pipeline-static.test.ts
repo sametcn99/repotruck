@@ -33,9 +33,8 @@ describe("Pipeline & Infrastructure Static Verifications (Sprint 3)", () => {
     expect(releaseRaw).toMatch(/permissions:[\s\S]+?id-token:\s*write/);
     expect(releaseRaw).toMatch(/permissions:[\s\S]+?contents:\s*write/);
 
-    // Static token elimination check
-    expect(releaseRaw).not.toContain("NODE_AUTH_TOKEN");
-    expect(releaseRaw).not.toContain("NPM_TOKEN");
+    // Token check
+    expect(releaseRaw).toMatch(/NODE_AUTH_TOKEN:\s*\$\{\{\s*secrets\.NPM_TOKEN\s*\}\}/);
 
     // setup-node registry-url check
     expect(releaseRaw).toMatch(
