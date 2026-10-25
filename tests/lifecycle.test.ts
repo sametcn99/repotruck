@@ -1,3 +1,4 @@
+import { deleteRepo, archiveRepo, pruneRepos } from "../src/core/repos.ts";
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -640,5 +641,36 @@ describe("workspaceStatus", () => {
     const status = await workspaceStatus(root, config);
     expect(status.repos).toEqual([]);
     expect(status.lastSync).toBeNull();
+  });
+});
+
+describe("core/repos functions", () => {
+  test("deleteRepo delegates to deleteRepository", async () => {
+    const { root, env } = await makeWorkspace("rt-core-del", [
+      makeEntry("acme", "api", "acme/source/api"),
+    ]);
+    const res = await deleteRepo(root, "acme/api", { yes: false }, env);
+    expect(res.ok).toBe(false);
+    expect(res.message).toContain("delete requires --yes");
+  });
+
+  test("archiveRepo delegates to archiveRepository", async () => {
+    const { root, env } = await makeWorkspace("rt-core-arc", [
+      makeEntry("acme", "api", "acme/source/api"),
+    ]);
+    const github = fakeGithub({});
+    const res = await archiveRepo(root, "acme/api", github as any, env);
+    expect(res.ok).toBe(true);
+    expect(github.archiveCalls).toEqual(["acme/api"]);
+  });
+
+  test("pruneRepos delegates to pruneWorkspace", async () => {
+    const { root, env } = await makeWorkspace("rt-core-prn", [
+      makeEntry("acme", "api", "acme/source/api"),
+    ]);
+    const github = fakeGithub({ "acme/api": "gone" });
+    const res = await pruneRepos(root, github as any, { dryRun: true }, env);
+    expect(res.ok).toBe(true);
+    expect(res.message).toContain("would be pruned");
   });
 });
