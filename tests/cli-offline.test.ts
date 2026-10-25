@@ -1,9 +1,13 @@
-import { afterEach, describe, expect, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { program } from "commander";
-import { defaultGrammarResolver, searchCode } from "../src/services/codeSearch.ts";
+import {
+  clearLanguageCache,
+  defaultGrammarResolver,
+  searchCode,
+} from "../src/services/codeSearch.ts";
 import type { RepotruckConfig } from "../src/services/config.ts";
 import {
   GrammarDownloadError,
@@ -20,7 +24,12 @@ function makeTempDir(prefix: string): string {
   return dir;
 }
 
+beforeEach(() => {
+  clearLanguageCache();
+});
+
 afterEach(() => {
+  clearLanguageCache();
   delete process.env.REPOTRUCK_NO_PARSE;
   for (const dir of pendingDirs.splice(0)) {
     try {

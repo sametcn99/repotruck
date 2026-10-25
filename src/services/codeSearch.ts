@@ -147,11 +147,16 @@ function ensureParserInit(): Promise<void> {
 
 const languageCache = new Map<GrammarLang, Language | null>();
 
+export function clearLanguageCache(): void {
+  languageCache.clear();
+}
+
 async function loadLanguage(
   lang: GrammarLang,
   resolver: GrammarResolver,
+  useCache = true,
 ): Promise<Language | null> {
-  if (languageCache.has(lang)) return languageCache.get(lang) ?? null;
+  if (useCache && languageCache.has(lang)) return languageCache.get(lang) ?? null;
   let loaded: Language | null = null;
   try {
     const bytes = await resolver(lang);
@@ -170,7 +175,7 @@ async function loadLanguage(
     }
     loaded = null;
   }
-  languageCache.set(lang, loaded);
+  if (useCache) languageCache.set(lang, loaded);
   return loaded;
 }
 
@@ -435,7 +440,8 @@ export async function buildCodeIndex(options: BuildCodeIndexOptions): Promise<{
       }
       let language = languages.get(lang);
       if (language === undefined) {
-        language = await loadLanguage(lang, resolver);
+        const useCache = options.resolver === undefined && options.offline !== true;
+        language = await loadLanguage(lang, resolver, useCache);
         languages.set(lang, language);
       }
       if (language === null) {
