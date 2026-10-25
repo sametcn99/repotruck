@@ -33,7 +33,7 @@
     "access": "public"
   },
   "bin": {
-    "repotruck": "./bin/repotruck.js"
+    "repotruck": "bin/repotruck.js"
   },
   "files": [
     "bin",
