@@ -46,8 +46,6 @@ jobs:
           npm install "../$tarball"
           npx --yes repotruck --version
       - name: Publish to npm with provenance
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           EXTRA_ARGS=()
           if [[ "${GITHUB_REF_NAME}" == *-* ]]; then
