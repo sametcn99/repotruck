@@ -130,6 +130,7 @@ export interface SingleCloneOptions {
   preferSsh?: boolean;
   depth?: number;
   blobless?: boolean;
+  sparse?: string[];
   emit?: EmitProgress;
   hosts?: readonly string[];
   customPresets?: readonly CustomPreset[];
@@ -179,6 +180,7 @@ export async function cloneSingleRepository(
       preferSsh,
       depth: options.depth,
       blobless: options.blobless,
+      sparse: options.sparse,
     },
     options.emit,
   );
@@ -187,7 +189,12 @@ export async function cloneSingleRepository(
   }
   const relativePath = toPosixRelative(options.root, destDir);
   await updateWorkspace(options.root, (current) => {
-    const next = upsertInventory(current, repo, relativePath, internal);
+    const next = upsertInventory(
+      current,
+      { ...repo, sparse: options.sparse },
+      relativePath,
+      internal,
+    );
     return { config: { ...next, lastSync: new Date().toISOString() }, result: undefined };
   });
   return { repo, destDir, internal, preset: config.preset, progress };

@@ -32,6 +32,7 @@ export function register(program: Command, ctx: CliContext): void {
     .option("-p, --preset <id>", `preset for the target layout: ${PRESET_IDS.join(", ")}`)
     .option("--depth <n>", "create a shallow clone with the given commit depth")
     .option("--blobless", "create a blobless partial clone (git clone --filter=blob:none)")
+    .option("--sparse <dirs...>", "sparse checkout only specified directories/paths")
     .option("--base-url <url>", "GitHub Enterprise base URL (e.g. https://ghe.example.com)")
     .option("--json", "Output results as JSON")
     .action(
@@ -42,6 +43,7 @@ export function register(program: Command, ctx: CliContext): void {
           preset?: string;
           depth?: string;
           blobless?: boolean;
+          sparse?: string[];
           baseUrl?: string;
           json?: boolean;
         },
@@ -82,6 +84,7 @@ export function register(program: Command, ctx: CliContext): void {
               presetOverride,
               depth,
               blobless: options.blobless === true,
+              sparse: options.sparse,
               hosts,
               customPresets,
               emit,

@@ -21,7 +21,7 @@
     {
       "identifier": "urn:air:sametcn99.github.io:skill:repotruck-workspace",
       "displayName": "Repotruck Workspace Management Skill",
-      "type": "text/markdown",
+      "type": "text/markdown; profile=\"urn:air:agent-skills\"",
       "url": "https://sametcn99.github.io/repotruck/.well-known/agent-skills/repotruck-workspace/SKILL.md",
       "representativeQueries": [
         "how to clone multiple repositories at once",
@@ -32,7 +32,7 @@
     {
       "identifier": "urn:air:sametcn99.github.io:skill:repotruck-mcp",
       "displayName": "Repotruck MCP Server Skill",
-      "type": "text/markdown",
+      "type": "text/markdown; profile=\"urn:air:agent-skills\"",
       "url": "https://sametcn99.github.io/repotruck/.well-known/agent-skills/repotruck-mcp/SKILL.md",
       "representativeQueries": [
         "connect repotruck to claude code mcp",

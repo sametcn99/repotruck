@@ -47,6 +47,7 @@ export interface DoctorDeps {
   readJournalImpl?: (root: string) => ReorganizeJournal | null;
   listTrashImpl?: (root: string) => TrashEntry[];
   grammarCacheDirImpl?: (env?: EnvLike) => string;
+  checkSigning?: boolean;
   onFixProgress?: (message: string) => void;
 }
 
@@ -311,6 +312,45 @@ export async function runDoctor(deps: DoctorDeps = {}): Promise<DoctorResult> {
     );
   }
 
+  // 8. Commit signing check (GPG / SSH)
+  const shouldCheckSigning = deps.checkSigning === true || deps.whichImpl === undefined;
+  if (shouldCheckSigning && gitPath !== null) {
+    try {
+      const signingRes = await exec("git", ["config", "--get", "commit.gpgsign"]);
+      const isGpgSign = signingRes.stdout.trim().toLowerCase() === "true";
+      if (isGpgSign) {
+        let key = "";
+        try {
+          const keyRes = await exec("git", ["config", "--get", "user.signingkey"]);
+          key = keyRes.stdout.trim();
+        } catch {
+          key = "";
+        }
+        checks.push(
+          makeCheck("ok", "signing", `commit signing enabled${key ? ` (key: ${key})` : ""}`),
+        );
+      } else {
+        checks.push(
+          makeCheck(
+            "warn",
+            "signing",
+            "git commit signing is not configured (commit.gpgsign = false)",
+            "enable commit signing with: git config --global commit.gpgsign true",
+          ),
+        );
+      }
+    } catch {
+      checks.push(
+        makeCheck(
+          "warn",
+          "signing",
+          "git commit signing is not configured",
+          "enable commit signing with: git config --global commit.gpgsign true",
+        ),
+      );
+    }
+  }
+
   const ok = !checks.some((c) => c.status === "fail");
   return { ok, checks };
 }
@@ -337,7 +377,7 @@ export async function fixDoctor(deps: DoctorDeps = {}): Promise<DoctorResult> {
         env: deps.env,
         existsSyncImpl: existsFn,
       });
-      deps.onFixProgress?.(`\u2713 reconciled and cleaned up journal in ${root}`);
+      deps.onFixProgress?.(`✓ reconciled and cleaned up journal in ${root}`);
     } catch (err) {
       deps.onFixProgress?.(`failed to resume reorganize in ${root}: ${firstErrorLine(err)}`);
     }

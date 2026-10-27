@@ -28,6 +28,7 @@ import type {
   removeWorkspace,
   WorkspaceListing,
 } from "../../services/workspaceRegistry.ts";
+import type { RepoWorktreeDetail } from "../../services/worktree.ts";
 import type { ThemeName } from "../theme.ts";
 import type { PreviewTreeEntry } from "../windowing.ts";
 
@@ -163,6 +164,13 @@ export type ModalState =
       target: PresetRef;
       keepCustom: boolean;
       preview: ReorganizeResult | null;
+    }
+  | {
+      type: "worktree";
+      key: string;
+      worktrees: readonly RepoWorktreeDetail[];
+      loading: boolean;
+      error: string | null;
     }
   | {
       type: "omnibar";

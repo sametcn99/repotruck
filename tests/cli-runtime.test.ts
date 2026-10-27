@@ -133,7 +133,7 @@ describe("CLI help surface", () => {
   test("sync --help documents --limit and --scope semantics", () => {
     const result = runCli(["sync", "--help"]);
     expect(result.exitCode).toBe(0);
-    const text = result.stdout!.toString();
+    const text = result.stdout!.toString().replace(/\s+/g, " ");
     expect(text).toContain("-s, --scope");
     expect(text).toContain("-l, --limit");
     expect(text).toContain("org:<name>");

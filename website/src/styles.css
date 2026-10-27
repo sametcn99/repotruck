@@ -753,6 +753,7 @@ section[id],
 .terminal {
   border: 1px solid var(--border);
   background: #010409;
+  min-height: 252px;
 }
 
 .preset-tree-grid {
@@ -1171,6 +1172,10 @@ td.key {
 }
 
 @media (max-width: 700px) {
+  .terminal {
+    min-height: 416px;
+  }
+
   .grid-2 {
     grid-template-columns: minmax(0, 1fr);
   }

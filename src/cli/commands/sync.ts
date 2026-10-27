@@ -1,3 +1,4 @@
+import path from "node:path";
 import type { Command } from "commander";
 import { collectScopeRepos, describeSyncScope, parseSyncScope } from "../../cliSupport.ts";
 import { PRESET_IDS } from "../../presets/index.ts";
@@ -10,6 +11,7 @@ import {
 import { refreshCodeIndexIfPresent } from "../../services/codeSearch.ts";
 import { filterReposByKey, parseFilterFlags } from "../../services/filters.ts";
 import type { RepoInfo } from "../../services/github.ts";
+import { resolveRepoRef } from "../../services/launcher.ts";
 import { resolveProfileKeys } from "../../services/profiles.ts";
 import {
   readCustomPresets,
@@ -17,6 +19,7 @@ import {
   resolveGithubBaseUrl,
   resolveSyncSettings,
 } from "../../services/settings.ts";
+import { executeConflictAction, getConflictResolutionGuide } from "../../services/syncResolver.ts";
 import { loadWorkspace, syncRepos } from "../../services/workspace.ts";
 import {
   type CliContext,
@@ -24,13 +27,14 @@ import {
   jsonEmit,
   parseIntStrict,
   progressEmit,
+  requireExistingRoot,
   requirePreset,
   resolveRootOption,
   runAction,
 } from "../shared.ts";
 
 export function register(program: Command, ctx: CliContext): void {
-  program
+  const syncCommand = program
     .command("sync")
     .description("Clone or update repositories in bulk, without the interactive interface.")
     .option(
@@ -335,6 +339,73 @@ export function register(program: Command, ctx: CliContext): void {
             }
           },
           { command: "sync", json: options.json },
+        );
+      },
+    );
+
+  syncCommand
+    .command("resolve [repo]")
+    .description("Inspect git conflict / rebase state and get actionable resolution steps.")
+    .option(
+      "-d, --dir <root>",
+      "workspace root directory (default: nearest registered workspace, configured default root, or OS default)",
+    )
+    .option("--action <action>", "action to execute: continue or abort")
+    .option("--json", "Output resolution guide as JSON")
+    .action(
+      async (
+        repoArg: string | undefined,
+        options: { dir?: string; action?: string; json?: boolean },
+      ) => {
+        await runAction(
+          async () => {
+            const root = await requireExistingRoot(options.dir);
+            const config = await loadWorkspace(root);
+            let targetRepoDir = root;
+            if (repoArg) {
+              const match = resolveRepoRef(config, repoArg);
+              if (match === null) {
+                exitFail(`repository not found: ${repoArg}`);
+              }
+              targetRepoDir = path.join(root, ...match.entry.relativePath.split("/"));
+            }
+
+            if (options.action) {
+              if (options.action !== "continue" && options.action !== "abort") {
+                exitFail("action must be 'continue' or 'abort'");
+              }
+              const res = await executeConflictAction(targetRepoDir, options.action);
+              if (!res.ok) {
+                exitFail(res.message);
+              }
+              if (options.json) {
+                process.stdout.write(
+                  `${JSON.stringify({ command: "sync resolve", ok: true, message: res.message })}\n`,
+                );
+                return;
+              }
+              process.stdout.write(`${res.message}\n`);
+              return;
+            }
+
+            const guide = await getConflictResolutionGuide(targetRepoDir);
+            if (options.json) {
+              process.stdout.write(
+                `${JSON.stringify({ command: "sync resolve", ok: true, guide })}\n`,
+              );
+              return;
+            }
+
+            process.stdout.write(`Repository: ${guide.repoPath}\n`);
+            process.stdout.write(`Status: ${guide.statusDescription}\n\n`);
+            if (guide.suggestedSteps.length > 0) {
+              process.stdout.write("Resolution Steps:\n");
+              for (const step of guide.suggestedSteps) {
+                process.stdout.write(`  ${step}\n`);
+              }
+            }
+          },
+          { command: "sync resolve", json: options.json },
         );
       },
     );

@@ -13,7 +13,7 @@ export interface CommandGroup {
   readonly commands: readonly CommandDoc[];
 }
 
-// 30 top-level commands across 6 logical groups.
+// 32 top-level commands across 6 logical groups.
 export const COMMAND_GROUPS: readonly CommandGroup[] = [
   {
     id: "sync-and-clone",
@@ -23,8 +23,8 @@ export const COMMAND_GROUPS: readonly CommandGroup[] = [
       {
         name: "sync",
         summary:
-          "Clone or update repositories in bulk, without the interactive interface. Exits 1 when any repository fails.",
-        usage: "repotruck sync [options]",
+          "Clone or update repositories in bulk, without the interactive interface. Also provides conflict and rebase resolution via the resolve subcommand. Exits 1 when any repository fails.",
+        usage: "repotruck sync [options] | repotruck sync resolve [repo] [options]",
         examples: [
           "repotruck sync",
           "repotruck sync --scope all",
@@ -35,6 +35,8 @@ export const COMMAND_GROUPS: readonly CommandGroup[] = [
           "repotruck sync --depth 1 --blobless -c 5",
           "repotruck sync --stash --divergence rebase",
           "repotruck sync --watch 60",
+          "repotruck sync resolve monalisa/api",
+          "repotruck sync resolve monalisa/api --action continue",
         ],
         flags: [
           { flag: "-s, --scope <scope>", description: '"user" (default), "org:<name>", or "all"' },
@@ -80,6 +82,10 @@ export const COMMAND_GROUPS: readonly CommandGroup[] = [
             description:
               "keep syncing at a fixed interval (default 300s; Ctrl+C stops; never exits non-zero mid-watch)",
           },
+          {
+            flag: "--action <action>",
+            description: "resolution action for sync resolve: continue or abort",
+          },
           { flag: "--json", description: "machine-readable JSON output" },
         ],
       },
@@ -92,6 +98,7 @@ export const COMMAND_GROUPS: readonly CommandGroup[] = [
           "repotruck clone monalisa/api",
           "repotruck clone https://github.com/monalisa/api -p flat-by-owner",
           "repotruck clone monalisa/api --depth 1 --blobless",
+          "repotruck clone monalisa/api --sparse packages/core packages/utils",
         ],
         flags: [
           {
@@ -101,6 +108,10 @@ export const COMMAND_GROUPS: readonly CommandGroup[] = [
           {
             flag: "--blobless",
             description: "create a blobless partial clone (git clone --filter=blob:none)",
+          },
+          {
+            flag: "--sparse <dirs...>",
+            description: "initialize sparse checkout with specified subdirectory paths",
           },
           { flag: "--json", description: "machine-readable JSON output" },
         ],
@@ -421,6 +432,30 @@ export const COMMAND_GROUPS: readonly CommandGroup[] = [
           "repotruck open api",
         ],
       },
+      {
+        name: "worktree",
+        summary:
+          "Manage linked git worktrees across tracked repositories. List, scan orphaned trees, create linked worktrees, and safely remove them.",
+        usage: "repotruck worktree <list|scan|create|remove> [options]",
+        examples: [
+          "repotruck worktree list monalisa/api",
+          "repotruck worktree scan",
+          "repotruck worktree create monalisa/api feat-branch",
+          "repotruck worktree create monalisa/api feat-branch ./trees/feat -b",
+          "repotruck worktree remove monalisa/api ./trees/feat --force",
+        ],
+        flags: [
+          {
+            flag: "-b, --new-branch",
+            description: "create a new branch instead of checking out existing",
+          },
+          {
+            flag: "-f, --force",
+            description: "force removal even if worktree contains untracked changes",
+          },
+          { flag: "--json", description: "machine-readable JSON output" },
+        ],
+      },
     ],
   },
   {
@@ -437,7 +472,7 @@ export const COMMAND_GROUPS: readonly CommandGroup[] = [
           "repotruck search-code UserService",
           "repotruck search-code handleAuth --kind function",
           "repotruck search-code 'TODO:' --text",
-          "repotruck search-code 'useEffect\\(' --regex",
+          "repotruck search-code 'useEffect\\\\(' --regex",
         ],
         flags: [
           {
@@ -494,18 +529,65 @@ export const COMMAND_GROUPS: readonly CommandGroup[] = [
       {
         name: "instructions",
         summary:
-          "Manage AGENTS.md instruction templates: list them (node, python, monorepo), apply one by name, or clear the applied template block.",
-        usage: "repotruck instructions template [name]",
+          "Manage AGENTS.md instruction templates (list, apply, clear) or export instructions to CursorRules, Copilot, Claude, and AGENTS.md formats.",
+        usage: "repotruck instructions <template|export> [options]",
         examples: [
           "repotruck instructions template",
           "repotruck instructions template monorepo",
           "repotruck instructions template --clear",
+          "repotruck instructions export --format cursor",
+          "repotruck instructions export --format claude --out CLAUDE.md",
         ],
         flags: [
           {
             flag: "--clear",
             description: "remove the applied template block from AGENTS.md",
           },
+          {
+            flag: "-f, --format <format>",
+            description: "target export format: cursor, claude, copilot, or agents",
+          },
+          {
+            flag: "-o, --out <path>",
+            description: "custom output file path for exported instructions",
+          },
+          { flag: "--json", description: "machine-readable JSON output" },
+        ],
+      },
+      {
+        name: "changelog",
+        summary:
+          "Synthesize git commits across workspace repositories into a structured conventional changelog with markdown or JSON output.",
+        usage: "repotruck changelog [options]",
+        examples: [
+          "repotruck changelog",
+          "repotruck changelog --since '14 days ago'",
+          "repotruck changelog --author monalisa --format json",
+          "repotruck changelog --repo monalisa/api -o CHANGELOG.md",
+        ],
+        flags: [
+          {
+            flag: "--since <duration>",
+            description: "git log since expression (e.g. '7 days ago', '2026-01-01', 'v1.0.0')",
+          },
+          {
+            flag: "--until <duration>",
+            description: "git log until expression (e.g. 'yesterday')",
+          },
+          { flag: "--author <author>", description: "filter commits by author name or email" },
+          {
+            flag: "--repo <ref>",
+            description: "filter commits to a single repository alias or owner/name",
+          },
+          {
+            flag: "--format <fmt>",
+            description: "output format: markdown or json (default: markdown)",
+          },
+          {
+            flag: "-o, --out <file>",
+            description: "write changelog to output file instead of stdout",
+          },
+          { flag: "--json", description: "alias for --format json" },
         ],
       },
     ],
@@ -550,7 +632,13 @@ export const COMMAND_GROUPS: readonly CommandGroup[] = [
           "Display repository statistics, language distribution, category breakdown, disk usage, and stale repositories (>=180d).",
         usage: "repotruck stats [options]",
         examples: ["repotruck stats", "repotruck stats --json"],
-        flags: [{ flag: "--json", description: "machine-readable JSON output" }],
+        flags: [
+          {
+            flag: "--health",
+            description: "compute and display comprehensive workspace health scorecard and grade",
+          },
+          { flag: "--json", description: "machine-readable JSON output" },
+        ],
       },
       {
         name: "completions",

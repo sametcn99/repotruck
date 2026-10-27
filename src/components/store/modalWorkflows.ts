@@ -18,6 +18,12 @@ import { readSettings, validateRootInput, writeSettings } from "../../services/s
 import { parseGitUrl } from "../../services/singleCloner.ts";
 import { loadWorkspace } from "../../services/workspace.ts";
 import { resolveWorkspaceRoot } from "../../services/workspaceRegistry.ts";
+import {
+  createRepoWorktree,
+  listRepoWorktrees,
+  type RepoWorktreeDetail,
+  removeRepoWorktree,
+} from "../../services/worktree.ts";
 import type { PreviewTreeEntry } from "../windowing.ts";
 import type { ResolvedStoreDeps } from "./defaults.ts";
 import { repoKey, validateCreateDraft } from "./filters.ts";
@@ -273,6 +279,53 @@ export async function performSubmitCreate(params: {
   };
 }
 
+export async function performOpenWorktreeModal(
+  root: string,
+  key: string,
+): Promise<RepoWorktreeDetail[]> {
+  const config = await loadWorkspace(root);
+  const match = resolveRepoRef(config, key);
+  if (match === null) {
+    throw new Error(`repository not found: ${key}`);
+  }
+  const repoDir = path.join(root, ...match.entry.relativePath.split("/"));
+  return await listRepoWorktrees(repoDir);
+}
+
+export async function performCreateWorktree(
+  root: string,
+  key: string,
+  branch: string,
+  targetPath?: string,
+  newBranch = false,
+): Promise<{ ok: boolean; message: string }> {
+  const config = await loadWorkspace(root);
+  const match = resolveRepoRef(config, key);
+  if (match === null) {
+    return { ok: false, message: `repository not found: ${key}` };
+  }
+  const repoDir = path.join(root, ...match.entry.relativePath.split("/"));
+  const safeBranch = branch.replace(/[^a-zA-Z0-9._-]/g, "-");
+  const destPath =
+    targetPath ?? path.join(path.dirname(repoDir), `${match.entry.name}+${safeBranch}`);
+  return await createRepoWorktree(repoDir, branch, destPath, { newBranch });
+}
+
+export async function performRemoveWorktree(
+  root: string,
+  key: string,
+  targetPath: string,
+  force = false,
+): Promise<{ ok: boolean; message: string }> {
+  const config = await loadWorkspace(root);
+  const match = resolveRepoRef(config, key);
+  if (match === null) {
+    return { ok: false, message: `repository not found: ${key}` };
+  }
+  const repoDir = path.join(root, ...match.entry.relativePath.split("/"));
+  return await removeRepoWorktree(repoDir, targetPath, force);
+}
+
 function currentHighlightedKey(store: Store): string | null {
   const snap = store.getSnapshot();
   const repo = snap.filteredRepos[snap.cursor];
@@ -322,6 +375,12 @@ export function executeOmnibarCommandById(store: Store, id: string): void {
       const key = currentHighlightedKey(store);
       if (key !== null) store.openDetailModal(key);
       else store.pushStatus("FAILED", "[detail]", "no repository highlighted");
+      return;
+    }
+    case "worktree": {
+      const key = currentHighlightedKey(store);
+      if (key !== null) void store.openWorktreeModal(key);
+      else store.pushStatus("FAILED", "[worktree]", "no repository highlighted");
       return;
     }
     case "move": {

@@ -266,6 +266,7 @@ export interface CloneOrUpdateOptions {
   blobless?: boolean;
   stash?: boolean;
   divergence?: DivergenceStrategy;
+  sparse?: string[];
 }
 
 function progress(target: CloneTarget, phase: ClonePhase, message?: string): CloneProgress {
@@ -422,15 +423,22 @@ export async function cloneOrUpdate(
     const useToken = Boolean(token) && !preferSsh;
     const sourceUrl = preferSsh ? target.sshUrl : target.httpsUrl;
     const git = authedGit(undefined, target.httpsUrl, token, preferSsh);
+    const hasSparse = Array.isArray(options.sparse) && options.sparse.length > 0;
     const cloneArgs = ["clone"];
     if (depth !== undefined) cloneArgs.push("--depth", String(depth));
     if (blobless === true) cloneArgs.push("--filter=blob:none");
+    if (hasSparse) cloneArgs.push("--no-checkout");
     cloneArgs.push(sourceUrl, target.destDir);
     await withGitRetry(() => git.raw(cloneArgs));
+    if (hasSparse) {
+      const destGit = authedGit(target.destDir, target.httpsUrl, token, preferSsh);
+      await destGit.raw(["sparse-checkout", "set", ...(options.sparse ?? [])]);
+      await destGit.raw(["checkout"]);
+    }
     if (useToken) {
       await simpleGit(target.destDir).raw(["remote", "set-url", "origin", target.httpsUrl]);
     }
-    return report("done", "cloned");
+    return report("done", hasSparse ? "cloned (sparse)" : "cloned");
   } catch (error) {
     return report("failed", firstErrorLine(error, token ?? null));
   }

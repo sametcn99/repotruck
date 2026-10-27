@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-10-28
+
+### Added
+
+- **Interactive Worktree Manager (TUI + CLI)**:
+  - CLI subcommands `repotruck worktree <list|scan|create|remove>` with JSON envelope output and human-readable formatting.
+  - Interactive TUI `WorktreeModal` (`Shift+W` / `W` shortcut, and `:worktree` Omnibar command) to list, scan orphaned, create linked, and safely remove git worktrees across the workspace.
+- **Advanced Sync & Rebase Resolution Guide**:
+  - `repotruck sync resolve [repo]` inspecting in-progress git rebase, merge, cherry-pick, and conflicted files.
+  - Actionable step-by-step resolution guidance with automated `--action continue` and `--action abort` helpers.
+- **Smart AGENTS.md / CursorRules Multi-Export**:
+  - `repotruck instructions export --format <cursor|claude|copilot|agents>` targeting `.cursorrules`, `CLAUDE.md`, `.github/copilot-instructions.md`, and `AGENTS.md`.
+- **Cross-Repository Conventional Changelog**:
+  - `repotruck changelog` synthesizing git commits across all tracked repositories, grouped by conventional commit categories (`feat`, `fix`, `docs`, `refactor`, `chore`, `other`) with markdown and JSON export options.
+- **Workspace Health Scoreboard**:
+  - Automated health scoring algorithm evaluating cleanliness (30%), synchronization (25%), focus pinning (15%), hygiene & backups (15%), and doctor checks (15%).
+  - Detailed letter grade (`A+` to `F`) and actionable remediation tips surfaced via `repotruck stats --health` and TUI `[3]Health` panel.
+- **GPG / SSH Commit Verification & Health Analysis**:
+  - Commit signature inspection using `git log -1 --pretty=format:%G?|%GK|%GS` for valid, bad, untrusted, expired, and unsigned commits.
+  - Doctor diagnostic check #8 inspecting git commit signing configuration (`commit.gpgsign` and `user.signingkey`).
+  - Signature status badge rendered in TUI `[2]Inspector` status panel.
+- **Sparse & Monorepo Subdirectory Clone**:
+  - `repotruck clone <url> --sparse <dirs...>` flag with `--no-checkout` initial clone and `git sparse-checkout set` handling.
+  - Preserved `sparse?: string[]` array across repository inventory and background syncs.
+
 ## [0.4.0] - 2026-10-27
 
 ### Added

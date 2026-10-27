@@ -2,6 +2,8 @@ import type { Dirent } from "node:fs";
 import { existsSync, lstatSync, readFileSync } from "node:fs";
 import { readdir } from "node:fs/promises";
 import path from "node:path";
+import { simpleGit } from "simple-git";
+import { firstErrorLine } from "./cloner.ts";
 
 export type GitDotInspection =
   | { kind: "none" }
@@ -49,6 +51,113 @@ export interface LinkedWorktreeEntry {
   absolutePath: string;
   gitDir: string;
   mainRepoDir: string | null;
+}
+
+export interface RepoWorktreeDetail {
+  path: string;
+  head: string;
+  branch: string | null;
+  bare: boolean;
+  locked: boolean;
+  isMain: boolean;
+}
+
+/**
+ * Parses `git worktree list --porcelain` output.
+ */
+export function parseWorktreeListPorcelain(raw: string): RepoWorktreeDetail[] {
+  const items: RepoWorktreeDetail[] = [];
+  const blocks = raw.trim().split(/\r?\n\r?\n/);
+  for (const block of blocks) {
+    if (!block.trim()) continue;
+    let worktreePath = "";
+    let head = "";
+    let branch: string | null = null;
+    let bare = false;
+    let locked = false;
+
+    for (const line of block.split(/\r?\n/)) {
+      if (line.startsWith("worktree ")) {
+        worktreePath = line.slice("worktree ".length).trim();
+      } else if (line.startsWith("HEAD ")) {
+        head = line.slice("HEAD ".length).trim();
+      } else if (line.startsWith("branch ")) {
+        const fullBranch = line.slice("branch ".length).trim();
+        branch = fullBranch.replace(/^refs\/heads\//, "");
+      } else if (line === "bare") {
+        bare = true;
+      } else if (line.startsWith("locked")) {
+        locked = true;
+      } else if (line === "detached") {
+        branch = null;
+      }
+    }
+    if (worktreePath) {
+      items.push({
+        path: path.normalize(worktreePath),
+        head,
+        branch,
+        bare,
+        locked,
+        isMain: items.length === 0,
+      });
+    }
+  }
+  return items;
+}
+
+/** Lists worktrees belonging to a git repository using `git worktree list --porcelain`. */
+export async function listRepoWorktrees(repoDir: string): Promise<RepoWorktreeDetail[]> {
+  const git = simpleGit(repoDir);
+  try {
+    const raw = await git.raw(["worktree", "list", "--porcelain"]);
+    return parseWorktreeListPorcelain(raw);
+  } catch (error) {
+    throw new Error(`failed to list worktrees in ${repoDir}: ${firstErrorLine(error)}`);
+  }
+}
+
+/** Creates a new git worktree for a branch. */
+export async function createRepoWorktree(
+  repoDir: string,
+  branch: string,
+  targetPath: string,
+  options: { newBranch?: boolean; commitOrBranch?: string } = {},
+): Promise<{ ok: boolean; message: string; path: string }> {
+  const git = simpleGit(repoDir);
+  const resolved = path.resolve(targetPath);
+  const args = ["worktree", "add"];
+  if (options.newBranch === true) {
+    args.push("-b", branch, resolved);
+    if (options.commitOrBranch) args.push(options.commitOrBranch);
+  } else {
+    args.push(resolved, branch);
+  }
+  try {
+    await git.raw(args);
+    return { ok: true, message: `created worktree at ${resolved} for ${branch}`, path: resolved };
+  } catch (error) {
+    return { ok: false, message: firstErrorLine(error), path: resolved };
+  }
+}
+
+/** Removes an existing git worktree. */
+export async function removeRepoWorktree(
+  repoDir: string,
+  targetPath: string,
+  force = false,
+): Promise<{ ok: boolean; message: string }> {
+  const git = simpleGit(repoDir);
+  const resolved = path.resolve(targetPath);
+  const args = ["worktree", "remove"];
+  if (force) args.push("--force");
+  args.push(resolved);
+  try {
+    await git.raw(args);
+    return { ok: true, message: `removed worktree ${resolved}` };
+  } catch (error) {
+    return { ok: false, message: firstErrorLine(error) };
+  }
 }
 
 const SKIP_WALK_DIRS = new Set([

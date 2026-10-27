@@ -101,6 +101,14 @@ export function buildCommandPaletteItems(
       keywords: "info stars description branch",
     },
     {
+      id: "worktree",
+      category: "Repo",
+      label: "Manage linked git worktrees for highlighted repository",
+      shortcut: "W",
+      detail: currentRepoKey,
+      keywords: "worktree branch checkout linked",
+    },
+    {
       id: "move",
       category: "Repo",
       label: "Move highlighted repository to custom path",

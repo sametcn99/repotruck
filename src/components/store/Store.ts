@@ -18,6 +18,9 @@ import {
   computeReorganizePreview,
   executeOmnibarCommandById,
   findTrackedEntryInRoot,
+  performCreateWorktree,
+  performOpenWorktreeModal,
+  performRemoveWorktree,
   performRunOpenApp,
   performSubmitAlias,
   performSubmitClone,
@@ -320,6 +323,55 @@ export class Store extends StoreCore {
     await this.refreshLocalState();
     this.closeModal();
     return true;
+  };
+
+  openWorktreeModal = async (key: string): Promise<void> => {
+    this.openModal({ type: "worktree", key, worktrees: [], loading: true, error: null });
+    try {
+      const worktrees = await performOpenWorktreeModal(this.rootValue, key);
+      if (this.state.modal?.type === "worktree") {
+        this.set({ modal: { type: "worktree", key, worktrees, loading: false, error: null } });
+      }
+    } catch (error) {
+      if (this.state.modal?.type === "worktree") {
+        this.set({
+          modal: {
+            type: "worktree",
+            key,
+            worktrees: [],
+            loading: false,
+            error: firstErrorLine(error),
+          },
+        });
+      }
+    }
+  };
+
+  createWorktree = async (
+    key: string,
+    branch: string,
+    targetPath?: string,
+    newBranch = false,
+  ): Promise<{ ok: boolean; message: string }> => {
+    const res = await performCreateWorktree(this.rootValue, key, branch, targetPath, newBranch);
+    if (res.ok) {
+      await this.openWorktreeModal(key);
+      await this.refreshLocalState();
+    }
+    return res;
+  };
+
+  removeWorktree = async (
+    key: string,
+    targetPath: string,
+    force = false,
+  ): Promise<{ ok: boolean; message: string }> => {
+    const res = await performRemoveWorktree(this.rootValue, key, targetPath, force);
+    if (res.ok) {
+      await this.openWorktreeModal(key);
+      await this.refreshLocalState();
+    }
+    return res;
   };
 
   runOpenApp = async (appName: string): Promise<number> => {

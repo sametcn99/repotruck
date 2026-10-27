@@ -34,6 +34,7 @@ export interface InventoryRepoInput extends CategoryInput {
   name: string;
   language: string | null;
   updatedAt?: string | null;
+  sparse?: string[];
 }
 
 export function targetDirFor(
@@ -66,6 +67,7 @@ export function upsertInventory(
     internal,
     language: repo.language,
     updatedAt: repo.updatedAt ?? null,
+    ...(repo.sparse ? { sparse: repo.sparse } : {}),
   };
   const entry: RepoInventoryEntry =
     previous !== undefined && previous.custom !== undefined
@@ -83,9 +85,9 @@ export function upsertInventory(
  * Loads the current config, applies the `mutate` function, writes the updated config
  * and regenerated AGENTS.md, and returns the resulting config and any custom result.
  *
- * RULE: No network calls or git operations are permitted inside `mutate`.
+ * RULE: No network calls or git operations are permitted inside `mutate``.
  * Long-running work (like git clone or network fetch) MUST happen outside the lock,
- * with only the in-memory config transformations performed inside `mutate`.
+ * with only the in-memory config transformations performed inside `mutate``.
  */
 export async function updateWorkspace<T = void>(
   root: string,
@@ -221,6 +223,7 @@ export async function syncRepos(options: SyncReposOptions): Promise<SyncReposRes
               }
             : undefined;
         const cloneFn = options.cloneOrUpdateImpl ?? cloneOrUpdate;
+        const inv = config.repos.find((e) => repoKeyEquals(e, repo.owner, repo.name));
         const final = await cloneFn(
           {
             owner: repo.owner,
@@ -236,6 +239,7 @@ export async function syncRepos(options: SyncReposOptions): Promise<SyncReposRes
             blobless: options.blobless,
             stash: options.stash,
             divergence: options.divergence,
+            sparse: inv?.sparse,
           },
           emit,
         );
@@ -259,7 +263,13 @@ export async function syncRepos(options: SyncReposOptions): Promise<SyncReposRes
       for (const entry of done) {
         const repo = repos.find((r) => `${r.owner}/${r.name}` === entry.key);
         if (repo) {
-          updated = upsertInventory(updated, repo, entry.relativePath, entry.internal);
+          const invEntry = config.repos.find((e) => repoKeyEquals(e, repo.owner, repo.name));
+          updated = upsertInventory(
+            updated,
+            { ...repo, sparse: invEntry?.sparse },
+            entry.relativePath,
+            entry.internal,
+          );
         }
       }
       return { config: { ...updated, lastSync: new Date().toISOString() }, result: undefined };

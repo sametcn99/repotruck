@@ -20,6 +20,7 @@ import type { ModalState, StatusPhase, Store } from "./store.ts";
 import { theme } from "./theme.ts";
 import { WorkspacePicker } from "./WorkspacePicker.tsx";
 import { WorkspaceSkeleton } from "./WorkspaceSkeleton.tsx";
+import { WorktreeModal } from "./WorktreeModal.tsx";
 import { repoKeyOf, repoViewportRows, sidebarWidth, statusWidth } from "./windowing.ts";
 
 // A second q inside this window while a sync runs actually quits.
@@ -128,6 +129,8 @@ function renderModal(
       return <ConfirmModal store={store} />;
     case "reorganize":
       return <ReorganizeModal store={store} />;
+    case "worktree":
+      return <WorktreeModal store={store} />;
     case "omnibar":
       return <OmnibarModal store={store} />;
     default:
@@ -269,6 +272,13 @@ export function Dashboard({
     }
     if (isShiftLetter(key, "R")) {
       void store.openReorganizeModal();
+      return;
+    }
+    if (isShiftLetter(key, "W") && current.focus === "list") {
+      const repo = current.filteredRepos[current.cursor];
+      if (repo !== undefined) {
+        void store.openWorktreeModal(`${repo.owner}/${repo.name}`);
+      }
       return;
     }
     if (isShiftLetter(key, "S")) {

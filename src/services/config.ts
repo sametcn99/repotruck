@@ -23,6 +23,7 @@ export interface RepoInventoryEntry {
   language: string | null;
   updatedAt: string | null;
   custom?: boolean;
+  sparse?: string[];
 }
 
 export interface RepotruckConfig {
@@ -73,6 +74,7 @@ export function appConfigDir(
 export function isRepoInventoryEntry(value: unknown): value is RepoInventoryEntry {
   if (value === null || typeof value !== "object") return false;
   const entry = value as Partial<RepoInventoryEntry>;
+  const sparseValid = entry.sparse === undefined || isStringArray(entry.sparse);
   return (
     typeof entry.owner === "string" &&
     typeof entry.name === "string" &&
@@ -80,7 +82,8 @@ export function isRepoInventoryEntry(value: unknown): value is RepoInventoryEntr
     (entry.category === "archived" || entry.category === "forks" || entry.category === "source") &&
     typeof entry.internal === "boolean" &&
     (entry.language === null || typeof entry.language === "string") &&
-    (entry.updatedAt === null || typeof entry.updatedAt === "string")
+    (entry.updatedAt === null || typeof entry.updatedAt === "string") &&
+    sparseValid
   );
 }
 

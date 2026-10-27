@@ -39,6 +39,7 @@ test("built index.html contains canonical and agent documentation links", () => 
   const html = builtHtml();
   expect(html).toContain(`<link rel="canonical" href="${CANONICAL}" />`);
   expect(html).toContain('rel="alternate" type="text/markdown"');
+  expect(html).toContain('rel="ard"');
   expect(html).toContain('rel="ai-catalog"');
 });
 
@@ -127,4 +128,10 @@ test("agent discovery well-known files exist and match calculated sha256 digests
   const aiCatalog = JSON.parse(readFileSync(aiCatalogPath, "utf8"));
   expect(aiCatalog.specVersion).toBe("1.0");
   expect(Array.isArray(aiCatalog.entries)).toBe(true);
+
+  const ardPath = join(websiteRoot, "public", ".well-known", "ard.json");
+  expect(existsSync(ardPath)).toBe(true);
+  const ard = JSON.parse(readFileSync(ardPath, "utf8"));
+  expect(ard.specVersion).toBe("1.0");
+  expect(Array.isArray(ard.entries)).toBe(true);
 });

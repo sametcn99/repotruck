@@ -62,4 +62,5 @@ Content-Signal: ai-train=yes, search=yes, ai-input=yes
 
 # Sitemaps and Agent Discovery
 Sitemap: https://sametcn99.github.io/repotruck/sitemap.xml
+Agentmap: https://sametcn99.github.io/repotruck/.well-known/ard.json
 Agentmap: https://sametcn99.github.io/repotruck/.well-known/ai-catalog.json

@@ -3,6 +3,7 @@ import { readVersion } from "../services/version.ts";
 import { register as registerAlias } from "./commands/alias.ts";
 import { register as registerAuth } from "./commands/auth.ts";
 import { register as registerBackup } from "./commands/backup.ts";
+import { register as registerChangelog } from "./commands/changelog.ts";
 import { register as registerClone } from "./commands/clone.ts";
 import { register as registerCompletions } from "./commands/completions.ts";
 import { register as registerConfig } from "./commands/config.ts";
@@ -26,6 +27,7 @@ import { register as registerSync } from "./commands/sync.ts";
 import { register as registerTrash } from "./commands/trash.ts";
 import { register as registerUpdate } from "./commands/update.ts";
 import { register as registerWorkspaces } from "./commands/workspaces.ts";
+import { register as registerWorktree } from "./commands/worktree.ts";
 import { type CliContext, createCliContext } from "./shared.ts";
 
 export async function buildCliProgram(
@@ -81,6 +83,8 @@ export async function buildCliProgram(
   registerBackup(cmd, ctx);
   registerInstructions(cmd, ctx);
   registerMcp(cmd, ctx);
+  registerWorktree(cmd, ctx);
+  registerChangelog(cmd, ctx);
 
   return cmd;
 }
