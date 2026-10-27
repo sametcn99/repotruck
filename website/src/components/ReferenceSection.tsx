@@ -77,7 +77,7 @@ const INVENTORY_SNIPPET = `{
     {
       "root": "C:\\\\work\\\\my-workspace",
       "preset": "categorized",
-      "lastSync": "2026-10-23T10:00:00.000Z",
+      "lastSync": "2026-10-28T10:00:00.000Z",
       "repos": [
         {
           "owner": "monalisa",
@@ -86,10 +86,12 @@ const INVENTORY_SNIPPET = `{
           "category": "source",
           "internal": true,
           "language": "Go",
-          "custom": true
+          "custom": true,
+          "sparse": ["packages/core", "apps/server"]
         }
       ],
-      "aliases": { "api": "monalisa/source/api" }
+      "aliases": { "api": "monalisa/source/api" },
+      "pinned": ["monalisa/api"]
     }
   ]
 }`;
@@ -218,7 +220,7 @@ export function ReferenceSection() {
 
       <div className="panel ref-panel" id="ref-agents" data-toc-sub="AGENTS.md">
         <span className="panel-label">agents</span>
-        <h3>AGENTS.md</h3>
+        <h3>AGENTS.md & rules multi-export</h3>
         <p>
           Every workspace root carries an <code>AGENTS.md</code> map for coding agents. It starts
           with an auto-generated marker and is rewritten on every sync, clone, move, create and
@@ -245,6 +247,41 @@ export function ReferenceSection() {
             <code>{"<!-- repotruck:custom-instructions begin -->"}</code> and{" "}
             <code>{"<!-- repotruck:custom-instructions end -->"}</code> is preserved byte-for-byte
             on every rewrite; everything else regenerates.
+          </li>
+          <li>
+            <strong>Multi-Agent Rules Export</strong> —{" "}
+            <code>repotruck instructions export --format &lt;cursor|claude|copilot|agents&gt;</code>{" "}
+            writes tailored workspace configuration directly into <code>.cursorrules</code>,{" "}
+            <code>CLAUDE.md</code>, or <code>.github/copilot-instructions.md</code>.
+          </li>
+        </ul>
+      </div>
+
+      <div className="panel ref-panel" id="ref-worktrees" data-toc-sub="Worktrees & Git health">
+        <span className="panel-label">git</span>
+        <h3>Worktrees & Git health</h3>
+        <ul>
+          <li>
+            <strong>Linked Worktrees</strong> — repotruck recognizes linked git worktree checkouts
+            (whose <code>.git</code> is a pointer file to <code>.git/worktrees/&lt;id&gt;</code>).
+            Moving or reorganizing respects these bidirectional pointers.
+          </li>
+          <li>
+            <strong>Interactive Worktree Manager</strong> —{" "}
+            <code>repotruck worktree &lt;list|scan|create|remove&gt;</code> and the TUI modal (
+            <code>Shift+W</code>) manage checkouts, create isolated branches, and prune orphaned
+            worktrees.
+          </li>
+          <li>
+            <strong>Conflict & Rebase Resolution</strong> —{" "}
+            <code>repotruck sync resolve [repo]</code> inspects in-progress merges, cherry-picks,
+            and rebases, providing step-by-step guidance with automated continue and abort helpers.
+          </li>
+          <li>
+            <strong>Health Scoreboard & Commit Verification</strong> —{" "}
+            <code>repotruck stats --health</code> rates cleanliness, sync, focus, hygiene, and
+            doctor diagnostics with grades (A+ to F). <code>repotruck doctor --check-signing</code>{" "}
+            verifies GPG/SSH commit signatures.
           </li>
         </ul>
       </div>
@@ -361,13 +398,14 @@ export function ReferenceSection() {
           <li>
             <code>workspaces[]</code> — one entry per workspace, keyed by absolute <code>root</code>
             , with <code>preset</code>, <code>lastSync</code>, <code>lastUsed</code>,{" "}
-            <code>aliases</code> and the repository inventory.
+            <code>aliases</code>, <code>pinned</code>, and the repository inventory.
           </li>
           <li>
             <code>repos[]</code> — <code>owner</code>, <code>name</code>, <code>relativePath</code>{" "}
             (POSIX separators), <code>category</code> (<code>source</code> / <code>forks</code> /{" "}
             <code>archived</code>), <code>internal</code>, <code>language</code>,{" "}
-            <code>updatedAt</code> and <code>custom</code> (true when manually placed).
+            <code>updatedAt</code>, <code>custom</code> (true when manually placed), and optional{" "}
+            <code>sparse</code> paths.
           </li>
           <li>
             <code>aliases</code> — alias to workspace-relative path; <code>move</code> and{" "}

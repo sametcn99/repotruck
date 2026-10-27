@@ -77,17 +77,17 @@ test("auth.md exists and documents GitHub CLI and device-flow authentication", (
   expect(authMd).toContain("REPOTRUCK_OAUTH_CLIENT_ID");
 });
 
-test("llms.txt and index.md completely cover the 16 presets, 27 CLI commands and 25 MCP tools", () => {
+test("llms.txt and index.md completely cover the 16 presets, 32 CLI commands and 25 MCP tools", () => {
   const llms = readFileSync(join(websiteRoot, "public", "llms.txt"), "utf8");
   const indexMd = readFileSync(join(websiteRoot, "public", "index.md"), "utf8");
 
   expect(llms).toContain("16 Built-in Presets");
-  expect(llms).toContain("27 CLI Commands");
+  expect(llms).toContain("32 CLI Commands");
   expect(llms).toContain("25 MCP Tools");
   expect(llms).toContain("repotruck_search_code");
 
   expect(indexMd).toContain("16 Built-in Presets");
-  expect(indexMd).toContain("27 Commands");
+  expect(indexMd).toContain("32 Commands");
   expect(indexMd).toContain("25 Tools");
   expect(indexMd).toContain("search-code");
   expect(indexMd).toContain("reorganize");

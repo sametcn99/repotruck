@@ -61,7 +61,7 @@ export function DocsBody() {
         <h2>Headless CLI</h2>
         <p className="section-sub">
           The dashboard is optional. Every workspace operation is a plain subcommand — scriptable,
-          CI-friendly and happy without a TTY. The full reference below covers all 27 commands in
+          CI-friendly and happy without a TTY. The full reference below covers all 32 commands in
           six groups; run <code>repotruck &lt;command&gt; --help</code> for the live flag list.
         </p>
         {COMMAND_GROUPS.map((group) => (
@@ -100,17 +100,19 @@ export function DocsBody() {
               <tr>
                 <th scope="col">Key</th>
                 <th scope="col">Default</th>
-                <th scope="col">Controls</th>
+                <th scope="col">Description</th>
               </tr>
             </thead>
             <tbody>
               {SETTING_ROWS.map((row) => (
                 <tr key={row.key}>
                   <td data-label="Key" className="path">
-                    {row.key}
+                    <code>{row.key}</code>
                   </td>
-                  <td data-label="Default">{row.value}</td>
-                  <td data-label="Controls">{row.description}</td>
+                  <td data-label="Default">
+                    <code>{row.value}</code>
+                  </td>
+                  <td data-label="Description">{row.description}</td>
                 </tr>
               ))}
             </tbody>
@@ -121,8 +123,8 @@ export function DocsBody() {
       <section className="section" id="divergence" aria-label="Divergence strategies">
         <h2>Divergence strategies</h2>
         <p className="section-sub">
-          When a repository has local commits ahead of its origin, <code>sync --divergence</code>{" "}
-          decides what happens. Dirty trees are stashed first when <code>--stash</code> is set.
+          When <code>repotruck sync</code> finds a local clone ahead of its remote branch, the{" "}
+          <code>--divergence &lt;strategy&gt;</code> flag picks how to reconcile it:
         </p>
         <div className="panel">
           <span className="panel-label">Strategies</span>
@@ -137,7 +139,7 @@ export function DocsBody() {
               {DIVERGENCE_ROWS.map((row) => (
                 <tr key={row.strategy}>
                   <td data-label="Strategy" className="path">
-                    {row.strategy}
+                    <code>{row.strategy}</code>
                   </td>
                   <td data-label="Behavior">{row.behavior}</td>
                 </tr>

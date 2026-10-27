@@ -21,6 +21,23 @@ const ROWS: readonly ShortcutRow[] = [
     action:
       "Search repositories by owner or name (filters live as you type; Enter closes, Escape clears)",
   },
+  {
+    key: "Ctrl+K / :",
+    action:
+      "Open Omnibar palette: @ symbol search, # discovery & clone, ! parallel commands, :worktree",
+  },
+  {
+    key: "W / Shift+W",
+    action:
+      "Open worktree manager modal (inspect linked checkouts, create branches, prune orphans)",
+  },
+  { key: "P", action: "Toggle pin/unpin for highlighted repository (prioritizes in focus views)" },
+  {
+    key: "F",
+    action: "Cycle repository filter: all → dirty → unpushed → unpulled → missing → pinned",
+  },
+  { key: "T", action: "Cycle color palette theme: default → light → contrast" },
+  { key: "L", action: "Toggle offline local mode (bypasses remote GitHub network calls)" },
   { key: "s", action: "Cycle sort: name, language, updated" },
   { key: "S", action: "Reverse current sort direction" },
   {
@@ -36,6 +53,10 @@ const ROWS: readonly ShortcutRow[] = [
   { key: "m", action: "Open move modal for highlighted repository" },
   { key: "z", action: "Undo last move or delete (restores directory and inventory entry)" },
   { key: "u", action: "Untrack highlighted repository — confirmation modal (files stay on disk)" },
+  {
+    key: "A",
+    action: "Archive highlighted repository on GitHub — confirmation modal (moves to archived/)",
+  },
   {
     key: "D",
     action: "Delete highlighted repository (parks clone in .repotruck/trash; z undoes)",

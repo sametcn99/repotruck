@@ -16,6 +16,34 @@ const FEATURES: readonly { title: string; body: string }[] = [
     body: "repotruck mcp exposes the whole workspace to coding agents as native MCP tools, resources, and prompt workflows.",
   },
   {
+    title: "Worktree manager",
+    body: "repotruck worktree lists, scans orphaned, creates linked checkouts, and safely removes git worktrees with interactive TUI modal (Shift+W) and CLI commands.",
+  },
+  {
+    title: "Sync & rebase resolution",
+    body: "repotruck sync resolve inspects diverged merges, rebases, and cherry-picks, offering guided step-by-step resolution with continue and abort helpers.",
+  },
+  {
+    title: "Multi-agent rules export",
+    body: "repotruck instructions export writes customized workspace guides to .cursorrules, CLAUDE.md, .github/copilot-instructions.md, and AGENTS.md.",
+  },
+  {
+    title: "Cross-repo changelog",
+    body: "repotruck changelog aggregates git commits across all tracked repositories into grouped conventional release notes in Markdown or JSON.",
+  },
+  {
+    title: "Workspace health scoreboard",
+    body: "repotruck stats --health evaluates cleanliness, sync, focus, hygiene, and doctor diagnostics with actionable remediation tips and letter grades (A+ to F).",
+  },
+  {
+    title: "Commit signature verification",
+    body: "repotruck doctor --check-signing verifies GPG/SSH commit signatures and git signing configuration, surfaced in the TUI Inspector status bar.",
+  },
+  {
+    title: "Sparse monorepo clone",
+    body: "repotruck clone <url> --sparse <dirs...> clones only the subdirectories you need, keeping monorepo disk footprints minimal across background syncs.",
+  },
+  {
     title: "Workspace memory",
     body: "One central repotruck.json in the app config dir remembers every workspace: preset, repository inventory, last sync and last use. Jump between them from the dashboard.",
   },

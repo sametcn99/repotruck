@@ -1,6 +1,6 @@
 # Repotruck
 
-> Bulk-clone and organize your GitHub repositories into predictable preset layouts with an AGENTS.md map and a built-in MCP server for AI coding agents.
+> Bulk-clone and organize your GitHub repositories into predictable preset layouts with an AGENTS.md map, worktree management, and a built-in MCP server for AI coding agents.
 
 Repotruck is an open-source CLI and Model Context Protocol (MCP) server for Windows, macOS, and Linux that mirrors GitHub accounts and organizations into structured local workspaces. It keeps repositories synchronized, tracks Git health, provides Tree-sitter symbol search, and generates an `AGENTS.md` map for AI coding agents.
 
@@ -13,6 +13,10 @@ npx repotruck status
 npx repotruck clone owner/name
 npx repotruck reorganize categorized --dry-run
 npx repotruck search-code "handleAuth" --kind function
+npx repotruck worktree list
+npx repotruck changelog
+npx repotruck instructions export --format cursor
+npx repotruck stats --health
 npx repotruck mcp
 
 # Connect MCP server to Claude Code
@@ -22,31 +26,36 @@ claude mcp add repotruck -- repotruck mcp
 ## Runtimes & Surfaces
 
 - **Headless CLI & MCP Server**: Runs on Node.js >= 20.0 or any modern Bun. Scriptable, CI-friendly, no TTY required.
-- **Interactive TUI Dashboard**: Runs with `repotruck` (no args). Requires Node.js >= 26.4 or Bun >= 1.3.14. Three-pane interface with scope selection, repository list, and real-time status log.
+- **Interactive TUI Dashboard**: Runs with `repotruck` (no args). Requires Node.js >= 26.4 or Bun >= 1.3.14. Multi-repo cockpit with live filtering, inspector status panel, Worktree Modal (Shift+W), Omnibar (Ctrl+K), and health scores.
 
-## 27 CLI Commands by Category
+## 32 CLI Commands by Category
 
-### Sync & Clone
-- `sync`: Bulk clone and fast-forward-update repositories (`--scope <user|org:<name>|all>`, `--limit <n>`, `-c <concurrency>`, `--depth <n>`, `--blobless`, `--stash`, `--divergence <strategy>`, `--include <glob>`, `--exclude <glob>`, `--watch [seconds]`).
-- `clone <url>`: Clone or update a single repository into the workspace preset (`--depth`, `--blobless`).
+### Sync, Clone & Discover
+- `sync`: Bulk clone and fast-forward-update repositories (`--scope <user|org:<name>|all>`, `--limit <n>`, `-c <concurrency>`, `--depth <n>`, `--blobless`, `--stash`, `--divergence <strategy>`, `--include <glob>`, `--exclude <glob>`, `--watch [seconds]`). Also includes conflict and rebase resolution via `repotruck sync resolve [repo] [--action <continue|abort>]`.
+- `clone <url>`: Clone or update a single repository into the workspace preset (`--depth`, `--blobless`, `--sparse <dirs...>`).
+- `discover <query>`: Search GitHub repositories with structured qualifiers and optionally clone matches (`--org`, `--lang`, `--min-stars`, `--topic`, `--clone`).
 - `create <name>`: Create a GitHub repository and register in workspace (`--from <dir>`, `--at <path>`, `--public`, `--private`, `--org <name>`, `--description <text>`).
 - `scan [directory]`: Recursively discover untracked Git repositories on disk and optionally adopt/move them into preset layout (`--move`, `--dry-run`).
 - `reorganize <preset>`: Re-file all tracked repositories into a new preset layout (`--dry-run`, `--scan`, `--keep-custom`, `--resume`).
 
-### Repository Lifecycle
+### Repository Lifecycle & Worktrees
 - `move <repo> <path>`: Relocate a repository to a custom relative path; inventory, aliases, and AGENTS.md follow.
 - `forget <repo>`: Untrack a repository from workspace inventory; files remain untouched on disk.
 - `delete <repo> --yes`: Untrack and permanently remove repository directory from disk.
+- `trash <list|restore|purge>`: Inspect soft-deleted repositories in trash bin, restore or purge.
 - `archive <repo>`: Archive repository on GitHub and move local directory under `archived/`.
 - `prune`: Untrack repositories deleted on GitHub (returns 404).
+- `worktree <list|scan|create|remove>`: List, scan orphaned, create linked, and safely remove git worktrees across the workspace.
 
-### Status, Search & Batch Run
+### Status, Search, Changelog & Batch Run
 - `status`: Per-repository Git health: dirty status, ahead/behind, diff stats (`-D, --detail`), filter (`-f <dirty|uncommitted|unpushed|unpulled|all>`), CI check (`-c, --check`).
-- `stats`: Workspace metrics: language distribution, category breakdown, stale repositories (>=180 days), total disk footprint.
+- `stats`: Workspace metrics: language distribution, category breakdown, stale repositories (>=180 days), total disk footprint, and health scoreboard (`--health`).
+- `changelog`: Synthesize git commits across all tracked repositories into conventional grouped release notes (`--since`, `--format`, `--out`).
 - `search-code <pattern>`: Tree-sitter symbol search across all tracked repositories (`--kind <function|class|interface|type|enum|method|const>`, `--lang <ts|tsx|js|py|go|rs>`, `--limit <n>`, `--regex`, `--offline`, `--rebuild`).
 - `run <command...>`: Execute shell commands across all or selected repositories in parallel (`-r <repo>`, `-c <concurrency>`).
 - `open <repo> [app]`: Launch an editor or coding agent (`claude`, `cursor`, `vscode`, `codex`, `gemini`, `aider`) in a repository directory.
 - `alias <set|remove|list>`: Assign and manage short aliases for repositories.
+- `profile <list|create|switch|delete|pin|unpin>`: Manage workspace profiles and pin repositories for focus.
 
 ### Workspace Memory & Settings
 - `workspaces [list|remove]`: Manage the central machine-wide workspace registry.
@@ -54,11 +63,11 @@ claude mcp add repotruck -- repotruck mcp
 - `config <get|set|unset|list>`: View and edit settings in `settings.json`.
 - `preset <list|add|remove>`: Manage custom layouts composed of `owner`, `category`, `language`, and `name` tokens.
 - `backup [list|restore <snapshot>]`: List or restore automated workspace snapshots (5 generations kept, `--yes`).
-- `instructions template [name]`: Manage AGENTS.md template blocks (`node`, `python`, `monorepo`, `--clear`).
+- `instructions <template|export>`: Manage AGENTS.md template blocks (`node`, `python`, `monorepo`) or export instructions to CursorRules, Copilot, Claude, and AGENTS.md (`--format <cursor|claude|copilot|agents>`).
 
 ### Platform & Housekeeping
 - `auth <status|login|logout>`: Manage GitHub credentials (GitHub CLI `gh`, cached device-flow token, `REPOTRUCK_TOKEN`).
-- `doctor`: Health diagnostics for git, gh, GitHub token, central store, and workspace roots (`--fix`).
+- `doctor`: Health diagnostics for git, gh, GitHub token, central store, workspace roots, and commit signing configuration (`--fix`, `--check-signing`).
 - `mcp`: Launch Model Context Protocol server on stdio (default) or Streamable HTTP (`--http`, `--port`, `--token`, `--base-url`).
 - `update`: Self-update via npm/bun package managers.
 - `completions <bash|zsh|fish|powershell>`: Generate shell auto-completion scripts.
@@ -118,6 +127,7 @@ Every workspace root contains an `AGENTS.md` map generated and updated by repotr
 2. **Search Exclusions**: Exclude `.git/`, `node_modules/`, `.repotruck/`, and `dist/` from global searches.
 3. **Community Repositories**: Repositories under `community/` are third-party references. Treat them as read-only.
 4. **Custom Instructions Preservation**: Text between `<!-- repotruck:custom-instructions begin -->` and `<!-- repotruck:custom-instructions end -->` is preserved verbatim across all rewrites.
+5. **Multi-Agent Rules Export**: Export customized rules to `.cursorrules`, `CLAUDE.md`, or `.github/copilot-instructions.md` via `repotruck instructions export`.
 
 ## Settings & Divergence Strategies
 

@@ -1,11 +1,6 @@
-# Repotruck — Complete Reference & Agent Guide
+# Repotruck \u2014 Complete Reference Documentation
 
-> Bulk-clone and organize your GitHub repositories into predictable preset layouts with an `AGENTS.md` map and a built-in Model Context Protocol (MCP) server for AI coding agents.
-
-- **Canonical URL**: https://sametcn99.github.io/repotruck/
-- **Repository**: https://github.com/sametcn99/repotruck
-- **License**: MIT
-- **Author**: sametcn99
+> Multi-repository workspace manager and Model Context Protocol (MCP) server for Windows, macOS, and Linux.
 
 ---
 
@@ -14,10 +9,14 @@
 Repotruck bridges local developer filesystems and remote GitHub organizations. It is engineered to give developers and autonomous AI coding agents (Claude, Cursor, Copilot, Codex, Windsurf, Roo Code) structured, predictable, and self-documenting multi-repository workspaces.
 
 ### Key Capabilities
-- **Three Interaction Surfaces**: An interactive terminal dashboard (TUI), 27 headless CLI commands, and a 25-tool native Model Context Protocol (MCP) server.
+- **Three Interaction Surfaces**: An interactive terminal dashboard (TUI cockpit), 32 headless CLI commands, and a 25-tool native Model Context Protocol (MCP) server.
 - **16 Deterministic Presets**: Organize repositories by owner, classification (`source`, `forks`, `archived`), language, or custom segment combinations.
-- **Automated AGENTS.md Maps**: Every workspace root receives a machine-readable directory map, repository metadata, and coding agent rules rewritten on every sync or move.
+- **Automated AGENTS.md Maps & Rules Export**: Every workspace root receives a machine-readable directory map, repository metadata, and coding agent rules rewritten on every sync or move. Export rules to `.cursorrules`, `CLAUDE.md`, or `.github/copilot-instructions.md`.
+- **Interactive Worktree Manager**: Manage linked git worktrees without breaking `.git` pointers, scan for orphaned worktrees, and create branches via CLI and TUI (`Shift+W`).
+- **Conflict & Rebase Resolution Guide**: `sync resolve` inspects in-progress merges, cherry-picks, and rebases with step-by-step guidance and continue/abort automation.
+- **Workspace Health Scoreboard**: `stats --health` evaluates cleanliness, synchronization, focus pinning, hygiene, and doctor diagnostics with letter grades (A+ to F).
 - **Tree-sitter Symbol Search**: Fast AST symbol indexing across all repositories in the workspace for functions, classes, interfaces, types, enums, methods, and constants.
+- **Cross-Repo Conventional Changelog**: Aggregate git commits across all tracked repositories into grouped release notes in Markdown or JSON.
 - **Strict Credential Hygiene**: Zero token persistence in `.git/config` or workspace files. Clones and updates pass ephemeral in-memory credential headers with automatic error redaction.
 - **Atomic Operations & Safety**: Reorganizing layouts uses a journaled two-phase move with rollback recovery. Dashboard deletions move to `.repotruck/trash` with undo support. Automated 5-generation workspace backups.
 
@@ -40,7 +39,7 @@ bun add -g repotruck
 | Surface | Runtime Requirement | Description |
 |---|---|---|
 | **Headless CLI & MCP Server** | Node.js >= 20.0 or any modern Bun | Runs `sync`, `clone`, `status`, `reorganize`, `mcp`, `search-code`, etc. No TTY or graphics required. |
-| **Interactive Dashboard (TUI)** | Node.js >= 26.4 or Bun >= 1.3.14 | Full three-pane terminal UI powered by OpenTUI with mouse support and color themes. |
+| **Interactive Dashboard (TUI)** | Node.js >= 26.4 or Bun >= 1.3.14 | Full three-pane terminal UI cockpit with mouse support, Omnibar (`Ctrl+K`), worktree manager (`Shift+W`), and color themes. |
 
 `repotruck doctor` automatically detects and diagnoses runtime compatibility.
 
@@ -67,15 +66,17 @@ repotruck config set github.baseUrl https://github.mycompany.com/api/v3
 
 ---
 
-## 4. Complete CLI Command Reference (27 Commands)
+## 4. Complete CLI Command Reference (32 Commands)
 
-### Group 1: Sync & Clone
+### Group 1: Sync, Clone and Discover
 
-#### `repotruck sync [options]`
-Bulk clone or fast-forward-update repositories without interactive prompts. Exits 1 if any repository fails.
-- **Usage**: `repotruck sync [options]`
+#### `repotruck sync [options] | repotruck sync resolve [repo] [options]`
+Bulk clone or fast-forward-update repositories without interactive prompts. Also provides conflict and rebase resolution via the resolve subcommand. Exits 1 if any repository fails.
+- **Usage**: `repotruck sync [options] | repotruck sync resolve [repo] [options]`
 - **Flags**:
   - `-s, --scope <scope>`: `"user"` (default), `"org:<name>"`, or `"all"`
+  - `--pinned`: Sync only repositories pinned in the workspace
+  - `--profile <name>`: Sync only repositories in the named workspace profile
   - `-l, --limit <n>`: Sync only the first N repositories of the scope in API order
   - `-c, --concurrency <n>`: Parallel execution limit (default 3; settable via `sync.concurrency`)
   - `--depth <n>`: Shallow clone with given commit depth (new clones only)
@@ -85,15 +86,20 @@ Bulk clone or fast-forward-update repositories without interactive prompts. Exit
   - `--include <glob>`: Only sync repositories whose `owner/name` matches the glob
   - `--exclude <glob>`: Skip repositories whose `owner/name` matches the glob
   - `--watch [seconds]`: Keep syncing at fixed interval (default 300s; Ctrl+C stops)
+  - `--action <action>`: Resolution action for `sync resolve`: `continue` or `abort`
   - `--json`: Output machine-readable JSON summary
 - **Examples**:
   ```bash
   repotruck sync
   repotruck sync --scope all --concurrency 5
+  repotruck sync --pinned
+  repotruck sync --profile backend
   repotruck sync --scope org:acme --limit 20
   repotruck sync -p language-first --stash --divergence rebase
   repotruck sync --include "core-*" --exclude "*-legacy"
   repotruck sync --watch 60
+  repotruck sync resolve monalisa/api
+  repotruck sync resolve monalisa/api --action continue
   ```
 
 #### `repotruck clone <url> [options]`
@@ -103,50 +109,72 @@ Clone a single GitHub repository into the layout; fast-forward pulls if already 
   - `-p, --preset <id>`: Target layout preset
   - `--depth <n>`: Create a shallow clone with given depth
   - `--blobless`: Create a blobless partial clone
+  - `--sparse <dirs...>`: Initialize sparse checkout with specified subdirectory paths
   - `--json`: Machine-readable JSON output
 - **Examples**:
   ```bash
   repotruck clone owner/repo
   repotruck clone https://github.com/owner/repo -p flat-by-owner
   repotruck clone owner/repo --depth 1 --blobless
+  repotruck clone owner/repo --sparse packages/core apps/web
+  ```
+
+#### `repotruck discover <query> [options]`
+Search GitHub repositories with structured qualifiers (org, language, minimum stars, topics) and optionally clone matches straight into the workspace.
+- **Usage**: `repotruck discover <query> [options]`
+- **Flags**:
+  - `--org <org>`: Restrict search to a GitHub organization
+  - `--lang <language>`: Filter by primary language
+  - `--min-stars <n>`: Minimum number of GitHub stars
+  - `--topic <topic>`: Filter by topic tag
+  - `--include-forks`: Include forked repositories
+  - `-l, --limit <n>`: Maximum results (default 10)
+  - `--clone`: Clone discovered matches straight into the workspace
+  - `--json`: Machine-readable JSON output
+- **Examples**:
+  ```bash
+  repotruck discover mcp --lang typescript --min-stars 50
+  repotruck discover cli --org acme --topic devtools --clone
+  repotruck discover router --include-forks --limit 10 --json
   ```
 
 #### `repotruck create <name> [options]`
 Create a new GitHub repository and register it in the workspace. Private by default.
 - **Usage**: `repotruck create <name> [options]`
 - **Flags**:
-  - `--from <dir>`: Import an existing local directory (clean Git tree required)
-  - `--at <relative-path>`: Place repository at a custom workspace-relative path
-  - `--public / --private`: Visibility (default is private)
-  - `--description <text>`: Short repository description
-  - `--org <name>`: Create inside a specific organization
-- **Examples**:
-  ```bash
-  repotruck create my-service --description "Auth service"
-  repotruck create cli-tool --from ./cli-tool --at tools/cli
-  repotruck create shared-ui --org acme --public
-  ```
-
-#### `repotruck scan [directory] [options]`
-Recursively scan a directory for Git repositories, detect unregistered repositories, and optionally adopt or move them into the active preset layout.
-- **Usage**: `repotruck scan [directory] [options]`
-- **Flags**:
-  - `-m, --move`: Adopt and move unregistered repositories into their target preset directory
-  - `--dry-run`: Preview planned moves without modifying files
+  - `--from <dir>`: Import an existing local directory with clean Git history
+  - `--at <path>`: Custom relative path for the clone
+  - `--public`: Create as a public repository
+  - `--private`: Create as a private repository (default)
+  - `--org <name>`: Create under an organization
+  - `-d, --description <text>`: Repository description
   - `--json`: Machine-readable JSON output
 - **Examples**:
   ```bash
-  repotruck scan
-  repotruck scan ~/code
-  repotruck scan --move --dry-run
-  repotruck scan --move
+  repotruck create my-new-lib
+  repotruck create legacy-tool --from ./local-folder
+  repotruck create shared-utils --org acme --public
+  ```
+
+#### `repotruck scan [directory] [options]`
+Discover untracked Git repositories on disk and optionally move them into the preset layout.
+- **Usage**: `repotruck scan [directory] [options]`
+- **Flags**:
+  - `--move`: Relocate discovered repositories into preset structure
+  - `--dry-run`: Preview actions without touching disk
+  - `--json`: Machine-readable JSON output
+- **Examples**:
+  ```bash
+  repotruck scan ~/work
+  repotruck scan ~/work --move --dry-run
+  repotruck scan ~/work --move
   ```
 
 #### `repotruck reorganize <preset> [options]`
-Move every tracked repository to its destination path for a new preset layout. Uses a two-phase atomic move journal (`.repotruck/journal.json`).
+Re-file all tracked repositories into a new preset layout using journaled two-phase moves with rollback recovery.
 - **Usage**: `repotruck reorganize <preset> [options]`
 - **Flags**:
-  - `--dry-run`: Show the complete move plan without touching disk
+  - `--dry-run`: Preview plan without moving files
   - `--scan`: Discover untracked Git repositories on disk and adopt them
   - `--keep-custom`: Keep manually placed repositories where they are
   - `--resume`: Resume an interrupted reorganization from its journal
@@ -160,7 +188,7 @@ Move every tracked repository to its destination path for a new preset layout. U
 
 ---
 
-### Group 2: Repository Lifecycle
+### Group 2: Repository Lifecycle and Trash
 
 #### `repotruck move <repo> <destination>`
 Move a tracked repository to a custom relative path. Workspace inventory, AGENTS.md, and aliases update automatically.
@@ -177,6 +205,19 @@ Stop tracking a repository and permanently remove its directory from disk. Requi
 - **Usage**: `repotruck delete <repo> --yes`
 - **Example**: `repotruck delete acme/old-api --yes`
 
+#### `repotruck trash <list|restore|purge> [repo]`
+Manage soft-deleted repositories parked in `.repotruck/trash`.
+- **Usage**: `repotruck trash <list|restore|purge> [repo]`
+- **Flags**:
+  - `--yes`: Skip confirmation for purge
+  - `--json`: Machine-readable JSON output
+- **Examples**:
+  ```bash
+  repotruck trash list
+  repotruck trash restore monalisa/api
+  repotruck trash purge --yes
+  ```
+
 #### `repotruck archive <repo>`
 Archive the repository on GitHub and re-file it locally under the `archived/` category.
 - **Usage**: `repotruck archive <repo>`
@@ -190,9 +231,27 @@ Untrack repositories that have been deleted or made inaccessible on GitHub (retu
   - `--json`: Machine-readable JSON output
 - **Example**: `repotruck prune --dry-run`
 
+#### `repotruck worktree <list|scan|create|remove> [options]`
+Manage git worktrees belonging to a tracked repository. List active worktrees, scan for orphaned/linked worktrees across the workspace, create linked checkouts for branches, or safely remove worktrees.
+- **Usage**: `repotruck worktree <list|scan|create|remove> [options]`
+- **Flags**:
+  - `-r, --repo <ref>`: Target repository (alias, owner/name, or path)
+  - `-b, --branch <branch>`: Target branch name
+  - `-p, --path <path>`: Destination path for the worktree checkout
+  - `-f, --force`: Force removal of worktree even if dirty
+  - `--new-branch`: Create a new branch when adding a worktree
+  - `--json`: Machine-readable JSON output
+- **Examples**:
+  ```bash
+  repotruck worktree list -r monalisa/api
+  repotruck worktree scan
+  repotruck worktree create -r monalisa/api -b feat-login -p ../api-feat --new-branch
+  repotruck worktree remove -r monalisa/api -p ../api-feat --force
+  ```
+
 ---
 
-### Group 3: Status, Inspection & Code Search
+### Group 3: Status, Search and Changelog
 
 #### `repotruck status [options]`
 Comprehensive status matrix across all tracked repositories: dirty state, ahead/behind commit counts, category, aliases, and diff stats.
@@ -211,9 +270,34 @@ Comprehensive status matrix across all tracked repositories: dirty state, ahead/
   ```
 
 #### `repotruck stats [options]`
-Display aggregated workspace statistics: language distribution, category breakdown (`source`, `forks`, `archived`), stale repositories (>=180 days without commit), and total disk footprint.
+Display aggregated workspace statistics: language distribution, category breakdown (`source`, `forks`, `archived`), stale repositories (>=180 days without commit), total disk footprint, and workspace health scoreboard.
 - **Usage**: `repotruck stats [options]`
-- **Example**: `repotruck stats`
+- **Flags**:
+  - `--health`: Compute and display comprehensive workspace health scorecard and grade (A+ to F)
+  - `--json`: Machine-readable JSON output
+- **Examples**:
+  ```bash
+  repotruck stats
+  repotruck stats --health
+  repotruck stats --json
+  ```
+
+#### `repotruck changelog [options]`
+Generate an aggregated conventional changelog across all tracked repositories in the workspace, classified into Features, Bug Fixes, Documentation, and Other changes.
+- **Usage**: `repotruck changelog [options]`
+- **Flags**:
+  - `--since <date>`: Include commits since date or natural time (default "7 days ago")
+  - `--format <fmt>`: Output format: `markdown` (default) or `json`
+  - `--out <path>`: Write changelog output to file
+  - `-r, --repo <ref>`: Restrict changelog to specific repository
+  - `--json`: Machine-readable JSON output
+- **Examples**:
+  ```bash
+  repotruck changelog
+  repotruck changelog --since "30 days ago"
+  repotruck changelog --format markdown --out CHANGELOG.md
+  repotruck changelog -r monalisa/api --json
+  ```
 
 #### `repotruck search-code <pattern> [options]`
 Search indexed symbols across every tracked repository using Tree-sitter AST parsing. Respects each repository's `.gitignore`.
@@ -261,6 +345,18 @@ Manage short identifiers for repositories. Aliases survive moves and reorganizat
   repotruck alias remove api
   ```
 
+#### `repotruck profile <list|create|switch|delete|pin|unpin> [name] [repos...]`
+Manage workspace profiles and repository pinning for focus-driven workflows.
+- **Examples**:
+  ```bash
+  repotruck profile list
+  repotruck profile create backend
+  repotruck profile switch backend
+  repotruck profile pin monalisa/api monalisa/web
+  repotruck profile unpin monalisa/web
+  repotruck profile delete backend
+  ```
+
 ---
 
 ### Group 4: Workspace Memory & Presets
@@ -299,18 +395,41 @@ List or restore automated workspace snapshots kept in `<root>/.repotruck/backups
   repotruck backup restore 20261024T120000.json --yes
   ```
 
-#### `repotruck instructions template [name] [--clear]`
-Apply predefined AGENTS.md instruction templates (`node`, `python`, `monorepo`) or clear the active template block.
+---
+
+### Group 5: Instructions and Tools
+
+#### `repotruck instructions <template|export> [options]`
+Manage AGENTS.md instruction templates (list, apply, clear) or export instructions to CursorRules, Copilot, Claude, and AGENTS.md formats.
+- **Usage**: `repotruck instructions <template|export> [options]`
+- **Flags**:
+  - `--format <format>`: Export target format: `cursor`, `claude`, `copilot`, or `agents`
+  - `--out <path>`: Custom output file path for exported instructions
+  - `--clear`: Clear custom instructions template from AGENTS.md
+  - `--json`: Machine-readable JSON output
 - **Examples**:
   ```bash
   repotruck instructions template
   repotruck instructions template monorepo
   repotruck instructions template --clear
+  repotruck instructions export --format cursor
+  repotruck instructions export --format claude --out CLAUDE.md
+  repotruck instructions export --format copilot
+  ```
+
+#### `repotruck completions <bash|zsh|fish|powershell>`
+Generate shell tab-completion scripts with automated installation instructions.
+- **Examples**:
+  ```bash
+  repotruck completions bash
+  repotruck completions zsh
+  repotruck completions fish
+  repotruck completions powershell
   ```
 
 ---
 
-### Group 5: Settings, Health & Agents
+### Group 6: Settings, Updates and Agents
 
 #### `repotruck config <get|set|unset|list> [key] [value]`
 Read and update global settings stored in `settings.json`.
@@ -323,9 +442,33 @@ Read and update global settings stored in `settings.json`.
   repotruck config unset sync.depth
   ```
 
-#### `repotruck doctor [--fix]`
-Run diagnostics for git binary, gh CLI, GitHub token authentication, central store, and workspace health. `--fix` starts device-flow login if unauthenticated and resumes leftover reorganization journals.
-- **Example**: `repotruck doctor --fix`
+#### `repotruck auth <status|login|logout> [options]`
+Manage GitHub credentials across GitHub CLI, environment variables, or device-flow OAuth.
+- **Flags**:
+  - `--base-url <url>`: Target GitHub Enterprise API
+  - `--client-id <id>`: Custom OAuth app client ID for device flow
+  - `--token <token>`: Explicit token to store
+  - `--json`: Machine-readable JSON output
+- **Examples**:
+  ```bash
+  repotruck auth status
+  repotruck auth login
+  repotruck auth login --base-url https://ghe.example.com/api/v3
+  repotruck auth logout
+  ```
+
+#### `repotruck doctor [--fix] [--check-signing]`
+Run diagnostics for git binary, gh CLI, GitHub token authentication, central store, workspace health, and commit signing configuration. `--fix` starts device-flow login if unauthenticated and resumes leftover reorganization journals.
+- **Flags**:
+  - `--fix`: Automatically resolve fixable diagnostic issues
+  - `--check-signing`: Inspect git commit signing configuration (`commit.gpgsign`, `user.signingkey`)
+  - `--json`: Machine-readable JSON output
+- **Examples**:
+  ```bash
+  repotruck doctor
+  repotruck doctor --fix
+  repotruck doctor --check-signing
+  ```
 
 #### `repotruck mcp [options]`
 Launch the Model Context Protocol (MCP) server for AI coding agents.
@@ -343,9 +486,6 @@ Launch the Model Context Protocol (MCP) server for AI coding agents.
 
 #### `repotruck update`
 Check npm registry for newer versions and self-update global installations.
-
-#### `repotruck completions <bash|zsh|fish|powershell>`
-Generate shell tab-completion scripts with automated installation instructions.
 
 ---
 
@@ -389,7 +529,7 @@ Every workspace root carries an `AGENTS.md` file rewritten on every change.
 ## Workspace Metadata
 - Preset: `categorized`
 - Instructions template: `node`
-- Last sync: 2026-10-25T19:00:00Z
+- Last sync: 2026-10-28T10:00:00Z
 - Total repositories: 32 (28 internal, 4 community)
 
 ## Internal Projects
