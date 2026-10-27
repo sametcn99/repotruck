@@ -2,6 +2,7 @@ import { useKeyboard } from "@opentui/react";
 import { useState, useSyncExternalStore } from "react";
 import { ModalShell } from "./ModalShell.tsx";
 import type { Store } from "./store.ts";
+import { theme } from "./theme.ts";
 
 export function SearchModal({ store }: { store: Store }) {
   const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot);
@@ -38,7 +39,7 @@ export function SearchModal({ store }: { store: Store }) {
       />
       <box flexDirection="row" gap={2} marginTop={1}>
         <text
-          fg="green"
+          fg={theme.success()}
           onMouseDown={(e) => {
             e.stopPropagation();
             store.applySearch(term);
@@ -48,7 +49,7 @@ export function SearchModal({ store }: { store: Store }) {
           {"[ Done ]"}
         </text>
         <text
-          fg="gray"
+          fg={theme.dim()}
           onMouseDown={(e) => {
             e.stopPropagation();
             store.clearSearch();

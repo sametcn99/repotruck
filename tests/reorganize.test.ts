@@ -1,4 +1,4 @@
-import { afterAll, describe, expect, test } from "bun:test";
+import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { execFileSync } from "node:child_process";
 import {
   existsSync,
@@ -23,6 +23,7 @@ import {
 import { readWorkspaceConfig, writeWorkspaceConfig } from "../src/services/workspaceRegistry.ts";
 
 const tempRoots: string[] = [];
+let savedConfigDir: string | undefined;
 
 function tempDir(prefix: string): string {
   const dir = mkdtempSync(path.join(tmpdir(), prefix));
@@ -30,7 +31,17 @@ function tempDir(prefix: string): string {
   return dir;
 }
 
+beforeAll(() => {
+  savedConfigDir = process.env.REPOTRUCK_CONFIG_DIR;
+  process.env.REPOTRUCK_CONFIG_DIR = tempDir("repotruck-reorg-cfg-");
+});
+
 afterAll(() => {
+  if (savedConfigDir === undefined) {
+    delete process.env.REPOTRUCK_CONFIG_DIR;
+  } else {
+    process.env.REPOTRUCK_CONFIG_DIR = savedConfigDir;
+  }
   for (const dir of tempRoots) {
     try {
       rmSync(dir, { recursive: true, force: true });

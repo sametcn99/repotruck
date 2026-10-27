@@ -1,11 +1,9 @@
 import { useKeyboard } from "@opentui/react";
 import { useState, useSyncExternalStore } from "react";
+import { validateCreateName } from "../services/creator.ts";
 import { ModalShell, SelectList } from "./ModalShell.tsx";
 import { type CreateStep, nextCreateStep, prevCreateStep, type Store } from "./store.ts";
 import { theme } from "./theme.ts";
-
-const DIM_FG = theme.dim();
-const SELECTED = theme.success();
 
 const STEP_LABELS: Record<string, string> = {
   name: "[1/6] name",
@@ -18,18 +16,18 @@ const STEP_LABELS: Record<string, string> = {
 
 function createHint(step: CreateStep): string {
   if (step === "visibility") {
-    return "Space flips visibility · Enter creates · Left back · Escape cancels";
+    return "Space flips visibility \u00b7 Enter creates \u00b7 Left back \u00b7 Escape cancels";
   }
   if (step === "source") {
-    return "Space toggles the source · Enter continues · Left back · Escape cancels";
+    return "Space toggles the source \u00b7 Enter continues \u00b7 Left back \u00b7 Escape cancels";
   }
   if (step === "org") {
-    return "Up/Down choose the owner · Enter continues · Left back · Escape cancels";
+    return "Up/Down choose the owner \u00b7 Enter continues \u00b7 Left back \u00b7 Escape cancels";
   }
   if (step === "name") {
-    return "Enter continues · Escape cancels";
+    return "Enter continues \u00b7 Escape cancels";
   }
-  return "Enter continues · Left back · Escape cancels";
+  return "Enter continues \u00b7 Left back \u00b7 Escape cancels";
 }
 
 export function CreateModal({ store }: { store: Store }) {
@@ -42,10 +40,13 @@ export function CreateModal({ store }: { store: Store }) {
       : { name: "", path: "", isPrivate: true };
   const [name, setName] = useState(draft.name);
   const [path, setPath] = useState(draft.path);
+  const [pathCustomized, setPathCustomized] = useState(draft.path.length > 0);
   const [description, setDescription] = useState(draft.description ?? "");
   const [fromDir, setFromDir] = useState(draft.fromDir ?? "");
   const [sourceImport, setSourceImport] = useState(draft.fromDir !== undefined);
   const [orgCursor, setOrgCursor] = useState(0);
+  const dimFg = theme.dim();
+  const selectedFg = theme.success();
 
   const orgRows: Array<{ label: string; org: string | undefined }> = [
     { label: `Personal (${snapshot.userLogin ?? "unknown"})`, org: undefined },
@@ -57,6 +58,7 @@ export function CreateModal({ store }: { store: Store }) {
   const advance = (partial: Partial<typeof draft>): void => {
     const next = nextCreateStep(step);
     if (next === null) return;
+    store.setModalError(null);
     store.setModal({
       type: "create",
       step: next,
@@ -67,6 +69,7 @@ export function CreateModal({ store }: { store: Store }) {
   const goBack = (): void => {
     const prev = prevCreateStep(step);
     if (prev === null) return;
+    store.setModalError(null);
     store.setModal({
       type: "create",
       step: prev,
@@ -75,25 +78,33 @@ export function CreateModal({ store }: { store: Store }) {
   };
 
   const advanceFromName = (): void => {
+    const trimmed = name.trim();
+    if (validateCreateName(trimmed) === null) {
+      store.setModalError(`invalid repository name: ${trimmed || "(empty)"}`);
+      return;
+    }
+    setName(trimmed);
     advance({
-      name,
-      path: path.length > 0 ? path : "",
+      name: trimmed,
+      path: pathCustomized ? path : "",
     });
   };
 
   const advanceFromSource = (): void => {
-    advance(
-      sourceImport && fromDir.trim().length > 0
-        ? { fromDir: fromDir.trim() }
-        : { fromDir: undefined },
-    );
+    if (sourceImport && fromDir.trim().length === 0) {
+      store.setModalError("source directory path is required when importing");
+      return;
+    }
+    advance(sourceImport ? { fromDir: fromDir.trim() } : { fromDir: undefined });
   };
 
   const advanceFromOrg = (): void => {
     const org = orgRows[boundedOrgCursor]?.org;
+    const nextPath = pathCustomized && path.length > 0 ? path : store.presetTargetFor(name, org);
+    setPath(nextPath);
     advance({
       org,
-      path: path.length > 0 ? path : store.presetTargetFor(name, org),
+      path: nextPath,
     });
   };
 
@@ -104,6 +115,7 @@ export function CreateModal({ store }: { store: Store }) {
   const advanceFromDescription = (): void => {
     advance({ description: description.length > 0 ? description : undefined });
   };
+
   useKeyboard((key) => {
     if (key.name === "left") {
       goBack();
@@ -111,8 +123,9 @@ export function CreateModal({ store }: { store: Store }) {
     }
     if (step === "source") {
       if (key.name === "space") {
+        store.setModalError(null);
         setSourceImport((current) => !current);
-      } else if (key.name === "return" && (!sourceImport || fromDir.trim().length > 0)) {
+      } else if (key.name === "return" && !sourceImport) {
         advanceFromSource();
       }
       return;
@@ -156,7 +169,10 @@ export function CreateModal({ store }: { store: Store }) {
             key="step-name"
             focused
             value={name}
-            onInput={setName}
+            onInput={(val) => {
+              setName(val);
+              if (snapshot.modalError !== null) store.setModalError(null);
+            }}
             onSubmit={advanceFromName}
             width="100%"
           />
@@ -166,18 +182,20 @@ export function CreateModal({ store }: { store: Store }) {
         <>
           <text>Where does the repository come from?</text>
           <text
-            fg={!sourceImport ? SELECTED : DIM_FG}
+            fg={!sourceImport ? selectedFg : dimFg}
             onMouseDown={(e) => {
               e.stopPropagation();
+              store.setModalError(null);
               setSourceImport(false);
             }}
           >
             {[`${!sourceImport ? "[x]" : "[ ]"} New (empty) repository`]}
           </text>
           <text
-            fg={sourceImport ? SELECTED : DIM_FG}
+            fg={sourceImport ? selectedFg : dimFg}
             onMouseDown={(e) => {
               e.stopPropagation();
+              store.setModalError(null);
               setSourceImport(true);
             }}
           >
@@ -188,10 +206,11 @@ export function CreateModal({ store }: { store: Store }) {
               key="step-source-dir"
               focused
               value={fromDir}
-              onInput={(value) => setFromDir(value)}
-              onSubmit={() => {
-                if (fromDir.trim().length > 0) advanceFromSource();
+              onInput={(value) => {
+                setFromDir(value);
+                if (snapshot.modalError !== null) store.setModalError(null);
               }}
+              onSubmit={advanceFromSource}
               width="100%"
             />
           ) : null}
@@ -206,7 +225,7 @@ export function CreateModal({ store }: { store: Store }) {
             keyOf={(row) => row.label}
             labelOf={(row) => row.label}
             fgOf={(row, isCursor) =>
-              isCursor ? theme.cursorFg() : selectedOrg === row.org ? SELECTED : theme.normal()
+              isCursor ? theme.cursorFg() : selectedOrg === row.org ? selectedFg : theme.normal()
             }
             onSelect={(_row, index) => setOrgCursor(index)}
             onActivate={() => advanceFromOrg()}
@@ -220,7 +239,10 @@ export function CreateModal({ store }: { store: Store }) {
             key="step-path"
             focused
             value={path}
-            onInput={setPath}
+            onInput={(val) => {
+              setPath(val);
+              setPathCustomized(true);
+            }}
             onSubmit={advanceFromPath}
             width="100%"
           />
@@ -242,7 +264,7 @@ export function CreateModal({ store }: { store: Store }) {
       {step === "visibility" ? (
         <>
           <text
-            fg={draft.isPrivate ? SELECTED : DIM_FG}
+            fg={draft.isPrivate ? selectedFg : dimFg}
             onMouseDown={(e) => {
               e.stopPropagation();
               store.setModal({
@@ -255,7 +277,7 @@ export function CreateModal({ store }: { store: Store }) {
             {`[${draft.isPrivate ? "x" : " "}] Private`}
           </text>
           <text
-            fg={!draft.isPrivate ? SELECTED : DIM_FG}
+            fg={!draft.isPrivate ? selectedFg : dimFg}
             onMouseDown={(e) => {
               e.stopPropagation();
               store.setModal({
@@ -272,7 +294,7 @@ export function CreateModal({ store }: { store: Store }) {
       <box flexDirection="row" gap={2} marginTop={1}>
         {step !== "name" ? (
           <text
-            fg={theme.dim()}
+            fg={dimFg}
             onMouseDown={(e) => {
               e.stopPropagation();
               goBack();
@@ -283,7 +305,7 @@ export function CreateModal({ store }: { store: Store }) {
         ) : null}
         {step === "visibility" ? (
           <text
-            fg={theme.success()}
+            fg={selectedFg}
             onMouseDown={(e) => {
               e.stopPropagation();
               void store.submitCreate({
@@ -300,7 +322,7 @@ export function CreateModal({ store }: { store: Store }) {
           </text>
         ) : (
           <text
-            fg={theme.success()}
+            fg={selectedFg}
             onMouseDown={(e) => {
               e.stopPropagation();
               if (step === "name") advanceFromName();
@@ -314,7 +336,7 @@ export function CreateModal({ store }: { store: Store }) {
           </text>
         )}
         <text
-          fg={theme.dim()}
+          fg={dimFg}
           onMouseDown={(e) => {
             e.stopPropagation();
             store.closeModal();

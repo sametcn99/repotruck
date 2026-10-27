@@ -19,6 +19,7 @@ import { getActualCasingOnDisk, repoKeyEquals } from "./fsUtils.ts";
 import { moveDir } from "./mover.ts";
 import { type ParsedGitUrl, parseGitUrl } from "./singleCloner.ts";
 import { loadWorkspace, toPosixRelative, updateWorkspace, upsertInventory } from "./workspace.ts";
+import { inspectGitDotEntry, isLinkedWorktree } from "./worktree.ts";
 
 export interface ReorganizeJournalMove {
   key: string;
@@ -155,7 +156,11 @@ async function scanForRepos(root: string): Promise<DiscoveredRepo[]> {
       if (!item.isDirectory()) continue;
       if (item.name === "node_modules" || item.name.startsWith(".")) continue;
       const full = path.join(dir, item.name);
-      if (existsSync(path.join(full, ".git"))) {
+      const gitDot = inspectGitDotEntry(full);
+      if (gitDot.kind === "worktree") {
+        continue;
+      }
+      if (gitDot.kind === "repo") {
         const relativePath = toPosixRelative(root, full);
         let parsed: ParsedGitUrl | null = null;
         try {
@@ -230,17 +235,14 @@ async function resumeReorganize(
   for (const move of journal.moves) {
     const isCaseOnly = move.from.toLowerCase() === move.to.toLowerCase() && move.from !== move.to;
 
-    // 1. Check for in-flight case-only crash: tmpPath exists on disk
     if (move.tmpPath) {
       const tmpAbs = path.join(root, ...move.tmpPath.split("/"));
       if (existsFn(tmpAbs)) {
         const fromAbs = path.join(root, ...move.from.split("/"));
         try {
           moveFn(tmpAbs, fromAbs);
-          // Rolled back to from; move is pending/uncompleted
           result.skipped.push({ key: move.key, reason: "interrupted move rolled back to source" });
         } catch (err) {
-          // M4: If rollback fails, record result.failed with clear message
           result.failed.push({
             key: move.key,
             message: `failed to roll back in-flight move from ${move.tmpPath} to ${move.from}: ${firstErrorLine(err)}`,
@@ -250,7 +252,6 @@ async function resumeReorganize(
       }
     }
 
-    // 2. Check if destination exists on disk
     if (isCaseOnly) {
       const actual = getActualCasingOnDisk(root, move.to, undefined, existsFn);
       if (actual === move.to) {
@@ -271,7 +272,6 @@ async function resumeReorganize(
       continue;
     }
 
-    // 3. Otherwise source still on disk, or missing
     const srcAbs = path.join(root, ...move.from.split("/"));
     if (existsFn(srcAbs)) {
       result.skipped.push({ key: move.key, reason: "pending move left at source" });
@@ -280,9 +280,6 @@ async function resumeReorganize(
     }
   }
 
-  // Atomically reconcile workspace config to match disk truth.
-  // Note: config.preset is NOT changed on resume.
-  // Unfinished adopted (scan) repos are NOT added to inventory.
   const moveMap = new Map(successfulMoves.map((m) => [m.key.toLowerCase(), m.to] as const));
   const oldPathsByKey = new Map(journal.moves.map((m) => [m.key.toLowerCase(), m.from] as const));
 
@@ -345,7 +342,6 @@ export async function reorganizeWorkspace(
     throw new Error("preset is required for reorganization");
   }
 
-  // Check if an existing journal is already present (prevent race/corruption)
   if (existsFn(reorganizeJournalPath(root))) {
     throw new Error(
       `unfinished reorganize in progress in ${root}; run 'repotruck reorganize --resume' or 'repotruck doctor --fix'`,
@@ -392,6 +388,11 @@ export async function reorganizeWorkspace(
       continue;
     }
 
+    if (options.existsSyncImpl === undefined && isLinkedWorktree(srcAbs)) {
+      result.skipped.push({ key: entry.key, reason: "linked git worktree kept" });
+      continue;
+    }
+
     const isExactSame = entry.relativePath === targetRel;
     const isCaseOnly = entry.relativePath.toLowerCase() === targetRel.toLowerCase() && !isExactSame;
 
@@ -400,7 +401,6 @@ export async function reorganizeWorkspace(
       continue;
     }
 
-    // Critical ordering: only check collision / existsSync if NOT case-only
     if (!isCaseOnly) {
       const occupant = occupied.get(targetRel.toLowerCase());
       if (occupant !== undefined && occupant !== entry.key) {
@@ -428,7 +428,6 @@ export async function reorganizeWorkspace(
     return result;
   }
 
-  // Write initial journal atomically before any disk modification
   const journal: ReorganizeJournal = {
     version: 1,
     preset: newPreset,
@@ -446,7 +445,6 @@ export async function reorganizeWorkspace(
     const journalEntry = journal.moves.find((m) => m.key === plan.entry.key);
     try {
       if (plan.isCaseOnly) {
-        // Step 1: Compute tmpRel and write to journal BEFORE phase 1 rename (Item 6)
         const tmpRel = `${plan.entry.relativePath}.tmp-${randomUUID().slice(0, 8)}`;
         const tmpAbs = path.join(root, ...tmpRel.split("/"));
         if (journalEntry) {
@@ -454,14 +452,11 @@ export async function reorganizeWorkspace(
           writeReorganizeJournalAtomically(root, journal);
         }
 
-        // Phase 1: move to tmp
         moveFn(plan.srcAbs, tmpAbs);
 
-        // Phase 2: move from tmp to destination
         try {
           moveFn(tmpAbs, plan.destAbs);
         } catch (phase2Error) {
-          // F2: Rollback tmp to srcAbs
           try {
             moveFn(tmpAbs, plan.srcAbs);
             if (journalEntry) {
@@ -476,7 +471,6 @@ export async function reorganizeWorkspace(
           throw phase2Error;
         }
 
-        // Clear tmpPath and mark done
         if (journalEntry) {
           journalEntry.tmpPath = undefined;
           journalEntry.status = "done";

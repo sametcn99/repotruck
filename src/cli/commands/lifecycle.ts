@@ -1,16 +1,9 @@
 import type { Command } from "commander";
 import { archiveRepo, deleteRepo, forgetRepo, moveRepo, pruneRepos } from "../../core/repos.ts";
 import { resolveGithubBaseUrl } from "../../services/settings.ts";
-import {
-  buildGithub,
-  type CliContext,
-  exitFail,
-  requireAuth,
-  requireExistingRoot,
-  runAction,
-} from "../shared.ts";
+import { type CliContext, exitFail, requireExistingRoot, runAction } from "../shared.ts";
 
-export function register(program: Command, _ctx: CliContext): void {
+export function register(program: Command, ctx: CliContext): void {
   program
     .command("move")
     .description("Move a tracked repository to a custom path and mark it as manually placed.")
@@ -27,7 +20,7 @@ export function register(program: Command, _ctx: CliContext): void {
           emit: (message) => process.stdout.write(`${message}\n`),
         });
         if (!result.ok) exitFail(result.message);
-        process.stdout.write(`✓ ${result.message}\n`);
+        process.stdout.write(`\u2713 ${result.message}\n`);
       });
     });
 
@@ -47,7 +40,7 @@ export function register(program: Command, _ctx: CliContext): void {
         const root = await requireExistingRoot(options.dir);
         const result = await forgetRepo(root, ref);
         if (!result.ok) exitFail(result.message);
-        process.stdout.write(`✓ ${result.message}\n`);
+        process.stdout.write(`\u2713 ${result.message}\n`);
       });
     });
 
@@ -68,9 +61,9 @@ export function register(program: Command, _ctx: CliContext): void {
         await runAction(
           async () => {
             const root = await requireExistingRoot(options.dir);
-            const auth = await requireAuth();
+            const auth = await ctx.requireAuth();
             const baseUrl = await resolveGithubBaseUrl(process.env, options.baseUrl);
-            const github = buildGithub(auth.token, baseUrl);
+            const github = ctx.buildGithub(auth.token, baseUrl);
             const result = await pruneRepos(root, github, {
               dryRun: options.dryRun === true,
             });
@@ -93,7 +86,7 @@ export function register(program: Command, _ctx: CliContext): void {
               process.stdout.write(`${line}\n`);
             }
             if (!result.ok) exitFail(result.message);
-            process.stdout.write(`✓ ${result.message}\n`);
+            process.stdout.write(`\u2713 ${result.message}\n`);
           },
           { command: "prune", json: options.json },
         );
@@ -119,7 +112,7 @@ export function register(program: Command, _ctx: CliContext): void {
           yes: options.yes === true,
         });
         if (!result.ok) exitFail(result.message);
-        process.stdout.write(`✓ ${result.message}\n`);
+        process.stdout.write(`\u2713 ${result.message}\n`);
       });
     });
 
@@ -138,12 +131,12 @@ export function register(program: Command, _ctx: CliContext): void {
     .action(async (ref: string, options: { dir?: string; baseUrl?: string }) => {
       await runAction(async () => {
         const root = await requireExistingRoot(options.dir);
-        const auth = await requireAuth();
+        const auth = await ctx.requireAuth();
         const baseUrl = await resolveGithubBaseUrl(process.env, options.baseUrl);
-        const github = buildGithub(auth.token, baseUrl);
+        const github = ctx.buildGithub(auth.token, baseUrl);
         const result = await archiveRepo(root, ref, github);
         if (!result.ok) exitFail(result.message);
-        process.stdout.write(`✓ ${result.message}\n`);
+        process.stdout.write(`\u2713 ${result.message}\n`);
       });
     });
 }

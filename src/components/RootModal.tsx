@@ -3,20 +3,19 @@ import { ModalShell } from "./ModalShell.tsx";
 import type { Store, StoreSnapshot } from "./store.ts";
 import { theme } from "./theme.ts";
 
-const ACCENT_COLOR = theme.launcher();
-
 export function RootModal({ store }: { store: Store }) {
   const snapshot: StoreSnapshot = useSyncExternalStore(store.subscribe, store.getSnapshot);
   const modal = snapshot.modal;
   const effective = modal !== null && modal.type === "root" ? modal.effective : "";
   const fromOverride = modal !== null && modal.type === "root" ? modal.fromOverride : false;
   const [value, setValue] = useState(effective);
+  const accentColor = theme.launcher();
   return (
     <ModalShell
       store={store}
       title="Default root"
       hint="Enter Save · Escape Cancel"
-      borderColor={ACCENT_COLOR}
+      borderColor={accentColor}
     >
       <text>{`Effective root: ${effective} (${fromOverride ? "settings override" : "OS default"})`}</text>
       <text>New default root (absolute path, ~ allowed):</text>
@@ -31,7 +30,7 @@ export function RootModal({ store }: { store: Store }) {
       />
       <box flexDirection="row" gap={2} marginTop={1}>
         <text
-          fg={ACCENT_COLOR}
+          fg={accentColor}
           onMouseDown={(e) => {
             e.stopPropagation();
             void store.submitRoot(value);

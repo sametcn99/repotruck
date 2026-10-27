@@ -10,26 +10,37 @@ export function registerSearchTools(server: McpServer, ctx: ToolContext): void {
   server.registerTool(
     "repotruck_search_code",
     {
-      title: "Search code symbols",
+      title: "Search code symbols or text",
       description:
-        "Search an indexed symbol name (substring, case-insensitive) across every tracked repository in a workspace, exactly like `repotruck search-code`: a tree-sitter symbol index over ts/tsx/js/python/go/rust sources returning repo:path:line hits with symbol kind and export status. The first search builds the index (~3 MB per second); later searches reuse it unless rebuild is set. Read-only.",
+        "Search an indexed symbol name (or raw source lines when text=true) across every tracked repository in a workspace, exactly like `repotruck search-code`: a tree-sitter symbol index over ts/tsx/js/python/go/rust sources returning repo:path:line hits with symbol kind and export status. Read-only.",
       annotations: { readOnlyHint: true, idempotentHint: true },
       inputSchema: z.object({
-        pattern: z.string().min(1).describe("Symbol name substring to match (case-insensitive)"),
+        pattern: z
+          .string()
+          .min(1)
+          .describe("Symbol name or line text substring/regex to match (case-insensitive)"),
         root: rootParam,
         kind: z
           .enum(["function", "class", "interface", "type", "enum", "method", "const"])
           .optional()
-          .describe("Only this symbol kind"),
+          .describe("Only this symbol kind (not used when text=true)"),
         lang: z
           .enum(["ts", "tsx", "js", "py", "go", "rs"])
           .optional()
           .describe("Only this source language (py = python, rs = rust)"),
         limit: z.number().int().positive().optional().describe("Max matches (default: all)"),
         rebuild: z.boolean().optional().describe("Force a full index rebuild before searching"),
+        regex: z
+          .boolean()
+          .optional()
+          .describe("Treat pattern as a case-insensitive regular expression"),
+        text: z
+          .boolean()
+          .optional()
+          .describe("Search raw source lines instead of AST symbol declarations"),
       }),
     },
-    async ({ pattern, root: rootArg, kind, lang, limit, rebuild }) =>
+    async ({ pattern, root: rootArg, kind, lang, limit, rebuild, regex, text }) =>
       guarded(async () => {
         const root = await requireWorkspaceRoot(rootArg);
         const config = await loadWorkspace(root, undefined, env);
@@ -41,6 +52,8 @@ export function registerSearchTools(server: McpServer, ctx: ToolContext): void {
           lang,
           limit,
           rebuild: rebuild === true,
+          regex: regex === true,
+          text: text === true,
         });
         return ok({
           root,

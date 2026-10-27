@@ -31,6 +31,11 @@ export function resolveThemeName(
   return "default";
 }
 
+export function cycleThemeName(current: ThemeName): ThemeName {
+  const idx = THEME_NAMES.indexOf(current);
+  return THEME_NAMES[(idx + 1) % THEME_NAMES.length] ?? "default";
+}
+
 export interface Palette {
   dim: string;
   normal: string;
@@ -113,7 +118,7 @@ const ENV = (globalThis as { process?: { env?: Record<string, string | undefined
 
 let active: ThemeName = resolveThemeName(ENV?.REPOTRUCK_THEME);
 
-/** Switches the active palette; called once at dashboard startup. */
+/** Switches the active palette dynamically across all TUI components. */
 export function activateTheme(name: ThemeName): void {
   if (PALETTES[name] !== undefined) active = name;
 }
@@ -140,8 +145,6 @@ export const theme = {
   success: (): Fg => c("success"),
   info: (): Fg => c("info"),
   toast: (): Fg => c("toast"),
-  // Warm accent for the launch-flavored modals (open-in-app, alias, root,
-  // start preview). Same value as the toast color but a distinct semantic.
   launcher: (): Fg => c("launcher"),
   phaseColor: (phase: "CLONING" | "PULLING" | "DONE" | "FAILED"): Fg => {
     if (phase === "CLONING") return c("warning");

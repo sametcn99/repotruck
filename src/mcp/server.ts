@@ -1,6 +1,6 @@
 import { createServer } from "node:http";
 import { StdioServerTransport } from "@modelcontextprotocol/server/stdio";
-import { createToolContext } from "./toolContext.ts";
+import { createToolContext, type ToolContext } from "./toolContext.ts";
 
 export type { ProgressSink } from "./toolHelpers.ts";
 // Re-exported helpers that previously lived in this module (tests and external
@@ -34,6 +34,8 @@ export interface McpServerOptions {
   version?: string;
   /** GitHub Enterprise base URL override (same as the CLI's --base-url). */
   baseUrl?: string;
+  /** Optional overrides for testing tool behaviors hermetically without real GitHub credentials. */
+  toolContextOverrides?: Partial<ToolContext>;
 }
 
 const _ROOT_PARAM_DESCRIPTION =
@@ -43,7 +45,8 @@ import { registerWorkspaceResources, registerWorkspaceTools } from "./tools/work
 
 export async function createRepotruckMcpServer(options: McpServerOptions = {}): Promise<McpServer> {
   const version = options.version ?? (await readVersion());
-  const ctx = await createToolContext(options);
+  const baseCtx = await createToolContext(options);
+  const ctx: ToolContext = { ...baseCtx, ...(options.toolContextOverrides ?? {}) };
   const server = new McpServer({ name: "repotruck", version });
   registerWorkspaceTools(server, ctx);
   registerReposTools(server, ctx);

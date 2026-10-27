@@ -27,6 +27,7 @@ import {
   readWorkspaceConfig,
   writeWorkspaceConfig,
 } from "./workspaceRegistry.ts";
+import { findLinkedWorktrees } from "./worktree.ts";
 
 export interface InventoryRepoInput extends CategoryInput {
   owner: string;
@@ -101,12 +102,23 @@ export async function updateWorkspace<T = void>(
 
       const resolved: RepotruckConfig = { ...nextConfig, root };
       await writeWorkspaceConfig(root, resolved, env);
+      let worktrees: Awaited<ReturnType<typeof findLinkedWorktrees>> = [];
+      try {
+        worktrees = await findLinkedWorktrees(root, 4);
+      } catch {
+        worktrees = [];
+      }
       await writeAgentsMd(
         root,
         resolved.repos,
         resolved.preset,
         resolved.lastSync,
         resolved.aliases,
+        undefined,
+        {
+          pinned: resolved.pinned,
+          worktrees,
+        },
       );
       return { config: resolved, result };
     },

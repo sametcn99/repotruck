@@ -1,4 +1,5 @@
 import type { MouseEvent } from "@opentui/core";
+import { useTerminalDimensions } from "@opentui/react";
 import { type ReactNode, useRef, useSyncExternalStore } from "react";
 import type { Store } from "./store.ts";
 import { theme } from "./theme.ts";
@@ -36,6 +37,7 @@ export function ModalShell({
       borderColor={borderColor ?? theme.focusBorder()}
       flexDirection="column"
       flexGrow={1}
+      overflow="hidden"
       padding={1}
       gap={gap}
       onMouseDown={(e) => {
@@ -46,23 +48,33 @@ export function ModalShell({
       }}
       onMouseScroll={onMouseScroll}
     >
-      <box flexDirection="row" justifyContent="space-between" width="100%">
-        <text fg={borderColor ?? theme.focusBorder()}>{title}</text>
+      <box flexDirection="row" justifyContent="space-between" width="100%" flexShrink={0}>
+        <text fg={borderColor ?? theme.focusBorder()} wrapMode="none" flexShrink={0}>
+          {title}
+        </text>
         <text
           fg={theme.dim()}
+          wrapMode="none"
+          flexShrink={0}
           onMouseDown={(e) => {
             e.stopPropagation();
             handleClose();
           }}
         >
-          {"[× Close]"}
+          {"[\u00d7 Close]"}
         </text>
       </box>
       {children}
-      {snapshot.modalError !== null ? <text fg={theme.error()}>{snapshot.modalError}</text> : null}
+      {snapshot.modalError !== null ? (
+        <text fg={theme.error()} wrapMode="none" flexShrink={0}>
+          {snapshot.modalError}
+        </text>
+      ) : null}
       {hint !== null ? (
         <text
           fg={theme.dim()}
+          wrapMode="none"
+          flexShrink={0}
           onMouseDown={(e) => {
             e.stopPropagation();
             handleClose();
@@ -75,9 +87,11 @@ export function ModalShell({
   );
 }
 
-const CURSOR_FG = theme.cursorFg();
-const CURSOR_BG = theme.cursorBg();
-const NORMAL_FG = theme.normal();
+function clampModalRow(text: string, maxCols: number): string {
+  const clean = text.replace(/[\r\n\t]+/g, " ");
+  if (clean.length <= maxCols) return clean;
+  return `${clean.slice(0, Math.max(1, maxCols - 1))}\u2026`;
+}
 
 /**
  * Cursor list rendering primitive: prefixes the cursor row with "> ", applies
@@ -100,7 +114,12 @@ export function SelectList<T>({
   onSelect?: (item: T, index: number) => void;
   onActivate?: (item: T, index: number) => void;
 }) {
+  const { width } = useTerminalDimensions();
+  const maxCols = Math.max(12, width - 6);
   const lastClickRef = useRef<{ index: number; time: number } | null>(null);
+  const cursorFg = theme.cursorFg();
+  const cursorBg = theme.cursorBg();
+  const normalFg = theme.normal();
 
   const handleClick = (item: T, index: number) => {
     const now = Date.now();
@@ -118,12 +137,14 @@ export function SelectList<T>({
     <>
       {items.map((item, index) => {
         const isCursor = index === cursor;
-        const fg = fgOf !== undefined ? fgOf(item, isCursor) : isCursor ? CURSOR_FG : NORMAL_FG;
+        const fg = fgOf !== undefined ? fgOf(item, isCursor) : isCursor ? cursorFg : normalFg;
         return (
           <text
             key={keyOf(item, index)}
             fg={fg}
-            bg={isCursor ? CURSOR_BG : undefined}
+            bg={isCursor ? cursorBg : undefined}
+            wrapMode="none"
+            flexShrink={0}
             onMouseDown={(e) => {
               if (e.button === 0) {
                 e.stopPropagation();
@@ -131,7 +152,7 @@ export function SelectList<T>({
               }
             }}
           >
-            {`${isCursor ? "> " : "  "}${labelOf(item)}`}
+            {clampModalRow(`${isCursor ? "> " : "  "}${labelOf(item)}`, maxCols)}
           </text>
         );
       })}

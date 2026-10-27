@@ -7,6 +7,7 @@ import { CreateModal } from "./CreateModal.tsx";
 import { DetailModal } from "./DetailModal.tsx";
 import { HelpModal } from "./HelpModal.tsx";
 import { MoveModal } from "./MoveModal.tsx";
+import { OmnibarModal } from "./OmnibarModal.tsx";
 import { OpenModal } from "./OpenModal.tsx";
 import { ReorganizeModal } from "./ReorganizeModal.tsx";
 import { RepoList } from "./RepoList.tsx";
@@ -21,8 +22,6 @@ import { WorkspacePicker } from "./WorkspacePicker.tsx";
 import { WorkspaceSkeleton } from "./WorkspaceSkeleton.tsx";
 import { repoKeyOf, repoViewportRows, sidebarWidth, statusWidth } from "./windowing.ts";
 
-const DIM_FG = theme.dim();
-
 // A second q inside this window while a sync runs actually quits.
 const QUIT_CONFIRM_WINDOW_MS = 3000;
 
@@ -30,16 +29,11 @@ function isKey(key: { name: string; sequence: string }, match: string): boolean 
   return key.name === match || key.sequence === match;
 }
 
-function isDeleteKey(key: { name: string; sequence: string; shift?: boolean }): boolean {
-  return key.sequence === "D" || (key.shift === true && key.name === "d");
-}
-
-function isReorganizeKey(key: { name: string; sequence: string; shift?: boolean }): boolean {
-  return key.sequence === "R" || (key.shift === true && key.name === "r");
-}
-
-function isSortDirectionKey(key: { name: string; sequence: string; shift?: boolean }): boolean {
-  return key.sequence === "S" || (key.shift === true && key.name === "s");
+function isShiftLetter(
+  key: { name: string; sequence: string; shift?: boolean },
+  upper: string,
+): boolean {
+  return key.sequence === upper || (key.shift === true && key.name === upper.toLowerCase());
 }
 
 function trimToWidth(line: string, innerWidth: number): string {
@@ -52,7 +46,15 @@ export function buildFooterLines(width: number, runningSummary: string | null = 
   if (runningSummary !== null) {
     return [trimToWidth(` ${runningSummary}`, innerWidth)];
   }
-  const items = ["[Tab] Focus", "[Space] Select", "[?] Help", "[q] Quit"];
+  const items = [
+    "[Tab] Focus",
+    "[Space] Select",
+    "[?] Help",
+    "[q] Quit",
+    "[:] Omnibar",
+    "[/] Search",
+    "[f] Health",
+  ];
 
   let line = "";
   for (const item of items) {
@@ -121,11 +123,13 @@ function renderModal(
     case "detail":
       return <DetailModal store={store} />;
     case "confirmDelete":
-      return <ConfirmModal store={store} />;
     case "confirmUntrack":
+    case "confirmArchive":
       return <ConfirmModal store={store} />;
     case "reorganize":
       return <ReorganizeModal store={store} />;
+    case "omnibar":
+      return <OmnibarModal store={store} />;
     default:
       return assertUnreachable(modal);
   }
@@ -145,7 +149,7 @@ export function Dashboard({
   const [quitArmedAt, setQuitArmedAt] = useState(0);
 
   useEffect(() => {
-    void store.init();
+    void store.ensureInit();
   }, [store]);
 
   useEffect(() => {
@@ -217,22 +221,78 @@ export function Dashboard({
   useKeyboard((key) => {
     const current = store.getSnapshot();
     if (current.modal !== null) {
-      if (key.name === "escape") store.closeModal();
-      return;
-    }
-    if (isDeleteKey(key) && current.focus === "list") {
-      const repo = current.filteredRepos[current.cursor];
-      if (repo !== undefined) {
-        void store.openDeleteConfirm(`${repo.owner}/${repo.name}`);
+      if (key.name === "escape") {
+        if (current.modal.type === "search") {
+          store.clearSearch();
+        }
+        store.closeModal();
       }
       return;
     }
-    if (isReorganizeKey(key)) {
+    if (current.phase === "error") {
+      if (key.name === "q") handleQuit();
+      else if (key.name === "o") void store.enterOfflineMode();
+      else if (key.name === "r") void store.init();
+      return;
+    }
+    if ((key as { ctrl?: boolean }).ctrl === true && key.name === "k") {
+      store.openOmnibar("commands");
+      return;
+    }
+    if (key.sequence === ":") {
+      store.openOmnibar("commands");
+      return;
+    }
+    if (key.sequence === "@") {
+      store.openOmnibar("symbols");
+      return;
+    }
+    if (key.sequence === "#") {
+      store.openOmnibar("github");
+      return;
+    }
+    if (key.sequence === "!") {
+      store.openOmnibar("runner");
+      return;
+    }
+    if (isShiftLetter(key, "D") && current.focus === "list") {
+      void store.openSelectionDeleteConfirm();
+      return;
+    }
+    if (isShiftLetter(key, "A") && current.focus === "list") {
+      store.openSelectionArchiveConfirm();
+      return;
+    }
+    if (isShiftLetter(key, "P")) {
+      void store.togglePinSelection();
+      return;
+    }
+    if (isShiftLetter(key, "R")) {
       void store.openReorganizeModal();
       return;
     }
-    if (isSortDirectionKey(key)) {
+    if (isShiftLetter(key, "S")) {
       store.toggleSortDirection();
+      return;
+    }
+    if (isShiftLetter(key, "F") && current.rightPaneTab === "health") {
+      void store.runHealthDoctorFix();
+      return;
+    }
+    if (isShiftLetter(key, "G") && current.focus === "list") {
+      store.setCursor(current.filteredRepos.length - 1);
+      return;
+    }
+    if (key.sequence === "1") {
+      store.setRightPaneTab("activity");
+      return;
+    }
+    if (key.sequence === "2") {
+      store.setRightPaneTab("inspector");
+      return;
+    }
+    if (key.sequence === "3") {
+      store.setRightPaneTab("health");
       return;
     }
     if (key.name === "z") {
@@ -260,17 +320,20 @@ export function Dashboard({
         void store.openRootModal();
         return;
       case "p":
-        store.cyclePreset();
+        void store.cyclePreset();
+        return;
+      case "f":
+        store.cycleHealthFilter();
+        return;
+      case "t":
+        void store.cycleTheme();
         return;
       case "s":
         store.cycleSort();
         return;
       case "u":
         if (current.focus === "list") {
-          const repo = current.filteredRepos[current.cursor];
-          if (repo !== undefined) {
-            store.openUntrackConfirm(`${repo.owner}/${repo.name}`);
-          }
+          store.openSelectionUntrackConfirm();
         }
         return;
       case "i":
@@ -318,9 +381,9 @@ export function Dashboard({
       return;
     }
     if (current.focus === "sidebar") {
-      if (key.name === "up") {
+      if (key.name === "up" || key.sequence === "k") {
         store.moveSidebarCursor(-1);
-      } else if (key.name === "down") {
+      } else if (key.name === "down" || key.sequence === "j") {
         store.moveSidebarCursor(1);
       } else if (key.name === "space" || key.name === "return") {
         store.activateSidebarRow();
@@ -328,11 +391,11 @@ export function Dashboard({
       return;
     }
     if (current.focus === "list") {
-      if (key.name === "up") {
+      if (key.name === "up" || key.sequence === "k") {
         store.moveCursor(-1);
-      } else if (key.name === "down") {
+      } else if (key.name === "down" || key.sequence === "j") {
         store.moveCursor(1);
-      } else if (key.name === "home") {
+      } else if (key.name === "home" || key.sequence === "g") {
         store.setCursor(0);
       } else if (key.name === "end") {
         store.setCursor(current.filteredRepos.length - 1);
@@ -355,9 +418,9 @@ export function Dashboard({
       return;
     }
     if (current.focus === "status") {
-      if (key.name === "up") {
+      if (key.name === "up" || key.sequence === "k") {
         store.moveStatusScroll(1);
-      } else if (key.name === "down") {
+      } else if (key.name === "down" || key.sequence === "j") {
         store.moveStatusScroll(-1);
       }
     }
@@ -366,11 +429,12 @@ export function Dashboard({
   const login = snapshot.userLogin ?? "…";
   const reposCount =
     snapshot.phase === "loading" ? "discovering…" : `${snapshot.repos.length} repos`;
-  const header = `repotruck · ${login} (auth: ${snapshot.authMethod ?? "?"}) · preset: ${snapshot.preset} · root: ${snapshot.root} · ${reposCount}`;
+  const offlinePrefix = snapshot.offline ? "[OFFLINE] " : "";
+  const header = `${offlinePrefix}repotruck · ${login} (auth: ${snapshot.authMethod ?? "?"}) · preset: ${snapshot.preset} · root: ${snapshot.root} · ${reposCount}`;
+  const showCockpit = snapshot.modal === null || snapshot.modal.type === "search";
   const runningSummary =
-    snapshot.running && snapshot.modal === null
-      ? buildRunningSummary(snapshot.statuses, quitArmed)
-      : null;
+    snapshot.running && showCockpit ? buildRunningSummary(snapshot.statuses, quitArmed) : null;
+  const dimFg = theme.dim();
 
   return (
     <box flexDirection="column" flexGrow={1} width="100%">
@@ -381,30 +445,61 @@ export function Dashboard({
         onMouseDown={(event) => {
           event.stopPropagation?.();
           if (event.x >= 35 && event.x <= 65) {
-            store.cyclePreset();
+            void store.cyclePreset();
           } else if (event.x > 65 && event.x <= 95) {
             void store.openRootModal();
           }
         }}
       >
-        <text fg={theme.accent()}>{buildHeaderLine(width, header)}</text>
+        <text fg={snapshot.offline ? theme.warning() : theme.accent()}>
+          {buildHeaderLine(width, header)}
+        </text>
       </box>
       {snapshot.phase === "loading" ? (
         <WorkspaceSkeleton width={width} height={height} preset={snapshot.preset} />
       ) : snapshot.phase === "error" ? (
-        <box flexGrow={1} flexDirection="column">
+        <box flexGrow={1} flexDirection="column" padding={1} gap={1}>
           <text fg={theme.error()}>{snapshot.errorMessage ?? "unknown error"}</text>
+          <box flexDirection="row" gap={3}>
+            <text
+              fg={theme.warning()}
+              onMouseDown={(e) => {
+                e.stopPropagation();
+                void store.enterOfflineMode();
+              }}
+            >
+              {"[o] Continue in Offline Mode (local repositories)"}
+            </text>
+            <text
+              fg={theme.accent()}
+              onMouseDown={(e) => {
+                e.stopPropagation();
+                void store.init();
+              }}
+            >
+              {"[r] Retry connection"}
+            </text>
+            <text
+              fg={dimFg}
+              onMouseDown={(e) => {
+                e.stopPropagation();
+                handleQuit();
+              }}
+            >
+              {"[q] Quit"}
+            </text>
+          </box>
         </box>
-      ) : snapshot.modal === null ? (
+      ) : showCockpit ? (
         <box flexDirection="row" flexGrow={1}>
           <Sidebar store={store} width={sidebarWidth(width)} />
           <RepoList store={store} />
           <StatusPanel store={store} width={statusWidth(width)} />
         </box>
-      ) : (
+      ) : snapshot.modal !== null ? (
         renderModal(snapshot.modal, store, onSuspendAndRun)
-      )}
-      {snapshot.updateToast !== null && snapshot.modal === null ? (
+      ) : null}
+      {snapshot.updateToast !== null && showCockpit ? (
         <box
           border
           borderColor={theme.toast()}
@@ -425,7 +520,7 @@ export function Dashboard({
         height={3}
         onMouseDown={(event) => {
           event.stopPropagation?.();
-          if (snapshot.running && snapshot.modal === null) {
+          if (snapshot.running && showCockpit) {
             handleQuit();
             return;
           }
@@ -437,11 +532,17 @@ export function Dashboard({
             store.openHelpModal();
           } else if (event.x <= 60) {
             handleQuit();
+          } else if (event.x <= 75) {
+            store.openOmnibar("commands");
+          } else if (event.x <= 88) {
+            store.openSearchModal();
+          } else {
+            store.cycleHealthFilter();
           }
         }}
       >
         {buildFooterLines(width, runningSummary).map((line) => (
-          <text key={line} fg={DIM_FG}>
+          <text key={line} fg={dimFg}>
             {line}
           </text>
         ))}

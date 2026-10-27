@@ -2,18 +2,27 @@ import type { McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod/v4";
 import { getWorkspaceStatus } from "../../core/inspect.ts";
 import { listAliases, resolveRepoRef } from "../../services/launcher.ts";
+import { resolveProfileKeys } from "../../services/profiles.ts";
 import { loadWorkspace } from "../../services/workspace.ts";
 import type { ToolContext } from "../toolContext.ts";
-import { aliasesByPath, fail, guarded, ok, repoView, rootParam } from "../toolHelpers.ts";
+import {
+  aliasesByPath,
+  fail,
+  guarded,
+  ok,
+  pinnedKeySet,
+  repoView,
+  rootParam,
+} from "../toolHelpers.ts";
 
 export function registerReposTools(server: McpServer, ctx: ToolContext): void {
-  const { env, requireWorkspaceRoot } = ctx;
+  const { env, requireWorkspaceRoot, requireAuth } = ctx;
   server.registerTool(
     "repotruck_list_repos",
     {
       title: "List repositories",
       description:
-        "List the repositories tracked by a workspace, with workspace-relative and absolute paths, category (source/forks/archived), language, updatedAt, custom flag and aliases. Optional filters: internal vs community, category, custom. Requires an initialized workspace.",
+        "List the repositories tracked by a workspace, with workspace-relative and absolute paths, category (source/forks/archived), language, updatedAt, custom flag, pinned status and aliases. Optional filters: internal vs community, category, custom, pinned, profile. Requires an initialized workspace.",
       annotations: { readOnlyHint: true, idempotentHint: true },
       inputSchema: z.object({
         root: rootParam,
@@ -29,6 +38,15 @@ export function registerReposTools(server: McpServer, ctx: ToolContext): void {
           .boolean()
           .optional()
           .describe("Only manually placed (true) or preset-placed (false) repositories"),
+        pinned: z
+          .boolean()
+          .optional()
+          .describe("Only pinned (true) or only unpinned (false) repositories"),
+        profile: z
+          .string()
+          .min(1)
+          .optional()
+          .describe("Only repositories belonging to this named workspace profile"),
         limit: z
           .number()
           .int()
@@ -44,15 +62,31 @@ export function registerReposTools(server: McpServer, ctx: ToolContext): void {
           .describe("Skip the first N repositories of the filtered list (default 0)"),
       }),
     },
-    async ({ root: rootArg, internal, category, custom, limit, offset }) =>
+    async ({ root: rootArg, internal, category, custom, pinned, profile, limit, offset }) =>
       guarded(async () => {
         const root = await requireWorkspaceRoot(rootArg);
-        const config = await loadWorkspace(root);
+        const config = await loadWorkspace(root, undefined, env);
         const aliases = aliasesByPath(config);
+        const pinnedKeys = pinnedKeySet(config);
         let repos = config.repos;
         if (internal !== undefined) repos = repos.filter((repo) => repo.internal === internal);
         if (category !== undefined) repos = repos.filter((repo) => repo.category === category);
         if (custom !== undefined) repos = repos.filter((repo) => (repo.custom === true) === custom);
+        if (pinned !== undefined) {
+          repos = repos.filter(
+            (repo) => pinnedKeys.has(`${repo.owner}/${repo.name}`.toLowerCase()) === pinned,
+          );
+        }
+        if (profile !== undefined) {
+          const profileKeys = resolveProfileKeys(config, profile);
+          if (profileKeys === null) {
+            return fail(`profile not found: ${profile}`);
+          }
+          const profileSet = new Set(profileKeys.map((k) => k.toLowerCase()));
+          repos = repos.filter((repo) =>
+            profileSet.has(`${repo.owner}/${repo.name}`.toLowerCase()),
+          );
+        }
         const totalCount = repos.length;
         const start = offset ?? 0;
         const page = repos.slice(start, start + (limit ?? 500));
@@ -63,7 +97,7 @@ export function registerReposTools(server: McpServer, ctx: ToolContext): void {
           totalCount,
           offset: start,
           ...(start + page.length < totalCount ? { nextOffset: start + page.length } : {}),
-          repos: page.map((entry) => repoView(root, entry, aliases)),
+          repos: page.map((entry) => repoView(root, entry, aliases, pinnedKeys)),
         });
       }),
   );
@@ -84,8 +118,9 @@ export function registerReposTools(server: McpServer, ctx: ToolContext): void {
     async ({ query, root: rootArg, limit }) =>
       guarded(async () => {
         const root = await requireWorkspaceRoot(rootArg);
-        const config = await loadWorkspace(root);
+        const config = await loadWorkspace(root, undefined, env);
         const aliases = aliasesByPath(config);
+        const pinnedKeys = pinnedKeySet(config);
         const needle = query.toLowerCase();
         const matches = config.repos.filter((entry) => {
           const haystacks = [
@@ -104,7 +139,7 @@ export function registerReposTools(server: McpServer, ctx: ToolContext): void {
           query,
           count: capped.length,
           totalCount: matches.length,
-          repos: capped.map((entry) => repoView(root, entry, aliases)),
+          repos: capped.map((entry) => repoView(root, entry, aliases, pinnedKeys)),
         });
       }),
   );
@@ -124,7 +159,7 @@ export function registerReposTools(server: McpServer, ctx: ToolContext): void {
     async ({ ref, root: rootArg }) =>
       guarded(async () => {
         const root = await requireWorkspaceRoot(rootArg);
-        const config = await loadWorkspace(root);
+        const config = await loadWorkspace(root, undefined, env);
         const match = resolveRepoRef(config, ref);
         if (match === null) {
           const aliases = listAliases(config).map((item) => item.alias);
@@ -144,10 +179,11 @@ export function registerReposTools(server: McpServer, ctx: ToolContext): void {
           );
         }
         const aliases = aliasesByPath(config);
+        const pinnedKeys = pinnedKeySet(config);
         return ok({
           ref,
           root,
-          repo: repoView(root, match.entry, aliases),
+          repo: repoView(root, match.entry, aliases, pinnedKeys),
         });
       }),
   );
@@ -157,14 +193,34 @@ export function registerReposTools(server: McpServer, ctx: ToolContext): void {
     {
       title: "Repository git status",
       description:
-        "Per-repository Git health for a workspace, exactly like `repotruck status`: for every tracked repository reports missing-on-disk, dirty or clean tree, ahead/behind counts against upstream, category, custom flag and aliases. Read-only.",
+        "Per-repository Git health for a workspace, exactly like `repotruck status`: for every tracked repository reports missing-on-disk, dirty or clean tree, ahead/behind counts against upstream, linked worktrees, category, custom flag, aliases, and optional diff details or remote PR/CI checks. Read-only.",
       annotations: { readOnlyHint: true, idempotentHint: true },
-      inputSchema: z.object({ root: rootParam }),
+      inputSchema: z.object({
+        root: rootParam,
+        detail: z.boolean().optional().describe("Include outgoing commits and per-file diff stats"),
+        pinned: z.boolean().optional().describe("Only inspect pinned repositories"),
+        profile: z
+          .string()
+          .min(1)
+          .optional()
+          .describe("Only inspect repositories in this named profile"),
+        remote: z
+          .boolean()
+          .optional()
+          .describe("Also query GitHub for open PR count and default-branch CI state"),
+      }),
     },
-    async ({ root: rootArg }) =>
+    async ({ root: rootArg, detail, pinned, profile, remote }) =>
       guarded(async () => {
         const root = await requireWorkspaceRoot(rootArg);
-        const result = await getWorkspaceStatus(root, env);
+        const github = remote ? (await requireAuth()).github : undefined;
+        const result = await getWorkspaceStatus(root, env, {
+          detail: detail === true,
+          pinned: pinned === true,
+          profile,
+          remote: remote === true,
+          github,
+        });
         return ok({ root, lastSync: result.lastSync, repos: result.repos });
       }),
   );

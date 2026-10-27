@@ -17,6 +17,50 @@ export interface RepoInfo {
   stars?: number | null;
 }
 
+export type CiState = "success" | "failure" | "pending" | "none" | "unknown";
+
+export interface RemoteRepoHealth {
+  defaultBranch: string | null;
+  openPrs: number;
+  ciState: CiState;
+}
+
+export interface DiscoverQueryOptions {
+  org?: string;
+  lang?: string;
+  minStars?: number;
+  topics?: readonly string[];
+  includeArchived?: boolean;
+  includeForks?: boolean;
+}
+
+export function buildDiscoverQuery(rawQuery: string, options: DiscoverQueryOptions = {}): string {
+  const parts: string[] = [];
+  const trimmed = rawQuery.trim();
+  if (trimmed.length > 0) parts.push(trimmed);
+  if (options.org && options.org.trim().length > 0) {
+    parts.push(`org:${options.org.trim()}`);
+  }
+  if (options.lang && options.lang.trim().length > 0) {
+    parts.push(`language:${options.lang.trim()}`);
+  }
+  if (options.minStars !== undefined) {
+    parts.push(`stars:>=${options.minStars}`);
+  }
+  for (const topic of options.topics ?? []) {
+    if (topic.trim().length > 0) {
+      parts.push(`topic:${topic.trim()}`);
+    }
+  }
+  if (!options.includeArchived && !/\barchived:(true|false)\b/i.test(trimmed)) {
+    parts.push("archived:false");
+  }
+  if (!options.includeForks && !/\bfork:(true|false|only)\b/i.test(trimmed)) {
+    parts.push("fork:false");
+  }
+  return parts.join(" ");
+}
+
 export interface CreateRepoOptions {
   org?: string;
   private: boolean;
@@ -49,8 +93,9 @@ export const ETAG_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 function isEtagCacheEntry(value: unknown): value is EtagCacheEntry {
   if (value === null || typeof value !== "object") return false;
   const entry = value as Partial<EtagCacheEntry>;
-  return typeof entry.etag === "string" && typeof entry.savedAt === "number";
+  return typeof entry.etag === stringType && typeof entry.savedAt === "number";
 }
+const stringType = "string";
 
 /**
  * A JSON-file-backed etag cache. Writes are batched in memory and flushed on a
@@ -97,7 +142,6 @@ export function fileEtagCache(
     const content = JSON.stringify(Object.fromEntries(entries));
     try {
       if (sync) {
-        // Only synchronous I/O completes from the process-exit handler.
         const tmp = `${file}.tmp-${process.pid}`;
         writeFileSync(tmp, content, "utf8");
         renameSync(tmp, file);
@@ -120,7 +164,6 @@ export function fileEtagCache(
     timer.unref?.();
   };
 
-  // One-shot CLI processes exit before the debounce fires; flush then.
   process.once("exit", () => persistNow(true));
 
   return {
@@ -204,6 +247,49 @@ export function orgLoginsFromMemberships(data: unknown): string[] {
     }
   }
   return logins;
+}
+
+export function deriveCiStateFromChecks(
+  checkRuns: readonly Record<string, unknown>[],
+  combinedStatusState: string | null,
+): CiState {
+  let hasFail = false;
+  let hasPending = false;
+  let hasSuccess = false;
+
+  for (const run of checkRuns) {
+    const status = typeof run.status === "string" ? run.status : "";
+    const conclusion = typeof run.conclusion === "string" ? run.conclusion : "";
+    if (status !== "completed") {
+      hasPending = true;
+      continue;
+    }
+    if (
+      conclusion === "failure" ||
+      conclusion === "timed_out" ||
+      conclusion === "action_required" ||
+      conclusion === "startup_failure"
+    ) {
+      hasFail = true;
+    } else if (conclusion === "success") {
+      hasSuccess = true;
+    }
+  }
+
+  if (combinedStatusState === "failure" || combinedStatusState === "error") {
+    hasFail = true;
+  } else if (combinedStatusState === "pending" && checkRuns.length === 0) {
+    // Note: GitHub returns "pending" with total_count=0 when no legacy commit statuses exist;
+    // callers only pass non-null combinedStatusState when total_count > 0.
+    hasPending = true;
+  } else if (combinedStatusState === "success") {
+    hasSuccess = true;
+  }
+
+  if (hasFail) return "failure";
+  if (hasPending) return "pending";
+  if (hasSuccess) return "success";
+  return "none";
 }
 
 export interface GitHubServiceDeps {
@@ -291,11 +377,8 @@ export class GitHubService implements GitHubRepoReader, GitHubRepoCreator {
   }
 
   async getRepo(owner: string, name: string): Promise<RepoInfo> {
-    // getRepo backs prune's per-repository existence checks; sending
-    // If-None-Match turns unchanged repositories into cheap 304s.
     const cacheKey = `repos/${owner.toLowerCase()}/${name.toLowerCase()}`;
     const cached = this.etagCache === undefined ? null : await this.etagCache.get(cacheKey);
-    // Octokit types every non-error status as 200; 304 arrives at runtime.
     const response = (await this.wrap(() =>
       this.octokit.request("GET /repos/{owner}/{repo}", {
         owner,
@@ -321,6 +404,66 @@ export class GitHubService implements GitHubRepoReader, GitHubRepoCreator {
       }
     }
     return info;
+  }
+
+  async getRepoRemoteHealth(owner: string, name: string): Promise<RemoteRepoHealth> {
+    const repoResp = await this.wrap(() =>
+      this.octokit.request("GET /repos/{owner}/{repo}", { owner, repo: name }),
+    );
+    const repoObj = (repoResp.data ?? {}) as Record<string, unknown>;
+    const defaultBranch = firstString(repoObj.default_branch) ?? "main";
+
+    const pullsResp = await this.wrap(() =>
+      this.octokit.request("GET /repos/{owner}/{repo}/pulls", {
+        owner,
+        repo: name,
+        state: "open",
+        per_page: 100,
+      }),
+    );
+    const openPrs = Array.isArray(pullsResp.data) ? pullsResp.data.length : 0;
+
+    let checkRuns: Record<string, unknown>[] = [];
+    try {
+      const checksResp = await this.wrap(() =>
+        this.octokit.request("GET /repos/{owner}/{repo}/commits/{ref}/check-runs", {
+          owner,
+          repo: name,
+          ref: defaultBranch,
+          per_page: 100,
+        }),
+      );
+      const rawRuns = (checksResp.data as { check_runs?: unknown } | null)?.check_runs;
+      if (Array.isArray(rawRuns)) {
+        checkRuns = rawRuns as Record<string, unknown>[];
+      }
+    } catch {
+      /* check-runs may be unavailable on older GHE or empty repos */
+    }
+
+    let combinedStatusState: string | null = null;
+    try {
+      const statusResp = await this.wrap(() =>
+        this.octokit.request("GET /repos/{owner}/{repo}/commits/{ref}/status", {
+          owner,
+          repo: name,
+          ref: defaultBranch,
+        }),
+      );
+      const statusData = (statusResp.data ?? {}) as Record<string, unknown>;
+      const totalCount = typeof statusData.total_count === "number" ? statusData.total_count : 0;
+      if (totalCount > 0 && typeof statusData.state === "string") {
+        combinedStatusState = statusData.state;
+      }
+    } catch {
+      /* empty repository or missing commit */
+    }
+
+    return {
+      defaultBranch,
+      openPrs,
+      ciState: deriveCiStateFromChecks(checkRuns, combinedStatusState),
+    };
   }
 
   async archiveRepo(owner: string, name: string): Promise<RepoInfo> {

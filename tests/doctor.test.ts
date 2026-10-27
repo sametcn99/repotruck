@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -11,6 +11,35 @@ import {
 } from "../src/services/reorganizer.ts";
 import { readWorkspaceConfig, writeWorkspaceConfig } from "../src/services/workspaceRegistry.ts";
 
+const tempDirs: string[] = [];
+let savedConfigDir: string | undefined;
+
+function makeTempDir(prefix: string): string {
+  const dir = mkdtempSync(path.join(tmpdir(), prefix));
+  tempDirs.push(dir);
+  return dir;
+}
+
+beforeAll(() => {
+  savedConfigDir = process.env.REPOTRUCK_CONFIG_DIR;
+  process.env.REPOTRUCK_CONFIG_DIR = makeTempDir("repotruck-doctor-cfg-");
+});
+
+afterAll(() => {
+  if (savedConfigDir === undefined) {
+    delete process.env.REPOTRUCK_CONFIG_DIR;
+  } else {
+    process.env.REPOTRUCK_CONFIG_DIR = savedConfigDir;
+  }
+  for (const dir of tempDirs) {
+    try {
+      rmSync(dir, { recursive: true, force: true });
+    } catch {
+      /* best effort */
+    }
+  }
+});
+
 const healthyBaseDeps = {
   whichImpl: async (cmd: string) => `/usr/bin/${cmd}`,
   execImpl: async (cmd: string) => ({ stdout: `${cmd} version 2.40.0` }),
@@ -18,7 +47,7 @@ const healthyBaseDeps = {
 };
 
 async function createTestWorkspace(name: string): Promise<string> {
-  const dir = mkdtempSync(path.join(tmpdir(), `repotruck-doctor-${name}-`));
+  const dir = makeTempDir(`repotruck-doctor-${name}-`);
   const config: RepotruckConfig = {
     version: 1,
     root: dir,
@@ -131,28 +160,28 @@ describe("doctor diagnostic checks", () => {
     expect(configCheck?.suggestion).toContain("repotruck.json.bak");
   });
 
-  test("missing workspace root on disk results in warning", async () => {
+  test("missing workspace root on disk results in warning (and truncates >3 roots)", async () => {
     const deps: DoctorDeps = {
       whichImpl: async (cmd: string) => `/usr/bin/${cmd}`,
       execImpl: async () => ({ stdout: "git version 2.40.0" }),
       probeAuthImpl: async () => ({ method: "cached" }),
-      readEntriesImpl: async () => [
-        {
+      readEntriesImpl: async () =>
+        ["/ws/m1", "/ws/m2", "/ws/m3", "/ws/m4", "/ws/m5"].map((root) => ({
           version: 1,
-          root: "/workspace/nonexistent",
-          preset: "categorized",
+          root,
+          preset: "categorized" as const,
           lastSync: null,
           lastUsed: new Date().toISOString(),
           repos: [],
-        },
-      ],
-      existsSyncImpl: (p: string) => !p.includes("nonexistent"),
+        })),
+      existsSyncImpl: (p: string) => !p.startsWith("/ws/"),
     };
 
     const result = await runDoctor(deps);
     expect(result.ok).toBe(true);
     const diskCheck = result.checks.find((c) => c.check === "disk");
     expect(diskCheck?.status).toBe("warn");
+    expect(diskCheck?.detail).toContain("(+2 more)");
   });
 
   test("leftover journal produces reorganize failure check (C20)", async () => {

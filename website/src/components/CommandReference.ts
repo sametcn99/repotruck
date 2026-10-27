@@ -13,12 +13,12 @@ export interface CommandGroup {
   readonly commands: readonly CommandDoc[];
 }
 
-// 27 top-level commands across 6 logical groups.
+// 30 top-level commands across 6 logical groups.
 export const COMMAND_GROUPS: readonly CommandGroup[] = [
   {
     id: "sync-and-clone",
-    title: "Sync and clone",
-    blurb: "Move repositories between GitHub and disk in bulk or one at a time.",
+    title: "Sync, clone and discover",
+    blurb: "Search GitHub and move repositories between GitHub and disk in bulk or one at a time.",
     commands: [
       {
         name: "sync",
@@ -28,6 +28,8 @@ export const COMMAND_GROUPS: readonly CommandGroup[] = [
         examples: [
           "repotruck sync",
           "repotruck sync --scope all",
+          "repotruck sync --pinned",
+          "repotruck sync --profile backend",
           "repotruck sync --scope org:acme --limit 20",
           "repotruck sync -p language-first",
           "repotruck sync --depth 1 --blobless -c 5",
@@ -36,6 +38,11 @@ export const COMMAND_GROUPS: readonly CommandGroup[] = [
         ],
         flags: [
           { flag: "-s, --scope <scope>", description: '"user" (default), "org:<name>", or "all"' },
+          { flag: "--pinned", description: "sync only repositories pinned in the workspace" },
+          {
+            flag: "--profile <name>",
+            description: "sync only repositories in the named workspace profile",
+          },
           {
             flag: "-l, --limit <n>",
             description: "sync only the first N repositories of the scope, in API order",
@@ -98,12 +105,45 @@ export const COMMAND_GROUPS: readonly CommandGroup[] = [
           { flag: "--json", description: "machine-readable JSON output" },
         ],
       },
+      {
+        name: "discover",
+        summary:
+          "Search GitHub repositories with structured qualifiers (org, language, minimum stars, topics) and optionally clone matches straight into the workspace.",
+        usage: "repotruck discover <query> [options]",
+        examples: [
+          "repotruck discover mcp --lang typescript --min-stars 50",
+          "repotruck discover cli --org acme --topic devtools --clone",
+          "repotruck discover router --include-forks --limit 10 --json",
+        ],
+        flags: [
+          { flag: "--org <org>", description: "restrict search to a GitHub organization" },
+          { flag: "--lang <language>", description: "restrict search to primary language" },
+          { flag: "--min-stars <n>", description: "minimum stargazer count" },
+          { flag: "--topic <topic>", description: "require repository topic (repeatable)" },
+          {
+            flag: "--include-archived",
+            description: "include archived repositories (excluded by default)",
+          },
+          {
+            flag: "--include-forks",
+            description: "include fork repositories (excluded by default)",
+          },
+          {
+            flag: "-l, --limit <n>",
+            description: "maximum results to return (default 20, max 200)",
+          },
+          { flag: "--clone", description: "clone discovered repositories into the workspace" },
+          { flag: "--depth <n>", description: "shallow clone commit depth when --clone is used" },
+          { flag: "--blobless", description: "blobless partial clone when --clone is used" },
+          { flag: "--json", description: "machine-readable JSON output" },
+        ],
+      },
     ],
   },
   {
     id: "lifecycle",
     title: "Repository lifecycle",
-    blurb: "Track, untrack, archive and inspect what happens to repositories over time.",
+    blurb: "Track, untrack, soft-delete/restore, archive and inspect repository health.",
     commands: [
       {
         name: "forget",
@@ -135,6 +175,29 @@ export const COMMAND_GROUPS: readonly CommandGroup[] = [
         ],
       },
       {
+        name: "trash",
+        summary:
+          "List, restore, or permanently empty soft-deleted repositories parked in <root>/.repotruck/trash.",
+        usage: "repotruck trash [list|restore <selector>|empty] [options]",
+        examples: [
+          "repotruck trash list",
+          "repotruck trash restore monalisa/api",
+          "repotruck trash empty --older-than 30 --yes",
+          "repotruck trash empty --yes",
+        ],
+        flags: [
+          {
+            flag: "--older-than <days>",
+            description: "only delete entries trashed more than N days ago (empty)",
+          },
+          {
+            flag: "--yes",
+            description: "confirm permanent deletion from trash (required for empty)",
+          },
+          { flag: "--json", description: "machine-readable JSON output" },
+        ],
+      },
+      {
         name: "archive",
         summary: "Archive the repository on GitHub and re-file it under the archived category.",
         usage: "repotruck archive <repo>",
@@ -143,11 +206,13 @@ export const COMMAND_GROUPS: readonly CommandGroup[] = [
       {
         name: "status",
         summary:
-          "Show per-repository health: dirty state, ahead/behind, category, aliases, and detailed diff stats.",
+          "Show per-repository health: dirty state, ahead/behind, worktrees, category, aliases, detailed diff stats, and optional remote PR/CI checks.",
         usage: "repotruck status [options]",
         examples: [
           "repotruck status",
           "repotruck status -D",
+          "repotruck status --pinned --remote",
+          "repotruck status --profile backend",
           "repotruck status --filter dirty",
           "repotruck status --check",
           "repotruck status --json",
@@ -161,6 +226,15 @@ export const COMMAND_GROUPS: readonly CommandGroup[] = [
             flag: "-f, --filter <type>",
             description: "filter repos by status: dirty, uncommitted, unpushed, unpulled, all",
           },
+          { flag: "--pinned", description: "only inspect pinned repositories" },
+          {
+            flag: "--profile <name>",
+            description: "only inspect repositories in the named profile",
+          },
+          {
+            flag: "--remote",
+            description: "fetch open PR counts and default-branch CI check state from GitHub",
+          },
           {
             flag: "-c, --check",
             description: "exit non-zero if any repo has uncommitted/unpushed changes or is missing",
@@ -173,7 +247,7 @@ export const COMMAND_GROUPS: readonly CommandGroup[] = [
   {
     id: "workspace",
     title: "Workspace and layout",
-    blurb: "Create, move and re-file repositories; manage workspaces and aliases.",
+    blurb: "Create, move and re-file repositories; manage workspaces, profiles and aliases.",
     commands: [
       {
         name: "create",
@@ -270,6 +344,27 @@ export const COMMAND_GROUPS: readonly CommandGroup[] = [
         ],
       },
       {
+        name: "profile",
+        summary:
+          "Manage pinned focus repositories (surfaced in AGENTS.md) and named repository profiles reusable across status, sync, and run.",
+        usage: "repotruck profile <list|pin|unpin|save|delete> [options]",
+        examples: [
+          "repotruck profile list",
+          "repotruck profile pin monalisa/api monalisa/web",
+          "repotruck profile unpin monalisa/web",
+          "repotruck profile save backend --from-pinned",
+          "repotruck profile save core monalisa/api acme/sdk",
+          "repotruck profile delete core",
+        ],
+        flags: [
+          {
+            flag: "--from-pinned",
+            description: "populate the saved profile from currently pinned repositories",
+          },
+          { flag: "--json", description: "machine-readable JSON output" },
+        ],
+      },
+      {
         name: "workspaces",
         summary:
           'List or remove registered workspaces ("list" is the default). Both print the central records file path.',
@@ -336,11 +431,12 @@ export const COMMAND_GROUPS: readonly CommandGroup[] = [
       {
         name: "search-code",
         summary:
-          "Search an indexed symbol name across every tracked repository using Tree-sitter. Respects each repository's root .gitignore.",
+          "Search an indexed symbol name (or raw source lines with --text) across every tracked repository. Uses fast git ls-files discovery with .gitignore fallback.",
         usage: "repotruck search-code <pattern> [options]",
         examples: [
           "repotruck search-code UserService",
           "repotruck search-code handleAuth --kind function",
+          "repotruck search-code 'TODO:' --text",
           "repotruck search-code 'useEffect\\(' --regex",
         ],
         flags: [
@@ -362,6 +458,10 @@ export const COMMAND_GROUPS: readonly CommandGroup[] = [
             flag: "--regex",
             description: "treat the pattern as a case-insensitive regular expression",
           },
+          {
+            flag: "--text",
+            description: "search raw source lines across tracked repositories instead of symbols",
+          },
           { flag: "--json", description: "machine-readable JSON output" },
         ],
       },
@@ -372,7 +472,8 @@ export const COMMAND_GROUPS: readonly CommandGroup[] = [
         usage: "repotruck run <command...> [options]",
         examples: [
           "repotruck run git status -s",
-          "repotruck run bun test",
+          "repotruck run --pinned bun test",
+          "repotruck run --profile backend npm run lint",
           "repotruck run -r monalisa/api -r acme/cli npm test",
         ],
         flags: [
@@ -380,6 +481,11 @@ export const COMMAND_GROUPS: readonly CommandGroup[] = [
             flag: "-r, --repo <ref>",
             description:
               "target specific repositories (repeatable; owner/name, alias, or path); without it the command runs in every tracked repository",
+          },
+          { flag: "--pinned", description: "run only in pinned repositories" },
+          {
+            flag: "--profile <name>",
+            description: "run only in repositories belonging to the named profile",
           },
           { flag: "-c, --concurrency <n>", description: "parallel execution limit (default 3)" },
           { flag: "--json", description: "machine-readable JSON output" },
@@ -426,7 +532,7 @@ export const COMMAND_GROUPS: readonly CommandGroup[] = [
       {
         name: "doctor",
         summary:
-          "Check system dependencies (git, gh), configuration, GitHub auth, central registry, and workspace health. --fix starts auth login when no token is found and resumes interrupted reorganizations.",
+          "Check system dependencies (git, gh), configuration, GitHub auth, central registry, trash directory, and workspace health. --fix starts auth login when no token is found and resumes interrupted reorganizations.",
         usage: "repotruck doctor [options]",
         examples: ["repotruck doctor", "repotruck doctor --fix"],
         flags: [

@@ -4,9 +4,6 @@ import { ModalShell, SelectList } from "./ModalShell.tsx";
 import type { Store } from "./store.ts";
 import { theme } from "./theme.ts";
 
-const DIM_FG = theme.dim();
-const SELECTED_FG = theme.success();
-
 export function WorkspacePicker({ store }: { store: Store }) {
   const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot);
   const [cursor, setCursor] = useState(0);
@@ -18,6 +15,9 @@ export function WorkspacePicker({ store }: { store: Store }) {
     snapshot.modal !== null && snapshot.modal.type === "workspaces"
       ? snapshot.modal.recordsPath
       : null;
+  const dimFg = theme.dim();
+  const selectedFg = theme.success();
+
   const removeEntry = (target: string) => {
     setCursor(0);
     setNotice(null);
@@ -57,9 +57,9 @@ export function WorkspacePicker({ store }: { store: Store }) {
         );
       }}
     >
-      {recordsPath !== null ? <text fg={DIM_FG}>{`records: ${recordsPath}`}</text> : null}
-      {notice !== null ? <text fg={SELECTED_FG}>{notice}</text> : null}
-      {snapshot.workspaces.length === 0 ? <text fg={DIM_FG}>no registered workspaces</text> : null}
+      {recordsPath !== null ? <text fg={dimFg}>{`records: ${recordsPath}`}</text> : null}
+      {notice !== null ? <text fg={selectedFg}>{notice}</text> : null}
+      {snapshot.workspaces.length === 0 ? <text fg={dimFg}>no registered workspaces</text> : null}
       <SelectList
         items={snapshot.workspaces}
         cursor={boundedCursor}
@@ -68,7 +68,7 @@ export function WorkspacePicker({ store }: { store: Store }) {
           `${item.path} · ${item.preset} · ${item.repoCount} repos · ${item.lastUsed}${item.missing ? " (missing, not switchable)" : ""}`
         }
         fgOf={(item, isCursor) =>
-          item.missing ? DIM_FG : isCursor ? theme.cursorFg() : theme.normal()
+          item.missing ? dimFg : isCursor ? theme.cursorFg() : theme.normal()
         }
         onSelect={(_item, index) => setCursor(index)}
         onActivate={(item) => {
@@ -77,7 +77,7 @@ export function WorkspacePicker({ store }: { store: Store }) {
       />
       <box flexDirection="row" gap={2} marginTop={1}>
         <text
-          fg={current !== undefined && !current.missing ? theme.success() : DIM_FG}
+          fg={current !== undefined && !current.missing ? selectedFg : dimFg}
           onMouseDown={(e) => {
             e.stopPropagation();
             switchCurrent();
@@ -86,7 +86,7 @@ export function WorkspacePicker({ store }: { store: Store }) {
           {"[ Switch ]"}
         </text>
         <text
-          fg={current !== undefined ? theme.error() : DIM_FG}
+          fg={current !== undefined ? theme.error() : dimFg}
           onMouseDown={(e) => {
             e.stopPropagation();
             if (current !== undefined) removeEntry(current.path);
@@ -95,7 +95,7 @@ export function WorkspacePicker({ store }: { store: Store }) {
           {"[ Remove ]"}
         </text>
         <text
-          fg={DIM_FG}
+          fg={dimFg}
           onMouseDown={(e) => {
             e.stopPropagation();
             store.closeModal();

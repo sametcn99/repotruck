@@ -107,10 +107,10 @@ export function buildPreviewTree(entries: readonly PreviewTreeEntry[]): string[]
       const name = names[i]!;
       const child = node.children.get(name)!;
       const isLast = i === names.length - 1;
-      const connector = isLast ? "└── " : "├── ";
+      const connector = isLast ? "\u2514\u2500\u2500 " : "\u251c\u2500\u2500 ";
       const label = child.marker !== null ? `${name} [${child.marker}]` : name;
       lines.push(`${prefix}${connector}${label}`);
-      walk(child, prefix + (isLast ? "    " : "│   "));
+      walk(child, prefix + (isLast ? "    " : "\u2502   "));
     }
   };
   walk(root, "");
@@ -121,14 +121,41 @@ export function buildPreviewTree(entries: readonly PreviewTreeEntry[]): string[]
   return lines;
 }
 
-export function repoRowLabel(repo: {
-  name: string;
-  isPrivate: boolean;
-  isFork: boolean;
-  isArchived: boolean;
-  language: string | null;
-}): string {
+export interface RepoRowBadges {
+  alias?: string | null;
+  pinned?: boolean;
+  missing?: boolean;
+  dirty?: boolean;
+  ahead?: number;
+  behind?: number;
+  worktree?: boolean;
+}
+
+export function repoRowLabel(
+  repo: {
+    name: string;
+    isPrivate: boolean;
+    isFork: boolean;
+    isArchived: boolean;
+    language: string | null;
+  },
+  badges?: RepoRowBadges,
+): string {
   let label = repo.name;
+  if (badges?.pinned) label += " [\u2605]";
+  if (badges?.alias) label += ` [@${badges.alias}]`;
+  if (badges?.missing) {
+    label += " [MISSING]";
+  } else {
+    if (badges?.dirty) label += " [\u25cf dirty]";
+    if ((badges?.ahead ?? 0) > 0 || (badges?.behind ?? 0) > 0) {
+      const ab: string[] = [];
+      if ((badges?.ahead ?? 0) > 0) ab.push(`\u2191${badges!.ahead}`);
+      if ((badges?.behind ?? 0) > 0) ab.push(`\u2193${badges!.behind}`);
+      label += ` [${ab.join(" ")}]`;
+    }
+    if (badges?.worktree) label += " [WT]";
+  }
   if (repo.isPrivate) label += " [Private]";
   if (repo.isFork) label += " [Fork]";
   if (repo.isArchived) label += " [Archived]";

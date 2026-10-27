@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, test } from "bun:test";
+import { afterAll, afterEach, beforeAll, describe, expect, test } from "bun:test";
 import { execFileSync } from "node:child_process";
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -13,12 +13,35 @@ import {
 import { loadWorkspace } from "../src/services/workspace.ts";
 
 const tempRoots: string[] = [];
+let configTempDir: string | undefined;
+let savedConfigDir: string | undefined;
 
 function makeTempDir(prefix: string): string {
   const dir = mkdtempSync(path.join(tmpdir(), prefix));
   tempRoots.push(dir);
   return dir;
 }
+
+beforeAll(() => {
+  savedConfigDir = process.env.REPOTRUCK_CONFIG_DIR;
+  configTempDir = mkdtempSync(path.join(tmpdir(), "repotruck-singleclone-cfg-"));
+  process.env.REPOTRUCK_CONFIG_DIR = configTempDir;
+});
+
+afterAll(() => {
+  if (savedConfigDir === undefined) {
+    delete process.env.REPOTRUCK_CONFIG_DIR;
+  } else {
+    process.env.REPOTRUCK_CONFIG_DIR = savedConfigDir;
+  }
+  if (configTempDir !== undefined) {
+    try {
+      rmSync(configTempDir, { recursive: true, force: true });
+    } catch {
+      /* ignore cleanup error in tests */
+    }
+  }
+});
 
 afterEach(() => {
   for (const dir of tempRoots.splice(0)) {
@@ -177,6 +200,51 @@ describe("cloneSingleRepository (Hermetic Local Git)", () => {
     expect(tracked).toBeDefined();
     expect(tracked?.internal).toBe(true);
     expect(progressEvents).toContain("done");
+  });
+
+  test("clones and updates cleanly when GIT_CONFIG_COUNT token auth is active", async () => {
+    const sourceRepoDir = initLocalGitRepo("authed-source");
+    const workspaceRoot = makeTempDir("repotruck-authed-ws-");
+
+    const mockRepo: RepoInfo = {
+      owner: "oven-sh",
+      name: "setup-bun",
+      isPrivate: false,
+      isArchived: false,
+      isFork: false,
+      description: "Authed clone regression test",
+      language: "TypeScript",
+      updatedAt: new Date().toISOString(),
+      stars: 730,
+      httpsUrl: sourceRepoDir,
+      sshUrl: sourceRepoDir,
+    };
+
+    const mockGithub: GitHubRepoReader = {
+      getRepo: async () => mockRepo,
+    };
+
+    const first = await cloneSingleRepository("oven-sh/setup-bun", {
+      root: workspaceRoot,
+      github: mockGithub,
+      userLogin: "myuser",
+      orgs: [],
+      token: "gho_test_token_12345",
+      preferSsh: false,
+    });
+    expect(first.progress.phase).toBe("done");
+    expect(existsSync(path.join(first.destDir, "README.md"))).toBe(true);
+
+    // Second run exercises updateRepository (fetch/pull) with GIT_CONFIG_COUNT enabled
+    const second = await cloneSingleRepository("oven-sh/setup-bun", {
+      root: workspaceRoot,
+      github: mockGithub,
+      userLogin: "myuser",
+      orgs: [],
+      token: "gho_test_token_12345",
+      preferSsh: false,
+    });
+    expect(second.progress.phase).toBe("done");
   });
 
   test("C22: external repository is marked non-internal and routed to community prefix", async () => {

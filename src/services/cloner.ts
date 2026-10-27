@@ -104,7 +104,10 @@ export function gitWithTokenAuth(
   token: string | null | undefined,
   preferSsh?: boolean,
 ): ReturnType<typeof simpleGit> {
-  const options = { allowEnvironment: [...TOKEN_ENV_KEYS] };
+  const options = {
+    allowEnvironment: [...TOKEN_ENV_KEYS],
+    unsafe: { allowUnsafeConfigEnvCount: true },
+  };
   const git = baseDir === undefined ? simpleGit(options) : simpleGit(baseDir, options);
   if (token !== undefined && token !== null && token.length > 0 && preferSsh !== true) {
     (git as unknown as EnvCarrier).env(tokenAuthEnv(url, token));
@@ -134,8 +137,8 @@ async function withGitRetry<T>(operation: () => Promise<T>): Promise<T> {
  * happens to sit at the destination path.
  */
 export function originMatchesRepo(remoteUrl: string, owner: string, name: string): boolean {
-  let url = remoteUrl.trim().toLowerCase();
-  if (url.endsWith(".git")) url = url.slice(0, -".git".length);
+  let url = remoteUrl.trim().toLowerCase().replace(/\/+$/, "");
+  if (url.endsWith(".git")) url = url.slice(0, -".git".length).replace(/\/+$/, "");
   const suffix = `/${owner.toLowerCase()}/${name.toLowerCase()}`;
   if (url.endsWith(suffix)) return true;
   const colon = url.indexOf(":");

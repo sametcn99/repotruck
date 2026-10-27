@@ -1,6 +1,7 @@
 import { useState, useSyncExternalStore } from "react";
 import { ModalShell } from "./ModalShell.tsx";
 import type { Store } from "./store.ts";
+import { theme } from "./theme.ts";
 
 export function MoveModal({ store }: { store: Store }) {
   const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot);
@@ -22,7 +23,7 @@ export function MoveModal({ store }: { store: Store }) {
       />
       <box flexDirection="row" gap={2} marginTop={1}>
         <text
-          fg="green"
+          fg={theme.success()}
           onMouseDown={(e) => {
             e.stopPropagation();
             void store.submitMove(value);
@@ -31,7 +32,7 @@ export function MoveModal({ store }: { store: Store }) {
           {"[ Move ]"}
         </text>
         <text
-          fg="gray"
+          fg={theme.dim()}
           onMouseDown={(e) => {
             e.stopPropagation();
             store.closeModal();

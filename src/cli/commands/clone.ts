@@ -11,18 +11,16 @@ import {
 import { cloneSingleRepository, GITHUB_HOST } from "../../services/singleCloner.ts";
 import { loadWorkspace, toPosixRelative } from "../../services/workspace.ts";
 import {
-  buildGithub,
   type CliContext,
   jsonEmit,
   parseIntStrict,
   progressEmit,
-  requireAuth,
   requirePreset,
   resolveRootOption,
   runAction,
 } from "../shared.ts";
 
-export function register(program: Command, _ctx: CliContext): void {
+export function register(program: Command, ctx: CliContext): void {
   program
     .command("clone")
     .description("Clone a single GitHub repository into the workspace layout.")
@@ -60,7 +58,7 @@ export function register(program: Command, _ctx: CliContext): void {
                 ? undefined
                 : await requirePreset(options.preset, options.json, "clone");
             const customPresets = await readCustomPresets(process.env);
-            const auth = await requireAuth();
+            const auth = await ctx.requireAuth();
             const baseUrl = await resolveGithubBaseUrl(process.env, options.baseUrl);
             const hosts = [GITHUB_HOST];
             if (baseUrl !== DEFAULT_GITHUB_BASE_URL) {
@@ -71,7 +69,7 @@ export function register(program: Command, _ctx: CliContext): void {
                 /* noop */
               }
             }
-            const github = buildGithub(auth.token, baseUrl);
+            const github = ctx.buildGithub(auth.token, baseUrl);
             const userLogin = await github.getUserLogin();
             const orgs = await github.getActiveOrgs();
             const emit: EmitProgress = options.json ? jsonEmit() : progressEmit();

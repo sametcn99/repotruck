@@ -162,7 +162,7 @@ function sanitizeSettings(value: unknown, env: EnvLike): RepotruckSettings {
   // Unknown keys are copied verbatim so a read-modify-write never drops
   // settings written by newer repotruck versions.
   for (const [key, entry] of Object.entries(raw)) {
-    if (key !== "defaultRoot" && key !== "sync" && key !== "github") {
+    if (key !== "defaultRoot" && key !== "sync" && key !== "github" && key !== "theme") {
       (next as Record<string, unknown>)[key] = entry;
     }
   }

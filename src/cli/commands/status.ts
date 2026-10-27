@@ -1,9 +1,11 @@
 import type { Command } from "commander";
 import { getWorkspaceStatus } from "../../core/inspect.ts";
 import { formatDiffBar } from "../../services/gitState.ts";
+import type { RemoteHealthReader } from "../../services/lifecycle.ts";
+import { resolveGithubBaseUrl } from "../../services/settings.ts";
 import { type CliContext, requireExistingRoot, runAction } from "../shared.ts";
 
-export function register(program: Command, _ctx: CliContext): void {
+export function register(program: Command, ctx: CliContext): void {
   program
     .command("status")
     .description("Show per-repository health: dirty state, ahead/behind, category, aliases.")
@@ -16,6 +18,10 @@ export function register(program: Command, _ctx: CliContext): void {
       "-f, --filter <type>",
       "Filter repos by status: dirty, uncommitted, unpushed, unpulled, all",
     )
+    .option("--pinned", "Only inspect pinned repositories")
+    .option("--profile <name>", "Only inspect repositories in the named profile")
+    .option("--remote", "Fetch open PR counts and default-branch CI check state from GitHub")
+    .option("--base-url <url>", "GitHub Enterprise base URL (used with --remote)")
     .option(
       "-c, --check",
       "Exit with non-zero exit code if any repo has uncommitted/unpushed changes",
@@ -27,13 +33,27 @@ export function register(program: Command, _ctx: CliContext): void {
         json?: boolean;
         detail?: boolean;
         filter?: string;
+        pinned?: boolean;
+        profile?: string;
+        remote?: boolean;
+        baseUrl?: string;
         check?: boolean;
       }) => {
         await runAction(
           async () => {
             const root = await requireExistingRoot(options.dir);
-            const status = await getWorkspaceStatus(root, undefined, {
+            let github: RemoteHealthReader | undefined;
+            if (options.remote) {
+              const auth = await ctx.requireAuth();
+              const baseUrl = await resolveGithubBaseUrl(process.env, options.baseUrl);
+              github = ctx.buildGithub(auth.token, baseUrl);
+            }
+            const status = await getWorkspaceStatus(root, process.env, {
               detail: options.detail,
+              pinned: options.pinned === true,
+              profile: options.profile,
+              remote: options.remote === true,
+              github,
             });
 
             // Filter logic
@@ -62,7 +82,9 @@ export function register(program: Command, _ctx: CliContext): void {
                   ahead: r.ahead,
                   behind: r.behind,
                   missing: r.missing,
+                  ...(r.worktree ? { worktree: true } : {}),
                   ...(options.detail && r.details ? { details: r.details } : {}),
+                  ...(r.remote ? { remote: r.remote } : {}),
                 })),
               };
               process.stdout.write(`${JSON.stringify(payload)}\n`);
@@ -80,7 +102,7 @@ export function register(program: Command, _ctx: CliContext): void {
                     if (d.outgoingCommits.length > 0) {
                       process.stdout.write(`  outgoing commits (${d.outgoingCommits.length}):\n`);
                       for (const c of d.outgoingCommits) {
-                        process.stdout.write(`    ↑ ${c.hash} ${c.subject}\n`);
+                        process.stdout.write(`    \u2191 ${c.hash} ${c.subject}\n`);
                       }
                     }
                     if (d.modifiedFiles.length > 0 || d.untrackedFiles.length > 0) {

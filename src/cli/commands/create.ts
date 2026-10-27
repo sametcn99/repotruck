@@ -2,16 +2,9 @@ import { type Command, Option } from "commander";
 import { createRepository } from "../../services/creator.ts";
 import { readCustomPresets, resolveGithubBaseUrl } from "../../services/settings.ts";
 import { loadWorkspace } from "../../services/workspace.ts";
-import {
-  buildGithub,
-  type CliContext,
-  exitFail,
-  requireAuth,
-  resolveRootOption,
-  runAction,
-} from "../shared.ts";
+import { type CliContext, exitFail, resolveRootOption, runAction } from "../shared.ts";
 
-export function register(program: Command, _ctx: CliContext): void {
+export function register(program: Command, ctx: CliContext): void {
   program
     .command("create")
     .description("Create a new GitHub repository and register it in the workspace.")
@@ -48,9 +41,9 @@ export function register(program: Command, _ctx: CliContext): void {
       ) => {
         await runAction(async () => {
           const root = await resolveRootOption(options.dir);
-          const auth = await requireAuth();
+          const auth = await ctx.requireAuth();
           const baseUrl = await resolveGithubBaseUrl(process.env, options.baseUrl);
-          const github = buildGithub(auth.token, baseUrl);
+          const github = ctx.buildGithub(auth.token, baseUrl);
           const userLogin = await github.getUserLogin();
           const orgs = await github.getActiveOrgs();
           const config = await loadWorkspace(root);
@@ -73,7 +66,7 @@ export function register(program: Command, _ctx: CliContext): void {
             emit: (message) => process.stdout.write(`${message}\n`),
           });
           if (!result.ok) exitFail(result.message);
-          process.stdout.write(`✓ ${result.message}\n`);
+          process.stdout.write(`\u2713 ${result.message}\n`);
         });
       },
     );

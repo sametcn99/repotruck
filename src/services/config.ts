@@ -4,6 +4,7 @@ import { isPresetRef, type PresetRef, type RepoCategory } from "../presets/index
 import {
   type AgentsMdRepo,
   type AgentsMdTemplateBlock,
+  type AgentsMdWorktree,
   extractCustomInstructions,
   extractTemplateBlock,
   generateAgentsMd,
@@ -31,6 +32,8 @@ export interface RepotruckConfig {
   lastSync: string | null;
   repos: RepoInventoryEntry[];
   aliases?: Record<string, string>;
+  pinned?: string[];
+  profiles?: Record<string, string[]>;
 }
 
 export type EnvLike = Record<string, string | undefined>;
@@ -81,6 +84,10 @@ export function isRepoInventoryEntry(value: unknown): value is RepoInventoryEntr
   );
 }
 
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((item) => typeof item === "string");
+}
+
 export function isRepotruckConfig(value: unknown): value is RepotruckConfig {
   if (value === null || typeof value !== "object") return false;
   const config = value as Partial<RepotruckConfig>;
@@ -92,6 +99,15 @@ export function isRepotruckConfig(value: unknown): value is RepotruckConfig {
       Object.entries(config.aliases).every(
         ([key, target]) => typeof key === "string" && typeof target === "string",
       ));
+  const pinnedValid = config.pinned === undefined || isStringArray(config.pinned);
+  const profilesValid =
+    config.profiles === undefined ||
+    (typeof config.profiles === "object" &&
+      config.profiles !== null &&
+      !Array.isArray(config.profiles) &&
+      Object.entries(config.profiles).every(
+        ([key, targets]) => typeof key === "string" && isStringArray(targets),
+      ));
   return (
     config.version === 1 &&
     typeof config.root === "string" &&
@@ -99,7 +115,9 @@ export function isRepotruckConfig(value: unknown): value is RepotruckConfig {
     (config.lastSync === null || typeof config.lastSync === "string") &&
     Array.isArray(config.repos) &&
     config.repos.every(isRepoInventoryEntry) &&
-    aliasesValid
+    aliasesValid &&
+    pinnedValid &&
+    profilesValid
   );
 }
 
@@ -121,6 +139,11 @@ export async function readAgentsMd(root: string): Promise<string | null> {
   }
 }
 
+export interface WriteAgentsMdExtra {
+  pinned?: readonly string[];
+  worktrees?: readonly AgentsMdWorktree[];
+}
+
 export async function writeAgentsMd(
   root: string,
   repos: readonly AgentsMdRepo[],
@@ -128,6 +151,7 @@ export async function writeAgentsMd(
   lastSync: string | null,
   aliases?: Record<string, string>,
   template?: AgentsMdTemplateBlock | null,
+  extra?: WriteAgentsMdExtra,
 ): Promise<string> {
   const existing = await readAgentsMd(root);
   const customInstructions = existing !== null ? extractCustomInstructions(existing) : null;
@@ -140,6 +164,8 @@ export async function writeAgentsMd(
     customInstructions,
     aliases,
     template: templateBlock,
+    pinned: extra?.pinned,
+    worktrees: extra?.worktrees,
   });
   if (existing === content) {
     return content;

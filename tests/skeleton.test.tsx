@@ -1,8 +1,40 @@
-import { describe, expect, test } from "bun:test";
+import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import { testRender } from "@opentui/react/test-utils";
 import { Dashboard } from "../src/components/Dashboard.tsx";
 import { Store, type StoreDeps } from "../src/components/store.ts";
 import { WorkspaceSkeleton } from "../src/components/WorkspaceSkeleton.tsx";
+
+const tempDirs: string[] = [];
+let savedConfigDir: string | undefined;
+
+function makeTempDir(prefix: string): string {
+  const dir = mkdtempSync(path.join(tmpdir(), prefix));
+  tempDirs.push(dir);
+  return dir;
+}
+
+beforeAll(() => {
+  savedConfigDir = process.env.REPOTRUCK_CONFIG_DIR;
+  process.env.REPOTRUCK_CONFIG_DIR = makeTempDir("repotruck-skeleton-cfg-");
+});
+
+afterAll(() => {
+  if (savedConfigDir === undefined) {
+    delete process.env.REPOTRUCK_CONFIG_DIR;
+  } else {
+    process.env.REPOTRUCK_CONFIG_DIR = savedConfigDir;
+  }
+  for (const dir of tempDirs) {
+    try {
+      rmSync(dir, { recursive: true, force: true });
+    } catch {
+      /* best effort */
+    }
+  }
+});
 
 // biome-ignore lint/suspicious/noExplicitAny: test-only cast
 async function settle(setup: any): Promise<void> {
@@ -11,7 +43,10 @@ async function settle(setup: any): Promise<void> {
 }
 
 function norm(frame: string): string {
-  return frame.replace(/[─│┌┐└┘├┤┬┴┼]/g, " ");
+  return frame.replace(
+    /[\u2500\u2502\u250c\u2510\u2514\u2518\u251c\u2524\u252c\u2534\u253c]/g,
+    " ",
+  );
 }
 
 describe("WorkspaceSkeleton", () => {
@@ -36,14 +71,14 @@ describe("WorkspaceSkeleton", () => {
       expect(frame).toContain("FILTERS");
 
       // Repositories section elements
-      expect(frame).toContain("Loading workspace…");
-      expect(frame).toContain("Discovering repositories…");
+      expect(frame).toContain("Loading workspace\u2026");
+      expect(frame).toContain("Discovering repositories\u2026");
       expect(frame).toContain("[ ]");
-      expect(frame).toContain("░");
+      expect(frame).toContain("\u2591");
 
       // Status section elements
-      expect(frame).toContain("0 cloning · 0 pulling");
-      expect(frame).toContain("· 0 failed");
+      expect(frame).toContain("0 cloning \u00b7 0 pulling");
+      expect(frame).toContain("\u00b7 0 failed");
       expect(frame).toContain("DISCOVERY");
       expect(frame).toContain("Authenticate GitHub");
       expect(frame).toContain("ACTIVITY");
@@ -63,7 +98,7 @@ describe("WorkspaceSkeleton", () => {
       expect(frame).toContain("Scope");
       expect(frame).toContain("Repositories");
       expect(frame).toContain("Status");
-      expect(frame).toContain("Loading…");
+      expect(frame).toContain("Loading\u2026");
       expect(frame).toContain("flat");
     } finally {
       await setup.dispose();
@@ -106,8 +141,8 @@ describe("WorkspaceSkeleton", () => {
       expect(store.getSnapshot().phase).toBe("loading");
       const frame = norm(setup.captureCharFrame());
       expect(frame).toContain("repotruck");
-      expect(frame).toContain("discovering…");
-      expect(frame).toContain("Loading workspace…");
+      expect(frame).toContain("discovering\u2026");
+      expect(frame).toContain("Loading workspace\u2026");
       expect(frame).toContain("Scope");
       expect(frame).toContain("Repositories");
       expect(frame).toContain("Status");

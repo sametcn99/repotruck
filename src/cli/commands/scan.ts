@@ -4,6 +4,7 @@ import {
   buildAdoptPlan,
   scanWorkspaceRepos,
 } from "../../services/scanner.ts";
+import { readCustomPresets } from "../../services/settings.ts";
 import { loadWorkspace } from "../../services/workspace.ts";
 import { type CliContext, requireExistingRoot, runAction } from "../shared.ts";
 
@@ -40,14 +41,18 @@ export function register(program: Command, _ctx: CliContext): void {
           async () => {
             const root = await requireExistingRoot(directory ?? options.dir);
             const config = await loadWorkspace(root);
+            const customPresets = await readCustomPresets(process.env);
             const scanResult = await scanWorkspaceRepos(root, config);
 
-            const plans = buildAdoptPlan(root, config, scanResult.unregistered);
+            const plans = buildAdoptPlan(root, config, scanResult.unregistered, customPresets);
 
             if (options.move) {
               const execution = await adoptUnregisteredRepos(root, config, plans, {
                 dryRun: options.dryRun,
               });
+              if (execution.errors.length > 0) {
+                process.exitCode = 1;
+              }
 
               if (options.json) {
                 const payload = {
@@ -62,7 +67,7 @@ export function register(program: Command, _ctx: CliContext): void {
               }
 
               const prefix = options.dryRun ? "[dry-run] " : "";
-              if (execution.adopted.length === 0) {
+              if (execution.adopted.length === 0 && execution.errors.length === 0) {
                 process.stdout.write("no unregistered repositories to adopt\n");
               } else {
                 for (const item of execution.adopted) {

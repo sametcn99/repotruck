@@ -4,9 +4,6 @@ import { ModalShell, SelectList } from "./ModalShell.tsx";
 import type { Store, StoreSnapshot } from "./store.ts";
 import { theme } from "./theme.ts";
 
-const DIM_FG = theme.dim();
-const ACCENT_COLOR = theme.launcher();
-
 export function OpenModal({
   store,
   onSuspendAndRun,
@@ -17,11 +14,12 @@ export function OpenModal({
   const snapshot: StoreSnapshot = useSyncExternalStore(store.subscribe, store.getSnapshot);
   const [cursor, setCursor] = useState(0);
   const modal = snapshot.modal;
-  // apps === null while detection is pending; [] means detection found nothing.
   const apps = modal !== null && modal.type === "open" ? modal.apps : null;
   const list = apps ?? [];
   const boundedCursor = Math.min(cursor, Math.max(0, list.length - 1));
   const current = list[boundedCursor];
+  const dimFg = theme.dim();
+  const accentColor = theme.launcher();
 
   const launchApp = (appName: string) => {
     void onSuspendAndRun(() => store.runOpenApp(appName));
@@ -43,7 +41,7 @@ export function OpenModal({
       store={store}
       title="Open in app"
       hint="Up/Down choose · Enter launch (dashboard resumes after) · Escape cancels"
-      borderColor={ACCENT_COLOR}
+      borderColor={accentColor}
       gap={0}
       onMouseScroll={(e) => {
         const isUp = e.scroll?.direction === "up" || e.button === 4;
@@ -51,9 +49,9 @@ export function OpenModal({
       }}
     >
       <text>{`Repository: ${modal !== null && modal.type === "open" ? modal.key : ""}`}</text>
-      {apps === null ? <text fg={DIM_FG}>detecting apps…</text> : null}
+      {apps === null ? <text fg={dimFg}>detecting apps…</text> : null}
       {apps !== null && apps.length === 0 ? (
-        <text fg={DIM_FG}>no apps detected (builtin, apps.json, or PATH)</text>
+        <text fg={dimFg}>no apps detected (builtin, apps.json, or PATH)</text>
       ) : null}
       <SelectList
         items={list}
@@ -65,7 +63,7 @@ export function OpenModal({
       />
       <box flexDirection="row" gap={2} marginTop={1}>
         <text
-          fg={current !== undefined ? theme.success() : DIM_FG}
+          fg={current !== undefined ? theme.success() : dimFg}
           onMouseDown={(e) => {
             e.stopPropagation();
             if (current !== undefined) launchApp(current.name);
@@ -74,7 +72,7 @@ export function OpenModal({
           {"[ Open ]"}
         </text>
         <text
-          fg={DIM_FG}
+          fg={dimFg}
           onMouseDown={(e) => {
             e.stopPropagation();
             store.closeModal();

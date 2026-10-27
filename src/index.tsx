@@ -1,47 +1,47 @@
 import { createCliRenderer } from "@opentui/core";
 import { createRoot } from "@opentui/react";
-import { resolveThemeName } from "./components/theme.ts";
+import { Dashboard } from "./components/Dashboard.tsx";
+import { Store } from "./components/store.ts";
+import { activateTheme, resolveThemeName } from "./components/theme.ts";
 import { readSettings, resolveRootForSession } from "./services/settings.ts";
 
 async function bootstrap(): Promise<void> {
-  // Resolve the palette BEFORE importing the components: modals capture
-  // theme colors in module-level constants at import time.
-  const [{ activateTheme }, settings] = await Promise.all([
-    import("./components/theme.ts"),
-    readSettings(),
-  ]);
+  const settings = await readSettings();
   activateTheme(resolveThemeName(process.env.REPOTRUCK_THEME, settings.theme));
-  const [{ Dashboard }, { Store }] = await Promise.all([
-    import("./components/Dashboard.tsx"),
-    import("./components/store.ts"),
-  ]);
   await startTui(Dashboard, Store);
 }
 
-type DashboardComponent = typeof import("./components/Dashboard.tsx").Dashboard;
-type StoreConstructor = typeof import("./components/store.ts").Store;
+type DashboardComponent = typeof Dashboard;
+type StoreConstructor = typeof Store;
 
 export async function startTui(
-  Dashboard: DashboardComponent,
-  Store: StoreConstructor,
+  DashboardComp: DashboardComponent,
+  StoreCtor: StoreConstructor,
 ): Promise<void> {
   const root = await resolveRootForSession();
+  // Create Store once outside the resume loop so selections, cursor, filters,
+  // undo stack, and status log persist across foreground app launches (o key).
+  const store = new StoreCtor(root);
   let resumeRequested = true;
+  let resumedFromApp = false;
   while (resumeRequested) {
     resumeRequested = false;
+    if (resumedFromApp) {
+      await store.refreshLocalState();
+      resumedFromApp = false;
+    }
     const renderer = await createCliRenderer({
       exitOnCtrlC: true,
       clearOnShutdown: true,
-      // Wheel + click reporting; the store maps events to list rows/focus.
       useMouse: true,
     });
-    const store = new Store(root);
     createRoot(renderer).render(
-      <Dashboard
+      <DashboardComp
         store={store}
         onQuit={() => void renderer.destroy()}
         onSuspendAndRun={async (run) => {
           resumeRequested = true;
+          resumedFromApp = true;
           await renderer.destroy();
           try {
             await run();

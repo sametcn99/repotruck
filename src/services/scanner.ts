@@ -3,11 +3,13 @@ import { existsSync } from "node:fs";
 import { readdir } from "node:fs/promises";
 import path from "node:path";
 import { simpleGit } from "simple-git";
+import type { CustomPreset } from "../presets/index.ts";
 import type { EnvLike, RepoInventoryEntry, RepotruckConfig } from "./config.ts";
 import { repoKeyEquals } from "./fsUtils.ts";
 import { moveDir } from "./mover.ts";
-import { type ParsedGitUrl, parseGitUrl } from "./singleCloner.ts";
+import { GITHUB_HOST, type ParsedGitUrl, parseGitUrl } from "./singleCloner.ts";
 import { targetDirFor, toPosixRelative, updateWorkspace } from "./workspace.ts";
+import { inspectGitDotEntry } from "./worktree.ts";
 
 export interface DiscoveredRepo {
   owner: string;
@@ -52,6 +54,7 @@ const IGNORED_DIRS = new Set([
 export async function scanForRepos(
   root: string,
   maxDepth = MAX_SCAN_DEPTH,
+  hosts: readonly string[] = [GITHUB_HOST],
 ): Promise<DiscoveredRepo[]> {
   const found: DiscoveredRepo[] = [];
   const resolvedRoot = path.resolve(root);
@@ -68,14 +71,18 @@ export async function scanForRepos(
       if (!item.isDirectory()) continue;
       if (IGNORED_DIRS.has(item.name) || item.name.startsWith(".")) continue;
       const full = path.join(dir, item.name);
-      if (existsSync(path.join(full, ".git"))) {
+      const gitDot = inspectGitDotEntry(full);
+      if (gitDot.kind === "worktree") {
+        continue;
+      }
+      if (gitDot.kind === "repo") {
         const relativePath = toPosixRelative(resolvedRoot, full);
         let parsed: ParsedGitUrl | null = null;
         let remoteUrl = "";
         try {
           const remote = await simpleGit(full).raw(["remote", "get-url", "origin"]);
           remoteUrl = remote.trim();
-          parsed = parseGitUrl(remoteUrl);
+          parsed = parseGitUrl(remoteUrl, hosts);
         } catch {
           parsed = null;
         }
@@ -102,8 +109,9 @@ export async function scanForRepos(
 export async function scanWorkspaceRepos(
   root: string,
   config: RepotruckConfig,
+  hosts: readonly string[] = [GITHUB_HOST],
 ): Promise<ScanResult> {
-  const discovered = await scanForRepos(root);
+  const discovered = await scanForRepos(root, MAX_SCAN_DEPTH, hosts);
   const tracked: DiscoveredRepo[] = [];
   const unregistered: DiscoveredRepo[] = [];
 
@@ -128,6 +136,7 @@ export function buildAdoptPlan(
   root: string,
   config: RepotruckConfig,
   repos: DiscoveredRepo[],
+  customPresets: readonly CustomPreset[] = [],
 ): AdoptPlan[] {
   const plans: AdoptPlan[] = [];
   for (const repo of repos) {
@@ -142,6 +151,7 @@ export function buildAdoptPlan(
       },
       config.preset,
       repo.internal,
+      customPresets,
     );
     const targetRelative = toPosixRelative(root, targetDir);
     const needsMove = targetRelative.toLowerCase() !== repo.relativePath.toLowerCase();
@@ -185,6 +195,13 @@ export async function adoptUnregisteredRepos(
 
     try {
       if (plan.needsMove) {
+        if (existsSync(plan.targetPath)) {
+          errors.push({
+            key,
+            error: `destination already exists on disk: ${plan.targetRelativePath}`,
+          });
+          continue;
+        }
         move(plan.repo.absolutePath, plan.targetPath);
       }
       await updateWorkspace(

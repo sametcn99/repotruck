@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-27
+
+### Added
+
+- **TUI v2 Multi-Repo Cockpit**:
+  - Live inline filtering (`/`), background git health hydration (`dirty`, `↑ahead`/`↓behind`, `missing`, linked `worktree` badges), and multi-filter toggles (`F` cycles `all → dirty → unpushed → unpulled → missing → pinned`).
+  - Vim navigation (`j`/`k`, `g`/`G`, `Ctrl+d`/`Ctrl+u`) and live runtime theme switching (`T` cycles `default`, `light`, `contrast`, persisted to `settings.json`).
+  - Tabbed right-hand `StatusPanel` (`[1] Activity`, `[2] Inspector` with branch, ahead/behind, outgoing commits, and per-file diff bars, `[3] Health` running live `doctor` checks with `f` auto-fix) plus a visual batch progress bar.
+  - Multi-mode **Omnibar** (`Ctrl+K` / `:` Command Palette, `@` Cross-Repo Symbol Search jumping directly to editor `file:line`, `#` GitHub Repository Discovery & Clone, `!` Parallel Command Runner across selected or tracked repos).
+  - Bulk lifecycle actions (`u` untrack/forget, `A` archive on GitHub, `D` soft-delete to trash) over multi-selected repositories, repository pinning (`P`), and offline local mode (`L` when unauthenticated or offline).
+- **CLI Commands & Flags**:
+  - `repotruck discover <query>`: structured GitHub repository discovery (`--org`, `--lang`, `--min-stars`, `--topic`, `--include-archived`, `--include-forks`, `--limit`, `--clone`).
+  - `repotruck trash [list|restore|empty]`: manage soft-deleted repositories in `<root>/.repotruck/trash` with `--older-than <days>` cleanup.
+  - `repotruck profile <list|pin|unpin|save|delete>`: manage pinned focus repositories (surfaced in `AGENTS.md`) and named repository profiles reusable via `--pinned` and `--profile <name>` across `status`, `sync`, and `run`.
+  - `repotruck status --remote`: query GitHub for open PR counts and default-branch CI check/status rollups.
+  - `repotruck search-code --text`: fast cross-repository full-text line search powered by `git ls-files` discovery.
+- **Git Worktree Awareness**: linked worktrees (`.git` files pointing to a parent gitdir) are detected across `scanner`, `reorganizer`, `stats`, `status`, and surfaced in `AGENTS.md` without double-counting disk usage or moving worktree directories.
+- **Modular TUI Store & Zero Size Exceptions**: decomposed `src/components/store.ts` into `src/components/store/*` modules and removed all `scripts/size-check.ts` exceptions (`<= 600` lines across every file in `src/`).
+
+### Fixed
+
+- Preserved TUI `Store` state across editor/agent suspend-and-resume cycles (`src/index.tsx`) and refreshed local git state on return.
+- Validated repository names immediately on Step 1 of `CreateModal` before advancing to visibility/org steps.
+- Excluded `.repotruck` metadata/trash directories from `repotruck stats` disk calculations and added a `doctor` warning when `.repotruck/trash` is non-empty.
+- Dynamic theme propagation across every modal in the TUI dashboard.
+
 ## [0.3.0] - 2026-10-25
 
 ### Added

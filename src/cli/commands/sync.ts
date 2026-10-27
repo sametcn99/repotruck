@@ -2,12 +2,15 @@ import type { Command } from "commander";
 import { collectScopeRepos, describeSyncScope, parseSyncScope } from "../../cliSupport.ts";
 import { PRESET_IDS } from "../../presets/index.ts";
 import {
+  createCloneLimiter,
   type DivergenceStrategy,
   type EmitProgress,
   isDivergenceStrategy,
 } from "../../services/cloner.ts";
 import { refreshCodeIndexIfPresent } from "../../services/codeSearch.ts";
 import { filterReposByKey, parseFilterFlags } from "../../services/filters.ts";
+import type { RepoInfo } from "../../services/github.ts";
+import { resolveProfileKeys } from "../../services/profiles.ts";
 import {
   readCustomPresets,
   readSettings,
@@ -16,19 +19,17 @@ import {
 } from "../../services/settings.ts";
 import { loadWorkspace, syncRepos } from "../../services/workspace.ts";
 import {
-  buildGithub,
   type CliContext,
   exitFail,
   jsonEmit,
   parseIntStrict,
   progressEmit,
-  requireAuth,
   requirePreset,
   resolveRootOption,
   runAction,
 } from "../shared.ts";
 
-export function register(program: Command, _ctx: CliContext): void {
+export function register(program: Command, ctx: CliContext): void {
   program
     .command("sync")
     .description("Clone or update repositories in bulk, without the interactive interface.")
@@ -42,6 +43,8 @@ export function register(program: Command, _ctx: CliContext): void {
       'repositories to sync: "user" (your own repositories), "org:<name>" (a single organization), or "all" (your repositories plus every active organization)',
       "user",
     )
+    .option("--pinned", "sync only repositories pinned in the workspace")
+    .option("--profile <name>", "sync only repositories in the named workspace profile")
     .option(
       "-l, --limit <n>",
       "sync only the first N repositories of the resolved scope, in API order",
@@ -95,6 +98,8 @@ export function register(program: Command, _ctx: CliContext): void {
         dir?: string;
         preset?: string;
         scope: string;
+        pinned?: boolean;
+        profile?: string;
         limit?: string;
         concurrency?: string;
         depth?: string;
@@ -164,14 +169,67 @@ export function register(program: Command, _ctx: CliContext): void {
                 ? undefined
                 : await requirePreset(options.preset, options.json, "sync");
             const customPresets = await readCustomPresets(process.env);
-            const auth = await requireAuth();
+            const auth = await ctx.requireAuth();
             const baseUrl = await resolveGithubBaseUrl(process.env, options.baseUrl);
-            const github = buildGithub(auth.token, baseUrl);
+            const github = ctx.buildGithub(auth.token, baseUrl);
             const userLogin = await github.getUserLogin();
             const orgs = await github.getActiveOrgs();
 
             const runOnce = async (): Promise<void> => {
-              let repos = await collectScopeRepos(github, scope);
+              const config = await loadWorkspace(root, presetOverride, process.env);
+              const scopeLabel = options.profile
+                ? `profile:${options.profile}`
+                : options.pinned
+                  ? "pinned"
+                  : describeSyncScope(scope);
+
+              let repos: RepoInfo[];
+              if (options.pinned || options.profile !== undefined) {
+                const targetKeys = new Map<string, { owner: string; name: string }>();
+                if (options.pinned) {
+                  for (const key of config.pinned ?? []) {
+                    const [owner, name] = key.split("/");
+                    if (owner && name) targetKeys.set(key.toLowerCase(), { owner, name });
+                  }
+                }
+                if (options.profile !== undefined) {
+                  const profileKeys = resolveProfileKeys(config, options.profile);
+                  if (profileKeys === null) {
+                    exitFail(`profile not found: ${options.profile}`, options.json, "sync");
+                  }
+                  for (const key of profileKeys) {
+                    const [owner, name] = key.split("/");
+                    if (owner && name) targetKeys.set(key.toLowerCase(), { owner, name });
+                  }
+                }
+                if (targetKeys.size === 0) {
+                  if (options.json) {
+                    process.stdout.write(
+                      `${JSON.stringify({
+                        command: "sync",
+                        ok: true,
+                        root,
+                        scope: scopeLabel,
+                        synced: [],
+                        skipped: [],
+                        failed: [],
+                        summary: { synced: 0, skipped: 0, failed: 0 },
+                      })}\n`,
+                    );
+                    return;
+                  }
+                  process.stdout.write("nothing to sync (0 repositories in selection)\n");
+                  return;
+                }
+                const fetchLimiter = createCloneLimiter(5);
+                repos = await Promise.all(
+                  [...targetKeys.values()].map(({ owner, name }) =>
+                    fetchLimiter(() => github.getRepo(owner, name)),
+                  ),
+                );
+              } else {
+                repos = await collectScopeRepos(github, scope);
+              }
 
               // Apply filters BEFORE limit
               const includes = parseFilterFlags(options.include);
@@ -185,7 +243,7 @@ export function register(program: Command, _ctx: CliContext): void {
                         command: "sync",
                         ok: true,
                         root,
-                        scope: describeSyncScope(scope),
+                        scope: scopeLabel,
                         synced: [],
                         skipped: [],
                         failed: [],
@@ -200,7 +258,6 @@ export function register(program: Command, _ctx: CliContext): void {
               }
 
               if (limit !== undefined) repos = repos.slice(0, limit);
-              const config = await loadWorkspace(root, presetOverride, process.env);
               const emit: EmitProgress = options.json ? jsonEmit() : progressEmit();
 
               const result = await syncRepos({
@@ -228,7 +285,7 @@ export function register(program: Command, _ctx: CliContext): void {
                   command: "sync",
                   ok: result.failed.length === 0,
                   root,
-                  scope: describeSyncScope(scope),
+                  scope: scopeLabel,
                   synced: result.done.map((entry) => ({
                     key: entry.key,
                     relativePath: entry.relativePath,
@@ -254,7 +311,7 @@ export function register(program: Command, _ctx: CliContext): void {
                 process.stdout.write(`[skipped] ${skip.key} (${skip.message})\n`);
               }
               process.stdout.write(
-                `summary: ${result.done.length} synced, ${result.skipped.length} skipped, ${result.failed.length} failed (scope: ${describeSyncScope(scope)}${limit !== undefined ? `, limit ${limit}` : ""})\n`,
+                `summary: ${result.done.length} synced, ${result.skipped.length} skipped, ${result.failed.length} failed (scope: ${scopeLabel}${limit !== undefined ? `, limit ${limit}` : ""})\n`,
               );
               if (result.failed.length > 0 && !watching) {
                 process.exitCode = 1;

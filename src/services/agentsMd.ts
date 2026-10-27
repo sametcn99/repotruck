@@ -7,7 +7,7 @@ export const CUSTOM_INSTRUCTIONS_BEGIN =
   "<!-- repotruck:custom-instructions begin (this section is preserved verbatim on every rewrite) -->";
 export const CUSTOM_INSTRUCTIONS_END = "<!-- repotruck:custom-instructions end -->";
 export const CUSTOM_INSTRUCTIONS_PLACEHOLDER =
-  "(add your own instructions for coding agents here — they survive repotruck rewrites)";
+  "(add your own instructions for coding agents — they survive repotruck rewrites)";
 
 export const TEMPLATE_BLOCK_BEGIN =
   "<!-- repotruck:template begin (this section is regenerated from the selected template on every rewrite) -->";
@@ -27,6 +27,11 @@ export interface AgentsMdRepo {
   language?: string | null;
 }
 
+export interface AgentsMdWorktree {
+  relativePath: string;
+  mainRepoDir?: string | null;
+}
+
 export interface GenerateAgentsMdInput {
   preset: PresetRef;
   lastSync: string | null;
@@ -34,6 +39,8 @@ export interface GenerateAgentsMdInput {
   customInstructions?: string | null;
   aliases?: Record<string, string>;
   template?: AgentsMdTemplateBlock | null;
+  pinned?: readonly string[];
+  worktrees?: readonly AgentsMdWorktree[];
 }
 
 export function extractCustomInstructions(content: string): string | null {
@@ -134,6 +141,14 @@ export function generateAgentsMd(input: GenerateAgentsMdInput): string {
   const communityCount = community.length;
   const lastSync = input.lastSync ?? "never";
 
+  const pinnedSet = new Set((input.pinned ?? []).map((item) => item.toLowerCase()));
+  const pinnedRepos =
+    pinnedSet.size > 0
+      ? sortRepos(
+          input.repos.filter((repo) => pinnedSet.has(`${repo.owner}/${repo.name}`.toLowerCase())),
+        )
+      : [];
+
   const lines: string[] = [
     AGENTS_MD_MARKER,
     "",
@@ -151,10 +166,16 @@ export function generateAgentsMd(input: GenerateAgentsMdInput): string {
   lines.push(
     `- Last sync: ${lastSync}`,
     `- Total repositories: ${internalCount + communityCount} (${internalCount} internal, ${communityCount} community)`,
-    "",
-    "## Internal Projects",
-    "",
   );
+
+  if (pinnedRepos.length > 0) {
+    lines.push("", "## Active Focus (Pinned)", "");
+    for (const repo of pinnedRepos) {
+      lines.push(renderEntry(repo, aliasByPath));
+    }
+  }
+
+  lines.push("", "## Internal Projects", "");
 
   if (internal.length === 0) {
     lines.push("*(none yet)*");
@@ -168,6 +189,17 @@ export function generateAgentsMd(input: GenerateAgentsMdInput): string {
     lines.push("*(none yet)*");
   } else {
     for (const repo of community) lines.push(renderEntry(repo, aliasByPath));
+  }
+
+  if (input.worktrees !== undefined && input.worktrees.length > 0) {
+    lines.push("", "## Linked Git Worktrees", "");
+    for (const wt of input.worktrees) {
+      const parentNote =
+        wt.mainRepoDir !== undefined && wt.mainRepoDir !== null
+          ? ` (linked from \`${wt.mainRepoDir}\`)`
+          : "";
+      lines.push(`- \`${wt.relativePath}\`${parentNote} — linked worktree; keep in place`);
+    }
   }
 
   lines.push(

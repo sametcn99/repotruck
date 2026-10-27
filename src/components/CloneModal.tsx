@@ -1,9 +1,10 @@
 import { useState, useSyncExternalStore } from "react";
 import { ModalShell } from "./ModalShell.tsx";
 import type { Store } from "./store.ts";
+import { theme } from "./theme.ts";
 
 export function CloneModal({ store }: { store: Store }) {
-  useSyncExternalStore(store.subscribe, store.getSnapshot);
+  const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot);
   const [value, setValue] = useState("");
   return (
     <ModalShell store={store} title="Clone repository by URL" hint="Enter submits · Escape cancels">
@@ -20,7 +21,7 @@ export function CloneModal({ store }: { store: Store }) {
       />
       <box flexDirection="row" gap={2} marginTop={1}>
         <text
-          fg={store.getSnapshot().phase === "ready" ? "[#5af78e]" : undefined}
+          fg={snapshot.phase === "ready" ? theme.success() : theme.dim()}
           onMouseDown={(e) => {
             e.stopPropagation();
             void store.submitClone(value);
@@ -29,7 +30,7 @@ export function CloneModal({ store }: { store: Store }) {
           {"[ Clone ]"}
         </text>
         <text
-          fg="gray"
+          fg={theme.dim()}
           onMouseDown={(e) => {
             e.stopPropagation();
             store.closeModal();

@@ -42,7 +42,7 @@ suite("toc rail", () => {
     expect(cliLink?.getAttribute("data-level")).toBe("1");
 
     const syncSubLink = nav.querySelector<HTMLAnchorElement>('a[href="#sync-and-clone"]');
-    expect(syncSubLink?.textContent).toContain("Sync and clone");
+    expect(syncSubLink?.textContent).toContain("Sync, clone and discover");
     expect(syncSubLink?.getAttribute("data-level")).toBe("2");
     expect(syncSubLink?.classList.contains("toc-rail-sub")).toBe(true);
 

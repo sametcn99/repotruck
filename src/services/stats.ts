@@ -1,6 +1,7 @@
-import { existsSync, readdirSync, realpathSync, statSync } from "node:fs";
+import { readdirSync, realpathSync, statSync } from "node:fs";
 import path from "node:path";
 import type { RepoInventoryEntry, RepotruckConfig } from "./config.ts";
+import { inspectGitDotEntry } from "./worktree.ts";
 
 export const STALE_DAYS = 180;
 export const MAX_WALK_DEPTH = 10;
@@ -84,6 +85,7 @@ function computeDirSizeBytes(
   try {
     const entries = readdirSync(dir, { withFileTypes: true });
     for (const entry of entries) {
+      if (entry.name === ".repotruck") continue;
       const full = path.join(dir, entry.name);
       if (entry.isSymbolicLink()) continue;
       if (entry.isDirectory()) {
@@ -133,8 +135,11 @@ export function walkRepositoriesOnDisk(
       return;
     }
 
-    const dotGit = path.join(currentDir, ".git");
-    if (existsSync(dotGit)) {
+    const gitDot = inspectGitDotEntry(currentDir);
+    if (gitDot.kind === "worktree") {
+      return;
+    }
+    if (gitDot.kind === "repo") {
       repoCount += 1;
       const sizeVisited = new Set<string>();
       totalSizeBytes += computeDirSizeBytes(currentDir, sizeVisited, 0, maxDepth);
@@ -145,6 +150,7 @@ export function walkRepositoriesOnDisk(
       const entries = readdirSync(currentDir, { withFileTypes: true });
       for (const entry of entries) {
         if (entry.isSymbolicLink()) continue;
+        if (entry.name === ".repotruck" || entry.name === ".git") continue;
         if (entry.isDirectory()) {
           walk(path.join(currentDir, entry.name), depth + 1);
         }
@@ -186,10 +192,10 @@ export function calculateWorkspaceStats(
   }
 
   lines.push(
-    `categories: source ${categories.source} • forks ${categories.forks} • archived ${categories.archived} • custom ${categories.custom}`,
+    `categories: source ${categories.source} \u2022 forks ${categories.forks} \u2022 archived ${categories.archived} \u2022 custom ${categories.custom}`,
   );
   lines.push(
-    `disk: ${diskStats.repoCount} repositories • ${formatDiskSize(diskStats.totalSizeBytes)}`,
+    `disk: ${diskStats.repoCount} repositories \u2022 ${formatDiskSize(diskStats.totalSizeBytes)}`,
   );
   lines.push(`stale (>=${STALE_DAYS}d): ${stale.totalStale}`);
   for (const item of stale.topStalest) {

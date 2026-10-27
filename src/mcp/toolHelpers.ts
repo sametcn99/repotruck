@@ -70,14 +70,20 @@ export function aliasesByPath(config: RepotruckConfig): Map<string, string[]> {
   return map;
 }
 
+export function pinnedKeySet(config: RepotruckConfig): Set<string> {
+  return new Set((config.pinned ?? []).map((key) => key.toLowerCase()));
+}
+
 export function repoView(
   root: string,
   entry: RepoInventoryEntry,
   aliases: Map<string, string[]>,
+  pinnedKeys?: ReadonlySet<string>,
 ): Record<string, unknown> {
   const absolutePath = path.join(root, ...entry.relativePath.split("/"));
+  const key = `${entry.owner}/${entry.name}`;
   return {
-    key: `${entry.owner}/${entry.name}`,
+    key,
     owner: entry.owner,
     name: entry.name,
     relativePath: entry.relativePath,
@@ -88,6 +94,7 @@ export function repoView(
     language: entry.language,
     updatedAt: entry.updatedAt,
     custom: entry.custom === true,
+    pinned: pinnedKeys?.has(key.toLowerCase()) ?? false,
     aliases: (aliases.get(entry.relativePath.toLowerCase()) ?? []).sort((a, b) =>
       a.localeCompare(b),
     ),

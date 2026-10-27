@@ -4,12 +4,13 @@ import { simpleGit } from "simple-git";
 import { aheadBehindCount, createCloneLimiter, firstErrorLine } from "./cloner.ts";
 import type { EnvLike, RepoInventoryEntry, RepotruckConfig } from "./config.ts";
 import { repoKeyEquals } from "./fsUtils.ts";
-import type { RepoInfo } from "./github.ts";
+import type { RemoteRepoHealth, RepoInfo } from "./github.ts";
 import { collectDetailedGitStatus, type DetailedGitStatus } from "./gitState.ts";
 import { resolveRepoRef } from "./launcher.ts";
 import { moveDir } from "./mover.ts";
 import { targetDirFor, toPosixRelative, updateWorkspace } from "./workspace.ts";
 import { centralStorePath } from "./workspaceRegistry.ts";
+import { isLinkedWorktree } from "./worktree.ts";
 
 function notTrackedMessage(ref: string, env?: EnvLike): string {
   return `not tracked by repotruck: ${ref} (records: ${centralStorePath(env)})`;
@@ -35,7 +36,12 @@ function entryKey(entry: RepoInventoryEntry): string {
 function removeEntry(
   config: RepotruckConfig,
   entry: RepoInventoryEntry,
-): { repos: RepoInventoryEntry[]; aliases: Record<string, string> } {
+): {
+  repos: RepoInventoryEntry[];
+  aliases: Record<string, string>;
+  pinned?: string[];
+  profiles?: Record<string, string[]>;
+} {
   const repos = config.repos.filter((item) => !repoKeyEquals(item, entry.owner, entry.name));
   const aliases: Record<string, string> = {};
   for (const [alias, target] of Object.entries(config.aliases ?? {})) {
@@ -43,7 +49,24 @@ function removeEntry(
       aliases[alias] = target;
     }
   }
-  return { repos, aliases };
+  const keyLower = entryKey(entry).toLowerCase();
+  const pinned =
+    config.pinned !== undefined
+      ? config.pinned.filter((k) => k.toLowerCase() !== keyLower)
+      : undefined;
+  let profiles: Record<string, string[]> | undefined;
+  if (config.profiles !== undefined) {
+    profiles = {};
+    for (const [name, list] of Object.entries(config.profiles)) {
+      profiles[name] = list.filter((k) => k.toLowerCase() !== keyLower);
+    }
+  }
+  return {
+    repos,
+    aliases,
+    ...(pinned !== undefined ? { pinned } : {}),
+    ...(profiles !== undefined ? { profiles } : {}),
+  };
 }
 
 export async function forgetRepository(
@@ -58,10 +81,10 @@ export async function forgetRepository(
   }
   await updateWorkspace(
     root,
-    (current) => {
-      const { repos, aliases } = removeEntry(current, match.entry);
-      return { config: { ...current, repos, aliases }, result: undefined };
-    },
+    (current) => ({
+      config: { ...current, ...removeEntry(current, match.entry) },
+      result: undefined,
+    }),
     env,
   );
   return {
@@ -113,19 +136,16 @@ export async function pruneWorkspace(
   }
   const lines: string[] = [];
   if (unclear.length > 0) {
-    // Repositories with an unclear answer are never untracked; they are
-    // reported so a permission or network problem cannot masquerade as a
-    // deletion.
     lines.push(
       ...unclear.map(
-        (item) => `[prune] ${entryKey(item.entry)} kept (${item.error}) — unclear answer`,
+        (item) => `[prune] ${entryKey(item.entry)} kept (${item.error}) \u2014 unclear answer`,
       ),
     );
   }
   if (gone.length === 0) {
     return {
       ok: false,
-      message: `prune failed: ${entryKey(unclear[0]!.entry)} (${unclear[0]!.error}) — ${
+      message: `prune failed: ${entryKey(unclear[0]!.entry)} (${unclear[0]!.error}) \u2014 ${
         config.repos.length > 1 ? `${unclear.length} unclear answers, ` : ""
       }nothing untracked, inventory unchanged`,
       lines,
@@ -243,16 +263,16 @@ export async function deleteRepository(
     } catch (error) {
       return {
         ok: false,
-        message: `failed to delete ${entry.relativePath} (${firstErrorLine(error)}) — partial removal possible, inventory unchanged, retry the command`,
+        message: `failed to delete ${entry.relativePath} (${firstErrorLine(error)}) \u2014 partial removal possible, inventory unchanged, retry the command`,
       };
     }
   }
   await updateWorkspace(
     root,
-    (current) => {
-      const { repos, aliases } = removeEntry(current, entry);
-      return { config: { ...current, repos, aliases }, result: undefined };
-    },
+    (current) => ({
+      config: { ...current, ...removeEntry(current, entry) },
+      result: undefined,
+    }),
     env,
   );
   return {
@@ -260,7 +280,7 @@ export async function deleteRepository(
     ...(trashPath !== undefined ? { trashPath } : {}),
     message: onDisk
       ? trashPath !== undefined
-        ? `deleted ${entryKey(entry)} (moved ${entry.relativePath} to ${toPosixRelative(resolvedRoot, trashPath)} — press z in the dashboard to undo)`
+        ? `deleted ${entryKey(entry)} (moved ${entry.relativePath} to ${toPosixRelative(resolvedRoot, trashPath)} \u2014 press z in the dashboard to undo)`
         : `deleted ${entryKey(entry)} (removed ${entry.relativePath})`
       : `deleted ${entryKey(entry)} (directory was already missing)`,
   };
@@ -289,7 +309,7 @@ export async function archiveRepository(
   } catch (error) {
     return {
       ok: false,
-      message: `archiving ${entryKey(entry)} on GitHub failed (${firstErrorLine(error)}) — nothing changed locally`,
+      message: `archiving ${entryKey(entry)} on GitHub failed (${firstErrorLine(error)}) \u2014 nothing changed locally`,
     };
   }
   const updated: RepoInventoryEntry = {
@@ -334,7 +354,7 @@ export async function archiveRepository(
         );
         return {
           ok: false,
-          message: `archive succeeded on GitHub but moving to ${targetRel} failed (${firstErrorLine(error)}) — run 'repotruck archive ${entryKey(entry)}' again to retry the move`,
+          message: `archive succeeded on GitHub but moving to ${targetRel} failed (${firstErrorLine(error)}) \u2014 run 'repotruck archive ${entryKey(entry)}' again to retry the move`,
         };
       }
     }
@@ -381,6 +401,10 @@ export async function archiveRepository(
   };
 }
 
+export interface RemoteHealthReader {
+  getRepoRemoteHealth(owner: string, name: string): Promise<RemoteRepoHealth>;
+}
+
 export interface RepoStatusLine {
   key: string;
   line: string;
@@ -388,12 +412,16 @@ export interface RepoStatusLine {
   ahead?: number;
   behind?: number;
   missing?: boolean;
+  worktree?: boolean;
   details?: DetailedGitStatus;
+  remote?: RemoteRepoHealth;
 }
 
 export interface WorkspaceStatusOptions {
   concurrency?: number;
   detail?: boolean;
+  remote?: boolean;
+  github?: RemoteHealthReader;
 }
 
 export interface WorkspaceStatus {
@@ -419,8 +447,9 @@ export async function workspaceStatus(
         const key = entryKey(entry);
         const dir = path.join(root, ...entry.relativePath.split("/"));
         if (!existsSync(dir)) {
-          return { key, line: `${key} — MISSING on disk`, missing: true };
+          return { key, line: `${key} \u2014 MISSING on disk`, missing: true };
         }
+        const worktree = isLinkedWorktree(dir);
         const git = simpleGit(dir);
         let inside: string;
         try {
@@ -451,6 +480,7 @@ export async function workspaceStatus(
             parts.push("no upstream");
           }
         }
+        if (worktree) parts.push("worktree");
         parts.push(`category ${entry.category}`);
         if (entry.custom === true) parts.push("custom");
         const aliases = aliasByPath.get(entry.relativePath.toLowerCase());
@@ -465,14 +495,26 @@ export async function workspaceStatus(
             // ignore detail collection failure
           }
         }
+        let remote: RemoteRepoHealth | undefined;
+        if (options.remote && options.github !== undefined) {
+          try {
+            remote = await options.github.getRepoRemoteHealth(entry.owner, entry.name);
+            parts.push(`PRs ${remote.openPrs}`, `CI ${remote.ciState}`);
+          } catch {
+            remote = { defaultBranch: null, openPrs: 0, ciState: "unknown" };
+            parts.push("CI unknown");
+          }
+        }
         return {
           key,
-          line: `${key} — ${parts.join(", ")}`,
+          line: `${key} \u2014 ${parts.join(", ")}`,
           dirty: isDirty,
           ahead: aheadNum,
           behind: behindNum,
           missing: false,
+          ...(worktree ? { worktree: true } : {}),
           details,
+          ...(remote !== undefined ? { remote } : {}),
         };
       }),
     ),

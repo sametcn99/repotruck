@@ -7,12 +7,15 @@ import { type AuthProbe, probeAuth } from "./auth.ts";
 import { firstErrorLine } from "./cloner.ts";
 import type { EnvLike } from "./config.ts";
 import { defaultGrammarCacheDir, GRAMMAR_FILES } from "./grammarStore.ts";
+import { workspaceTrashDir } from "./lifecycle.ts";
 import {
   type ReorganizeJournal,
   readReorganizeJournal,
   reorganizeJournalPath,
   reorganizeWorkspace,
 } from "./reorganizer.ts";
+import { formatDiskSize } from "./stats.ts";
+import { listTrashEntries, type TrashEntry } from "./trash.ts";
 import { readWorkspaceEntries, type WorkspaceEntry } from "./workspaceRegistry.ts";
 
 const execFileAsync = promisify(execFile);
@@ -42,6 +45,7 @@ export interface DoctorDeps {
   existsSyncImpl?: (p: string) => boolean;
   tuiRuntimeImpl?: () => string | null;
   readJournalImpl?: (root: string) => ReorganizeJournal | null;
+  listTrashImpl?: (root: string) => TrashEntry[];
   grammarCacheDirImpl?: (env?: EnvLike) => string;
   onFixProgress?: (message: string) => void;
 }
@@ -87,6 +91,7 @@ export async function runDoctor(deps: DoctorDeps = {}): Promise<DoctorResult> {
   const readEntriesFn = deps.readEntriesImpl ?? readWorkspaceEntries;
   const existsFn = deps.existsSyncImpl ?? existsSync;
   const readJournalFn = deps.readJournalImpl ?? readReorganizeJournal;
+  const listTrashFn = deps.listTrashImpl ?? listTrashEntries;
   const tuiRuntimeImpl = deps.tuiRuntimeImpl ?? detectTuiRuntimeError;
 
   const checks: DoctorCheck[] = [];
@@ -162,7 +167,7 @@ export async function runDoctor(deps: DoctorDeps = {}): Promise<DoctorResult> {
     );
   }
 
-  // 5. disk & reorganize checks
+  // 5. disk, reorganize & trash checks
   if (entries !== null) {
     const paths = entries.map((e) => e.root);
     const missing: string[] = [];
@@ -170,11 +175,15 @@ export async function runDoctor(deps: DoctorDeps = {}): Promise<DoctorResult> {
       if (!existsFn(p)) missing.push(p);
     }
     if (missing.length > 0) {
+      const listed =
+        missing.length <= 3
+          ? missing.join(", ")
+          : `${missing.slice(0, 3).join(", ")} (+${missing.length - 3} more)`;
       checks.push(
         makeCheck(
           "warn",
           "disk",
-          `missing workspace root(s): ${missing.join(", ")}`,
+          `missing workspace root(s): ${listed}`,
           "run 'repotruck workspaces remove <path>' to clean up records",
         ),
       );
@@ -190,7 +199,7 @@ export async function runDoctor(deps: DoctorDeps = {}): Promise<DoctorResult> {
       );
     }
 
-    // Check for unfinished or corrupt reorganize journals across registered workspace roots
+    // Check for unfinished or corrupt reorganize journals and accumulated trash across workspace roots
     for (const p of paths) {
       const journalPath = reorganizeJournalPath(p);
       const hasJournal = deps.readJournalImpl !== undefined || existsFn(journalPath);
@@ -218,6 +227,28 @@ export async function runDoctor(deps: DoctorDeps = {}): Promise<DoctorResult> {
               p,
             ),
           );
+        }
+      }
+
+      const trashDir = workspaceTrashDir(p);
+      const hasTrashDir = deps.listTrashImpl !== undefined || existsFn(trashDir);
+      if (hasTrashDir) {
+        try {
+          const trashed = listTrashFn(p);
+          if (trashed.length > 0) {
+            const bytes = trashed.reduce((sum, item) => sum + item.sizeBytes, 0);
+            checks.push(
+              makeCheck(
+                "warn",
+                "trash",
+                `${trashed.length} trashed repo(s) in ${p} (${formatDiskSize(bytes)})`,
+                "run 'repotruck trash list' to inspect or 'repotruck trash empty --yes' to reclaim disk space",
+                p,
+              ),
+            );
+          }
+        } catch {
+          /* ignore unreadable trash directory */
         }
       }
     }
@@ -306,7 +337,7 @@ export async function fixDoctor(deps: DoctorDeps = {}): Promise<DoctorResult> {
         env: deps.env,
         existsSyncImpl: existsFn,
       });
-      deps.onFixProgress?.(`✓ reconciled and cleaned up journal in ${root}`);
+      deps.onFixProgress?.(`\u2713 reconciled and cleaned up journal in ${root}`);
     } catch (err) {
       deps.onFixProgress?.(`failed to resume reorganize in ${root}: ${firstErrorLine(err)}`);
     }

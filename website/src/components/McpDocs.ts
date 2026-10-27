@@ -7,11 +7,17 @@ export interface McpToolDoc {
 export const MCP_TOOL_ROWS: readonly McpToolDoc[] = [
   { tool: "repotruck_list_workspaces", action: "discover every registered workspace" },
   { tool: "repotruck_workspace_status", action: "preset, counts, aliases, last sync" },
-  { tool: "repotruck_list_repos", action: "tracked repositories with absolute paths" },
+  {
+    tool: "repotruck_list_repos",
+    action: "tracked repositories with absolute paths, pinned status and profile filters",
+  },
   { tool: "repotruck_search_repos", action: "search by owner, path, language or alias" },
   { tool: "repotruck_resolve_repo", action: "alias or owner/name to an absolute path" },
   { tool: "repotruck_agents_md", action: "read the AGENTS.md workspace map" },
-  { tool: "repotruck_status", action: "per-repository Git health and upstream sync" },
+  {
+    tool: "repotruck_status",
+    action: "per-repository Git health, linked worktrees, and optional remote PR/CI state",
+  },
   {
     tool: "repotruck_sync",
     action:
@@ -44,8 +50,14 @@ export const MCP_TOOL_ROWS: readonly McpToolDoc[] = [
   },
   { tool: "repotruck_alias_set", action: "set a short repository alias" },
   { tool: "repotruck_alias_remove", action: "remove a repository alias" },
-  { tool: "repotruck_search_github", action: "find repositories to clone next" },
-  { tool: "repotruck_search_code", action: "tree-sitter symbol search across all tracked repos" },
+  {
+    tool: "repotruck_search_github",
+    action: "discover GitHub repositories by query, org, language, stars and topics",
+  },
+  {
+    tool: "repotruck_search_code",
+    action: "tree-sitter symbol and raw text search across all tracked repos",
+  },
 ];
 
 export interface McpResourceDoc {

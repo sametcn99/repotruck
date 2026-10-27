@@ -35,10 +35,14 @@ export function register(program: Command, _ctx: CliContext): void {
       "Filter by symbol kind (function, class, interface, type, enum, method, const)",
     )
     .option("--lang <lang>", "Filter by source language (ts, tsx, js, py, go, rs)")
-    .option("--limit <number>", "Maximum number of matches to return")
+    .option("-l, --limit <number>", "Maximum number of matches to return")
     .option("--offline", "Disable automatic grammar downloads and require local/cached grammars")
     .option("--rebuild", "Force rebuilding the symbol index")
     .option("--regex", "Treat the pattern as a case-insensitive regular expression")
+    .option(
+      "--text",
+      "Perform full-text line search across tracked source files instead of AST symbol search",
+    )
     .option("--json", "Output results as JSON")
     .action(
       async (
@@ -51,6 +55,7 @@ export function register(program: Command, _ctx: CliContext): void {
           offline?: boolean;
           rebuild?: boolean;
           regex?: boolean;
+          text?: boolean;
           json?: boolean;
         },
       ) => {
@@ -62,6 +67,9 @@ export function register(program: Command, _ctx: CliContext): void {
             let limit: number | undefined;
             if (options.limit !== undefined) {
               limit = parseIntStrict(options.limit, "limit", options.json, "search-code");
+            }
+            if (options.text && options.kind !== undefined) {
+              exitFail("--kind cannot be combined with --text", options.json, "search-code");
             }
             if (options.kind !== undefined) {
               const kind = options.kind.toLowerCase();
@@ -95,6 +103,7 @@ export function register(program: Command, _ctx: CliContext): void {
                 offline: options.offline === true,
                 rebuild: options.rebuild === true,
                 regex: options.regex === true,
+                text: options.text === true,
               });
               if (result.index.built) {
                 process.stderr.write(
