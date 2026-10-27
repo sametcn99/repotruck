@@ -24,13 +24,15 @@ suite("command reference on the landing page", () => {
   });
 
   test("documents every committed CLI command exactly once", () => {
-    expect(ALL_COMMAND_NAMES.length).toBe(30);
+    expect(ALL_COMMAND_NAMES.length).toBe(32);
     expect(ALL_COMMAND_NAMES).toContain("preset");
     expect(ALL_COMMAND_NAMES).toContain("backup");
     expect(ALL_COMMAND_NAMES).toContain("scan");
     expect(ALL_COMMAND_NAMES).toContain("discover");
     expect(ALL_COMMAND_NAMES).toContain("trash");
     expect(ALL_COMMAND_NAMES).toContain("profile");
+    expect(ALL_COMMAND_NAMES).toContain("worktree");
+    expect(ALL_COMMAND_NAMES).toContain("changelog");
     const { container } = render(<App />);
     const rendered = Array.from(
       container.querySelectorAll<HTMLElement>(".command-doc h3 code"),

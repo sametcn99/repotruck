@@ -1,5 +1,12 @@
 import { afterAll, describe, expect, test } from "bun:test";
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdtempSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { simpleGit } from "simple-git";
@@ -28,7 +35,7 @@ import {
 const tempRoots: string[] = [];
 
 function makeTemp(prefix: string): string {
-  const dir = mkdtempSync(path.join(tmpdir(), prefix));
+  const dir = (realpathSync.native ?? realpathSync)(mkdtempSync(path.join(tmpdir(), prefix)));
   tempRoots.push(dir);
   return dir;
 }
@@ -93,7 +100,16 @@ detached
 
     const trees = await listRepoWorktrees(repoDir);
     expect(trees.length).toBe(2);
-    expect(trees.some((t) => t.path === path.resolve(wtPath))).toBe(true);
+    const expectedPath = (realpathSync.native ?? realpathSync)(wtPath).toLowerCase();
+    expect(
+      trees.some((t) => {
+        try {
+          return (realpathSync.native ?? realpathSync)(t.path).toLowerCase() === expectedPath;
+        } catch {
+          return path.resolve(t.path).toLowerCase() === expectedPath;
+        }
+      }),
+    ).toBe(true);
 
     const removeRes = await removeRepoWorktree(repoDir, wtPath, true);
     expect(removeRes.ok).toBe(true);
