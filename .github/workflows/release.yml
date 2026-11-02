@@ -19,7 +19,7 @@ jobs:
     needs: ci
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Verify release tag matches package.json version
         run: test "${GITHUB_REF_NAME}" = "v$(node -p "require('./package.json').version")"
       - name: Verify CHANGELOG contains entry for this version
@@ -33,7 +33,7 @@ jobs:
       - run: bun run typecheck
       - run: bun test
       - run: bun run build
-      - uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a # v4.2.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 26
           registry-url: https://registry.npmjs.org
