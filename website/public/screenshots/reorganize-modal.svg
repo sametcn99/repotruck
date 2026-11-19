@@ -1,11 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1368" height="908" viewBox="0 0 1368 908" role="img" aria-label="repotruck TUI — reorganize-modal">
-<title>repotruck TUI — reorganize-modal</title>
+<svg xmlns="http://www.w3.org/2000/svg" width="1368" height="908" viewBox="0 0 1368 908" role="img" aria-label="primary TUI — reorganize-modal">
+<title>primary TUI — reorganize-modal</title>
 <rect width="1368" height="908" fill="#0d1117"/>
 <style>text{font-family:ui-monospace,"SF Mono","Cascadia Code",Consolas,"Liberation Mono",Menlo,monospace;font-size:14px;white-space:pre}</style>
 <text x="12.0" y="26" fill="rgb(48,54,61)" textLength="1344.0" lengthAdjust="spacingAndGlyphs">┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐</text>
 <text x="12.0" y="43" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="43" fill="rgb(88,166,255)" textLength="856.8" lengthAdjust="spacingAndGlyphs"> repotruck · sametcn99 (auth: gh-cli) · preset: categorized · root: /tmp/repotruck-shots-ws · 13 repos</text>
-<text x="877.2" y="43" fill="rgb(255,255,255)" textLength="470.4" lengthAdjust="spacingAndGlyphs">                                                        </text>
+<text x="20.4" y="43" fill="rgb(88,166,255)" textLength="840.0" lengthAdjust="spacingAndGlyphs"> repotruck · devuser (auth: gh-cli) · preset: categorized · root: /tmp/repotruck-shots-ws · 11 repos</text>
+<text x="860.4" y="43" fill="rgb(255,255,255)" textLength="487.2" lengthAdjust="spacingAndGlyphs">                                                          </text>
 <text x="1347.6" y="43" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="60" fill="rgb(48,54,61)" textLength="1344.0" lengthAdjust="spacingAndGlyphs">└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘</text>
 <text x="12.0" y="77" fill="rgb(210,168,255)" textLength="1344.0" lengthAdjust="spacingAndGlyphs">┌─Reorganize workspace─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐</text>
@@ -117,72 +117,72 @@
 <text x="1347.6" y="434" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="451" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="451" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="451" fill="rgb(139,148,158)" textLength="705.6" lengthAdjust="spacingAndGlyphs">Mekanet-Energy/hmi: Mekanet-Energy/source/hmi -&gt; community/Mekanet-Energy/source/hmi</text>
-<text x="734.4" y="451" fill="rgb(255,255,255)" textLength="613.2" lengthAdjust="spacingAndGlyphs">                                                                         </text>
+<text x="28.8" y="451" fill="rgb(139,148,158)" textLength="730.8" lengthAdjust="spacingAndGlyphs">acme-labs/dashboard: acme-labs/source/dashboard -&gt; community/acme-labs/source/dashboard</text>
+<text x="759.6" y="451" fill="rgb(255,255,255)" textLength="588.0" lengthAdjust="spacingAndGlyphs">                                                                      </text>
 <text x="1347.6" y="451" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="468" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="468" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="468" fill="rgb(139,148,158)" textLength="932.4" lengthAdjust="spacingAndGlyphs">Mekanet-Energy/opcua-server: Mekanet-Energy/source/opcua-server -&gt; community/Mekanet-Energy/source/opcua-server</text>
-<text x="961.2" y="468" fill="rgb(255,255,255)" textLength="386.4" lengthAdjust="spacingAndGlyphs">                                              </text>
+<text x="28.8" y="468" fill="rgb(139,148,158)" textLength="705.6" lengthAdjust="spacingAndGlyphs">acme-labs/core-api: acme-labs/source/core-api -&gt; community/acme-labs/source/core-api</text>
+<text x="734.4" y="468" fill="rgb(255,255,255)" textLength="613.2" lengthAdjust="spacingAndGlyphs">                                                                         </text>
 <text x="1347.6" y="468" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="485" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="485" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="485" fill="rgb(139,148,158)" textLength="630.0" lengthAdjust="spacingAndGlyphs">Hiretea/hiretea: Hiretea/source/hiretea -&gt; community/Hiretea/source/hiretea</text>
-<text x="658.8" y="485" fill="rgb(255,255,255)" textLength="688.8" lengthAdjust="spacingAndGlyphs">                                                                                  </text>
+<text x="28.8" y="485" fill="rgb(139,148,158)" textLength="781.2" lengthAdjust="spacingAndGlyphs">vertex-soft/docs-site: vertex-soft/source/docs-site -&gt; community/vertex-soft/source/docs-site</text>
+<text x="810.0" y="485" fill="rgb(255,255,255)" textLength="537.6" lengthAdjust="spacingAndGlyphs">                                                                </text>
 <text x="1347.6" y="485" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="502" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="502" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="502" fill="rgb(139,148,158)" textLength="495.6" lengthAdjust="spacingAndGlyphs">sametcn99/RepoHub: forks/RepoHub -&gt; sametcn99/forks/RepoHub</text>
-<text x="524.4" y="502" fill="rgb(255,255,255)" textLength="823.2" lengthAdjust="spacingAndGlyphs">                                                                                                  </text>
+<text x="28.8" y="502" fill="rgb(139,148,158)" textLength="537.6" lengthAdjust="spacingAndGlyphs">devuser/forked-lib: forks/forked-lib -&gt; devuser/forks/forked-lib</text>
+<text x="566.4" y="502" fill="rgb(255,255,255)" textLength="781.2" lengthAdjust="spacingAndGlyphs">                                                                                             </text>
 <text x="1347.6" y="502" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="519" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="519" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="519" fill="rgb(139,148,158)" textLength="470.4" lengthAdjust="spacingAndGlyphs">sametcn99/server: forks/server -&gt; sametcn99/forks/server</text>
-<text x="499.2" y="519" fill="rgb(255,255,255)" textLength="848.4" lengthAdjust="spacingAndGlyphs">                                                                                                     </text>
+<text x="28.8" y="519" fill="rgb(139,148,158)" textLength="537.6" lengthAdjust="spacingAndGlyphs">devuser/mirror-svc: forks/mirror-svc -&gt; devuser/forks/mirror-svc</text>
+<text x="566.4" y="519" fill="rgb(255,255,255)" textLength="781.2" lengthAdjust="spacingAndGlyphs">                                                                                             </text>
 <text x="1347.6" y="519" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="536" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="536" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="536" fill="rgb(139,148,158)" textLength="789.6" lengthAdjust="spacingAndGlyphs">Mekanet-Energy/web-tr-php: archived/web-tr-php -&gt; community/Mekanet-Energy/archived/web-tr-php</text>
-<text x="818.4" y="536" fill="rgb(255,255,255)" textLength="529.2" lengthAdjust="spacingAndGlyphs">                                                               </text>
+<text x="28.8" y="536" fill="rgb(139,148,158)" textLength="705.6" lengthAdjust="spacingAndGlyphs">acme-labs/legacy-php: archived/legacy-php -&gt; community/acme-labs/archived/legacy-php</text>
+<text x="734.4" y="536" fill="rgb(255,255,255)" textLength="613.2" lengthAdjust="spacingAndGlyphs">                                                                         </text>
 <text x="1347.6" y="536" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="553" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="553" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="553" fill="rgb(110,118,129)" textLength="369.6" lengthAdjust="spacingAndGlyphs">skip sametcn99/repotruck [already at target]</text>
-<text x="398.4" y="553" fill="rgb(255,255,255)" textLength="949.2" lengthAdjust="spacingAndGlyphs">                                                                                                                 </text>
+<text x="28.8" y="553" fill="rgb(110,118,129)" textLength="336.0" lengthAdjust="spacingAndGlyphs">skip devuser/primary [already at target]</text>
+<text x="364.8" y="553" fill="rgb(255,255,255)" textLength="982.8" lengthAdjust="spacingAndGlyphs">                                                                                                                     </text>
 <text x="1347.6" y="553" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="570" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="570" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="570" fill="rgb(110,118,129)" textLength="344.4" lengthAdjust="spacingAndGlyphs">skip sametcn99/golter [already at target]</text>
-<text x="373.2" y="570" fill="rgb(255,255,255)" textLength="974.4" lengthAdjust="spacingAndGlyphs">                                                                                                                    </text>
+<text x="28.8" y="570" fill="rgb(110,118,129)" textLength="327.6" lengthAdjust="spacingAndGlyphs">skip devuser/worker [already at target]</text>
+<text x="356.4" y="570" fill="rgb(255,255,255)" textLength="991.2" lengthAdjust="spacingAndGlyphs">                                                                                                                      </text>
 <text x="1347.6" y="570" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="587" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="587" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="587" fill="rgb(110,118,129)" textLength="344.4" lengthAdjust="spacingAndGlyphs">skip sametcn99/tcptui [already at target]</text>
+<text x="28.8" y="587" fill="rgb(110,118,129)" textLength="344.4" lengthAdjust="spacingAndGlyphs">skip devuser/tui-tool [already at target]</text>
 <text x="373.2" y="587" fill="rgb(255,255,255)" textLength="974.4" lengthAdjust="spacingAndGlyphs">                                                                                                                    </text>
 <text x="1347.6" y="587" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="604" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="604" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="604" fill="rgb(110,118,129)" textLength="361.2" lengthAdjust="spacingAndGlyphs">skip sametcn99/dreamtui [already at target]</text>
-<text x="390.0" y="604" fill="rgb(255,255,255)" textLength="957.6" lengthAdjust="spacingAndGlyphs">                                                                                                                  </text>
+<text x="28.8" y="604" fill="rgb(110,118,129)" textLength="336.0" lengthAdjust="spacingAndGlyphs">skip devuser/widgets [already at target]</text>
+<text x="364.8" y="604" fill="rgb(255,255,255)" textLength="982.8" lengthAdjust="spacingAndGlyphs">                                                                                                                     </text>
 <text x="1347.6" y="604" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="621" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="621" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="621" fill="rgb(110,118,129)" textLength="352.8" lengthAdjust="spacingAndGlyphs">skip sametcn99/hiretea [already at target]</text>
-<text x="381.6" y="621" fill="rgb(255,255,255)" textLength="966.0" lengthAdjust="spacingAndGlyphs">                                                                                                                   </text>
+<text x="28.8" y="621" fill="rgb(110,118,129)" textLength="310.8" lengthAdjust="spacingAndGlyphs">skip devuser/site [already at target]</text>
+<text x="339.6" y="621" fill="rgb(255,255,255)" textLength="1008.0" lengthAdjust="spacingAndGlyphs">                                                                                                                        </text>
 <text x="1347.6" y="621" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="638" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="638" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="638" fill="rgb(110,118,129)" textLength="386.4" lengthAdjust="spacingAndGlyphs">skip sametcn99/maalesef-tr [already at target]</text>
-<text x="415.2" y="638" fill="rgb(255,255,255)" textLength="932.4" lengthAdjust="spacingAndGlyphs">                                                                                                               </text>
+<text x="28.8" y="638" fill="rgb(110,118,129)" textLength="361.2" lengthAdjust="spacingAndGlyphs">skip devuser/scripts-py [already at target]</text>
+<text x="390.0" y="638" fill="rgb(255,255,255)" textLength="957.6" lengthAdjust="spacingAndGlyphs">                                                                                                                  </text>
 <text x="1347.6" y="638" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="655" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="655" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="655" fill="rgb(248,81,73)" textLength="344.4" lengthAdjust="spacingAndGlyphs">failed Mekanet-Energy/prdocs: not on disk</text>
-<text x="373.2" y="655" fill="rgb(255,255,255)" textLength="974.4" lengthAdjust="spacingAndGlyphs">                                                                                                                    </text>
+<text x="28.8" y="655" fill="rgb(248,81,73)" textLength="352.8" lengthAdjust="spacingAndGlyphs">failed acme-labs/retired-docs: not on disk</text>
+<text x="381.6" y="655" fill="rgb(255,255,255)" textLength="966.0" lengthAdjust="spacingAndGlyphs">                                                                                                                   </text>
 <text x="1347.6" y="655" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="672" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="672" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="672" fill="rgb(110,118,129)" textLength="285.6" lengthAdjust="spacingAndGlyphs">6 moves · 8 skipped · 0 collisions</text>
+<text x="28.8" y="672" fill="rgb(110,118,129)" textLength="285.6" lengthAdjust="spacingAndGlyphs">6 moves · 6 skipped · 0 collisions</text>
 <text x="314.4" y="672" fill="rgb(255,255,255)" textLength="1033.2" lengthAdjust="spacingAndGlyphs">                                                                                                                           </text>
 <text x="1347.6" y="672" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="689" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>

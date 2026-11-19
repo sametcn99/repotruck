@@ -1,11 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1368" height="908" viewBox="0 0 1368 908" role="img" aria-label="repotruck TUI — stats">
-<title>repotruck TUI — stats</title>
+<svg xmlns="http://www.w3.org/2000/svg" width="1368" height="908" viewBox="0 0 1368 908" role="img" aria-label="primary TUI — stats">
+<title>primary TUI — stats</title>
 <rect width="1368" height="908" fill="#0d1117"/>
 <style>text{font-family:ui-monospace,"SF Mono","Cascadia Code",Consolas,"Liberation Mono",Menlo,monospace;font-size:14px;white-space:pre}</style>
 <text x="12.0" y="26" fill="rgb(48,54,61)" textLength="1344.0" lengthAdjust="spacingAndGlyphs">┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐</text>
 <text x="12.0" y="43" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="43" fill="rgb(88,166,255)" textLength="974.4" lengthAdjust="spacingAndGlyphs"> repotruck · sametcn99 (auth: gh-cli) · preset: categorized · root: /tmp/repotruck-shots-ws · 13 repos · view: Stats</text>
-<text x="994.8" y="43" fill="rgb(255,255,255)" textLength="352.8" lengthAdjust="spacingAndGlyphs">                                          </text>
+<text x="20.4" y="43" fill="rgb(88,166,255)" textLength="957.6" lengthAdjust="spacingAndGlyphs"> repotruck · devuser (auth: gh-cli) · preset: categorized · root: /tmp/repotruck-shots-ws · 11 repos · view: Stats</text>
+<text x="978.0" y="43" fill="rgb(255,255,255)" textLength="369.6" lengthAdjust="spacingAndGlyphs">                                            </text>
 <text x="1347.6" y="43" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="60" fill="rgb(48,54,61)" textLength="1344.0" lengthAdjust="spacingAndGlyphs">└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘</text>
 <text x="12.0" y="77" fill="rgb(48,54,61)" textLength="327.6" lengthAdjust="spacingAndGlyphs">┌────────────────┐┌───────────────────┐</text>
@@ -100,7 +100,7 @@
 <text x="20.4" y="179" fill="rgb(201,209,217)" textLength="50.4" lengthAdjust="spacingAndGlyphs">  Scan</text>
 <text x="70.8" y="179" fill="rgb(255,255,255)" textLength="84.0" lengthAdjust="spacingAndGlyphs">          </text>
 <text x="154.8" y="179" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="163.2" y="179" fill="rgb(201,209,217)" textLength="235.2" lengthAdjust="spacingAndGlyphs"> TypeScript   ████████████ 8</text>
+<text x="163.2" y="179" fill="rgb(201,209,217)" textLength="235.2" lengthAdjust="spacingAndGlyphs"> TypeScript   ████████████ 6</text>
 <text x="398.4" y="179" fill="rgb(255,255,255)" textLength="352.8" lengthAdjust="spacingAndGlyphs">                                          </text>
 <text x="751.2" y="179" fill="rgb(63,185,80)" textLength="50.4" lengthAdjust="spacingAndGlyphs"> ✓ git</text>
 <text x="801.6" y="179" fill="rgb(255,255,255)" textLength="554.4" lengthAdjust="spacingAndGlyphs">                                                                  </text>
@@ -108,7 +108,7 @@
 <text x="20.4" y="196" fill="rgb(201,209,217)" textLength="92.4" lengthAdjust="spacingAndGlyphs">  Conflicts</text>
 <text x="112.8" y="196" fill="rgb(255,255,255)" textLength="42.0" lengthAdjust="spacingAndGlyphs">     </text>
 <text x="154.8" y="196" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="163.2" y="196" fill="rgb(201,209,217)" textLength="235.2" lengthAdjust="spacingAndGlyphs"> Go           ███░░░░░░░░░ 2</text>
+<text x="163.2" y="196" fill="rgb(201,209,217)" textLength="235.2" lengthAdjust="spacingAndGlyphs"> Go           ████░░░░░░░░ 2</text>
 <text x="398.4" y="196" fill="rgb(255,255,255)" textLength="352.8" lengthAdjust="spacingAndGlyphs">                                          </text>
 <text x="751.2" y="196" fill="rgb(63,185,80)" textLength="42.0" lengthAdjust="spacingAndGlyphs"> ✓ gh</text>
 <text x="793.2" y="196" fill="rgb(255,255,255)" textLength="562.8" lengthAdjust="spacingAndGlyphs">                                                                   </text>
@@ -156,15 +156,15 @@
 <text x="20.4" y="298" fill="rgb(110,118,129)" textLength="75.6" lengthAdjust="spacingAndGlyphs"> automate</text>
 <text x="96.0" y="298" fill="rgb(255,255,255)" textLength="58.8" lengthAdjust="spacingAndGlyphs">       </text>
 <text x="154.8" y="298" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="163.2" y="298" fill="rgb(110,118,129)" textLength="462.0" lengthAdjust="spacingAndGlyphs">categories: source 11 · forks 2 · archived 2 · custom 0</text>
-<text x="625.2" y="298" fill="rgb(255,255,255)" textLength="126.0" lengthAdjust="spacingAndGlyphs">               </text>
+<text x="163.2" y="298" fill="rgb(110,118,129)" textLength="453.6" lengthAdjust="spacingAndGlyphs">categories: source 9 · forks 2 · archived 2 · custom 0</text>
+<text x="616.8" y="298" fill="rgb(255,255,255)" textLength="134.4" lengthAdjust="spacingAndGlyphs">                </text>
 <text x="751.2" y="298" fill="rgb(227,179,65)" textLength="84.0" lengthAdjust="spacingAndGlyphs"> ! signing</text>
 <text x="835.2" y="298" fill="rgb(255,255,255)" textLength="520.8" lengthAdjust="spacingAndGlyphs">                                                              </text>
 <text x="12.0" y="315" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="315" fill="rgb(201,209,217)" textLength="109.2" lengthAdjust="spacingAndGlyphs">  Run Console</text>
 <text x="129.6" y="315" fill="rgb(255,255,255)" textLength="25.2" lengthAdjust="spacingAndGlyphs">   </text>
 <text x="154.8" y="315" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="163.2" y="315" fill="rgb(110,118,129)" textLength="193.2" lengthAdjust="spacingAndGlyphs">disk: 3 repos · 81.0 KB</text>
+<text x="163.2" y="315" fill="rgb(110,118,129)" textLength="193.2" lengthAdjust="spacingAndGlyphs">disk: 3 repos · 80.9 KB</text>
 <text x="356.4" y="315" fill="rgb(255,255,255)" textLength="394.8" lengthAdjust="spacingAndGlyphs">                                               </text>
 <text x="751.2" y="315" fill="rgb(110,118,129)" textLength="126.0" lengthAdjust="spacingAndGlyphs">recommendations</text>
 <text x="877.2" y="315" fill="rgb(255,255,255)" textLength="478.8" lengthAdjust="spacingAndGlyphs">                                                         </text>

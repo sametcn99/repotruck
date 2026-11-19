@@ -79,9 +79,9 @@ export function frameToSvg(frame: FrameLike, slug: string, charRows: readonly st
   const h = frame.rows * LH + PAD * 2;
   const parts: string[] = [];
   parts.push(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${Math.round(w)}" height="${Math.round(h)}" viewBox="0 0 ${w} ${h}" role="img" aria-label="repotruck TUI — ${esc(slug)}">`,
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${Math.round(w)}" height="${Math.round(h)}" viewBox="0 0 ${w} ${h}" role="img" aria-label="primary TUI — ${esc(slug)}">`,
   );
-  parts.push(`<title>repotruck TUI — ${esc(slug)}</title>`);
+  parts.push(`<title>primary TUI — ${esc(slug)}</title>`);
   parts.push(`<rect width="${w}" height="${h}" fill="${CANVAS_BG}"/>`);
   parts.push(
     `<style>text{font-family:ui-monospace,"SF Mono","Cascadia Code",Consolas,"Liberation Mono",Menlo,monospace;font-size:${FS}px;white-space:pre}</style>`,
@@ -205,10 +205,10 @@ async function main(): Promise<void> {
   const snapshot = (): ReturnType<typeof store.getSnapshot> => store.getSnapshot();
 
   // --- Cockpit -----------------------------------------------------------------
-  void store.toggleOrg("Mekanet-Energy");
-  void store.toggleOrg("Hiretea");
+  void store.toggleOrg("acme-labs");
+  void store.toggleOrg("vertex-soft");
   await waitFor(() => snapshot().repos.length >= 14);
-  await waitFor(() => snapshot().localHealth.get("sametcn99/repotruck")?.dirty === true);
+  await waitFor(() => snapshot().localHealth.get("devuser/primary")?.dirty === true);
 
   await shot("cockpit");
 
@@ -220,7 +220,7 @@ async function main(): Promise<void> {
   await waitFor(() => snapshot().healthData?.loading === false);
   await shot("cockpit-health");
 
-  store.openRepoContextMenu("sametcn99/repotruck");
+  store.openRepoContextMenu("devuser/primary");
   await shot("context-menu");
   store.closeRepoContextMenu();
 
@@ -255,11 +255,11 @@ async function main(): Promise<void> {
   store.setView("sync");
   await shot("sync-center");
 
-  store.updateDiscoverPage({ query: "mcp server" });
+  store.updateDiscoverPage({ query: "mcp mirror-svc" });
   await store.discoverSearch();
   await waitFor(() => snapshot().discoverPage?.loading === false);
   store.updateDiscoverPage({
-    selected: new Set(["modelcontextprotocol/servers", "wong2/mcp-runner"]),
+    selected: new Set(["open-tools/mcp-mirror-svcs", "indie-dev/mcp-runner"]),
   });
   store.setView("discover");
   await shot("discover");
@@ -357,20 +357,20 @@ async function main(): Promise<void> {
   await shot("create-wizard");
   store.closeModal();
 
-  await store.openMoveModal("sametcn99/repotruck");
+  await store.openMoveModal("devuser/primary");
   await shot("move-modal");
   store.closeModal();
 
-  await store.openAliasModal("sametcn99/repotruck");
+  await store.openAliasModal("devuser/primary");
   await shot("alias-modal");
   store.closeModal();
 
-  await store.openOpenModal("sametcn99/repotruck");
+  await store.openOpenModal("devuser/primary");
   await waitFor(() => snapshot().modal?.type === "open");
   await shot("open-modal");
   store.closeModal();
 
-  store.openDetailModal("sametcn99/repotruck");
+  store.openDetailModal("devuser/primary");
   await shot("detail-modal");
   store.closeModal();
 
@@ -382,7 +382,7 @@ async function main(): Promise<void> {
   await shot("reorganize-modal");
   store.closeModal();
 
-  await store.openWorktreeModal("sametcn99/repotruck");
+  await store.openWorktreeModal("devuser/primary");
   await waitFor(() => {
     const modal = snapshot().modal;
     return modal?.type === "worktree" && modal.loading === false;
@@ -404,7 +404,7 @@ async function main(): Promise<void> {
   await shot("device-flow");
   store.cancelDeviceFlow();
 
-  store.openPermanentDeleteConfirm("sametcn99/repotruck");
+  store.openPermanentDeleteConfirm("devuser/primary");
   await shot("permanent-delete");
   store.closeModal();
 

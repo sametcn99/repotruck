@@ -1,11 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1368" height="908" viewBox="0 0 1368 908" role="img" aria-label="repotruck TUI — detail-modal">
-<title>repotruck TUI — detail-modal</title>
+<svg xmlns="http://www.w3.org/2000/svg" width="1368" height="908" viewBox="0 0 1368 908" role="img" aria-label="primary TUI — detail-modal">
+<title>primary TUI — detail-modal</title>
 <rect width="1368" height="908" fill="#0d1117"/>
 <style>text{font-family:ui-monospace,"SF Mono","Cascadia Code",Consolas,"Liberation Mono",Menlo,monospace;font-size:14px;white-space:pre}</style>
 <text x="12.0" y="26" fill="rgb(48,54,61)" textLength="1344.0" lengthAdjust="spacingAndGlyphs">┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐</text>
 <text x="12.0" y="43" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="43" fill="rgb(88,166,255)" textLength="856.8" lengthAdjust="spacingAndGlyphs"> repotruck · sametcn99 (auth: gh-cli) · preset: categorized · root: /tmp/repotruck-shots-ws · 13 repos</text>
-<text x="877.2" y="43" fill="rgb(255,255,255)" textLength="470.4" lengthAdjust="spacingAndGlyphs">                                                        </text>
+<text x="20.4" y="43" fill="rgb(88,166,255)" textLength="840.0" lengthAdjust="spacingAndGlyphs"> repotruck · devuser (auth: gh-cli) · preset: categorized · root: /tmp/repotruck-shots-ws · 11 repos</text>
+<text x="860.4" y="43" fill="rgb(255,255,255)" textLength="487.2" lengthAdjust="spacingAndGlyphs">                                                          </text>
 <text x="1347.6" y="43" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="60" fill="rgb(48,54,61)" textLength="1344.0" lengthAdjust="spacingAndGlyphs">└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘</text>
 <text x="12.0" y="77" fill="rgb(210,168,255)" textLength="1344.0" lengthAdjust="spacingAndGlyphs">┌─Repository details───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐</text>
@@ -20,12 +20,12 @@
 <text x="1339.2" y="111" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
 <text x="1347.6" y="111" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="128" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="128" fill="rgb(255,255,255)" textLength="1327.2" lengthAdjust="spacingAndGlyphs"> sametcn99/repotruck                                                                                                                                          </text>
+<text x="20.4" y="128" fill="rgb(255,255,255)" textLength="1327.2" lengthAdjust="spacingAndGlyphs"> devuser/primary                                                                                                                                              </text>
 <text x="1347.6" y="128" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="145" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="145" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="145" fill="rgb(110,118,129)" textLength="470.4" lengthAdjust="spacingAndGlyphs">description: repotruck — typescript workspace repository</text>
-<text x="499.2" y="145" fill="rgb(255,255,255)" textLength="848.4" lengthAdjust="spacingAndGlyphs">                                                                                                     </text>
+<text x="28.8" y="145" fill="rgb(110,118,129)" textLength="344.4" lengthAdjust="spacingAndGlyphs">description: primary — typescript project</text>
+<text x="373.2" y="145" fill="rgb(255,255,255)" textLength="974.4" lengthAdjust="spacingAndGlyphs">                                                                                                                    </text>
 <text x="1347.6" y="145" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="162" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="162" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
@@ -44,13 +44,13 @@
 <text x="1347.6" y="196" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="213" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="213" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="213" fill="rgb(110,118,129)" textLength="394.8" lengthAdjust="spacingAndGlyphs">url: https://github.com/sametcn99/repotruck.git</text>
-<text x="423.6" y="213" fill="rgb(255,255,255)" textLength="924.0" lengthAdjust="spacingAndGlyphs">                                                                                                              </text>
+<text x="28.8" y="213" fill="rgb(110,118,129)" textLength="361.2" lengthAdjust="spacingAndGlyphs">url: https://github.com/devuser/primary.git</text>
+<text x="390.0" y="213" fill="rgb(255,255,255)" textLength="957.6" lengthAdjust="spacingAndGlyphs">                                                                                                                  </text>
 <text x="1347.6" y="213" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="230" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="230" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="230" fill="rgb(110,118,129)" textLength="588.0" lengthAdjust="spacingAndGlyphs">tracked at sametcn99/source/repotruck · alias: rt · dirty, no upstream</text>
-<text x="616.8" y="230" fill="rgb(255,255,255)" textLength="730.8" lengthAdjust="spacingAndGlyphs">                                                                                       </text>
+<text x="28.8" y="230" fill="rgb(110,118,129)" textLength="571.2" lengthAdjust="spacingAndGlyphs">tracked at devuser/source/primary · alias: main · dirty, no upstream</text>
+<text x="600.0" y="230" fill="rgb(255,255,255)" textLength="747.6" lengthAdjust="spacingAndGlyphs">                                                                                         </text>
 <text x="1347.6" y="230" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="247" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="247" fill="rgb(255,255,255)" textLength="1327.2" lengthAdjust="spacingAndGlyphs">                                                                                                                                                              </text>

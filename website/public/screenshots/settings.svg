@@ -1,11 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1368" height="908" viewBox="0 0 1368 908" role="img" aria-label="repotruck TUI — settings">
-<title>repotruck TUI — settings</title>
+<svg xmlns="http://www.w3.org/2000/svg" width="1368" height="908" viewBox="0 0 1368 908" role="img" aria-label="primary TUI — settings">
+<title>primary TUI — settings</title>
 <rect width="1368" height="908" fill="#0d1117"/>
 <style>text{font-family:ui-monospace,"SF Mono","Cascadia Code",Consolas,"Liberation Mono",Menlo,monospace;font-size:14px;white-space:pre}</style>
 <text x="12.0" y="26" fill="rgb(48,54,61)" textLength="1344.0" lengthAdjust="spacingAndGlyphs">┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐</text>
 <text x="12.0" y="43" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="43" fill="rgb(88,166,255)" textLength="999.6" lengthAdjust="spacingAndGlyphs"> repotruck · sametcn99 (auth: gh-cli) · preset: categorized · root: /tmp/repotruck-shots-ws · 13 repos · view: Settings</text>
-<text x="1020.0" y="43" fill="rgb(255,255,255)" textLength="327.6" lengthAdjust="spacingAndGlyphs">                                       </text>
+<text x="20.4" y="43" fill="rgb(88,166,255)" textLength="982.8" lengthAdjust="spacingAndGlyphs"> repotruck · devuser (auth: gh-cli) · preset: categorized · root: /tmp/repotruck-shots-ws · 11 repos · view: Settings</text>
+<text x="1003.2" y="43" fill="rgb(255,255,255)" textLength="344.4" lengthAdjust="spacingAndGlyphs">                                         </text>
 <text x="1347.6" y="43" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="60" fill="rgb(48,54,61)" textLength="1344.0" lengthAdjust="spacingAndGlyphs">└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘</text>
 <text x="12.0" y="77" fill="rgb(48,54,61)" textLength="940.8" lengthAdjust="spacingAndGlyphs">┌────────────────┐┌────────────────────────────────────────────────────────────────────────────────────────────┐</text>
@@ -56,8 +56,8 @@
 <text x="944.4" y="128" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="952.8" y="128" fill="rgb(255,255,255)" textLength="16.8" lengthAdjust="spacingAndGlyphs">  </text>
 <text x="969.6" y="128" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="978.0" y="128" fill="rgb(201,209,217)" textLength="142.8" lengthAdjust="spacingAndGlyphs"> login: sametcn99</text>
-<text x="1120.8" y="128" fill="rgb(255,255,255)" textLength="226.8" lengthAdjust="spacingAndGlyphs">                           </text>
+<text x="978.0" y="128" fill="rgb(201,209,217)" textLength="126.0" lengthAdjust="spacingAndGlyphs"> login: devuser</text>
+<text x="1104.0" y="128" fill="rgb(255,255,255)" textLength="243.6" lengthAdjust="spacingAndGlyphs">                             </text>
 <text x="1347.6" y="128" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="145" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="145" fill="rgb(201,209,217)" textLength="109.2" lengthAdjust="spacingAndGlyphs">  Sync Center</text>

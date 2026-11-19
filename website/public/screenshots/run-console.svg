@@ -1,11 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1368" height="908" viewBox="0 0 1368 908" role="img" aria-label="repotruck TUI — run-console">
-<title>repotruck TUI — run-console</title>
+<svg xmlns="http://www.w3.org/2000/svg" width="1368" height="908" viewBox="0 0 1368 908" role="img" aria-label="primary TUI — run-console">
+<title>primary TUI — run-console</title>
 <rect width="1368" height="908" fill="#0d1117"/>
 <style>text{font-family:ui-monospace,"SF Mono","Cascadia Code",Consolas,"Liberation Mono",Menlo,monospace;font-size:14px;white-space:pre}</style>
 <text x="12.0" y="26" fill="rgb(48,54,61)" textLength="1344.0" lengthAdjust="spacingAndGlyphs">┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐</text>
 <text x="12.0" y="43" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="43" fill="rgb(88,166,255)" textLength="1024.8" lengthAdjust="spacingAndGlyphs"> repotruck · sametcn99 (auth: gh-cli) · preset: categorized · root: /tmp/repotruck-shots-ws · 13 repos · view: Run Console</text>
-<text x="1045.2" y="43" fill="rgb(255,255,255)" textLength="302.4" lengthAdjust="spacingAndGlyphs">                                    </text>
+<text x="20.4" y="43" fill="rgb(88,166,255)" textLength="1008.0" lengthAdjust="spacingAndGlyphs"> repotruck · devuser (auth: gh-cli) · preset: categorized · root: /tmp/repotruck-shots-ws · 11 repos · view: Run Console</text>
+<text x="1028.4" y="43" fill="rgb(255,255,255)" textLength="319.2" lengthAdjust="spacingAndGlyphs">                                      </text>
 <text x="1347.6" y="43" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="60" fill="rgb(48,54,61)" textLength="1344.0" lengthAdjust="spacingAndGlyphs">└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘</text>
 <text x="12.0" y="77" fill="rgb(48,54,61)" textLength="151.2" lengthAdjust="spacingAndGlyphs">┌────────────────┐</text>
@@ -48,26 +48,26 @@
 <text x="20.4" y="179" fill="rgb(201,209,217)" textLength="50.4" lengthAdjust="spacingAndGlyphs">  Scan</text>
 <text x="70.8" y="179" fill="rgb(255,255,255)" textLength="84.0" lengthAdjust="spacingAndGlyphs">          </text>
 <text x="154.8" y="179" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="163.2" y="179" fill="rgb(201,209,217)" textLength="327.6" lengthAdjust="spacingAndGlyphs">✓ sametcn99/repotruck · exit 0 · 1240ms</text>
-<text x="490.8" y="179" fill="rgb(255,255,255)" textLength="865.2" lengthAdjust="spacingAndGlyphs">                                                                                                       </text>
+<text x="163.2" y="179" fill="rgb(201,209,217)" textLength="294.0" lengthAdjust="spacingAndGlyphs">✓ devuser/primary · exit 0 · 1240ms</text>
+<text x="457.2" y="179" fill="rgb(255,255,255)" textLength="898.8" lengthAdjust="spacingAndGlyphs">                                                                                                           </text>
 <text x="12.0" y="196" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="196" fill="rgb(201,209,217)" textLength="92.4" lengthAdjust="spacingAndGlyphs">  Conflicts</text>
 <text x="112.8" y="196" fill="rgb(255,255,255)" textLength="42.0" lengthAdjust="spacingAndGlyphs">     </text>
 <text x="154.8" y="196" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="163.2" y="196" fill="rgb(201,209,217)" textLength="294.0" lengthAdjust="spacingAndGlyphs">✓ sametcn99/golter · exit 0 · 890ms</text>
-<text x="457.2" y="196" fill="rgb(255,255,255)" textLength="898.8" lengthAdjust="spacingAndGlyphs">                                                                                                           </text>
+<text x="163.2" y="196" fill="rgb(201,209,217)" textLength="277.2" lengthAdjust="spacingAndGlyphs">✓ devuser/worker · exit 0 · 890ms</text>
+<text x="440.4" y="196" fill="rgb(255,255,255)" textLength="915.6" lengthAdjust="spacingAndGlyphs">                                                                                                             </text>
 <text x="12.0" y="213" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="213" fill="rgb(110,118,129)" textLength="67.2" lengthAdjust="spacingAndGlyphs"> inspect</text>
 <text x="87.6" y="213" fill="rgb(255,255,255)" textLength="67.2" lengthAdjust="spacingAndGlyphs">        </text>
 <text x="154.8" y="213" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="163.2" y="213" fill="rgb(248,81,73)" textLength="302.4" lengthAdjust="spacingAndGlyphs">✗ sametcn99/hiretea · exit 1 · 640ms</text>
-<text x="465.6" y="213" fill="rgb(255,255,255)" textLength="890.4" lengthAdjust="spacingAndGlyphs">                                                                                                          </text>
+<text x="163.2" y="213" fill="rgb(248,81,73)" textLength="285.6" lengthAdjust="spacingAndGlyphs">✗ devuser/widgets · exit 1 · 640ms</text>
+<text x="448.8" y="213" fill="rgb(255,255,255)" textLength="907.2" lengthAdjust="spacingAndGlyphs">                                                                                                            </text>
 <text x="12.0" y="230" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="230" fill="rgb(201,209,217)" textLength="67.2" lengthAdjust="spacingAndGlyphs">  Status</text>
 <text x="87.6" y="230" fill="rgb(255,255,255)" textLength="67.2" lengthAdjust="spacingAndGlyphs">        </text>
 <text x="154.8" y="230" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="163.2" y="230" fill="rgb(110,118,129)" textLength="394.8" lengthAdjust="spacingAndGlyphs">· Mekanet-Energy/prdocs — clone missing on disk</text>
-<text x="558.0" y="230" fill="rgb(255,255,255)" textLength="798.0" lengthAdjust="spacingAndGlyphs">                                                                                               </text>
+<text x="163.2" y="230" fill="rgb(110,118,129)" textLength="403.2" lengthAdjust="spacingAndGlyphs">· acme-labs/retired-docs — clone missing on disk</text>
+<text x="566.4" y="230" fill="rgb(255,255,255)" textLength="789.6" lengthAdjust="spacingAndGlyphs">                                                                                              </text>
 <text x="12.0" y="247" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="247" fill="rgb(201,209,217)" textLength="109.2" lengthAdjust="spacingAndGlyphs">  Code Search</text>
 <text x="129.6" y="247" fill="rgb(255,255,255)" textLength="25.2" lengthAdjust="spacingAndGlyphs">   </text>

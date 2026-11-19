@@ -1,11 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1368" height="908" viewBox="0 0 1368 908" role="img" aria-label="repotruck TUI — code-search">
-<title>repotruck TUI — code-search</title>
+<svg xmlns="http://www.w3.org/2000/svg" width="1368" height="908" viewBox="0 0 1368 908" role="img" aria-label="primary TUI — code-search">
+<title>primary TUI — code-search</title>
 <rect width="1368" height="908" fill="#0d1117"/>
 <style>text{font-family:ui-monospace,"SF Mono","Cascadia Code",Consolas,"Liberation Mono",Menlo,monospace;font-size:14px;white-space:pre}</style>
 <text x="12.0" y="26" fill="rgb(48,54,61)" textLength="1344.0" lengthAdjust="spacingAndGlyphs">┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐</text>
 <text x="12.0" y="43" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="43" fill="rgb(88,166,255)" textLength="1024.8" lengthAdjust="spacingAndGlyphs"> repotruck · sametcn99 (auth: gh-cli) · preset: categorized · root: /tmp/repotruck-shots-ws · 13 repos · view: Code Search</text>
-<text x="1045.2" y="43" fill="rgb(255,255,255)" textLength="302.4" lengthAdjust="spacingAndGlyphs">                                    </text>
+<text x="20.4" y="43" fill="rgb(88,166,255)" textLength="1008.0" lengthAdjust="spacingAndGlyphs"> repotruck · devuser (auth: gh-cli) · preset: categorized · root: /tmp/repotruck-shots-ws · 11 repos · view: Code Search</text>
+<text x="1028.4" y="43" fill="rgb(255,255,255)" textLength="319.2" lengthAdjust="spacingAndGlyphs">                                      </text>
 <text x="1347.6" y="43" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="60" fill="rgb(48,54,61)" textLength="1344.0" lengthAdjust="spacingAndGlyphs">└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘</text>
 <text x="12.0" y="77" fill="rgb(48,54,61)" textLength="151.2" lengthAdjust="spacingAndGlyphs">┌────────────────┐</text>
@@ -41,50 +41,50 @@
 <text x="20.4" y="128" fill="rgb(201,209,217)" textLength="75.6" lengthAdjust="spacingAndGlyphs">  Cockpit</text>
 <text x="96.0" y="128" fill="rgb(255,255,255)" textLength="58.8" lengthAdjust="spacingAndGlyphs">       </text>
 <text x="154.8" y="128" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="163.2" y="128" fill="rgb(88,166,255)" textLength="159.6" lengthAdjust="spacingAndGlyphs">sametcn99/repotruck</text>
-<text x="322.8" y="128" fill="rgb(255,255,255)" textLength="1033.2" lengthAdjust="spacingAndGlyphs">                                                                                                                           </text>
+<text x="163.2" y="128" fill="rgb(88,166,255)" textLength="126.0" lengthAdjust="spacingAndGlyphs">devuser/primary</text>
+<text x="289.2" y="128" fill="rgb(255,255,255)" textLength="1066.8" lengthAdjust="spacingAndGlyphs">                                                                                                                               </text>
 <text x="12.0" y="145" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="145" fill="rgb(201,209,217)" textLength="109.2" lengthAdjust="spacingAndGlyphs">  Sync Center</text>
 <text x="129.6" y="145" fill="rgb(255,255,255)" textLength="25.2" lengthAdjust="spacingAndGlyphs">   </text>
 <text x="154.8" y="145" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="163.2" y="145" fill="rgb(201,209,217)" textLength="621.6" lengthAdjust="spacingAndGlyphs">  sametcn99/repotruck src/components/store/StoreCore.ts:12 class StoreCore</text>
-<text x="784.8" y="145" fill="rgb(255,255,255)" textLength="571.2" lengthAdjust="spacingAndGlyphs">                                                                    </text>
+<text x="163.2" y="145" fill="rgb(201,209,217)" textLength="495.6" lengthAdjust="spacingAndGlyphs">  devuser/primary src/store/StoreCore.ts:12 class StoreCore</text>
+<text x="658.8" y="145" fill="rgb(255,255,255)" textLength="697.2" lengthAdjust="spacingAndGlyphs">                                                                                   </text>
 <text x="12.0" y="162" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="162" fill="rgb(201,209,217)" textLength="84.0" lengthAdjust="spacingAndGlyphs">  Discover</text>
 <text x="104.4" y="162" fill="rgb(255,255,255)" textLength="50.4" lengthAdjust="spacingAndGlyphs">      </text>
 <text x="154.8" y="162" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="163.2" y="162" fill="rgb(201,209,217)" textLength="613.2" lengthAdjust="spacingAndGlyphs">  sametcn99/repotruck src/components/store/StoreBase.ts:8 class StoreBase</text>
-<text x="776.4" y="162" fill="rgb(255,255,255)" textLength="579.6" lengthAdjust="spacingAndGlyphs">                                                                     </text>
+<text x="163.2" y="162" fill="rgb(201,209,217)" textLength="487.2" lengthAdjust="spacingAndGlyphs">  devuser/primary src/store/StoreBase.ts:8 class StoreBase</text>
+<text x="650.4" y="162" fill="rgb(255,255,255)" textLength="705.6" lengthAdjust="spacingAndGlyphs">                                                                                    </text>
 <text x="12.0" y="179" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="179" fill="rgb(201,209,217)" textLength="50.4" lengthAdjust="spacingAndGlyphs">  Scan</text>
 <text x="70.8" y="179" fill="rgb(255,255,255)" textLength="84.0" lengthAdjust="spacingAndGlyphs">          </text>
 <text x="154.8" y="179" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="163.2" y="179" fill="rgb(201,209,217)" textLength="756.0" lengthAdjust="spacingAndGlyphs">  sametcn99/repotruck src/components/store/omnibar.ts:88 function buildCommandPaletteItems</text>
-<text x="919.2" y="179" fill="rgb(255,255,255)" textLength="436.8" lengthAdjust="spacingAndGlyphs">                                                    </text>
+<text x="163.2" y="179" fill="rgb(201,209,217)" textLength="571.2" lengthAdjust="spacingAndGlyphs">  devuser/primary src/store/palette.ts:88 function buildCommandItems</text>
+<text x="734.4" y="179" fill="rgb(255,255,255)" textLength="621.6" lengthAdjust="spacingAndGlyphs">                                                                          </text>
 <text x="12.0" y="196" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="196" fill="rgb(201,209,217)" textLength="92.4" lengthAdjust="spacingAndGlyphs">  Conflicts</text>
 <text x="112.8" y="196" fill="rgb(255,255,255)" textLength="42.0" lengthAdjust="spacingAndGlyphs">     </text>
 <text x="154.8" y="196" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="163.2" y="196" fill="rgb(201,209,217)" textLength="554.4" lengthAdjust="spacingAndGlyphs">  sametcn99/repotruck src/services/auth.ts:93 function requireAuth</text>
-<text x="717.6" y="196" fill="rgb(255,255,255)" textLength="638.4" lengthAdjust="spacingAndGlyphs">                                                                            </text>
+<text x="163.2" y="196" fill="rgb(201,209,217)" textLength="520.8" lengthAdjust="spacingAndGlyphs">  devuser/primary src/services/auth.ts:93 function requireAuth</text>
+<text x="684.0" y="196" fill="rgb(255,255,255)" textLength="672.0" lengthAdjust="spacingAndGlyphs">                                                                                </text>
 <text x="12.0" y="213" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="213" fill="rgb(110,118,129)" textLength="67.2" lengthAdjust="spacingAndGlyphs"> inspect</text>
 <text x="87.6" y="213" fill="rgb(255,255,255)" textLength="67.2" lengthAdjust="spacingAndGlyphs">        </text>
 <text x="154.8" y="213" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="163.2" y="213" fill="rgb(201,209,217)" textLength="646.8" lengthAdjust="spacingAndGlyphs">  sametcn99/repotruck src/components/store/types.ts:9 interface StoreSnapshot</text>
-<text x="810.0" y="213" fill="rgb(255,255,255)" textLength="546.0" lengthAdjust="spacingAndGlyphs">                                                                 </text>
+<text x="163.2" y="213" fill="rgb(201,209,217)" textLength="520.8" lengthAdjust="spacingAndGlyphs">  devuser/primary src/store/types.ts:9 interface StoreSnapshot</text>
+<text x="684.0" y="213" fill="rgb(255,255,255)" textLength="672.0" lengthAdjust="spacingAndGlyphs">                                                                                </text>
 <text x="12.0" y="230" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="230" fill="rgb(201,209,217)" textLength="67.2" lengthAdjust="spacingAndGlyphs">  Status</text>
 <text x="87.6" y="230" fill="rgb(255,255,255)" textLength="67.2" lengthAdjust="spacingAndGlyphs">        </text>
 <text x="154.8" y="230" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="163.2" y="230" fill="rgb(88,166,255)" textLength="151.2" lengthAdjust="spacingAndGlyphs">sametcn99/dreamtui</text>
-<text x="314.4" y="230" fill="rgb(255,255,255)" textLength="1041.6" lengthAdjust="spacingAndGlyphs">                                                                                                                            </text>
+<text x="163.2" y="230" fill="rgb(88,166,255)" textLength="126.0" lengthAdjust="spacingAndGlyphs">devuser/widgets</text>
+<text x="289.2" y="230" fill="rgb(255,255,255)" textLength="1066.8" lengthAdjust="spacingAndGlyphs">                                                                                                                               </text>
 <text x="12.0" y="247" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="247" fill="rgb(88,166,255)" textLength="109.2" lengthAdjust="spacingAndGlyphs">&gt; Code Search</text>
 <text x="129.6" y="247" fill="rgb(255,255,255)" textLength="25.2" lengthAdjust="spacingAndGlyphs">   </text>
 <text x="154.8" y="247" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="163.2" y="247" fill="rgb(201,209,217)" textLength="470.4" lengthAdjust="spacingAndGlyphs">  sametcn99/dreamtui src/hooks.ts:5 function useTerminal</text>
-<text x="633.6" y="247" fill="rgb(255,255,255)" textLength="722.4" lengthAdjust="spacingAndGlyphs">                                                                                      </text>
+<text x="163.2" y="247" fill="rgb(201,209,217)" textLength="445.2" lengthAdjust="spacingAndGlyphs">  devuser/widgets src/hooks.ts:5 function useTerminal</text>
+<text x="608.4" y="247" fill="rgb(255,255,255)" textLength="747.6" lengthAdjust="spacingAndGlyphs">                                                                                         </text>
 <text x="12.0" y="264" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="264" fill="rgb(201,209,217)" textLength="58.8" lengthAdjust="spacingAndGlyphs">  Stats</text>
 <text x="79.2" y="264" fill="rgb(255,255,255)" textLength="75.6" lengthAdjust="spacingAndGlyphs">         </text>

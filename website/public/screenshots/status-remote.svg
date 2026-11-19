@@ -1,11 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1368" height="908" viewBox="0 0 1368 908" role="img" aria-label="repotruck TUI — status-remote">
-<title>repotruck TUI — status-remote</title>
+<svg xmlns="http://www.w3.org/2000/svg" width="1368" height="908" viewBox="0 0 1368 908" role="img" aria-label="primary TUI — status-remote">
+<title>primary TUI — status-remote</title>
 <rect width="1368" height="908" fill="#0d1117"/>
 <style>text{font-family:ui-monospace,"SF Mono","Cascadia Code",Consolas,"Liberation Mono",Menlo,monospace;font-size:14px;white-space:pre}</style>
 <text x="12.0" y="26" fill="rgb(48,54,61)" textLength="1344.0" lengthAdjust="spacingAndGlyphs">┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐</text>
 <text x="12.0" y="43" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="43" fill="rgb(88,166,255)" textLength="982.8" lengthAdjust="spacingAndGlyphs"> repotruck · sametcn99 (auth: gh-cli) · preset: categorized · root: /tmp/repotruck-shots-ws · 13 repos · view: Status</text>
-<text x="1003.2" y="43" fill="rgb(255,255,255)" textLength="344.4" lengthAdjust="spacingAndGlyphs">                                         </text>
+<text x="20.4" y="43" fill="rgb(88,166,255)" textLength="966.0" lengthAdjust="spacingAndGlyphs"> repotruck · devuser (auth: gh-cli) · preset: categorized · root: /tmp/repotruck-shots-ws · 11 repos · view: Status</text>
+<text x="986.4" y="43" fill="rgb(255,255,255)" textLength="361.2" lengthAdjust="spacingAndGlyphs">                                           </text>
 <text x="1347.6" y="43" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="60" fill="rgb(48,54,61)" textLength="1344.0" lengthAdjust="spacingAndGlyphs">└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘</text>
 <text x="12.0" y="77" fill="rgb(48,54,61)" textLength="151.2" lengthAdjust="spacingAndGlyphs">┌────────────────┐</text>
@@ -31,104 +31,102 @@
 <text x="20.4" y="94" fill="rgb(110,118,129)" textLength="50.4" lengthAdjust="spacingAndGlyphs"> views</text>
 <text x="70.8" y="94" fill="rgb(255,255,255)" textLength="84.0" lengthAdjust="spacingAndGlyphs">          </text>
 <text x="154.8" y="94" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="163.2" y="94" fill="rgb(227,179,65)" textLength="546.0" lengthAdjust="spacingAndGlyphs">15 repos · 5 need attention · last sync: 2026-11-18T09:41:00.000Z</text>
+<text x="163.2" y="94" fill="rgb(227,179,65)" textLength="546.0" lengthAdjust="spacingAndGlyphs">13 repos · 4 need attention · last sync: 2026-11-18T09:41:00.000Z</text>
 <text x="709.2" y="94" fill="rgb(255,255,255)" textLength="646.8" lengthAdjust="spacingAndGlyphs">                                                                             </text>
 <text x="12.0" y="111" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="111" fill="rgb(110,118,129)" textLength="84.0" lengthAdjust="spacingAndGlyphs"> workspace</text>
 <text x="104.4" y="111" fill="rgb(255,255,255)" textLength="50.4" lengthAdjust="spacingAndGlyphs">      </text>
 <text x="154.8" y="111" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="163.2" y="111" fill="rgb(110,118,129)" textLength="571.2" lengthAdjust="spacingAndGlyphs"> repository                  state   ahead/behind  wt  PR  CI  disk </text>
-<text x="734.4" y="111" fill="rgb(255,255,255)" textLength="621.6" lengthAdjust="spacingAndGlyphs">                                                                          </text>
+<text x="163.2" y="111" fill="rgb(110,118,129)" textLength="529.2" lengthAdjust="spacingAndGlyphs"> repository             state   ahead/behind  wt  PR  CI  disk </text>
+<text x="692.4" y="111" fill="rgb(255,255,255)" textLength="663.6" lengthAdjust="spacingAndGlyphs">                                                                               </text>
 <text x="12.0" y="128" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="128" fill="rgb(201,209,217)" textLength="75.6" lengthAdjust="spacingAndGlyphs">  Cockpit</text>
 <text x="96.0" y="128" fill="rgb(255,255,255)" textLength="58.8" lengthAdjust="spacingAndGlyphs">       </text>
 <text x="154.8" y="128" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="163.2" y="128" fill="rgb(88,166,255)" textLength="571.2" lengthAdjust="spacingAndGlyphs">&gt;sametcn99/repotruck         dirty   ↑2 ↓0         ⑂   #3  ✓   yes  </text>
-<text x="734.4" y="128" fill="rgb(255,255,255)" textLength="621.6" lengthAdjust="spacingAndGlyphs">                                                                          </text>
+<text x="163.2" y="128" fill="rgb(88,166,255)" textLength="529.2" lengthAdjust="spacingAndGlyphs">&gt;devuser/primary        dirty   ↑2 ↓0         ⑂   #3  ✓   yes  </text>
+<text x="692.4" y="128" fill="rgb(255,255,255)" textLength="663.6" lengthAdjust="spacingAndGlyphs">                                                                               </text>
 <text x="12.0" y="145" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="145" fill="rgb(201,209,217)" textLength="109.2" lengthAdjust="spacingAndGlyphs">  Sync Center</text>
 <text x="129.6" y="145" fill="rgb(255,255,255)" textLength="25.2" lengthAdjust="spacingAndGlyphs">   </text>
 <text x="154.8" y="145" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="163.2" y="145" fill="rgb(201,209,217)" textLength="571.2" lengthAdjust="spacingAndGlyphs"> sametcn99/golter            clean   —             —   #0  ✓   yes  </text>
-<text x="734.4" y="145" fill="rgb(255,255,255)" textLength="621.6" lengthAdjust="spacingAndGlyphs">                                                                          </text>
+<text x="163.2" y="145" fill="rgb(201,209,217)" textLength="529.2" lengthAdjust="spacingAndGlyphs"> devuser/worker         clean   —             —   #0  ✓   yes  </text>
+<text x="692.4" y="145" fill="rgb(255,255,255)" textLength="663.6" lengthAdjust="spacingAndGlyphs">                                                                               </text>
 <text x="12.0" y="162" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="162" fill="rgb(201,209,217)" textLength="84.0" lengthAdjust="spacingAndGlyphs">  Discover</text>
 <text x="104.4" y="162" fill="rgb(255,255,255)" textLength="50.4" lengthAdjust="spacingAndGlyphs">      </text>
 <text x="154.8" y="162" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="163.2" y="162" fill="rgb(201,209,217)" textLength="571.2" lengthAdjust="spacingAndGlyphs"> sametcn99/tcptui            clean   ↑1 ↓0         —   —   —   yes  </text>
-<text x="734.4" y="162" fill="rgb(255,255,255)" textLength="621.6" lengthAdjust="spacingAndGlyphs">                                                                          </text>
+<text x="163.2" y="162" fill="rgb(201,209,217)" textLength="529.2" lengthAdjust="spacingAndGlyphs"> devuser/tui-tool       clean   ↑1 ↓0         —   —   —   yes  </text>
+<text x="692.4" y="162" fill="rgb(255,255,255)" textLength="663.6" lengthAdjust="spacingAndGlyphs">                                                                               </text>
 <text x="12.0" y="179" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="179" fill="rgb(201,209,217)" textLength="50.4" lengthAdjust="spacingAndGlyphs">  Scan</text>
 <text x="70.8" y="179" fill="rgb(255,255,255)" textLength="84.0" lengthAdjust="spacingAndGlyphs">          </text>
 <text x="154.8" y="179" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="163.2" y="179" fill="rgb(201,209,217)" textLength="571.2" lengthAdjust="spacingAndGlyphs"> sametcn99/dreamtui          clean   —             —   —   —   yes  </text>
-<text x="734.4" y="179" fill="rgb(255,255,255)" textLength="621.6" lengthAdjust="spacingAndGlyphs">                                                                          </text>
+<text x="163.2" y="179" fill="rgb(201,209,217)" textLength="529.2" lengthAdjust="spacingAndGlyphs"> devuser/widgets        clean   —             —   —   —   yes  </text>
+<text x="692.4" y="179" fill="rgb(255,255,255)" textLength="663.6" lengthAdjust="spacingAndGlyphs">                                                                               </text>
 <text x="12.0" y="196" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="196" fill="rgb(201,209,217)" textLength="92.4" lengthAdjust="spacingAndGlyphs">  Conflicts</text>
 <text x="112.8" y="196" fill="rgb(255,255,255)" textLength="42.0" lengthAdjust="spacingAndGlyphs">     </text>
 <text x="154.8" y="196" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="163.2" y="196" fill="rgb(201,209,217)" textLength="571.2" lengthAdjust="spacingAndGlyphs"> sametcn99/hiretea           dirty   —             —   —   —   yes  </text>
-<text x="734.4" y="196" fill="rgb(255,255,255)" textLength="621.6" lengthAdjust="spacingAndGlyphs">                                                                          </text>
+<text x="163.2" y="196" fill="rgb(201,209,217)" textLength="529.2" lengthAdjust="spacingAndGlyphs"> devuser/site           clean   —             —   —   —   yes  </text>
+<text x="692.4" y="196" fill="rgb(255,255,255)" textLength="663.6" lengthAdjust="spacingAndGlyphs">                                                                               </text>
 <text x="12.0" y="213" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="213" fill="rgb(110,118,129)" textLength="67.2" lengthAdjust="spacingAndGlyphs"> inspect</text>
 <text x="87.6" y="213" fill="rgb(255,255,255)" textLength="67.2" lengthAdjust="spacingAndGlyphs">        </text>
 <text x="154.8" y="213" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="163.2" y="213" fill="rgb(201,209,217)" textLength="571.2" lengthAdjust="spacingAndGlyphs"> sametcn99/maalesef-tr       clean   —             —   —   —   yes  </text>
-<text x="734.4" y="213" fill="rgb(255,255,255)" textLength="621.6" lengthAdjust="spacingAndGlyphs">                                                                          </text>
+<text x="163.2" y="213" fill="rgb(201,209,217)" textLength="529.2" lengthAdjust="spacingAndGlyphs"> devuser/scripts-py     clean   —             —   —   —   yes  </text>
+<text x="692.4" y="213" fill="rgb(255,255,255)" textLength="663.6" lengthAdjust="spacingAndGlyphs">                                                                               </text>
 <text x="12.0" y="230" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="230" fill="rgb(88,166,255)" textLength="67.2" lengthAdjust="spacingAndGlyphs">&gt; Status</text>
 <text x="87.6" y="230" fill="rgb(255,255,255)" textLength="67.2" lengthAdjust="spacingAndGlyphs">        </text>
 <text x="154.8" y="230" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="163.2" y="230" fill="rgb(201,209,217)" textLength="571.2" lengthAdjust="spacingAndGlyphs"> sametcn99/personal-website  clean   —             —   —   —   yes  </text>
-<text x="734.4" y="230" fill="rgb(255,255,255)" textLength="621.6" lengthAdjust="spacingAndGlyphs">                                                                          </text>
+<text x="163.2" y="230" fill="rgb(201,209,217)" textLength="529.2" lengthAdjust="spacingAndGlyphs"> acme-labs/dashboard    dirty   ↑0 ↓3         —   #1  ✗   yes  </text>
+<text x="692.4" y="230" fill="rgb(255,255,255)" textLength="663.6" lengthAdjust="spacingAndGlyphs">                                                                               </text>
 <text x="12.0" y="247" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="247" fill="rgb(201,209,217)" textLength="109.2" lengthAdjust="spacingAndGlyphs">  Code Search</text>
 <text x="129.6" y="247" fill="rgb(255,255,255)" textLength="25.2" lengthAdjust="spacingAndGlyphs">   </text>
 <text x="154.8" y="247" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="163.2" y="247" fill="rgb(201,209,217)" textLength="571.2" lengthAdjust="spacingAndGlyphs"> sametcn99/case-fx-tool      clean   —             —   —   —   yes  </text>
-<text x="734.4" y="247" fill="rgb(255,255,255)" textLength="621.6" lengthAdjust="spacingAndGlyphs">                                                                          </text>
+<text x="163.2" y="247" fill="rgb(201,209,217)" textLength="529.2" lengthAdjust="spacingAndGlyphs"> acme-labs/core-api     clean   ↑0 ↓1         —   —   —   yes  </text>
+<text x="692.4" y="247" fill="rgb(255,255,255)" textLength="663.6" lengthAdjust="spacingAndGlyphs">                                                                               </text>
 <text x="12.0" y="264" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="264" fill="rgb(201,209,217)" textLength="58.8" lengthAdjust="spacingAndGlyphs">  Stats</text>
 <text x="79.2" y="264" fill="rgb(255,255,255)" textLength="75.6" lengthAdjust="spacingAndGlyphs">         </text>
 <text x="154.8" y="264" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="163.2" y="264" fill="rgb(201,209,217)" textLength="571.2" lengthAdjust="spacingAndGlyphs"> Mekanet-Energy/hmi          dirty   ↑0 ↓3         —   #1  ✗   yes  </text>
-<text x="734.4" y="264" fill="rgb(255,255,255)" textLength="621.6" lengthAdjust="spacingAndGlyphs">                                                                          </text>
+<text x="163.2" y="264" fill="rgb(201,209,217)" textLength="529.2" lengthAdjust="spacingAndGlyphs"> vertex-soft/docs-site  clean   —             —   —   —   yes  </text>
+<text x="692.4" y="264" fill="rgb(255,255,255)" textLength="663.6" lengthAdjust="spacingAndGlyphs">                                                                               </text>
 <text x="12.0" y="281" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="281" fill="rgb(201,209,217)" textLength="92.4" lengthAdjust="spacingAndGlyphs">  Changelog</text>
 <text x="112.8" y="281" fill="rgb(255,255,255)" textLength="42.0" lengthAdjust="spacingAndGlyphs">     </text>
 <text x="154.8" y="281" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="163.2" y="281" fill="rgb(201,209,217)" textLength="571.2" lengthAdjust="spacingAndGlyphs"> Mekanet-Energy/opcua-server clean   ↑0 ↓1         —   —   —   yes  </text>
-<text x="734.4" y="281" fill="rgb(255,255,255)" textLength="621.6" lengthAdjust="spacingAndGlyphs">                                                                          </text>
+<text x="163.2" y="281" fill="rgb(201,209,217)" textLength="529.2" lengthAdjust="spacingAndGlyphs"> devuser/forked-lib     clean   —             —   —   —   yes  </text>
+<text x="692.4" y="281" fill="rgb(255,255,255)" textLength="663.6" lengthAdjust="spacingAndGlyphs">                                                                               </text>
 <text x="12.0" y="298" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="298" fill="rgb(110,118,129)" textLength="75.6" lengthAdjust="spacingAndGlyphs"> automate</text>
 <text x="96.0" y="298" fill="rgb(255,255,255)" textLength="58.8" lengthAdjust="spacingAndGlyphs">       </text>
 <text x="154.8" y="298" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="163.2" y="298" fill="rgb(201,209,217)" textLength="571.2" lengthAdjust="spacingAndGlyphs"> Hiretea/hiretea             clean   —             —   —   —   yes  </text>
-<text x="734.4" y="298" fill="rgb(255,255,255)" textLength="621.6" lengthAdjust="spacingAndGlyphs">                                                                          </text>
+<text x="163.2" y="298" fill="rgb(201,209,217)" textLength="529.2" lengthAdjust="spacingAndGlyphs"> devuser/mirror-svc     clean   —             —   —   —   yes  </text>
+<text x="692.4" y="298" fill="rgb(255,255,255)" textLength="663.6" lengthAdjust="spacingAndGlyphs">                                                                               </text>
 <text x="12.0" y="315" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="315" fill="rgb(201,209,217)" textLength="109.2" lengthAdjust="spacingAndGlyphs">  Run Console</text>
 <text x="129.6" y="315" fill="rgb(255,255,255)" textLength="25.2" lengthAdjust="spacingAndGlyphs">   </text>
 <text x="154.8" y="315" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="163.2" y="315" fill="rgb(201,209,217)" textLength="571.2" lengthAdjust="spacingAndGlyphs"> sametcn99/RepoHub           clean   —             —   —   —   yes  </text>
-<text x="734.4" y="315" fill="rgb(255,255,255)" textLength="621.6" lengthAdjust="spacingAndGlyphs">                                                                          </text>
+<text x="163.2" y="315" fill="rgb(201,209,217)" textLength="529.2" lengthAdjust="spacingAndGlyphs"> acme-labs/legacy-php   clean   —             —   —   —   yes  </text>
+<text x="692.4" y="315" fill="rgb(255,255,255)" textLength="663.6" lengthAdjust="spacingAndGlyphs">                                                                               </text>
 <text x="12.0" y="332" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="332" fill="rgb(110,118,129)" textLength="75.6" lengthAdjust="spacingAndGlyphs"> organize</text>
 <text x="96.0" y="332" fill="rgb(255,255,255)" textLength="58.8" lengthAdjust="spacingAndGlyphs">       </text>
 <text x="154.8" y="332" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="163.2" y="332" fill="rgb(201,209,217)" textLength="571.2" lengthAdjust="spacingAndGlyphs"> sametcn99/server            clean   —             —   —   —   yes  </text>
-<text x="734.4" y="332" fill="rgb(255,255,255)" textLength="621.6" lengthAdjust="spacingAndGlyphs">                                                                          </text>
+<text x="163.2" y="332" fill="rgb(201,209,217)" textLength="529.2" lengthAdjust="spacingAndGlyphs"> acme-labs/retired-docs missing —             —   —   —   no   </text>
+<text x="692.4" y="332" fill="rgb(255,255,255)" textLength="663.6" lengthAdjust="spacingAndGlyphs">                                                                               </text>
 <text x="12.0" y="349" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="349" fill="rgb(201,209,217)" textLength="75.6" lengthAdjust="spacingAndGlyphs">  Presets</text>
 <text x="96.0" y="349" fill="rgb(255,255,255)" textLength="58.8" lengthAdjust="spacingAndGlyphs">       </text>
 <text x="154.8" y="349" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="163.2" y="349" fill="rgb(201,209,217)" textLength="571.2" lengthAdjust="spacingAndGlyphs"> Mekanet-Energy/web-tr-php   clean   —             —   —   —   yes  </text>
-<text x="734.4" y="349" fill="rgb(255,255,255)" textLength="621.6" lengthAdjust="spacingAndGlyphs">                                                                          </text>
+<text x="163.2" y="349" fill="rgb(255,255,255)" textLength="1192.8" lengthAdjust="spacingAndGlyphs">                                                                                                                                              </text>
 <text x="12.0" y="366" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="366" fill="rgb(201,209,217)" textLength="84.0" lengthAdjust="spacingAndGlyphs">  Profiles</text>
 <text x="104.4" y="366" fill="rgb(255,255,255)" textLength="50.4" lengthAdjust="spacingAndGlyphs">      </text>
 <text x="154.8" y="366" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="163.2" y="366" fill="rgb(201,209,217)" textLength="571.2" lengthAdjust="spacingAndGlyphs"> Mekanet-Energy/prdocs       missing —             —   —   —   no   </text>
-<text x="734.4" y="366" fill="rgb(255,255,255)" textLength="621.6" lengthAdjust="spacingAndGlyphs">                                                                          </text>
+<text x="163.2" y="366" fill="rgb(255,255,255)" textLength="1192.8" lengthAdjust="spacingAndGlyphs">                                                                                                                                              </text>
 <text x="12.0" y="383" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="383" fill="rgb(201,209,217)" textLength="58.8" lengthAdjust="spacingAndGlyphs">  Trash</text>
 <text x="79.2" y="383" fill="rgb(255,255,255)" textLength="75.6" lengthAdjust="spacingAndGlyphs">         </text>
