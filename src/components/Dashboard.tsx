@@ -4,9 +4,9 @@ import { AliasModal } from "./AliasModal.tsx";
 import { CloneModal } from "./CloneModal.tsx";
 import { CommandFormModal } from "./CommandFormModal.tsx";
 import { ConfirmModal } from "./ConfirmModal.tsx";
+import { ContextMenu } from "./ContextMenu.tsx";
 import { CreateModal } from "./CreateModal.tsx";
 import { DetailModal } from "./DetailModal.tsx";
-import { ContextMenu } from "./ContextMenu.tsx";
 import { DialogBox } from "./DialogBox.tsx";
 import { HelpModal } from "./HelpModal.tsx";
 import { MoveModal } from "./MoveModal.tsx";
@@ -22,16 +22,20 @@ import { StartPreviewModal } from "./StartPreviewModal.tsx";
 import { StatusPanel } from "./StatusPanel.tsx";
 import type { ModalState, StatusPhase, Store, ViewId } from "./store.ts";
 import { theme } from "./theme.ts";
-import { CodeSearchView } from "./views/CodeSearchView.tsx";
-import { PlaceholderView } from "./views/PlaceholderView.tsx";
-import { RunConsoleView } from "./views/RunConsoleView.tsx";
-import { StatsView } from "./views/StatsView.tsx";
-import { StatusMatrixView } from "./views/StatusMatrixView.tsx";
-import { TrashBackupsView } from "./views/TrashBackupsView.tsx";
 import { AgentsView } from "./views/AgentsView.tsx";
+import { CodeSearchView } from "./views/CodeSearchView.tsx";
+import { ConflictResolverView } from "./views/ConflictResolverView.tsx";
+import { DiscoverView } from "./views/DiscoverView.tsx";
+import { ChangelogView, ScanAdoptView, WorktreesView } from "./views/FlowViews.tsx";
+import { PlaceholderView } from "./views/PlaceholderView.tsx";
 import { PresetsView } from "./views/PresetsView.tsx";
 import { ProfilesView } from "./views/ProfilesView.tsx";
+import { RunConsoleView } from "./views/RunConsoleView.tsx";
 import { SettingsView } from "./views/SettingsView.tsx";
+import { StatsView } from "./views/StatsView.tsx";
+import { StatusMatrixView } from "./views/StatusMatrixView.tsx";
+import { SyncCenterView } from "./views/SyncCenterView.tsx";
+import { TrashBackupsView } from "./views/TrashBackupsView.tsx";
 import { VIEW_BY_ID, VIEW_GO_KEYS } from "./views/viewRegistry.ts";
 import { WorkspacePicker } from "./WorkspacePicker.tsx";
 import { WorkspaceSkeleton } from "./WorkspaceSkeleton.tsx";
@@ -159,6 +163,18 @@ function renderPage(view: ViewId, store: Store, width: number, height: number) {
       return <AgentsView store={store} width={width} />;
     case "settings":
       return <SettingsView store={store} width={width} />;
+    case "sync":
+      return <SyncCenterView store={store} width={width} />;
+    case "discover":
+      return <DiscoverView store={store} width={width} />;
+    case "resolve":
+      return <ConflictResolverView store={store} />;
+    case "changelog":
+      return <ChangelogView store={store} width={width} />;
+    case "scan":
+      return <ScanAdoptView store={store} />;
+    case "worktree":
+      return <WorktreesView store={store} />;
     case "cockpit":
       return null;
     default: {

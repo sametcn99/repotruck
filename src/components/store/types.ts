@@ -248,6 +248,11 @@ export interface StoreSnapshot {
   statsPage: StatsPageState | null;
   trashPage: TrashPageState | null;
   settingsPage: SettingsPageState | null;
+  syncCenter: SyncCenterState | null;
+  discoverPage: DiscoverPageState | null;
+  changelogPage: ChangelogPageState | null;
+  scanPage: ScanPageState | null;
+  worktreePage: WorktreePageState | null;
   omnibarLoading: boolean;
   omnibarSymbols: readonly CodeSearchMatch[];
   omnibarGithubRepos: readonly RepoInfo[];
@@ -316,6 +321,42 @@ export interface StatsPageState {
   stats: WorkspaceStatsOutput | null;
   health: HealthScoreResult | null;
   checks: readonly DoctorCheck[];
+}
+
+export interface SyncCenterState {
+  scope: string;
+  limit: number;
+  concurrency: number;
+  depth: number;
+  blobless: boolean;
+  stash: boolean;
+  divergence: "fail" | "rebase" | "reset" | "skip";
+  include: string;
+  exclude: string;
+  watchSeconds: number;
+  running: boolean;
+}
+
+export interface DiscoverPageState {
+  query: string;
+  limit: number;
+  depth: number;
+  blobless: boolean;
+  loading: boolean;
+  results: readonly import("../../services/github.ts").RepoInfo[];
+  selected: ReadonlySet<string>;
+}
+
+export interface ChangelogPageState {
+  markdown: string;
+}
+
+export interface ScanPageState {
+  unregistered: readonly string[];
+}
+
+export interface WorktreePageState {
+  rows: readonly string[];
 }
 
 export interface SettingsPageState {
