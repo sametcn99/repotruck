@@ -76,6 +76,29 @@ export const HEALTH_FILTERS: readonly HealthFilter[] = [
 
 export type RightPaneTab = "activity" | "inspector" | "health";
 
+/**
+ * Full-screen views of the dashboard shell. The cockpit is the classic
+ * three-pane layout; every other id is a dedicated page reachable from the
+ * nav rail, the `v`-prefix keys, `[`/`]` cycling, or the command palette.
+ */
+export type ViewId =
+  | "cockpit"
+  | "sync"
+  | "resolve"
+  | "discover"
+  | "scan"
+  | "status"
+  | "search"
+  | "stats"
+  | "changelog"
+  | "run"
+  | "presets"
+  | "profiles"
+  | "trash"
+  | "worktree"
+  | "agents"
+  | "settings";
+
 export type OmnibarMode = "commands" | "symbols" | "github" | "runner";
 
 export interface OmnibarCommandItem {
@@ -209,6 +232,7 @@ export interface StoreSnapshot {
   preset: PresetRef;
   customPresets: readonly CustomPreset[];
   focus: FocusRegion;
+  view: ViewId;
   modal: ModalState;
   modalError: string | null;
   cursor: number;

@@ -34,6 +34,21 @@ export function visibleSlice(cursor: number, total: number, viewportRows: number
 export const MIN_CENTER_COLUMNS = 20;
 const PANEL_FLOOR = 8;
 
+/** Width of the persistent nav rail when it is visible. */
+export const NAV_RAIL_WIDTH = 18;
+/** Below this terminal width the rail is hidden; v-prefix keys still work.
+ *  Wide enough that the three-pane cockpit keeps its full budget. */
+export const NAV_RAIL_MIN_TERMINAL = 132;
+
+export function navRailVisible(terminalWidth: number): boolean {
+  return terminalWidth >= NAV_RAIL_MIN_TERMINAL;
+}
+
+/** Columns remaining for the cockpit/page area after the nav rail. */
+export function contentWidth(terminalWidth: number): number {
+  return navRailVisible(terminalWidth) ? terminalWidth - NAV_RAIL_WIDTH : terminalWidth;
+}
+
 function panelBudget(terminalWidth: number): number {
   return Math.max(MIN_CENTER_COLUMNS, terminalWidth - MIN_CENTER_COLUMNS);
 }

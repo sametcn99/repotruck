@@ -4,6 +4,7 @@ import { warnQuiet } from "../../services/diagnostics.ts";
 import { readSettings, writeSettings } from "../../services/settings.ts";
 import { loadWorkspace } from "../../services/workspace.ts";
 import { activateTheme, activeThemeName, cycleThemeName } from "../theme.ts";
+import { nextViewId } from "../views/viewRegistry.ts";
 import { buildSidebarRows, repoKey } from "./filters.ts";
 import {
   performBulkCommandRun,
@@ -22,6 +23,7 @@ import {
   SORT_CYCLE,
   type SortKey,
   STATUS_VIEW_ROWS,
+  type ViewId,
   type WorkspaceMaintenanceKind,
 } from "./types.ts";
 
@@ -97,6 +99,15 @@ export class StoreCore extends StoreBase {
     this.set({ rightPaneTab: tab, statusScroll: 0 });
     if (tab === "inspector") void this.refreshInspector();
     if (tab === "health") void this.refreshHealthTab();
+  };
+
+  setView = (view: ViewId): void => {
+    if (this.state.view === view) return;
+    this.set({ view, statusScroll: 0 });
+  };
+
+  cycleView = (direction: 1 | -1): void => {
+    this.setView(nextViewId(this.state.view, direction));
   };
 
   runHealthDoctorFix = async (): Promise<void> => {

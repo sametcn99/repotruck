@@ -1,5 +1,5 @@
 import { useKeyboard, useRenderer, useTerminalDimensions } from "@opentui/react";
-import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { AliasModal } from "./AliasModal.tsx";
 import { CloneModal } from "./CloneModal.tsx";
 import { ConfirmModal } from "./ConfirmModal.tsx";
@@ -7,6 +7,7 @@ import { CreateModal } from "./CreateModal.tsx";
 import { DetailModal } from "./DetailModal.tsx";
 import { HelpModal } from "./HelpModal.tsx";
 import { MoveModal } from "./MoveModal.tsx";
+import { NavRail } from "./NavRail.tsx";
 import { OmnibarModal } from "./OmnibarModal.tsx";
 import { OpenModal } from "./OpenModal.tsx";
 import { ReorganizeModal } from "./ReorganizeModal.tsx";
@@ -16,18 +17,41 @@ import { SearchModal } from "./SearchModal.tsx";
 import { Sidebar } from "./Sidebar.tsx";
 import { StartPreviewModal } from "./StartPreviewModal.tsx";
 import { StatusPanel } from "./StatusPanel.tsx";
-import type { ModalState, StatusPhase, Store } from "./store.ts";
+import type { ModalState, StatusPhase, Store, ViewId } from "./store.ts";
 import { theme } from "./theme.ts";
+import { PlaceholderView } from "./views/PlaceholderView.tsx";
+import { VIEW_BY_ID, VIEW_GO_KEYS } from "./views/viewRegistry.ts";
 import { WorkspacePicker } from "./WorkspacePicker.tsx";
 import { WorkspaceSkeleton } from "./WorkspaceSkeleton.tsx";
 import { WorktreeModal } from "./WorktreeModal.tsx";
-import { repoKeyOf, repoViewportRows, sidebarWidth, statusWidth } from "./windowing.ts";
+import {
+  contentWidth,
+  FOOTER_ROWS,
+  HEADER_ROWS,
+  NAV_RAIL_WIDTH,
+  navRailVisible,
+  repoKeyOf,
+  repoViewportRows,
+  sidebarWidth,
+  statusWidth,
+} from "./windowing.ts";
 
 // A second q inside this window while a sync runs actually quits.
 const QUIT_CONFIRM_WINDOW_MS = 3000;
+// `v` followed by a view letter opens that page; the pairing expires so a
+// stray `v` never swallows the next keypress indefinitely.
+const VIEW_PREFIX_WINDOW_MS = 1500;
 
 function isKey(key: { name: string; sequence: string }, match: string): boolean {
   return key.name === match || key.sequence === match;
+}
+
+function isPlainLetter(
+  key: { name: string; sequence?: string; shift?: boolean; ctrl?: boolean },
+  letter: string,
+): boolean {
+  const seq = key.sequence ?? key.name ?? "";
+  return seq === letter && key.shift !== true && key.ctrl !== true;
 }
 
 function isShiftLetter(
@@ -42,12 +66,17 @@ function trimToWidth(line: string, innerWidth: number): string {
   return `${line.slice(0, Math.max(1, innerWidth - 1))}…`;
 }
 
-export function buildFooterLines(width: number, runningSummary: string | null = null): string[] {
+export function buildFooterLines(
+  width: number,
+  runningSummary: string | null = null,
+  viewTitle: string | null = null,
+): string[] {
   const innerWidth = Math.max(30, width - 4);
   if (runningSummary !== null) {
     return [trimToWidth(` ${runningSummary}`, innerWidth)];
   }
   const items = [
+    ...(viewTitle !== null ? ["[Esc] Cockpit", `[v] ${viewTitle}`] : []),
     "[Tab] Focus",
     "[Space] Select",
     "[?] Help",
@@ -93,6 +122,15 @@ export function buildRunningSummary(
 function assertUnreachable(value: never): null {
   void value;
   return null;
+}
+
+// Page body for a non-cockpit view. Implementing tickets replace the
+// placeholder with a real component; the registry drives rail, help and
+// palette entries so the shell stays consistent meanwhile.
+function renderPage(view: ViewId, width: number) {
+  const spec = VIEW_BY_ID.get(view);
+  if (spec === undefined) return null;
+  return <PlaceholderView spec={spec} width={width} />;
 }
 
 function renderModal(
@@ -150,6 +188,9 @@ export function Dashboard({
   const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot);
   const { width, height } = useTerminalDimensions();
   const [quitArmedAt, setQuitArmedAt] = useState(0);
+  // `v`-prefix arming lives in a ref: key handling must not depend on a
+  // pending React re-render between the two keypresses.
+  const viewPrefixRef = useRef(0);
 
   useEffect(() => {
     void store.ensureInit();
@@ -176,6 +217,10 @@ export function Dashboard({
 
   // Mouse support: the renderer reports wheel and click events on the
   // root renderable; the store maps coordinates to list rows / pane focus.
+  // The nav rail occupies the leftmost columns of the content area (header
+  // and footer span the full width), so content-row events are shifted by
+  // the rail width and clicks landing on the rail itself are left to its
+  // own component handlers.
   const renderer = useRenderer();
   useEffect(() => {
     const root = renderer.root as unknown as {
@@ -189,28 +234,39 @@ export function Dashboard({
           }) => void)
         | null;
     };
-    root.onMouseDown = (event) => {
+    const routeMouse = (
+      event: { button: number; x: number; y: number; scroll?: { direction?: string } },
+      type: "down" | "scroll",
+    ) => {
+      const state = store.getSnapshot();
+      const railActive =
+        state.modal === null && state.view === "cockpit" && navRailVisible(width);
+      let x = event.x;
+      if (railActive && event.y >= HEADER_ROWS && event.y < height - FOOTER_ROWS) {
+        x = event.x - NAV_RAIL_WIDTH;
+        if (x < 0) return; // nav rail: its rows handle their own clicks
+      }
+      if (state.modal === null && state.view !== "cockpit") {
+        // Pages own their content area; only header/footer bands route.
+        if (event.y >= HEADER_ROWS && event.y < height - FOOTER_ROWS) return;
+      }
       store.handleMouse(
-        { button: event.button, x: event.x, y: event.y, type: "down" },
-        width,
+        { button: event.button, x, y: event.y, type, scroll: event.scroll },
+        railActive ? width - NAV_RAIL_WIDTH : width,
         height,
         {
           onQuit: handleQuit,
         },
       );
     };
+    root.onMouseDown = (event) => {
+      routeMouse(event, "down");
+    };
     root.onMouseScroll = (event) => {
       const isUp = event.scroll?.direction === "up" || event.button === 4;
-      store.handleMouse(
-        {
-          button: isUp ? 4 : 5,
-          x: event.x,
-          y: event.y,
-          type: "scroll",
-          scroll: event.scroll,
-        },
-        width,
-        height,
+      routeMouse(
+        { button: isUp ? 4 : 5, x: event.x, y: event.y, scroll: event.scroll },
+        "scroll",
       );
     };
     return () => {
@@ -256,6 +312,43 @@ export function Dashboard({
     }
     if (key.sequence === "!") {
       store.openOmnibar("runner");
+      return;
+    }
+    // ---- view layer: Escape back, [ ] cycling, v-prefix go-to -------------
+    if (key.name === "escape" && current.view !== "cockpit") {
+      store.setView("cockpit");
+      viewPrefixRef.current = 0;
+      return;
+    }
+    if (key.sequence === "[") {
+      store.cycleView(-1);
+      return;
+    }
+    if (key.sequence === "]") {
+      store.cycleView(1);
+      return;
+    }
+    if (isPlainLetter(key, "v")) {
+      const now = Date.now();
+      const armedAt = viewPrefixRef.current;
+      viewPrefixRef.current = armedAt !== 0 && now - armedAt <= VIEW_PREFIX_WINDOW_MS ? 0 : now;
+      return;
+    }
+    if (
+      viewPrefixRef.current !== 0 &&
+      Date.now() - viewPrefixRef.current <= VIEW_PREFIX_WINDOW_MS
+    ) {
+      viewPrefixRef.current = 0;
+      const target = VIEW_GO_KEYS.get(key.sequence ?? key.name ?? "");
+      if (target !== undefined) {
+        store.setView(target);
+        return;
+      }
+      // not a view letter: disarm and fall through to the normal handler
+    }
+    // Pages own their keyboard surface (like modals do); only the shell
+    // keys above and the global ones handled earlier still apply.
+    if (current.view !== "cockpit") {
       return;
     }
     if (isShiftLetter(key, "D") && current.focus === "list") {
@@ -440,10 +533,15 @@ export function Dashboard({
   const reposCount =
     snapshot.phase === "loading" ? "discovering…" : `${snapshot.repos.length} repos`;
   const offlinePrefix = snapshot.offline ? "[OFFLINE] " : "";
-  const header = `${offlinePrefix}repotruck · ${login} (auth: ${snapshot.authMethod ?? "?"}) · preset: ${snapshot.preset} · root: ${snapshot.root} · ${reposCount}`;
+  const viewTitle =
+    snapshot.view === "cockpit" ? null : (VIEW_BY_ID.get(snapshot.view)?.title ?? null);
+  const header = `${offlinePrefix}repotruck · ${login} (auth: ${snapshot.authMethod ?? "?"}) · preset: ${snapshot.preset} · root: ${snapshot.root} · ${reposCount}${viewTitle !== null ? ` · view: ${viewTitle}` : ""}`;
   const showCockpit = snapshot.modal === null || snapshot.modal.type === "search";
+  const shellVisible = snapshot.modal === null;
   const runningSummary =
-    snapshot.running && showCockpit ? buildRunningSummary(snapshot.statuses, quitArmed) : null;
+    snapshot.running && shellVisible ? buildRunningSummary(snapshot.statuses, quitArmed) : null;
+  const railVisible = navRailVisible(width);
+  const pageWidth = contentWidth(width);
   const dimFg = theme.dim();
 
   return (
@@ -500,16 +598,22 @@ export function Dashboard({
             </text>
           </box>
         </box>
-      ) : showCockpit ? (
+      ) : showCockpit && snapshot.view === "cockpit" ? (
         <box flexDirection="row" flexGrow={1}>
-          <Sidebar store={store} width={sidebarWidth(width)} />
+          {railVisible ? <NavRail store={store} width={NAV_RAIL_WIDTH} /> : null}
+          <Sidebar store={store} width={sidebarWidth(pageWidth)} />
           <RepoList store={store} />
-          <StatusPanel store={store} width={statusWidth(width)} />
+          <StatusPanel store={store} width={statusWidth(pageWidth)} />
         </box>
       ) : snapshot.modal !== null ? (
         renderModal(snapshot.modal, store, onSuspendAndRun)
-      ) : null}
-      {snapshot.updateToast !== null && showCockpit ? (
+      ) : (
+        <box flexDirection="row" flexGrow={1}>
+          {railVisible ? <NavRail store={store} width={NAV_RAIL_WIDTH} /> : null}
+          {renderPage(snapshot.view, pageWidth)}
+        </box>
+      )}
+      {snapshot.updateToast !== null && shellVisible ? (
         <box
           border
           borderColor={theme.toast()}
@@ -530,7 +634,7 @@ export function Dashboard({
         height={3}
         onMouseDown={(event) => {
           event.stopPropagation?.();
-          if (snapshot.running && showCockpit) {
+          if (snapshot.running && shellVisible) {
             handleQuit();
             return;
           }
@@ -551,7 +655,7 @@ export function Dashboard({
           }
         }}
       >
-        {buildFooterLines(width, runningSummary).map((line) => (
+        {buildFooterLines(width, runningSummary, viewTitle).map((line) => (
           <text key={line} fg={dimFg}>
             {line}
           </text>

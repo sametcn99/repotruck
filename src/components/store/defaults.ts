@@ -84,6 +84,7 @@ export function buildInitialSnapshot(root: string): StoreSnapshot {
     preset: "categorized",
     customPresets: [],
     focus: "list",
+    view: "cockpit",
     modal: null,
     modalError: null,
     cursor: 0,
