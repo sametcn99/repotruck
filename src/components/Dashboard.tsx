@@ -5,6 +5,7 @@ import { CloneModal } from "./CloneModal.tsx";
 import { ConfirmModal } from "./ConfirmModal.tsx";
 import { CreateModal } from "./CreateModal.tsx";
 import { DetailModal } from "./DetailModal.tsx";
+import { DialogBox } from "./DialogBox.tsx";
 import { HelpModal } from "./HelpModal.tsx";
 import { MoveModal } from "./MoveModal.tsx";
 import { NavRail } from "./NavRail.tsx";
@@ -239,8 +240,7 @@ export function Dashboard({
       type: "down" | "scroll",
     ) => {
       const state = store.getSnapshot();
-      const railActive =
-        state.modal === null && state.view === "cockpit" && navRailVisible(width);
+      const railActive = state.modal === null && state.view === "cockpit" && navRailVisible(width);
       let x = event.x;
       if (railActive && event.y >= HEADER_ROWS && event.y < height - FOOTER_ROWS) {
         x = event.x - NAV_RAIL_WIDTH;
@@ -264,10 +264,7 @@ export function Dashboard({
     };
     root.onMouseScroll = (event) => {
       const isUp = event.scroll?.direction === "up" || event.button === 4;
-      routeMouse(
-        { button: isUp ? 4 : 5, x: event.x, y: event.y, scroll: event.scroll },
-        "scroll",
-      );
+      routeMouse({ button: isUp ? 4 : 5, x: event.x, y: event.y, scroll: event.scroll }, "scroll");
     };
     return () => {
       root.onMouseDown = null;
@@ -279,6 +276,10 @@ export function Dashboard({
 
   useKeyboard((key) => {
     const current = store.getSnapshot();
+    if (current.dialog !== null) {
+      // DialogBox owns y/n/Escape while it is open.
+      return;
+    }
     if (current.modal !== null) {
       if (key.name === "escape") {
         if (current.modal.type === "search") {
@@ -628,6 +629,7 @@ export function Dashboard({
           </text>
         </box>
       ) : null}
+      {snapshot.dialog !== null ? <DialogBox store={store} /> : null}
       <box
         border
         borderColor={theme.border()}

@@ -89,6 +89,30 @@ export class StoreBase {
   openModal = (modal: ModalState): void => this.set({ modal, modalError: null });
   setModal = (modal: ModalState): void => this.set({ modal });
   closeModal = (): void => this.set({ modal: null, modalError: null, movePrefill: null });
+
+  private dialogConfirm: (() => void) | null = null;
+
+  confirmDialog = (
+    options: { title: string; message: string; confirmLabel?: string; danger?: boolean },
+    onConfirm: () => void,
+  ): void => {
+    this.dialogConfirm = onConfirm;
+    this.set({
+      dialog: {
+        title: options.title,
+        message: options.message,
+        confirmLabel: options.confirmLabel ?? "Confirm",
+        danger: options.danger === true,
+      },
+    });
+  };
+
+  resolveDialog = (confirmed: boolean): void => {
+    const callback = this.dialogConfirm;
+    this.dialogConfirm = null;
+    this.set({ dialog: null });
+    if (confirmed && callback !== null) callback();
+  };
   openHelpModal = (): void => this.openModal({ type: "help" });
   openDetailModal = (key: string): void => this.openModal({ type: "detail", key });
   openCloneModal = (): void => this.openModal({ type: "clone" });

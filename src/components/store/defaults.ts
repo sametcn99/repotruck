@@ -86,6 +86,7 @@ export function buildInitialSnapshot(root: string): StoreSnapshot {
     focus: "list",
     view: "cockpit",
     modal: null,
+    dialog: null,
     modalError: null,
     cursor: 0,
     sidebarCursor: 0,

@@ -101,6 +101,14 @@ export type ViewId =
 
 export type OmnibarMode = "commands" | "symbols" | "github" | "runner";
 
+/** Thin confirmation rendered above views and modals (y/n). */
+export interface DialogState {
+  title: string;
+  message: string;
+  confirmLabel: string;
+  danger: boolean;
+}
+
 export interface OmnibarCommandItem {
   id: string;
   label: string;
@@ -234,6 +242,7 @@ export interface StoreSnapshot {
   focus: FocusRegion;
   view: ViewId;
   modal: ModalState;
+  dialog: DialogState | null;
   modalError: string | null;
   cursor: number;
   sidebarCursor: number;
