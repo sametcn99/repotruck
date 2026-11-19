@@ -12,6 +12,7 @@
  *
  * Run with `bun run docs:check`; CI fails when documentation drifts.
  */
+import { readFileSync } from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { program } from "commander";
@@ -131,6 +132,17 @@ async function main(): Promise<void> {
   for (const name of documented.keys()) {
     if (!cliNames.has(name)) {
       problems.push(`website: CommandReference.ts documents unknown command "repotruck ${name}"`);
+    }
+  }
+
+  // Generated-modules drift: regenerate in memory and compare with the
+  // checked-in copies so the CLI → registry → website chain is enforced
+  // end to end (the parity test guards CLI → registry).
+  const { generateWebsiteFiles } = await import("./docs-generate.ts");
+  for (const file of await generateWebsiteFiles()) {
+    const disk = readFileSync(path.join(import.meta.dir, "..", file.path), "utf8");
+    if (disk !== file.content) {
+      problems.push(`website: ${file.path} is out of date — run: bun run docs:gen`);
     }
   }
 
