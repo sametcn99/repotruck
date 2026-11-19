@@ -202,7 +202,7 @@ export const SHORTCUT_ROWS: readonly ShortcutRow[] = [
   },
   {
     key: "v x",
-    action: "Conflict Resolver — inspect and continue/abort stuck rebases",
+    action: "Conflicts — inspect and continue/abort stuck rebases",
   },
   {
     key: "v t",

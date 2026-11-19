@@ -412,20 +412,26 @@ function repoRoot(): string {
 /**
  * Render → format with the repo's biome config (via a temp sibling file so
  * config resolution works) → return the final content. The target file is
- * never touched; gen-docs writes and docs-check compares.
+ * never touched; gen-docs writes and docs-check compares. Throws when the
+ * formatter fails so generation can never silently diverge.
  */
-async function formattedContent(relativePath: string, raw: string): Promise<string> {
+export async function formattedContent(relativePath: string, raw: string): Promise<string> {
   const target = path.join(repoRoot(), relativePath);
   const tmp = path.join(path.dirname(target), `.tmp-${path.basename(target)}`);
   writeFileSync(tmp, raw);
-  const biome = path.join(repoRoot(), "node_modules", ".bin", "biome");
+  // The .bin shim needs node; run it through bun instead (bun runs the JS
+  // launcher fine and resolves the local install without network).
   try {
-    await execFile(biome, ["format", "--write", tmp]);
-  } finally {
-    const content = readFileSync(tmp, "utf8");
-    rmSync(tmp);
-    return content;
+    await execFile("bun", ["x", "biome", "format", "--write", tmp]);
+  } catch (error) {
+    rmSync(tmp, { force: true });
+    throw new Error(
+      `biome format failed for ${relativePath}: ${error instanceof Error ? error.message : String(error)}`,
+    );
   }
+  const content = readFileSync(tmp, "utf8");
+  rmSync(tmp, { force: true });
+  return content;
 }
 
 export async function generateWebsiteFiles(): Promise<readonly GeneratedFile[]> {

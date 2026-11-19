@@ -35,6 +35,57 @@ The mouse works too — the wheel scrolls, a click focuses and moves the cursor.
 
 **Pages (TUI v2).** A persistent nav rail turns the dashboard into a multi-page program — every page maps one CLI command with its full flag set. Open pages with `v` followed by the page letter (`v s` Sync Center, `v t` Status Matrix, `v e` Code Search, `v r` Run Console, `v a` Settings, …), cycle with `[` / `]`, return with `Escape`, or pick them from the `:` palette. Right-clicking (or pressing `→` on) a repository opens a context menu with every repo-targeted action. Data pages copy their table as JSON with `J` (the `--json` counterpart), and the palette's Command Form edits any command's flags with the equivalent CLI line built live at the bottom.
 
+<!-- screenshots:start -->
+<details>
+<summary><b>Screenshots</b> — every page, modal and dialog (auto-captured from the TUI with mock data; regenerate with <code>bun run shots:gen</code>)</summary>
+
+  <h4>Cockpit</h4>
+    <p><sub><b>Cockpit</b> — scope sidebar · live repository list · activity panel</sub><br /><img src="website/public/screenshots/cockpit.svg" alt="Cockpit — scope sidebar · live repository list · activity panel" width="880" /></p>
+    <p><sub><b>Inspector</b> — right pane tab [2]: live git state of the cursor repo</sub><br /><img src="website/public/screenshots/cockpit-inspector.svg" alt="Inspector — right pane tab [2]: live git state of the cursor repo" width="880" /></p>
+    <p><sub><b>Health & Doctor</b> — right pane tab [3]: workspace stats and doctor checks</sub><br /><img src="website/public/screenshots/cockpit-health.svg" alt="Health & Doctor — right pane tab [3]: workspace stats and doctor checks" width="880" /></p>
+    <p><sub><b>Repo context menu</b> — → or right-click: every repo-targeted action in one list</sub><br /><img src="website/public/screenshots/context-menu.svg" alt="Repo context menu — → or right-click: every repo-targeted action in one list" width="880" /></p>
+    <p><sub><b>Help</b> — ? — keybindings plus the registry-generated views and parity line</sub><br /><img src="website/public/screenshots/help.svg" alt="Help — ? — keybindings plus the registry-generated views and parity line" width="880" /></p>
+    <p><sub><b>Command palette</b> — : / Ctrl+K — fuzzy search across every CLI command</sub><br /><img src="website/public/screenshots/omnibar.svg" alt="Command palette — : / Ctrl+K — fuzzy search across every CLI command" width="880" /></p>
+    <p><sub><b>Command form</b> — palette → form: full flag editing with the live CLI line</sub><br /><img src="website/public/screenshots/command-form.svg" alt="Command form — palette → form: full flag editing with the live CLI line" width="880" /></p>
+    <p><sub><b>Sync preview</b> — Enter on a selection: where every repo will land before it runs</sub><br /><img src="website/public/screenshots/start-preview.svg" alt="Sync preview — Enter on a selection: where every repo will land before it runs" width="880" /></p>
+
+  <h4>Pages</h4>
+    <p><sub><b>Sync Center</b> — v s — every sync flag, watch mode and the equivalent CLI command</sub><br /><img src="website/public/screenshots/sync-center.svg" alt="Sync Center — v s — every sync flag, watch mode and the equivalent CLI command" width="880" /></p>
+    <p><sub><b>Discover</b> — v d — qualified GitHub search, tracked markers, bulk clone</sub><br /><img src="website/public/screenshots/discover.svg" alt="Discover — v d — qualified GitHub search, tracked markers, bulk clone" width="880" /></p>
+    <p><sub><b>Scan & Adopt</b> — v n — unregistered repositories with adopt (scan --move)</sub><br /><img src="website/public/screenshots/scan.svg" alt="Scan & Adopt — v n — unregistered repositories with adopt (scan --move)" width="880" /></p>
+    <p><sub><b>Conflicts</b> — v x — failed-sync candidates with continue/abort actions</sub><br /><img src="website/public/screenshots/conflicts.svg" alt="Conflicts — v x — failed-sync candidates with continue/abort actions" width="880" /></p>
+    <p><sub><b>Status Matrix</b> — v t — every repository × dirty/ahead/behind/missing</sub><br /><img src="website/public/screenshots/status-matrix.svg" alt="Status Matrix — v t — every repository × dirty/ahead/behind/missing" width="880" /></p>
+    <p><sub><b>Status detail</b> — Enter expands a row: outgoing commits and diff stats (-D)</sub><br /><img src="website/public/screenshots/status-detail.svg" alt="Status detail — Enter expands a row: outgoing commits and diff stats (-D)" width="880" /></p>
+    <p><sub><b>Status remote</b> — u adds open PR counts and CI state columns (--remote)</sub><br /><img src="website/public/screenshots/status-remote.svg" alt="Status remote — u adds open PR counts and CI state columns (--remote)" width="880" /></p>
+    <p><sub><b>Code Search</b> — v e / @ — symbol, text and regex search, results by repository</sub><br /><img src="website/public/screenshots/code-search.svg" alt="Code Search — v e / @ — symbol, text and regex search, results by repository" width="880" /></p>
+    <p><sub><b>Stats & health</b> — v i — scorecard grades, languages, disk and stale repos</sub><br /><img src="website/public/screenshots/stats.svg" alt="Stats & health — v i — scorecard grades, languages, disk and stale repos" width="880" /></p>
+    <p><sub><b>Changelog</b> — v c — conventional commits across the workspace</sub><br /><img src="website/public/screenshots/changelog.svg" alt="Changelog — v c — conventional commits across the workspace" width="880" /></p>
+    <p><sub><b>Run Console</b> — v r / ! — one command across repos with per-repo results</sub><br /><img src="website/public/screenshots/run-console.svg" alt="Run Console — v r / ! — one command across repos with per-repo results" width="880" /></p>
+    <p><sub><b>Presets</b> — v p — built-in and custom layout presets, token builder</sub><br /><img src="website/public/screenshots/presets.svg" alt="Presets — v p — built-in and custom layout presets, token builder" width="880" /></p>
+    <p><sub><b>Profiles & pins</b> — v f — pinned repos and named profiles feeding sync/run scopes</sub><br /><img src="website/public/screenshots/profiles.svg" alt="Profiles & pins — v f — pinned repos and named profiles feeding sync/run scopes" width="880" /></p>
+    <p><sub><b>Trash & backups</b> — v b — soft-deleted repos and snapshot generations</sub><br /><img src="website/public/screenshots/trash-backups.svg" alt="Trash & backups — v b — soft-deleted repos and snapshot generations" width="880" /></p>
+    <p><sub><b>Worktrees</b> — v w — workspace-wide linked worktree browser</sub><br /><img src="website/public/screenshots/worktrees.svg" alt="Worktrees — v w — workspace-wide linked worktree browser" width="880" /></p>
+    <p><sub><b>Agents & MCP</b> — v g — AGENTS.md templates, exports and the MCP server</sub><br /><img src="website/public/screenshots/agents.svg" alt="Agents & MCP — v g — AGENTS.md templates, exports and the MCP server" width="880" /></p>
+    <p><sub><b>Settings</b> — v a — configuration, auth, update and completions</sub><br /><img src="website/public/screenshots/settings.svg" alt="Settings — v a — configuration, auth, update and completions" width="880" /></p>
+
+  <h4>Modals & dialogs</h4>
+    <p><sub><b>Clone</b> — c — clone by URL or owner/name</sub><br /><img src="website/public/screenshots/clone-modal.svg" alt="Clone — c — clone by URL or owner/name" width="880" /></p>
+    <p><sub><b>Create wizard</b> — n — new repository, step by step</sub><br /><img src="website/public/screenshots/create-wizard.svg" alt="Create wizard — n — new repository, step by step" width="880" /></p>
+    <p><sub><b>Move</b> — m — custom path, undoable with z</sub><br /><img src="website/public/screenshots/move-modal.svg" alt="Move — m — custom path, undoable with z" width="880" /></p>
+    <p><sub><b>Alias</b> — r — short names usable everywhere</sub><br /><img src="website/public/screenshots/alias-modal.svg" alt="Alias — r — short names usable everywhere" width="880" /></p>
+    <p><sub><b>Open in app</b> — o — detected editors and agent CLIs</sub><br /><img src="website/public/screenshots/open-modal.svg" alt="Open in app — o — detected editors and agent CLIs" width="880" /></p>
+    <p><sub><b>Details</b> — i — GitHub metadata plus local git state</sub><br /><img src="website/public/screenshots/detail-modal.svg" alt="Details — i — GitHub metadata plus local git state" width="880" /></p>
+    <p><sub><b>Reorganize</b> — R — preset picker with a live dry-run preview</sub><br /><img src="website/public/screenshots/reorganize-modal.svg" alt="Reorganize — R — preset picker with a live dry-run preview" width="880" /></p>
+    <p><sub><b>Worktree manager</b> — W — per-repo linked worktrees</sub><br /><img src="website/public/screenshots/worktree-modal.svg" alt="Worktree manager — W — per-repo linked worktrees" width="880" /></p>
+    <p><sub><b>Workspace picker</b> — w — switch or remove registered workspaces</sub><br /><img src="website/public/screenshots/workspace-picker.svg" alt="Workspace picker — w — switch or remove registered workspaces" width="880" /></p>
+    <p><sub><b>Default root</b> — d — show and set the fallback workspace root</sub><br /><img src="website/public/screenshots/root-modal.svg" alt="Default root — d — show and set the fallback workspace root" width="880" /></p>
+    <p><sub><b>Device-flow login</b> — auth login — non-blocking URL + code while polling</sub><br /><img src="website/public/screenshots/device-flow.svg" alt="Device-flow login — auth login — non-blocking URL + code while polling" width="880" /></p>
+    <p><sub><b>Permanent delete</b> — delete --yes — armed only by typing the repository name</sub><br /><img src="website/public/screenshots/permanent-delete.svg" alt="Permanent delete — delete --yes — armed only by typing the repository name" width="880" /></p>
+    <p><sub><b>Delete to trash</b> — D — y/n confirm, parked in .repotruck/trash (z undoes)</sub><br /><img src="website/public/screenshots/confirm-delete.svg" alt="Delete to trash — D — y/n confirm, parked in .repotruck/trash (z undoes)" width="880" /></p>
+
+</details>
+<!-- screenshots:end -->
+
 ## Install
 
 ```bash

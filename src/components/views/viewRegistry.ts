@@ -142,7 +142,7 @@ export const VIEW_SPECS: readonly ViewSpec[] = [
   },
   {
     id: "resolve",
-    title: "Conflict Resolver",
+    title: "Conflicts",
     group: "Workspace",
     go: "x",
     summary: "inspect and continue/abort stuck rebases",

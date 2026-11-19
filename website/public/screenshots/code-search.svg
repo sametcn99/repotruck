@@ -1,0 +1,208 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="738" viewBox="0 0 1200 738" role="img" aria-label="repotruck TUI — code-search">
+<title>repotruck TUI — code-search</title>
+<rect width="1200" height="738" fill="#0d1117"/>
+<style>text{font-family:ui-monospace,"SF Mono","Cascadia Code",Consolas,"Liberation Mono",Menlo,monospace;font-size:14px;white-space:pre}</style>
+<text x="12.0" y="26" fill="rgb(48,54,61)" textLength="1176.0" lengthAdjust="spacingAndGlyphs">┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐</text>
+<text x="12.0" y="43" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="43" fill="rgb(88,166,255)" textLength="1024.8" lengthAdjust="spacingAndGlyphs"> repotruck · sametcn99 (auth: gh-cli) · preset: categorized · root: /tmp/repotruck-shots-ws · 13 repos · view: Code Search</text>
+<text x="1045.2" y="43" fill="rgb(255,255,255)" textLength="134.4" lengthAdjust="spacingAndGlyphs">                </text>
+<text x="1179.6" y="43" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="12.0" y="60" fill="rgb(48,54,61)" textLength="1176.0" lengthAdjust="spacingAndGlyphs">└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘</text>
+<text x="12.0" y="77" fill="rgb(48,54,61)" textLength="151.2" lengthAdjust="spacingAndGlyphs">┌────────────────┐</text>
+<text x="163.2" y="77" fill="rgb(110,118,129)" textLength="67.2" lengthAdjust="spacingAndGlyphs">pattern:</text>
+<text x="230.4" y="77" fill="rgb(255,255,255)" textLength="352.8" lengthAdjust="spacingAndGlyphs"> Store                                    </text>
+<text x="583.2" y="77" fill="rgb(88,166,255)" textLength="134.4" lengthAdjust="spacingAndGlyphs">[m] mode: symbol</text>
+<text x="717.6" y="77" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="726.0" y="77" fill="rgb(201,209,217)" textLength="126.0" lengthAdjust="spacingAndGlyphs">[o] offline: on</text>
+<text x="852.0" y="77" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="860.4" y="77" fill="rgb(201,209,217)" textLength="117.6" lengthAdjust="spacingAndGlyphs">[Enter] search</text>
+<text x="978.0" y="77" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="986.4" y="77" fill="rgb(110,118,129)" textLength="142.8" lengthAdjust="spacingAndGlyphs">[r] rebuild index</text>
+<text x="1129.2" y="77" fill="rgb(255,255,255)" textLength="58.8" lengthAdjust="spacingAndGlyphs">       </text>
+<text x="12.0" y="94" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="94" fill="rgb(110,118,129)" textLength="50.4" lengthAdjust="spacingAndGlyphs"> views</text>
+<text x="70.8" y="94" fill="rgb(255,255,255)" textLength="84.0" lengthAdjust="spacingAndGlyphs">          </text>
+<text x="154.8" y="94" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="163.2" y="94" fill="rgb(201,209,217)" textLength="75.6" lengthAdjust="spacingAndGlyphs">kind: any</text>
+<text x="238.8" y="94" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="247.2" y="94" fill="rgb(201,209,217)" textLength="75.6" lengthAdjust="spacingAndGlyphs">lang: any</text>
+<text x="322.8" y="94" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="331.2" y="94" fill="rgb(201,209,217)" textLength="75.6" lengthAdjust="spacingAndGlyphs">limit: 50</text>
+<text x="406.8" y="94" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="415.2" y="94" fill="rgb(110,118,129)" textLength="109.2" lengthAdjust="spacingAndGlyphs">[J] copy JSON</text>
+<text x="524.4" y="94" fill="rgb(255,255,255)" textLength="663.6" lengthAdjust="spacingAndGlyphs">                                                                               </text>
+<text x="12.0" y="111" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="111" fill="rgb(110,118,129)" textLength="84.0" lengthAdjust="spacingAndGlyphs"> workspace</text>
+<text x="104.4" y="111" fill="rgb(255,255,255)" textLength="50.4" lengthAdjust="spacingAndGlyphs">      </text>
+<text x="154.8" y="111" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="163.2" y="111" fill="rgb(110,118,129)" textLength="159.6" lengthAdjust="spacingAndGlyphs">6 matches · 2 repos</text>
+<text x="322.8" y="111" fill="rgb(255,255,255)" textLength="865.2" lengthAdjust="spacingAndGlyphs">                                                                                                       </text>
+<text x="12.0" y="128" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="128" fill="rgb(201,209,217)" textLength="75.6" lengthAdjust="spacingAndGlyphs">  Cockpit</text>
+<text x="96.0" y="128" fill="rgb(255,255,255)" textLength="58.8" lengthAdjust="spacingAndGlyphs">       </text>
+<text x="154.8" y="128" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="163.2" y="128" fill="rgb(88,166,255)" textLength="159.6" lengthAdjust="spacingAndGlyphs">sametcn99/repotruck</text>
+<text x="322.8" y="128" fill="rgb(255,255,255)" textLength="865.2" lengthAdjust="spacingAndGlyphs">                                                                                                       </text>
+<text x="12.0" y="145" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="145" fill="rgb(201,209,217)" textLength="109.2" lengthAdjust="spacingAndGlyphs">  Sync Center</text>
+<text x="129.6" y="145" fill="rgb(255,255,255)" textLength="25.2" lengthAdjust="spacingAndGlyphs">   </text>
+<text x="154.8" y="145" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="163.2" y="145" fill="rgb(201,209,217)" textLength="621.6" lengthAdjust="spacingAndGlyphs">  sametcn99/repotruck src/components/store/StoreCore.ts:12 class StoreCore</text>
+<text x="784.8" y="145" fill="rgb(255,255,255)" textLength="403.2" lengthAdjust="spacingAndGlyphs">                                                </text>
+<text x="12.0" y="162" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="162" fill="rgb(201,209,217)" textLength="84.0" lengthAdjust="spacingAndGlyphs">  Discover</text>
+<text x="104.4" y="162" fill="rgb(255,255,255)" textLength="50.4" lengthAdjust="spacingAndGlyphs">      </text>
+<text x="154.8" y="162" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="163.2" y="162" fill="rgb(201,209,217)" textLength="613.2" lengthAdjust="spacingAndGlyphs">  sametcn99/repotruck src/components/store/StoreBase.ts:8 class StoreBase</text>
+<text x="776.4" y="162" fill="rgb(255,255,255)" textLength="411.6" lengthAdjust="spacingAndGlyphs">                                                 </text>
+<text x="12.0" y="179" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="179" fill="rgb(201,209,217)" textLength="50.4" lengthAdjust="spacingAndGlyphs">  Scan</text>
+<text x="70.8" y="179" fill="rgb(255,255,255)" textLength="84.0" lengthAdjust="spacingAndGlyphs">          </text>
+<text x="154.8" y="179" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="163.2" y="179" fill="rgb(201,209,217)" textLength="756.0" lengthAdjust="spacingAndGlyphs">  sametcn99/repotruck src/components/store/omnibar.ts:88 function buildCommandPaletteItems</text>
+<text x="919.2" y="179" fill="rgb(255,255,255)" textLength="268.8" lengthAdjust="spacingAndGlyphs">                                </text>
+<text x="12.0" y="196" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="196" fill="rgb(201,209,217)" textLength="92.4" lengthAdjust="spacingAndGlyphs">  Conflicts</text>
+<text x="112.8" y="196" fill="rgb(255,255,255)" textLength="42.0" lengthAdjust="spacingAndGlyphs">     </text>
+<text x="154.8" y="196" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="163.2" y="196" fill="rgb(201,209,217)" textLength="554.4" lengthAdjust="spacingAndGlyphs">  sametcn99/repotruck src/services/auth.ts:93 function requireAuth</text>
+<text x="717.6" y="196" fill="rgb(255,255,255)" textLength="470.4" lengthAdjust="spacingAndGlyphs">                                                        </text>
+<text x="12.0" y="213" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="213" fill="rgb(110,118,129)" textLength="67.2" lengthAdjust="spacingAndGlyphs"> inspect</text>
+<text x="87.6" y="213" fill="rgb(255,255,255)" textLength="67.2" lengthAdjust="spacingAndGlyphs">        </text>
+<text x="154.8" y="213" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="163.2" y="213" fill="rgb(201,209,217)" textLength="646.8" lengthAdjust="spacingAndGlyphs">  sametcn99/repotruck src/components/store/types.ts:9 interface StoreSnapshot</text>
+<text x="810.0" y="213" fill="rgb(255,255,255)" textLength="378.0" lengthAdjust="spacingAndGlyphs">                                             </text>
+<text x="12.0" y="230" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="230" fill="rgb(201,209,217)" textLength="67.2" lengthAdjust="spacingAndGlyphs">  Status</text>
+<text x="87.6" y="230" fill="rgb(255,255,255)" textLength="67.2" lengthAdjust="spacingAndGlyphs">        </text>
+<text x="154.8" y="230" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="163.2" y="230" fill="rgb(88,166,255)" textLength="151.2" lengthAdjust="spacingAndGlyphs">sametcn99/dreamtui</text>
+<text x="314.4" y="230" fill="rgb(255,255,255)" textLength="873.6" lengthAdjust="spacingAndGlyphs">                                                                                                        </text>
+<text x="12.0" y="247" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="247" fill="rgb(88,166,255)" textLength="109.2" lengthAdjust="spacingAndGlyphs">&gt; Code Search</text>
+<text x="129.6" y="247" fill="rgb(255,255,255)" textLength="25.2" lengthAdjust="spacingAndGlyphs">   </text>
+<text x="154.8" y="247" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="163.2" y="247" fill="rgb(201,209,217)" textLength="470.4" lengthAdjust="spacingAndGlyphs">  sametcn99/dreamtui src/hooks.ts:5 function useTerminal</text>
+<text x="633.6" y="247" fill="rgb(255,255,255)" textLength="554.4" lengthAdjust="spacingAndGlyphs">                                                                  </text>
+<text x="12.0" y="264" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="264" fill="rgb(201,209,217)" textLength="58.8" lengthAdjust="spacingAndGlyphs">  Stats</text>
+<text x="79.2" y="264" fill="rgb(255,255,255)" textLength="75.6" lengthAdjust="spacingAndGlyphs">         </text>
+<text x="154.8" y="264" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="163.2" y="264" fill="rgb(255,255,255)" textLength="1024.8" lengthAdjust="spacingAndGlyphs">                                                                                                                          </text>
+<text x="12.0" y="281" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="281" fill="rgb(201,209,217)" textLength="92.4" lengthAdjust="spacingAndGlyphs">  Changelog</text>
+<text x="112.8" y="281" fill="rgb(255,255,255)" textLength="42.0" lengthAdjust="spacingAndGlyphs">     </text>
+<text x="154.8" y="281" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="163.2" y="281" fill="rgb(255,255,255)" textLength="1024.8" lengthAdjust="spacingAndGlyphs">                                                                                                                          </text>
+<text x="12.0" y="298" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="298" fill="rgb(110,118,129)" textLength="75.6" lengthAdjust="spacingAndGlyphs"> automate</text>
+<text x="96.0" y="298" fill="rgb(255,255,255)" textLength="58.8" lengthAdjust="spacingAndGlyphs">       </text>
+<text x="154.8" y="298" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="163.2" y="298" fill="rgb(255,255,255)" textLength="1024.8" lengthAdjust="spacingAndGlyphs">                                                                                                                          </text>
+<text x="12.0" y="315" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="315" fill="rgb(201,209,217)" textLength="109.2" lengthAdjust="spacingAndGlyphs">  Run Console</text>
+<text x="129.6" y="315" fill="rgb(255,255,255)" textLength="25.2" lengthAdjust="spacingAndGlyphs">   </text>
+<text x="154.8" y="315" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="163.2" y="315" fill="rgb(255,255,255)" textLength="1024.8" lengthAdjust="spacingAndGlyphs">                                                                                                                          </text>
+<text x="12.0" y="332" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="332" fill="rgb(110,118,129)" textLength="75.6" lengthAdjust="spacingAndGlyphs"> organize</text>
+<text x="96.0" y="332" fill="rgb(255,255,255)" textLength="58.8" lengthAdjust="spacingAndGlyphs">       </text>
+<text x="154.8" y="332" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="163.2" y="332" fill="rgb(255,255,255)" textLength="1024.8" lengthAdjust="spacingAndGlyphs">                                                                                                                          </text>
+<text x="12.0" y="349" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="349" fill="rgb(201,209,217)" textLength="75.6" lengthAdjust="spacingAndGlyphs">  Presets</text>
+<text x="96.0" y="349" fill="rgb(255,255,255)" textLength="58.8" lengthAdjust="spacingAndGlyphs">       </text>
+<text x="154.8" y="349" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="163.2" y="349" fill="rgb(255,255,255)" textLength="1024.8" lengthAdjust="spacingAndGlyphs">                                                                                                                          </text>
+<text x="12.0" y="366" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="366" fill="rgb(201,209,217)" textLength="84.0" lengthAdjust="spacingAndGlyphs">  Profiles</text>
+<text x="104.4" y="366" fill="rgb(255,255,255)" textLength="50.4" lengthAdjust="spacingAndGlyphs">      </text>
+<text x="154.8" y="366" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="163.2" y="366" fill="rgb(255,255,255)" textLength="1024.8" lengthAdjust="spacingAndGlyphs">                                                                                                                          </text>
+<text x="12.0" y="383" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="383" fill="rgb(201,209,217)" textLength="58.8" lengthAdjust="spacingAndGlyphs">  Trash</text>
+<text x="79.2" y="383" fill="rgb(255,255,255)" textLength="75.6" lengthAdjust="spacingAndGlyphs">         </text>
+<text x="154.8" y="383" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="163.2" y="383" fill="rgb(255,255,255)" textLength="1024.8" lengthAdjust="spacingAndGlyphs">                                                                                                                          </text>
+<text x="12.0" y="400" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="400" fill="rgb(201,209,217)" textLength="92.4" lengthAdjust="spacingAndGlyphs">  Worktrees</text>
+<text x="112.8" y="400" fill="rgb(255,255,255)" textLength="42.0" lengthAdjust="spacingAndGlyphs">     </text>
+<text x="154.8" y="400" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="163.2" y="400" fill="rgb(255,255,255)" textLength="1024.8" lengthAdjust="spacingAndGlyphs">                                                                                                                          </text>
+<text x="12.0" y="417" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="417" fill="rgb(110,118,129)" textLength="58.8" lengthAdjust="spacingAndGlyphs"> system</text>
+<text x="79.2" y="417" fill="rgb(255,255,255)" textLength="75.6" lengthAdjust="spacingAndGlyphs">         </text>
+<text x="154.8" y="417" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="163.2" y="417" fill="rgb(255,255,255)" textLength="1024.8" lengthAdjust="spacingAndGlyphs">                                                                                                                          </text>
+<text x="12.0" y="434" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="434" fill="rgb(201,209,217)" textLength="67.2" lengthAdjust="spacingAndGlyphs">  Agents</text>
+<text x="87.6" y="434" fill="rgb(255,255,255)" textLength="67.2" lengthAdjust="spacingAndGlyphs">        </text>
+<text x="154.8" y="434" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="163.2" y="434" fill="rgb(255,255,255)" textLength="1024.8" lengthAdjust="spacingAndGlyphs">                                                                                                                          </text>
+<text x="12.0" y="451" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="451" fill="rgb(201,209,217)" textLength="84.0" lengthAdjust="spacingAndGlyphs">  Settings</text>
+<text x="104.4" y="451" fill="rgb(255,255,255)" textLength="50.4" lengthAdjust="spacingAndGlyphs">      </text>
+<text x="154.8" y="451" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="163.2" y="451" fill="rgb(255,255,255)" textLength="1024.8" lengthAdjust="spacingAndGlyphs">                                                                                                                          </text>
+<text x="12.0" y="468" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="468" fill="rgb(110,118,129)" textLength="117.6" lengthAdjust="spacingAndGlyphs"> [v]+go · [ ] </text>
+<text x="138.0" y="468" fill="rgb(255,255,255)" textLength="16.8" lengthAdjust="spacingAndGlyphs">  </text>
+<text x="154.8" y="468" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="163.2" y="468" fill="rgb(255,255,255)" textLength="1024.8" lengthAdjust="spacingAndGlyphs">                                                                                                                          </text>
+<text x="12.0" y="485" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="485" fill="rgb(110,118,129)" textLength="42.0" lengthAdjust="spacingAndGlyphs">cycle</text>
+<text x="62.4" y="485" fill="rgb(255,255,255)" textLength="92.4" lengthAdjust="spacingAndGlyphs">           </text>
+<text x="154.8" y="485" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="163.2" y="485" fill="rgb(255,255,255)" textLength="1024.8" lengthAdjust="spacingAndGlyphs">                                                                                                                          </text>
+<text x="12.0" y="502" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="502" fill="rgb(255,255,255)" textLength="134.4" lengthAdjust="spacingAndGlyphs">                </text>
+<text x="154.8" y="502" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="163.2" y="502" fill="rgb(255,255,255)" textLength="1024.8" lengthAdjust="spacingAndGlyphs">                                                                                                                          </text>
+<text x="12.0" y="519" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="519" fill="rgb(255,255,255)" textLength="134.4" lengthAdjust="spacingAndGlyphs">                </text>
+<text x="154.8" y="519" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="163.2" y="519" fill="rgb(255,255,255)" textLength="1024.8" lengthAdjust="spacingAndGlyphs">                                                                                                                          </text>
+<text x="12.0" y="536" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="536" fill="rgb(255,255,255)" textLength="134.4" lengthAdjust="spacingAndGlyphs">                </text>
+<text x="154.8" y="536" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="163.2" y="536" fill="rgb(255,255,255)" textLength="1024.8" lengthAdjust="spacingAndGlyphs">                                                                                                                          </text>
+<text x="12.0" y="553" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="553" fill="rgb(255,255,255)" textLength="134.4" lengthAdjust="spacingAndGlyphs">                </text>
+<text x="154.8" y="553" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="163.2" y="553" fill="rgb(255,255,255)" textLength="1024.8" lengthAdjust="spacingAndGlyphs">                                                                                                                          </text>
+<text x="12.0" y="570" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="570" fill="rgb(255,255,255)" textLength="134.4" lengthAdjust="spacingAndGlyphs">                </text>
+<text x="154.8" y="570" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="163.2" y="570" fill="rgb(255,255,255)" textLength="1024.8" lengthAdjust="spacingAndGlyphs">                                                                                                                          </text>
+<text x="12.0" y="587" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="587" fill="rgb(255,255,255)" textLength="134.4" lengthAdjust="spacingAndGlyphs">                </text>
+<text x="154.8" y="587" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="163.2" y="587" fill="rgb(255,255,255)" textLength="1024.8" lengthAdjust="spacingAndGlyphs">                                                                                                                          </text>
+<text x="12.0" y="604" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="604" fill="rgb(255,255,255)" textLength="134.4" lengthAdjust="spacingAndGlyphs">                </text>
+<text x="154.8" y="604" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="163.2" y="604" fill="rgb(255,255,255)" textLength="1024.8" lengthAdjust="spacingAndGlyphs">                                                                                                                          </text>
+<text x="12.0" y="621" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="621" fill="rgb(255,255,255)" textLength="134.4" lengthAdjust="spacingAndGlyphs">                </text>
+<text x="154.8" y="621" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="163.2" y="621" fill="rgb(255,255,255)" textLength="1024.8" lengthAdjust="spacingAndGlyphs">                                                                                                                          </text>
+<text x="12.0" y="638" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="638" fill="rgb(255,255,255)" textLength="134.4" lengthAdjust="spacingAndGlyphs">                </text>
+<text x="154.8" y="638" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="163.2" y="638" fill="rgb(255,255,255)" textLength="1024.8" lengthAdjust="spacingAndGlyphs">                                                                                                                          </text>
+<text x="12.0" y="655" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="655" fill="rgb(255,255,255)" textLength="134.4" lengthAdjust="spacingAndGlyphs">                </text>
+<text x="154.8" y="655" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="163.2" y="655" fill="rgb(255,255,255)" textLength="1024.8" lengthAdjust="spacingAndGlyphs">                                                                                                                          </text>
+<text x="12.0" y="672" fill="rgb(48,54,61)" textLength="151.2" lengthAdjust="spacingAndGlyphs">└────────────────┘</text>
+<text x="163.2" y="672" fill="rgb(110,118,129)" textLength="798.0" lengthAdjust="spacingAndGlyphs">Enter edit pattern · m mode · J JSON · r rebuild · click a match for repo details · Esc cockpit</text>
+<text x="961.2" y="672" fill="rgb(255,255,255)" textLength="226.8" lengthAdjust="spacingAndGlyphs">                           </text>
+<text x="12.0" y="689" fill="rgb(48,54,61)" textLength="1176.0" lengthAdjust="spacingAndGlyphs">┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐</text>
+<text x="12.0" y="706" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="706" fill="rgb(110,118,129)" textLength="982.8" lengthAdjust="spacingAndGlyphs"> [Esc] Cockpit  [v] Code Search  [Tab] Focus  [Space] Select  [?] Help  [q] Quit  [:] Omnibar  [/] Search  [f] Health</text>
+<text x="1003.2" y="706" fill="rgb(255,255,255)" textLength="176.4" lengthAdjust="spacingAndGlyphs">                     </text>
+<text x="1179.6" y="706" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="12.0" y="723" fill="rgb(48,54,61)" textLength="1176.0" lengthAdjust="spacingAndGlyphs">└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘</text>
+<rect x="289.2" y="80.0" width="8.4" height="17" fill="none" stroke="#e6edf3" stroke-opacity="0.55" rx="1"/>
+</svg>

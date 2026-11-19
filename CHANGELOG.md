@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Command registry (`src/commands/registry.ts`) as the single source of truth: the palette (now fuzzy), the auto-generated Command Form modal with a live `repotruck …` CLI line, help sections and a strict CLI↔registry parity test that fails CI when a CLI flag lacks a TUI surface binding.
   - Repo context menu covering every repo-targeted action including confirm-guarded permanent delete; thin confirmation dialogs layered above pages and modals; OSC 52 clipboard (`J` copy-as-JSON on data pages) with temp-file fallback; background task model beside the sync runner.
   - Website docs generated from the same sources: `bun run docs:gen` renders the command/flag and shortcut tables from the registry and the in-app help rows, and `docs:check` fails CI when the checked-in copies drift.
+  - Auto-captured TUI screenshots: `bun run shots:gen` renders every page, modal and dialog (38 scenes) against a deterministic mock workspace — real git fixtures, mocked services — and writes colored SVGs plus the website gallery manifest and the README's collapsible gallery; `docs:check` keeps them in sync.
   - All existing keyboard shortcuts, modals and mouse behaviors preserved.
 
 ## [0.4.1] - 2026-10-28

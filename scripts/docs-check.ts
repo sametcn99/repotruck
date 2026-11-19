@@ -146,6 +146,35 @@ async function main(): Promise<void> {
     }
   }
 
+  // Screenshot manifest + README gallery drift (metadata only — SVGs are
+  // regenerated on demand by `bun run shots:gen`).
+  const { buildReadmeGallery, buildScreenshotsManifestModule } = await import(
+    "./screenshots-scenes.ts"
+  );
+  const manifestPath = "website/src/components/screenshotsManifest.generated.ts";
+  const manifest = await (await import("./docs-generate.ts")).formattedContent(
+    manifestPath,
+    buildScreenshotsManifestModule(),
+  );
+  const manifestDisk = readFileSync(path.join(import.meta.dir, "..", manifestPath), "utf8");
+  if (manifestDisk !== manifest) {
+    problems.push(`website: ${manifestPath} is out of date — run: bun run shots:gen`);
+  }
+  const readme = readFileSync(path.join(import.meta.dir, "..", "README.md"), "utf8");
+  const startMarker = "<!-- screenshots:start -->";
+  const endMarker = "<!-- screenshots:end -->";
+  const startIdx = readme.indexOf(startMarker);
+  const endIdx = readme.indexOf(endMarker);
+  if (startIdx < 0 || endIdx < startIdx) {
+    problems.push("README.md is missing the screenshots markers");
+  } else {
+    const expected = `${startMarker}\n${buildReadmeGallery()}\n${endMarker}`;
+    const actual = readme.slice(startIdx, endIdx + endMarker.length);
+    if (actual !== expected) {
+      problems.push("README.md screenshot gallery is out of date — run: bun run shots:gen");
+    }
+  }
+
   if (problems.length > 0) {
     process.stderr.write(
       `documentation drifted from the CLI surface:\n${problems.map((p) => `- ${p}`).join("\n")}\n`,

@@ -58,6 +58,7 @@
     "check:fix": "biome check --write",
     "docs:check": "bun scripts/docs-check.ts",
     "docs:gen": "bun scripts/gen-docs.ts",
+    "shots:gen": "bun scripts/capture-screens.tsx",
     "prepack": "bun run build"
   },
   "devDependencies": {

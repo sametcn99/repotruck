@@ -1,0 +1,223 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="738" viewBox="0 0 1200 738" role="img" aria-label="repotruck TUI — status-detail">
+<title>repotruck TUI — status-detail</title>
+<rect width="1200" height="738" fill="#0d1117"/>
+<style>text{font-family:ui-monospace,"SF Mono","Cascadia Code",Consolas,"Liberation Mono",Menlo,monospace;font-size:14px;white-space:pre}</style>
+<text x="12.0" y="26" fill="rgb(48,54,61)" textLength="1176.0" lengthAdjust="spacingAndGlyphs">┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐</text>
+<text x="12.0" y="43" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="43" fill="rgb(88,166,255)" textLength="982.8" lengthAdjust="spacingAndGlyphs"> repotruck · sametcn99 (auth: gh-cli) · preset: categorized · root: /tmp/repotruck-shots-ws · 13 repos · view: Status</text>
+<text x="1003.2" y="43" fill="rgb(255,255,255)" textLength="176.4" lengthAdjust="spacingAndGlyphs">                     </text>
+<text x="1179.6" y="43" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="12.0" y="60" fill="rgb(48,54,61)" textLength="1176.0" lengthAdjust="spacingAndGlyphs">└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘</text>
+<text x="12.0" y="77" fill="rgb(48,54,61)" textLength="151.2" lengthAdjust="spacingAndGlyphs">┌────────────────┐</text>
+<text x="163.2" y="77" fill="rgb(88,166,255)" textLength="58.8" lengthAdjust="spacingAndGlyphs">[x] all</text>
+<text x="222.0" y="77" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="230.4" y="77" fill="rgb(110,118,129)" textLength="75.6" lengthAdjust="spacingAndGlyphs">[ ] dirty</text>
+<text x="306.0" y="77" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="314.4" y="77" fill="rgb(110,118,129)" textLength="100.8" lengthAdjust="spacingAndGlyphs">[ ] unpushed</text>
+<text x="415.2" y="77" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="423.6" y="77" fill="rgb(110,118,129)" textLength="100.8" lengthAdjust="spacingAndGlyphs">[ ] unpulled</text>
+<text x="524.4" y="77" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="532.8" y="77" fill="rgb(110,118,129)" textLength="84.0" lengthAdjust="spacingAndGlyphs">[ ] pinned</text>
+<text x="616.8" y="77" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="625.2" y="77" fill="rgb(110,118,129)" textLength="8.4" lengthAdjust="spacingAndGlyphs">·</text>
+<text x="633.6" y="77" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="642.0" y="77" fill="rgb(110,118,129)" textLength="126.0" lengthAdjust="spacingAndGlyphs">[u] remote: off</text>
+<text x="768.0" y="77" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="776.4" y="77" fill="rgb(110,118,129)" textLength="92.4" lengthAdjust="spacingAndGlyphs">[r] refresh</text>
+<text x="868.8" y="77" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="877.2" y="77" fill="rgb(110,118,129)" textLength="109.2" lengthAdjust="spacingAndGlyphs">[J] copy JSON</text>
+<text x="986.4" y="77" fill="rgb(255,255,255)" textLength="201.6" lengthAdjust="spacingAndGlyphs">                        </text>
+<text x="12.0" y="94" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="94" fill="rgb(110,118,129)" textLength="50.4" lengthAdjust="spacingAndGlyphs"> views</text>
+<text x="70.8" y="94" fill="rgb(255,255,255)" textLength="84.0" lengthAdjust="spacingAndGlyphs">          </text>
+<text x="154.8" y="94" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="163.2" y="94" fill="rgb(227,179,65)" textLength="546.0" lengthAdjust="spacingAndGlyphs">15 repos · 5 need attention · last sync: 2026-11-18T09:41:00.000Z</text>
+<text x="709.2" y="94" fill="rgb(255,255,255)" textLength="478.8" lengthAdjust="spacingAndGlyphs">                                                         </text>
+<text x="12.0" y="111" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="111" fill="rgb(110,118,129)" textLength="84.0" lengthAdjust="spacingAndGlyphs"> workspace</text>
+<text x="104.4" y="111" fill="rgb(255,255,255)" textLength="50.4" lengthAdjust="spacingAndGlyphs">      </text>
+<text x="154.8" y="111" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="163.2" y="111" fill="rgb(110,118,129)" textLength="504.0" lengthAdjust="spacingAndGlyphs"> repository                  state   ahead/behind  wt  disk </text>
+<text x="667.2" y="111" fill="rgb(255,255,255)" textLength="520.8" lengthAdjust="spacingAndGlyphs">                                                              </text>
+<text x="12.0" y="128" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="128" fill="rgb(201,209,217)" textLength="75.6" lengthAdjust="spacingAndGlyphs">  Cockpit</text>
+<text x="96.0" y="128" fill="rgb(255,255,255)" textLength="58.8" lengthAdjust="spacingAndGlyphs">       </text>
+<text x="154.8" y="128" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="163.2" y="128" fill="rgb(88,166,255)" textLength="428.4" lengthAdjust="spacingAndGlyphs">&gt;sametcn99/repotruck dirty  ↑2 ↓0         ⑂   yes  </text>
+<text x="591.6" y="128" fill="rgb(255,255,255)" textLength="596.4" lengthAdjust="spacingAndGlyphs">                                                                       </text>
+<text x="12.0" y="145" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="145" fill="rgb(201,209,217)" textLength="109.2" lengthAdjust="spacingAndGlyphs">  Sync Center</text>
+<text x="129.6" y="145" fill="rgb(255,255,255)" textLength="25.2" lengthAdjust="spacingAndGlyphs">   </text>
+<text x="154.8" y="145" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="163.2" y="145" fill="rgb(110,118,129)" textLength="235.2" lengthAdjust="spacingAndGlyphs">  branch: main → origin/main</text>
+<text x="398.4" y="145" fill="rgb(255,255,255)" textLength="789.6" lengthAdjust="spacingAndGlyphs">                                                                                              </text>
+<text x="12.0" y="162" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="162" fill="rgb(201,209,217)" textLength="84.0" lengthAdjust="spacingAndGlyphs">  Discover</text>
+<text x="104.4" y="162" fill="rgb(255,255,255)" textLength="50.4" lengthAdjust="spacingAndGlyphs">      </text>
+<text x="154.8" y="162" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="163.2" y="162" fill="rgb(110,118,129)" textLength="394.8" lengthAdjust="spacingAndGlyphs">  ↑ a1b2c3d feat: view layer + command registry</text>
+<text x="558.0" y="162" fill="rgb(255,255,255)" textLength="630.0" lengthAdjust="spacingAndGlyphs">                                                                           </text>
+<text x="12.0" y="179" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="179" fill="rgb(201,209,217)" textLength="50.4" lengthAdjust="spacingAndGlyphs">  Scan</text>
+<text x="70.8" y="179" fill="rgb(255,255,255)" textLength="84.0" lengthAdjust="spacingAndGlyphs">          </text>
+<text x="154.8" y="179" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="163.2" y="179" fill="rgb(110,118,129)" textLength="319.2" lengthAdjust="spacingAndGlyphs">  ↑ e4f5a6b fix: palette fuzzy scoring</text>
+<text x="482.4" y="179" fill="rgb(255,255,255)" textLength="705.6" lengthAdjust="spacingAndGlyphs">                                                                                    </text>
+<text x="12.0" y="196" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="196" fill="rgb(201,209,217)" textLength="92.4" lengthAdjust="spacingAndGlyphs">  Conflicts</text>
+<text x="112.8" y="196" fill="rgb(255,255,255)" textLength="42.0" lengthAdjust="spacingAndGlyphs">     </text>
+<text x="154.8" y="196" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="163.2" y="196" fill="rgb(110,118,129)" textLength="344.4" lengthAdjust="spacingAndGlyphs">  * src/components/Dashboard.tsx +142 −18</text>
+<text x="507.6" y="196" fill="rgb(255,255,255)" textLength="680.4" lengthAdjust="spacingAndGlyphs">                                                                                 </text>
+<text x="12.0" y="213" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="213" fill="rgb(110,118,129)" textLength="67.2" lengthAdjust="spacingAndGlyphs"> inspect</text>
+<text x="87.6" y="213" fill="rgb(255,255,255)" textLength="67.2" lengthAdjust="spacingAndGlyphs">        </text>
+<text x="154.8" y="213" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="163.2" y="213" fill="rgb(110,118,129)" textLength="294.0" lengthAdjust="spacingAndGlyphs">  * src/commands/registry.ts +38 −4</text>
+<text x="457.2" y="213" fill="rgb(255,255,255)" textLength="730.8" lengthAdjust="spacingAndGlyphs">                                                                                       </text>
+<text x="12.0" y="230" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="230" fill="rgb(88,166,255)" textLength="67.2" lengthAdjust="spacingAndGlyphs">&gt; Status</text>
+<text x="87.6" y="230" fill="rgb(255,255,255)" textLength="67.2" lengthAdjust="spacingAndGlyphs">        </text>
+<text x="154.8" y="230" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="163.2" y="230" fill="rgb(110,118,129)" textLength="201.6" lengthAdjust="spacingAndGlyphs">  ? NOTES.md (untracked)</text>
+<text x="364.8" y="230" fill="rgb(255,255,255)" textLength="823.2" lengthAdjust="spacingAndGlyphs">                                                                                                  </text>
+<text x="12.0" y="247" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="247" fill="rgb(201,209,217)" textLength="109.2" lengthAdjust="spacingAndGlyphs">  Code Search</text>
+<text x="129.6" y="247" fill="rgb(255,255,255)" textLength="25.2" lengthAdjust="spacingAndGlyphs">   </text>
+<text x="154.8" y="247" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="163.2" y="247" fill="rgb(201,209,217)" textLength="403.2" lengthAdjust="spacingAndGlyphs"> sametcn99/golter clean  —             —   yes  </text>
+<text x="566.4" y="247" fill="rgb(255,255,255)" textLength="621.6" lengthAdjust="spacingAndGlyphs">                                                                          </text>
+<text x="12.0" y="264" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="264" fill="rgb(201,209,217)" textLength="58.8" lengthAdjust="spacingAndGlyphs">  Stats</text>
+<text x="79.2" y="264" fill="rgb(255,255,255)" textLength="75.6" lengthAdjust="spacingAndGlyphs">         </text>
+<text x="154.8" y="264" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="163.2" y="264" fill="rgb(201,209,217)" textLength="403.2" lengthAdjust="spacingAndGlyphs"> sametcn99/tcptui clean  ↑1 ↓0         —   yes  </text>
+<text x="566.4" y="264" fill="rgb(255,255,255)" textLength="621.6" lengthAdjust="spacingAndGlyphs">                                                                          </text>
+<text x="12.0" y="281" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="281" fill="rgb(201,209,217)" textLength="92.4" lengthAdjust="spacingAndGlyphs">  Changelog</text>
+<text x="112.8" y="281" fill="rgb(255,255,255)" textLength="42.0" lengthAdjust="spacingAndGlyphs">     </text>
+<text x="154.8" y="281" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="163.2" y="281" fill="rgb(201,209,217)" textLength="420.0" lengthAdjust="spacingAndGlyphs"> sametcn99/dreamtui clean  —             —   yes  </text>
+<text x="583.2" y="281" fill="rgb(255,255,255)" textLength="604.8" lengthAdjust="spacingAndGlyphs">                                                                        </text>
+<text x="12.0" y="298" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="298" fill="rgb(110,118,129)" textLength="75.6" lengthAdjust="spacingAndGlyphs"> automate</text>
+<text x="96.0" y="298" fill="rgb(255,255,255)" textLength="58.8" lengthAdjust="spacingAndGlyphs">       </text>
+<text x="154.8" y="298" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="163.2" y="298" fill="rgb(201,209,217)" textLength="411.6" lengthAdjust="spacingAndGlyphs"> sametcn99/hiretea dirty  —             —   yes  </text>
+<text x="574.8" y="298" fill="rgb(255,255,255)" textLength="613.2" lengthAdjust="spacingAndGlyphs">                                                                         </text>
+<text x="12.0" y="315" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="315" fill="rgb(201,209,217)" textLength="109.2" lengthAdjust="spacingAndGlyphs">  Run Console</text>
+<text x="129.6" y="315" fill="rgb(255,255,255)" textLength="25.2" lengthAdjust="spacingAndGlyphs">   </text>
+<text x="154.8" y="315" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="163.2" y="315" fill="rgb(201,209,217)" textLength="445.2" lengthAdjust="spacingAndGlyphs"> sametcn99/maalesef-tr clean  —             —   yes  </text>
+<text x="608.4" y="315" fill="rgb(255,255,255)" textLength="579.6" lengthAdjust="spacingAndGlyphs">                                                                     </text>
+<text x="12.0" y="332" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="332" fill="rgb(110,118,129)" textLength="75.6" lengthAdjust="spacingAndGlyphs"> organize</text>
+<text x="96.0" y="332" fill="rgb(255,255,255)" textLength="58.8" lengthAdjust="spacingAndGlyphs">       </text>
+<text x="154.8" y="332" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="163.2" y="332" fill="rgb(201,209,217)" textLength="487.2" lengthAdjust="spacingAndGlyphs"> sametcn99/personal-website clean  —             —   yes  </text>
+<text x="650.4" y="332" fill="rgb(255,255,255)" textLength="537.6" lengthAdjust="spacingAndGlyphs">                                                                </text>
+<text x="12.0" y="349" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="349" fill="rgb(201,209,217)" textLength="75.6" lengthAdjust="spacingAndGlyphs">  Presets</text>
+<text x="96.0" y="349" fill="rgb(255,255,255)" textLength="58.8" lengthAdjust="spacingAndGlyphs">       </text>
+<text x="154.8" y="349" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="163.2" y="349" fill="rgb(201,209,217)" textLength="453.6" lengthAdjust="spacingAndGlyphs"> sametcn99/case-fx-tool clean  —             —   yes  </text>
+<text x="616.8" y="349" fill="rgb(255,255,255)" textLength="571.2" lengthAdjust="spacingAndGlyphs">                                                                    </text>
+<text x="12.0" y="366" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="366" fill="rgb(201,209,217)" textLength="84.0" lengthAdjust="spacingAndGlyphs">  Profiles</text>
+<text x="104.4" y="366" fill="rgb(255,255,255)" textLength="50.4" lengthAdjust="spacingAndGlyphs">      </text>
+<text x="154.8" y="366" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="163.2" y="366" fill="rgb(201,209,217)" textLength="420.0" lengthAdjust="spacingAndGlyphs"> Mekanet-Energy/hmi dirty  ↑0 ↓3         —   yes  </text>
+<text x="583.2" y="366" fill="rgb(255,255,255)" textLength="604.8" lengthAdjust="spacingAndGlyphs">                                                                        </text>
+<text x="12.0" y="383" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="383" fill="rgb(201,209,217)" textLength="58.8" lengthAdjust="spacingAndGlyphs">  Trash</text>
+<text x="79.2" y="383" fill="rgb(255,255,255)" textLength="75.6" lengthAdjust="spacingAndGlyphs">         </text>
+<text x="154.8" y="383" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="163.2" y="383" fill="rgb(201,209,217)" textLength="495.6" lengthAdjust="spacingAndGlyphs"> Mekanet-Energy/opcua-server clean  ↑0 ↓1         —   yes  </text>
+<text x="658.8" y="383" fill="rgb(255,255,255)" textLength="529.2" lengthAdjust="spacingAndGlyphs">                                                               </text>
+<text x="12.0" y="400" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="400" fill="rgb(201,209,217)" textLength="92.4" lengthAdjust="spacingAndGlyphs">  Worktrees</text>
+<text x="112.8" y="400" fill="rgb(255,255,255)" textLength="42.0" lengthAdjust="spacingAndGlyphs">     </text>
+<text x="154.8" y="400" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="163.2" y="400" fill="rgb(201,209,217)" textLength="394.8" lengthAdjust="spacingAndGlyphs"> Hiretea/hiretea clean  —             —   yes  </text>
+<text x="558.0" y="400" fill="rgb(255,255,255)" textLength="630.0" lengthAdjust="spacingAndGlyphs">                                                                           </text>
+<text x="12.0" y="417" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="417" fill="rgb(110,118,129)" textLength="58.8" lengthAdjust="spacingAndGlyphs"> system</text>
+<text x="79.2" y="417" fill="rgb(255,255,255)" textLength="75.6" lengthAdjust="spacingAndGlyphs">         </text>
+<text x="154.8" y="417" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="163.2" y="417" fill="rgb(201,209,217)" textLength="411.6" lengthAdjust="spacingAndGlyphs"> sametcn99/RepoHub clean  —             —   yes  </text>
+<text x="574.8" y="417" fill="rgb(255,255,255)" textLength="613.2" lengthAdjust="spacingAndGlyphs">                                                                         </text>
+<text x="12.0" y="434" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="434" fill="rgb(201,209,217)" textLength="67.2" lengthAdjust="spacingAndGlyphs">  Agents</text>
+<text x="87.6" y="434" fill="rgb(255,255,255)" textLength="67.2" lengthAdjust="spacingAndGlyphs">        </text>
+<text x="154.8" y="434" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="163.2" y="434" fill="rgb(201,209,217)" textLength="403.2" lengthAdjust="spacingAndGlyphs"> sametcn99/server clean  —             —   yes  </text>
+<text x="566.4" y="434" fill="rgb(255,255,255)" textLength="621.6" lengthAdjust="spacingAndGlyphs">                                                                          </text>
+<text x="12.0" y="451" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="451" fill="rgb(201,209,217)" textLength="84.0" lengthAdjust="spacingAndGlyphs">  Settings</text>
+<text x="104.4" y="451" fill="rgb(255,255,255)" textLength="50.4" lengthAdjust="spacingAndGlyphs">      </text>
+<text x="154.8" y="451" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="163.2" y="451" fill="rgb(201,209,217)" textLength="478.8" lengthAdjust="spacingAndGlyphs"> Mekanet-Energy/web-tr-php clean  —             —   yes  </text>
+<text x="642.0" y="451" fill="rgb(255,255,255)" textLength="546.0" lengthAdjust="spacingAndGlyphs">                                                                 </text>
+<text x="12.0" y="468" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="468" fill="rgb(110,118,129)" textLength="117.6" lengthAdjust="spacingAndGlyphs"> [v]+go · [ ] </text>
+<text x="138.0" y="468" fill="rgb(255,255,255)" textLength="16.8" lengthAdjust="spacingAndGlyphs">  </text>
+<text x="154.8" y="468" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="163.2" y="468" fill="rgb(201,209,217)" textLength="453.6" lengthAdjust="spacingAndGlyphs"> Mekanet-Energy/prdocs missing —             —   no   </text>
+<text x="616.8" y="468" fill="rgb(255,255,255)" textLength="571.2" lengthAdjust="spacingAndGlyphs">                                                                    </text>
+<text x="12.0" y="485" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="485" fill="rgb(110,118,129)" textLength="42.0" lengthAdjust="spacingAndGlyphs">cycle</text>
+<text x="62.4" y="485" fill="rgb(255,255,255)" textLength="92.4" lengthAdjust="spacingAndGlyphs">           </text>
+<text x="154.8" y="485" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="163.2" y="485" fill="rgb(255,255,255)" textLength="1024.8" lengthAdjust="spacingAndGlyphs">                                                                                                                          </text>
+<text x="12.0" y="502" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="502" fill="rgb(255,255,255)" textLength="134.4" lengthAdjust="spacingAndGlyphs">                </text>
+<text x="154.8" y="502" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="163.2" y="502" fill="rgb(255,255,255)" textLength="1024.8" lengthAdjust="spacingAndGlyphs">                                                                                                                          </text>
+<text x="12.0" y="519" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="519" fill="rgb(255,255,255)" textLength="134.4" lengthAdjust="spacingAndGlyphs">                </text>
+<text x="154.8" y="519" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="163.2" y="519" fill="rgb(255,255,255)" textLength="1024.8" lengthAdjust="spacingAndGlyphs">                                                                                                                          </text>
+<text x="12.0" y="536" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="536" fill="rgb(255,255,255)" textLength="134.4" lengthAdjust="spacingAndGlyphs">                </text>
+<text x="154.8" y="536" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="163.2" y="536" fill="rgb(255,255,255)" textLength="1024.8" lengthAdjust="spacingAndGlyphs">                                                                                                                          </text>
+<text x="12.0" y="553" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="553" fill="rgb(255,255,255)" textLength="134.4" lengthAdjust="spacingAndGlyphs">                </text>
+<text x="154.8" y="553" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="163.2" y="553" fill="rgb(255,255,255)" textLength="1024.8" lengthAdjust="spacingAndGlyphs">                                                                                                                          </text>
+<text x="12.0" y="570" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="570" fill="rgb(255,255,255)" textLength="134.4" lengthAdjust="spacingAndGlyphs">                </text>
+<text x="154.8" y="570" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="163.2" y="570" fill="rgb(255,255,255)" textLength="1024.8" lengthAdjust="spacingAndGlyphs">                                                                                                                          </text>
+<text x="12.0" y="587" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="587" fill="rgb(255,255,255)" textLength="134.4" lengthAdjust="spacingAndGlyphs">                </text>
+<text x="154.8" y="587" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="163.2" y="587" fill="rgb(255,255,255)" textLength="1024.8" lengthAdjust="spacingAndGlyphs">                                                                                                                          </text>
+<text x="12.0" y="604" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="604" fill="rgb(255,255,255)" textLength="134.4" lengthAdjust="spacingAndGlyphs">                </text>
+<text x="154.8" y="604" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="163.2" y="604" fill="rgb(255,255,255)" textLength="1024.8" lengthAdjust="spacingAndGlyphs">                                                                                                                          </text>
+<text x="12.0" y="621" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="621" fill="rgb(255,255,255)" textLength="134.4" lengthAdjust="spacingAndGlyphs">                </text>
+<text x="154.8" y="621" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="163.2" y="621" fill="rgb(255,255,255)" textLength="1024.8" lengthAdjust="spacingAndGlyphs">                                                                                                                          </text>
+<text x="12.0" y="638" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="638" fill="rgb(255,255,255)" textLength="134.4" lengthAdjust="spacingAndGlyphs">                </text>
+<text x="154.8" y="638" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="163.2" y="638" fill="rgb(255,255,255)" textLength="1024.8" lengthAdjust="spacingAndGlyphs">                                                                                                                          </text>
+<text x="12.0" y="655" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="655" fill="rgb(255,255,255)" textLength="134.4" lengthAdjust="spacingAndGlyphs">                </text>
+<text x="154.8" y="655" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="163.2" y="655" fill="rgb(255,255,255)" textLength="1024.8" lengthAdjust="spacingAndGlyphs">                                                                                                                          </text>
+<text x="12.0" y="672" fill="rgb(48,54,61)" textLength="151.2" lengthAdjust="spacingAndGlyphs">└────────────────┘</text>
+<text x="163.2" y="672" fill="rgb(110,118,129)" textLength="814.8" lengthAdjust="spacingAndGlyphs">↑↓ move · Enter expand (-D detail) · f filter · u remote PR+CI · r refresh · J JSON · Esc cockpit</text>
+<text x="978.0" y="672" fill="rgb(255,255,255)" textLength="210.0" lengthAdjust="spacingAndGlyphs">                         </text>
+<text x="12.0" y="689" fill="rgb(48,54,61)" textLength="1176.0" lengthAdjust="spacingAndGlyphs">┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐</text>
+<text x="12.0" y="706" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="706" fill="rgb(110,118,129)" textLength="940.8" lengthAdjust="spacingAndGlyphs"> [Esc] Cockpit  [v] Status  [Tab] Focus  [Space] Select  [?] Help  [q] Quit  [:] Omnibar  [/] Search  [f] Health</text>
+<text x="961.2" y="706" fill="rgb(255,255,255)" textLength="218.4" lengthAdjust="spacingAndGlyphs">                          </text>
+<text x="1179.6" y="706" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="12.0" y="723" fill="rgb(48,54,61)" textLength="1176.0" lengthAdjust="spacingAndGlyphs">└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘</text>
+<rect x="20.4" y="29.0" width="8.4" height="17" fill="none" stroke="#e6edf3" stroke-opacity="0.55" rx="1"/>
+</svg>
