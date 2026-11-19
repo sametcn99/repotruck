@@ -469,15 +469,16 @@ describe("TUI v2 Store & Cockpit capabilities", () => {
       await settle(setup);
       const bottomOmnibarFrame = norm(setup.captureCharFrame());
       expect(bottomOmnibarFrame).toContain(`${totalCmds}/${totalCmds} commands`);
-      expect(bottomOmnibarFrame).toContain("Show all keyboard shortcuts");
-      expect(bottomOmnibarFrame).toContain("Empty workspace .repotruck/trash");
+      expect(bottomOmnibarFrame).toContain("trash — Trash");
 
-      // Press Enter on the bottom command ("help") without typing anything
+      // Press Enter on the bottom command (registry: trash view) without typing anything
       setup.mockInput.pressEnter();
       await settle(setup);
-      expect(store.getSnapshot().modal?.type).toBe("help");
+      expect(store.getSnapshot().modal).toBeNull();
+      expect(store.getSnapshot().view).toBe("trash");
       setup.mockInput.pressEscape();
       await settle(setup);
+      expect(store.getSnapshot().view).toBe("cockpit");
     } finally {
       await setup.dispose();
     }

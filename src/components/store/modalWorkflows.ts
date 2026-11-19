@@ -1,5 +1,6 @@
 import { existsSync } from "node:fs";
 import path from "node:path";
+import { REGISTRY_BY_ID } from "../../commands/registry.ts";
 import { setWorkspaceAlias } from "../../core/aliases.ts";
 import {
   type CustomPreset,
@@ -326,6 +327,92 @@ export async function performRemoveWorktree(
   return await removeRepoWorktree(repoDir, targetPath, force);
 }
 
+/**
+ * Dispatch a registry command selected from the palette. Surfaces already
+ * implemented navigate/open; planned tickets log their arrival notice so
+ * every CLI command is at least reachable and honest about its state.
+ */
+export function executeRegistryCommand(store: Store, registryId: string): void {
+  const spec = REGISTRY_BY_ID.get(registryId);
+  if (spec === undefined) {
+    store.pushStatus("FAILED", "[palette]", `unknown command: ${registryId}`);
+    return;
+  }
+  store.closeModal();
+
+  if (spec.surface.kind === "view") {
+    store.setView(spec.surface.view);
+    return;
+  }
+  if (spec.surface.kind === "planned") {
+    store.pushStatus("DONE", `[${spec.path}]`, `arriving with ${spec.surface.ticket}`);
+    return;
+  }
+  if (spec.surface.kind === "action") {
+    switch (spec.surface.action) {
+      case "openSelectionUntrackConfirm":
+        store.openSelectionUntrackConfirm();
+        return;
+      case "openSelectionDeleteConfirm":
+        void store.openSelectionDeleteConfirm();
+        return;
+      case "openSelectionArchiveConfirm":
+        store.openSelectionArchiveConfirm();
+        return;
+      case "togglePinSelection":
+        void store.togglePinSelection();
+        return;
+      case "runHealthDoctorFix":
+        void store.runHealthDoctorFix();
+        return;
+      case "trash-empty":
+        void store.runWorkspaceMaintenance("trash-empty");
+        return;
+      default:
+        store.pushStatus("FAILED", `[${spec.path}]`, "action surface not wired yet");
+        return;
+    }
+  }
+  // modal surfaces
+  const key = currentHighlightedKey(store);
+  const needsRepo = (name: string): boolean => ["move", "alias", "open", "worktree"].includes(name);
+  if (needsRepo(spec.surface.modal) && key === null) {
+    store.pushStatus("FAILED", `[${spec.path}]`, "no repository highlighted");
+    return;
+  }
+  switch (spec.surface.modal) {
+    case "clone":
+      store.openCloneModal();
+      return;
+    case "create":
+      store.openCreateModal();
+      return;
+    case "workspaces":
+      void store.openWorkspacePicker();
+      return;
+    case "root":
+      void store.openRootModal();
+      return;
+    case "reorganize":
+      void store.openReorganizeModal();
+      return;
+    case "move":
+      if (key !== null) void store.openMoveModal(key);
+      return;
+    case "alias":
+      if (key !== null) void store.openAliasModal(key);
+      return;
+    case "open":
+      if (key !== null) void store.openOpenModal(key);
+      return;
+    case "worktree":
+      if (key !== null) void store.openWorktreeModal(key);
+      return;
+    default:
+      store.pushStatus("DONE", `[${spec.path}]`, "modal surface not wired yet");
+  }
+}
+
 function currentHighlightedKey(store: Store): string | null {
   const snap = store.getSnapshot();
   const repo = snap.filteredRepos[snap.cursor];
@@ -333,6 +420,10 @@ function currentHighlightedKey(store: Store): string | null {
 }
 
 export function executeOmnibarCommandById(store: Store, id: string): void {
+  if (id.startsWith("cmd:")) {
+    executeRegistryCommand(store, id.slice("cmd:".length));
+    return;
+  }
   if (id === "mode-symbols") {
     store.openOmnibar("symbols", "");
     return;

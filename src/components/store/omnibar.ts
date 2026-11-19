@@ -1,3 +1,4 @@
+import { REGISTRY } from "../../commands/registry.ts";
 import type {
   CodeSearchMatch,
   CodeSearchResult,
@@ -12,6 +13,77 @@ export const OMNIBAR_MODES: readonly OmnibarMode[] = ["commands", "symbols", "gi
 export function cycleOmnibarMode(current: OmnibarMode): OmnibarMode {
   const idx = OMNIBAR_MODES.indexOf(current);
   return OMNIBAR_MODES[(idx + 1) % OMNIBAR_MODES.length] ?? "commands";
+}
+
+/**
+ * Case-insensitive fuzzy score: subsequence match with bonuses for word
+ * starts and consecutive runs. `null` when the query does not match.
+ */
+export function fuzzyScore(query: string, target: string): number | null {
+  if (query.length === 0) return 0;
+  const q = query.toLowerCase();
+  const t = target.toLowerCase();
+  const direct = t.indexOf(q);
+  if (direct >= 0) {
+    return 100 - direct + (direct === 0 ? 50 : 0);
+  }
+  let score = 0;
+  let qi = 0;
+  let run = 0;
+  let prevWordStart = false;
+  for (let ti = 0; ti < t.length && qi < q.length; ti += 1) {
+    const tc = t[ti]!;
+    const wordStart = ti === 0 || /[\s\-_/]/.test(t[ti - 1] ?? "");
+    if (tc === q[qi]) {
+      run += 1;
+      score += 10 + run * 2 + (wordStart ? 8 : 0) + (prevWordStart ? 4 : 0);
+      qi += 1;
+      prevWordStart = wordStart;
+    } else {
+      run = 0;
+      prevWordStart = false;
+    }
+  }
+  return qi === q.length ? score : null;
+}
+
+function itemScore(query: string, item: OmnibarCommandItem): number | null {
+  const fields = [
+    item.label,
+    item.id,
+    item.category ?? "",
+    item.shortcut ?? "",
+    item.keywords ?? "",
+  ];
+  let best: number | null = null;
+  for (const field of fields) {
+    const s = fuzzyScore(query, field);
+    if (s !== null && (best === null || s > best)) best = s;
+  }
+  return best;
+}
+
+/**
+ * Registry-derived palette entries: every CLI command/subcommand is
+ * reachable from the palette. Commands whose root path already has a
+ * richer UI entry (with shortcut and live detail) are skipped to avoid
+ * duplicates; subcommands and uncovered commands are added with the
+ * `cmd:` id prefix.
+ */
+export function buildRegistryPaletteItems(uiIds: ReadonlySet<string>): OmnibarCommandItem[] {
+  const items: OmnibarCommandItem[] = [];
+  for (const spec of REGISTRY) {
+    if (spec.id === "__globals__") continue;
+    const rootToken = spec.path.split(" ")[0]!;
+    if (spec.id === rootToken && uiIds.has(rootToken)) continue;
+    items.push({
+      id: `cmd:${spec.id}`,
+      label: `${spec.path} — ${spec.title}`,
+      category: spec.group,
+      keywords: `${spec.summary} ${spec.flags.map((flag) => flag.flag).join(" ")}`,
+    });
+  }
+  return items;
 }
 
 export function buildCommandPaletteItems(
@@ -453,17 +525,19 @@ export function buildCommandPaletteItems(
     },
   ];
 
-  const needle = query.trim().toLowerCase();
-  if (needle.length === 0) return all;
-  return all.filter(
-    (item) =>
-      item.label.toLowerCase().includes(needle) ||
-      item.id.toLowerCase().includes(needle) ||
-      (item.category?.toLowerCase().includes(needle) ?? false) ||
-      (item.shortcut?.toLowerCase().includes(needle) ?? false) ||
-      (item.detail?.toLowerCase().includes(needle) ?? false) ||
-      (item.keywords?.toLowerCase().includes(needle) ?? false),
-  );
+  const uiItems = all;
+  const uiIds = new Set(uiItems.map((item) => item.id));
+  const merged = [...uiItems, ...buildRegistryPaletteItems(uiIds)];
+
+  const needle = query.trim();
+  if (needle.length === 0) return merged;
+  const scored: { item: OmnibarCommandItem; score: number }[] = [];
+  for (const item of merged) {
+    const score = itemScore(needle, item);
+    if (score !== null) scored.push({ item, score });
+  }
+  scored.sort((a, b) => b.score - a.score);
+  return scored.map((entry) => entry.item);
 }
 
 export async function runOmnibarSymbolSearch(
