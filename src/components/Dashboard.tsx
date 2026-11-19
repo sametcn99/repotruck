@@ -21,7 +21,12 @@ import { StartPreviewModal } from "./StartPreviewModal.tsx";
 import { StatusPanel } from "./StatusPanel.tsx";
 import type { ModalState, StatusPhase, Store, ViewId } from "./store.ts";
 import { theme } from "./theme.ts";
+import { CodeSearchView } from "./views/CodeSearchView.tsx";
 import { PlaceholderView } from "./views/PlaceholderView.tsx";
+import { RunConsoleView } from "./views/RunConsoleView.tsx";
+import { StatsView } from "./views/StatsView.tsx";
+import { StatusMatrixView } from "./views/StatusMatrixView.tsx";
+import { TrashBackupsView } from "./views/TrashBackupsView.tsx";
 import { VIEW_BY_ID, VIEW_GO_KEYS } from "./views/viewRegistry.ts";
 import { WorkspacePicker } from "./WorkspacePicker.tsx";
 import { WorkspaceSkeleton } from "./WorkspaceSkeleton.tsx";
@@ -129,10 +134,26 @@ function assertUnreachable(value: never): null {
 // Page body for a non-cockpit view. Implementing tickets replace the
 // placeholder with a real component; the registry drives rail, help and
 // palette entries so the shell stays consistent meanwhile.
-function renderPage(view: ViewId, width: number) {
-  const spec = VIEW_BY_ID.get(view);
-  if (spec === undefined) return null;
-  return <PlaceholderView spec={spec} width={width} />;
+function renderPage(view: ViewId, store: Store, width: number, height: number) {
+  switch (view) {
+    case "status":
+      return <StatusMatrixView store={store} width={width} height={height} />;
+    case "search":
+      return <CodeSearchView store={store} width={width} />;
+    case "run":
+      return <RunConsoleView store={store} width={width} />;
+    case "stats":
+      return <StatsView store={store} width={width} />;
+    case "trash":
+      return <TrashBackupsView store={store} width={width} />;
+    case "cockpit":
+      return null;
+    default: {
+      const spec = VIEW_BY_ID.get(view);
+      if (spec === undefined) return null;
+      return <PlaceholderView spec={spec} width={width} />;
+    }
+  }
 }
 
 function renderModal(
@@ -614,7 +635,7 @@ export function Dashboard({
       ) : (
         <box flexDirection="row" flexGrow={1}>
           {railVisible ? <NavRail store={store} width={NAV_RAIL_WIDTH} /> : null}
-          {renderPage(snapshot.view, pageWidth)}
+          {renderPage(snapshot.view, store, pageWidth, height)}
         </box>
       )}
       {snapshot.updateToast !== null && shellVisible ? (

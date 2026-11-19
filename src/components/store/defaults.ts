@@ -3,7 +3,12 @@ import { searchCode } from "../../services/codeSearch.ts";
 import { createRepository } from "../../services/creator.ts";
 import { GitHubService } from "../../services/github.ts";
 import { detectApps, resolveApp, type SpawnImpl } from "../../services/launcher.ts";
-import { archiveRepository, deleteRepository, forgetRepository } from "../../services/lifecycle.ts";
+import {
+  archiveRepository,
+  deleteRepository,
+  forgetRepository,
+  workspaceStatus,
+} from "../../services/lifecycle.ts";
 import { moveDir, moveRepository } from "../../services/mover.ts";
 import { reorganizeWorkspace } from "../../services/reorganizer.ts";
 import { runInRepos } from "../../services/runner.ts";
@@ -35,6 +40,7 @@ export function buildStoreDeps(deps: StoreDeps = {}): ResolvedStoreDeps {
     reorganize: deps.reorganize ?? reorganizeWorkspace,
     searchCodeFn: deps.searchCodeFn ?? searchCode,
     runInReposFn: deps.runInReposFn ?? runInRepos,
+    workspaceStatusFn: deps.workspaceStatusFn ?? workspaceStatus,
     listWorkspacesFn: deps.listWorkspacesFn ?? listWorkspaces,
     removeWorkspaceFn: deps.removeWorkspaceFn ?? removeWorkspace,
     detectAppsFn: deps.detectAppsFn ?? ((options) => detectApps(options)),
@@ -78,6 +84,11 @@ export function buildInitialSnapshot(root: string): StoreSnapshot {
     rightPaneTab: "activity",
     inspector: null,
     healthData: null,
+    statusMatrix: null,
+    codeSearchPage: null,
+    runConsole: null,
+    statsPage: null,
+    trashPage: null,
     omnibarLoading: false,
     omnibarSymbols: [],
     omnibarGithubRepos: [],

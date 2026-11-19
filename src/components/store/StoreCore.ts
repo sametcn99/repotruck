@@ -1,16 +1,22 @@
 import { PRESET_IDS, type PresetRef } from "../../presets/index.ts";
+import { listWorkspaceSnapshots } from "../../services/backups.ts";
 import { firstErrorLine } from "../../services/cloner.ts";
 import { warnQuiet } from "../../services/diagnostics.ts";
+import { computeWorkspaceHealthScore } from "../../services/healthScore.ts";
 import { readSettings, writeSettings } from "../../services/settings.ts";
+import { listTrashEntries, restoreTrashEntry } from "../../services/trash.ts";
 import { loadWorkspace } from "../../services/workspace.ts";
+import { restoreWorkspaceSnapshot } from "../../services/workspaceRegistry.ts";
 import { activateTheme, activeThemeName, cycleThemeName } from "../theme.ts";
 import { nextViewId } from "../views/viewRegistry.ts";
 import { buildSidebarRows, repoKey } from "./filters.ts";
+import { loadWorkspaceHealthData } from "./gitHealth.ts";
 import {
   performBulkCommandRun,
   performDoctorFixAction,
   performUndoAction,
   performWorkspaceMaintenanceAction,
+  tokenizeCommandLine,
 } from "./lifecycleActions.ts";
 import { cycleOmnibarMode, runOmnibarGithubSearch, runOmnibarSymbolSearch } from "./omnibar.ts";
 import { StoreBase } from "./StoreBase.ts";
@@ -112,6 +118,258 @@ export class StoreCore extends StoreBase {
 
   openCommandForm = (specId: string): void => {
     this.openModal({ type: "commandForm", specId });
+  };
+
+  // ---- Code Search page (t06) ---------------------------------------------
+  updateCodeSearchForm = (partial: Partial<CodeSearchForm>): void => {
+    const current = this.state.codeSearchPage ?? defaultCodeSearchForm();
+    this.set({ codeSearchPage: { ...current, ...partial } });
+  };
+
+  runCodeSearchPage = async (): Promise<void> => {
+    const form = this.state.codeSearchPage ?? defaultCodeSearchForm();
+    const pattern = form.pattern.trim();
+    if (pattern.length === 0) return;
+    this.set({ codeSearchPage: { ...form, loading: true } });
+    try {
+      const config = this.localConfig ?? (await loadWorkspace(this.rootValue));
+      this.localConfig = config;
+      const result = await this.deps.searchCodeFn({
+        root: this.rootValue,
+        config,
+        pattern,
+        ...(form.kind !== "" ? { kind: form.kind } : {}),
+        ...(form.lang !== "" ? { lang: form.lang } : {}),
+        limit: form.limit,
+        offline: form.offline,
+        ...(form.mode === "text" ? { text: true } : {}),
+        ...(form.mode === "re" ? { regex: true } : {}),
+      });
+      const guard = this.state.codeSearchPage;
+      if (guard !== null)
+        this.set({ codeSearchPage: { ...guard, loading: false, matches: result.matches } });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.pushStatus("FAILED", "[search-code]", message);
+      const guard = this.state.codeSearchPage;
+      if (guard !== null) this.set({ codeSearchPage: { ...guard, loading: false, matches: [] } });
+    }
+  };
+
+  rebuildCodeIndex = async (): Promise<void> => {
+    try {
+      const config = this.localConfig ?? (await loadWorkspace(this.rootValue));
+      this.localConfig = config;
+      await this.deps.searchCodeFn({
+        root: this.rootValue,
+        config,
+        pattern: "",
+        rebuild: true,
+        offline: true,
+      });
+      this.pushStatus("DONE", "[search-code]", "symbol index rebuilt");
+    } catch (error) {
+      this.pushStatus(
+        "FAILED",
+        "[search-code]",
+        error instanceof Error ? error.message : String(error),
+      );
+    }
+  };
+
+  // ---- Run Console page (t07) ----------------------------------------------
+  updateRunConsole = (partial: Partial<import("./types.ts").RunConsoleState>): void => {
+    const current = this.state.runConsole ?? defaultRunConsoleState();
+    this.set({ runConsole: { ...current, ...partial } });
+  };
+
+  runConsoleStart = async (): Promise<void> => {
+    const state = this.state.runConsole ?? defaultRunConsoleState();
+    const commandLine = state.command.trim();
+    if (commandLine.length === 0 || state.running) return;
+    const [command, ...args] = tokenizeCommandLine(commandLine);
+    if (command === undefined) return;
+    const refs =
+      state.scope === "selection"
+        ? [...this.state.selected]
+        : state.scope === "pinned"
+          ? [...this.state.localHealth.entries()].filter(([, h]) => h.pinned).map(([key]) => key)
+          : state.scope === "profile"
+            ? await profileRefs(this.rootValue, state.profile)
+            : [];
+    this.set({ runConsole: { ...state, running: true, results: [], skipped: [] } });
+    const taskId = "run-console";
+    this.beginTask(taskId, "run");
+    try {
+      const config = this.localConfig ?? (await loadWorkspace(this.rootValue));
+      this.localConfig = config;
+      const result = await this.deps.runInReposFn({
+        root: this.rootValue,
+        config,
+        refs,
+        command,
+        args,
+        concurrency: state.concurrency,
+      });
+      const guard = this.state.runConsole;
+      if (guard !== null) {
+        this.set({
+          runConsole: {
+            ...guard,
+            running: false,
+            results: result.results,
+            skipped: result.skipped,
+          },
+        });
+      }
+      const failed = result.results.filter((r) => !r.ok).length;
+      this.endTask(taskId, `${result.results.length} repos · ${failed} failed`, failed > 0);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.endTask(taskId, message, true);
+      const guard = this.state.runConsole;
+      if (guard !== null) this.set({ runConsole: { ...guard, running: false } });
+    }
+  };
+
+  // ---- Stats page (t08) ------------------------------------------------------
+  refreshStatsPage = async (): Promise<void> => {
+    this.set({
+      statsPage: {
+        loading: true,
+        stats: this.state.statsPage?.stats ?? null,
+        health: this.state.statsPage?.health ?? null,
+        checks: this.state.statsPage?.checks ?? [],
+      },
+    });
+    try {
+      const config = this.localConfig ?? (await loadWorkspace(this.rootValue));
+      this.localConfig = config;
+      const health = await loadWorkspaceHealthData(this.rootValue, config);
+      const score = await computeWorkspaceHealthScore(this.rootValue, config);
+      this.set({
+        statsPage: { loading: false, stats: health.stats, health: score, checks: health.checks },
+      });
+    } catch {
+      this.set({ statsPage: { loading: false, stats: null, health: null, checks: [] } });
+    }
+  };
+
+  // ---- Trash & Backups page (t09) -------------------------------------------
+  refreshTrashPage = async (): Promise<void> => {
+    try {
+      const [trash, backups] = await Promise.all([
+        listTrashEntries(this.rootValue),
+        listWorkspaceSnapshots(this.rootValue),
+      ]);
+      this.set({ trashPage: { trash, backups } });
+    } catch {
+      this.set({ trashPage: { trash: [], backups: [] } });
+    }
+  };
+
+  trashRestoreEntry = async (id: string): Promise<void> => {
+    try {
+      const config = this.localConfig ?? (await loadWorkspace(this.rootValue));
+      this.localConfig = config;
+      const result = await restoreTrashEntry(this.rootValue, id);
+      this.pushStatus("DONE", "[trash]", result.message);
+      await this.refreshLocalState();
+      await this.refreshTrashPage();
+    } catch (error) {
+      this.pushStatus("FAILED", "[trash]", error instanceof Error ? error.message : String(error));
+    }
+  };
+
+  trashEmptyConfirm = (olderThanDays?: number): void => {
+    const keep =
+      olderThanDays !== undefined && olderThanDays > 0 ? ` --older-than ${olderThanDays}` : "";
+    this.confirmDialog(
+      {
+        title: "Empty trash",
+        message: `Permanently remove trashed directories? (trash empty --yes${keep})`,
+        confirmLabel: "Empty",
+        danger: true,
+      },
+      () => {
+        void this.runWorkspaceMaintenance("trash-empty");
+        void this.refreshTrashPage();
+      },
+    );
+  };
+
+  backupSnapshotNow = async (): Promise<void> => {
+    await this.runWorkspaceMaintenance("backup");
+    await this.refreshTrashPage();
+  };
+
+  backupRestoreConfirm = (file: string): void => {
+    this.confirmDialog(
+      {
+        title: "Restore snapshot",
+        message: `Restore ${file}? This replaces the current workspace inventory.`,
+        confirmLabel: "Restore",
+        danger: true,
+      },
+      () => {
+        void (async () => {
+          try {
+            await restoreWorkspaceSnapshot(this.rootValue, file, process.env);
+            this.pushStatus("DONE", "[backup]", `inventory restored from ${file}`);
+            await this.refreshLocalState();
+            await this.refreshTrashPage();
+          } catch (error) {
+            this.pushStatus(
+              "FAILED",
+              "[backup]",
+              error instanceof Error ? error.message : String(error),
+            );
+          }
+        })();
+      },
+    );
+  };
+
+  refreshStatusMatrix = async (remote?: boolean): Promise<void> => {
+    const wantRemote = remote ?? this.state.statusMatrix?.remote ?? false;
+    this.set({
+      statusMatrix: {
+        loading: true,
+        remote: wantRemote,
+        lastSync: this.state.statusMatrix?.lastSync ?? null,
+        repos: this.state.statusMatrix?.repos ?? [],
+      },
+    });
+    try {
+      const config = this.localConfig ?? (await loadWorkspace(this.rootValue));
+      this.localConfig = config;
+      const github =
+        wantRemote && this.github !== null && this.github.getRepoRemoteHealth !== undefined
+          ? {
+              getRepoRemoteHealth: (owner: string, name: string) =>
+                this.github!.getRepoRemoteHealth!(owner, name),
+            }
+          : undefined;
+      const result = await this.deps.workspaceStatusFn(this.rootValue, config, {
+        detail: true,
+        remote: wantRemote,
+        ...(github !== undefined ? { github } : {}),
+      });
+      this.set({
+        statusMatrix: {
+          loading: false,
+          remote: wantRemote,
+          lastSync: result.lastSync,
+          repos: result.repos,
+        },
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.pushStatus("FAILED", "[status]", message);
+      this.set({
+        statusMatrix: { loading: false, remote: wantRemote, lastSync: null, repos: [] },
+      });
+    }
   };
 
   runHealthDoctorFix = async (): Promise<void> => {
@@ -327,5 +585,50 @@ export class StoreCore extends StoreBase {
     if (!fallbackCursor) return [];
     const repo = this.state.filteredRepos[this.state.cursor];
     return repo !== undefined ? [repoKey(repo)] : [];
+  }
+}
+
+// ---- page-state helpers ----------------------------------------------------
+
+export interface CodeSearchForm {
+  pattern: string;
+  mode: "sym" | "text" | "re";
+  kind: string;
+  lang: string;
+  limit: number;
+  offline: boolean;
+}
+
+export function defaultCodeSearchForm(): import("./types.ts").CodeSearchPageState {
+  return {
+    loading: false,
+    pattern: "",
+    mode: "sym",
+    kind: "",
+    lang: "",
+    limit: 50,
+    offline: true,
+    matches: [],
+  };
+}
+
+export function defaultRunConsoleState(): import("./types.ts").RunConsoleState {
+  return {
+    running: false,
+    command: "",
+    scope: "selection",
+    profile: "",
+    concurrency: 3,
+    results: [],
+    skipped: [],
+  };
+}
+
+async function profileRefs(root: string, profile: string): Promise<string[]> {
+  try {
+    const config = await loadWorkspace(root);
+    return config.profiles?.[profile] ?? [];
+  } catch {
+    return [];
   }
 }

@@ -238,6 +238,11 @@ export interface StoreSnapshot {
   rightPaneTab: RightPaneTab;
   inspector: InspectorState | null;
   healthData: HealthPanelData | null;
+  statusMatrix: StatusMatrixData | null;
+  codeSearchPage: CodeSearchPageState | null;
+  runConsole: RunConsoleState | null;
+  statsPage: StatsPageState | null;
+  trashPage: TrashPageState | null;
   omnibarLoading: boolean;
   omnibarSymbols: readonly CodeSearchMatch[];
   omnibarGithubRepos: readonly RepoInfo[];
@@ -261,6 +266,13 @@ export interface StoreSnapshot {
   canUndo: boolean;
 }
 
+import type { WorkspaceBackupEntry } from "../../services/backups.ts";
+import type { RemoteRepoHealth } from "../../services/github.ts";
+import type { HealthScoreResult } from "../../services/healthScore.ts";
+import type { RepoStatusLine } from "../../services/lifecycle.ts";
+import type { RunRepoResult } from "../../services/runner.ts";
+import type { TrashEntry } from "../../services/trash.ts";
+
 export interface GithubClient extends GitHubRepoReader {
   getUserLogin(): Promise<string>;
   getActiveOrgs(): Promise<string[]>;
@@ -269,6 +281,48 @@ export interface GithubClient extends GitHubRepoReader {
   createRepo(name: string, options: CreateRepoOptions): Promise<RepoInfo>;
   archiveRepo?(owner: string, name: string): Promise<RepoInfo>;
   searchRepos?(query: string, limit: number): Promise<RepoInfo[]>;
+  getRepoRemoteHealth?(owner: string, name: string): Promise<RemoteRepoHealth>;
+}
+
+export interface CodeSearchPageState {
+  loading: boolean;
+  pattern: string;
+  mode: "sym" | "text" | "re";
+  kind: string;
+  lang: string;
+  limit: number;
+  offline: boolean;
+  matches: readonly CodeSearchMatch[];
+}
+
+export interface RunConsoleState {
+  running: boolean;
+  command: string;
+  scope: "selection" | "pinned" | "all" | "profile";
+  profile: string;
+  concurrency: number;
+  results: readonly RunRepoResult[];
+  skipped: readonly { key: string; message: string }[];
+}
+
+export interface StatsPageState {
+  loading: boolean;
+  stats: WorkspaceStatsOutput | null;
+  health: HealthScoreResult | null;
+  checks: readonly DoctorCheck[];
+}
+
+export interface TrashPageState {
+  trash: readonly TrashEntry[];
+  backups: readonly WorkspaceBackupEntry[];
+}
+
+/** Status Matrix page slice (`status` / `status -D --remote`). */
+export interface StatusMatrixData {
+  loading: boolean;
+  remote: boolean;
+  lastSync: string | null;
+  repos: readonly RepoStatusLine[];
 }
 
 export interface StoreDeps {
@@ -284,6 +338,7 @@ export interface StoreDeps {
   reorganize?: typeof reorganizeWorkspace;
   searchCodeFn?: (options: SearchCodeOptions) => Promise<CodeSearchResult>;
   runInReposFn?: (options: RunInReposOptions) => Promise<RunInReposResult>;
+  workspaceStatusFn?: typeof import("../../services/lifecycle.ts").workspaceStatus;
   listWorkspacesFn?: typeof listWorkspaces;
   removeWorkspaceFn?: typeof removeWorkspace;
   detectAppsFn?: (options: { env?: EnvLike }) => Promise<AppEntry[]>;
