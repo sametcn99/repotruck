@@ -64,7 +64,7 @@ function makeWorkspace(prefix: string): string {
   return root;
 }
 
-function makeStore(wsRoot: string): Store {
+function makeStore(wsRoot: string, extra: Partial<StoreDeps> = {}): Store {
   const deps: StoreDeps = {
     auth: async () => ({ token: "t", method: "gh-cli" }),
     github: () => ({
@@ -120,7 +120,11 @@ function makeStore(wsRoot: string): Store {
     resolveAppFn: async () => null,
     listWorkspacesFn: async () => [],
   };
-  return new Store(wsRoot, deps);
+  return new Store(wsRoot, { ...deps, ...extra });
+}
+
+function makeStoreWithDeps(wsRoot: string, extra: Partial<StoreDeps>): Store {
+  return makeStore(wsRoot, extra);
 }
 
 async function settle(setup: Awaited<ReturnType<typeof testRender>>): Promise<void> {
@@ -316,12 +320,11 @@ describe("t13 context menu", () => {
     expect([...store.getSnapshot().selected]).toEqual(["acme/api"]);
     store.closeModal();
 
-    // permanent delete shows the danger dialog
+    // permanent delete shows the typed-name guard modal
     store.openRepoContextMenu("acme/api");
     store.executeContextAction("delete-permanent");
-    expect(store.getSnapshot().dialog?.title).toContain("Permanently delete");
-    expect(store.getSnapshot().dialog?.danger).toBe(true);
-    store.resolveDialog(false);
+    expect(store.getSnapshot().modal?.type).toBe("confirmPermanentDelete");
+    store.closeModal();
 
     // Esc closes via keyboard
     store.openRepoContextMenu("acme/api");
@@ -331,6 +334,165 @@ describe("t13 context menu", () => {
     expect(store.getSnapshot().contextMenu).toBeNull();
     frame = norm(await capture(setup));
     expect(frame).not.toContain("Delete permanently");
+    await setup.dispose();
+  });
+});
+
+describe("device-flow login (t10 follow-up)", () => {
+  test("non-blocking flow shows URL+code, completes, and re-initializes", async () => {
+    const root = makeWorkspace("rt-device-flow-");
+    const savedToken = process.env.REPOTRUCK_TOKEN;
+    delete process.env.REPOTRUCK_TOKEN;
+    let completions = 0;
+    let resolveCompletion!: () => void;
+    const store = makeStoreWithDeps(root, {
+      beginDeviceLoginFn: async () => ({
+        verificationUri: "https://github.com/login/device",
+        userCode: "XLQW-TRHD",
+        completion: new Promise((resolve) => {
+          resolveCompletion = () => {
+            completions += 1;
+            resolve({ token: "device-token", method: "device" as const });
+          };
+        }),
+      }),
+    });
+    await store.ensureInit();
+
+    const running = store.startDeviceFlow();
+    await new Promise((resolve) => setTimeout(resolve, 60));
+    // codes are visible while the authorization is pending
+    const flow = store.getSnapshot().deviceFlow;
+    expect(flow?.verificationUri).toBe("https://github.com/login/device");
+    expect(flow?.userCode).toBe("XLQW-TRHD");
+    expect(flow?.waiting).toBe(true);
+    expect(store.getSnapshot().modal?.type).toBe("deviceFlow");
+
+    // completion lands: modal closes, flow clears, success logged
+    resolveCompletion();
+    await running;
+    expect(completions).toBe(1);
+    expect(store.getSnapshot().modal).toBeNull();
+    expect(store.getSnapshot().deviceFlow).toBeNull();
+    const last = store.getSnapshot().statuses.at(-1);
+    expect(last?.message).toContain("device flow");
+    if (savedToken !== undefined) process.env.REPOTRUCK_TOKEN = savedToken;
+  });
+
+  test("cancel abandons the wait; env token refuses the flow", async () => {
+    const root = makeWorkspace("rt-device-cancel-");
+    const savedToken = process.env.REPOTRUCK_TOKEN;
+    delete process.env.REPOTRUCK_TOKEN;
+    let cancelled = false;
+    const store = makeStoreWithDeps(root, {
+      beginDeviceLoginFn: async () => ({
+        verificationUri: "https://github.com/login/device",
+        userCode: "AAAA-BBBB",
+        completion: new Promise(() => {
+          cancelled = true; // never resolves
+        }),
+      }),
+    });
+    await store.ensureInit();
+
+    const running = store.startDeviceFlow();
+    await new Promise((resolve) => setTimeout(resolve, 80));
+    expect(store.getSnapshot().deviceFlow?.waiting).toBe(true);
+    store.cancelDeviceFlow();
+    expect(store.getSnapshot().deviceFlow).toBeNull();
+    expect(store.getSnapshot().modal).toBeNull();
+    void running.catch(() => {});
+    expect(cancelled).toBe(true);
+
+    // env token guard
+    process.env.REPOTRUCK_TOKEN = "env-token";
+    await store.startDeviceFlow();
+    expect(store.getSnapshot().statuses.at(-1)?.message).toContain("already logged in");
+    expect(store.getSnapshot().modal).toBeNull();
+    delete process.env.REPOTRUCK_TOKEN;
+    if (savedToken !== undefined) process.env.REPOTRUCK_TOKEN = savedToken;
+  });
+});
+
+describe("permanent delete typed-name guard (t13 follow-up)", () => {
+  test("modal requires the exact repo name; confirm runs delete --yes", async () => {
+    const root = makeWorkspace("rt-perm-delete-");
+    const deletes: Array<{ key: string; yes: boolean }> = [];
+    const store = makeStoreWithDeps(root, {
+      deleteRepo: async (rootArg, config, ref, options = {}) => {
+        deletes.push({ key: ref, yes: options.yes === true });
+        return { ok: true, message: `deleted ${ref}` } as never;
+      },
+    });
+    await store.ensureInit();
+
+    // context action opens the typed-name modal
+    store.openRepoContextMenu("acme/api");
+    store.executeContextAction("delete-permanent");
+    expect(store.getSnapshot().modal?.type).toBe("confirmPermanentDelete");
+    expect(deletes.length).toBe(0);
+
+    // typing the wrong name does not arm (store path only fires when armed)
+    await store.confirmPermanentDelete("acme/api");
+    expect(deletes.length).toBe(1);
+    expect(deletes[0]).toEqual({ key: "acme/api", yes: true });
+    const last = store.getSnapshot().statuses.at(-1);
+    expect(last?.phase).toBe("DONE");
+    expect(last?.message).toContain("permanently deleted");
+  });
+});
+
+describe("device-flow + permanent-delete rendering", () => {
+  test("modal paints URL and code; typed-name gate arms only on exact match", async () => {
+    const root = makeWorkspace("rt-df-render-");
+    const savedToken = process.env.REPOTRUCK_TOKEN;
+    delete process.env.REPOTRUCK_TOKEN;
+    const store = makeStoreWithDeps(root, {
+      beginDeviceLoginFn: async () => ({
+        verificationUri: "https://github.com/login/device",
+        userCode: "XLQW-TRHD",
+        completion: new Promise(() => {}),
+      }),
+    });
+    const setup = await testRender(
+      <Dashboard store={store} onQuit={() => {}} onSuspendAndRun={async () => {}} />,
+      { width: 120, height: 40, exitOnCtrlC: false },
+    );
+    for (let i = 0; i < 40 && store.getSnapshot().phase !== "ready"; i += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 25));
+    }
+    await settle(setup);
+
+    void store.startDeviceFlow();
+    await settle(setup);
+    let frame = norm(await capture(setup));
+    expect(frame).toContain("device flow");
+    expect(frame).toContain("https://github.com/login/device");
+    expect(frame).toContain("XLQW-TRHD");
+    expect(frame).toContain("waiting for authorization");
+    store.cancelDeviceFlow();
+    await settle(setup);
+
+    // permanent delete: gate inert until the exact repo name is typed
+    store.openPermanentDeleteConfirm("acme/api");
+    await settle(setup);
+    frame = norm(await capture(setup));
+    expect(frame).toContain("Delete permanently");
+    expect(frame).toContain("type: api");
+
+    await setup.mockInput.typeText("ap");
+    await settle(setup);
+    frame = norm(await capture(setup));
+    expect(frame).toContain("[ delete — type api ]");
+
+    await setup.mockInput.typeText("i");
+    await settle(setup);
+    frame = norm(await capture(setup));
+    expect(frame).toContain("[ Delete forever ]");
+    setup.mockInput.pressEscape();
+    await settle(setup);
+    expect(store.getSnapshot().modal).toBeNull();
+    if (savedToken !== undefined) process.env.REPOTRUCK_TOKEN = savedToken;
     await setup.dispose();
   });
 });

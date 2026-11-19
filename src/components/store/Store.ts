@@ -180,6 +180,23 @@ export class Store extends StoreCore {
     if (keys.length > 0) await this.openDeleteConfirm(keys[0]!, keys.length > 1 ? keys : undefined);
   };
 
+  /** Permanent delete: guarded by the typed-name confirm modal (t13/t19 follow-up). */
+  openPermanentDeleteConfirm = (key: string): void => {
+    this.openModal({ type: "confirmPermanentDelete", key });
+  };
+
+  confirmPermanentDelete = async (key: string): Promise<void> => {
+    this.closeModal();
+    try {
+      const config = await loadWorkspace(this.rootValue);
+      await this.deps.deleteRepo(this.rootValue, config, key, { yes: true });
+      this.pushStatus("DONE", "[delete]", `${key} permanently deleted (delete --yes)`);
+      await this.refreshLocalState();
+    } catch (error) {
+      this.pushStatus("FAILED", "[delete]", firstErrorLine(error));
+    }
+  };
+
   confirmDelete = async (key: string, keys?: readonly string[]): Promise<boolean> => {
     this.closeModal();
     try {
@@ -613,30 +630,7 @@ export class Store extends StoreCore {
         void this.openSelectionDeleteConfirm();
         return;
       case "delete-permanent":
-        this.confirmDialog(
-          {
-            title: `Permanently delete ${key}?`,
-            message: `delete --yes without trash — the directory is removed for good (undo impossible).`,
-            confirmLabel: "Delete forever",
-            danger: true,
-          },
-          () => {
-            void (async () => {
-              try {
-                const config = await loadWorkspace(this.rootValue);
-                await this.deps.deleteRepo(this.rootValue, config, key, { yes: true });
-                this.pushStatus("DONE", "[delete]", `${key} permanently deleted`);
-                await this.refreshLocalState();
-              } catch (error) {
-                this.pushStatus(
-                  "FAILED",
-                  "[delete]",
-                  error instanceof Error ? error.message : String(error),
-                );
-              }
-            })();
-          },
-        );
+        this.openPermanentDeleteConfirm(key);
         return;
       case "resolve":
         this.setView("resolve");

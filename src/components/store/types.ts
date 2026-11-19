@@ -105,6 +105,15 @@ export interface ContextMenuState {
   key: string;
 }
 
+/** Non-blocking GitHub device-flow login state (`repotruck auth login`). */
+export interface DeviceFlowState {
+  loading: boolean;
+  verificationUri: string | null;
+  userCode: string | null;
+  waiting: boolean;
+  error: string | null;
+}
+
 /** Thin confirmation rendered above views and modals (y/n). */
 export interface DialogState {
   title: string;
@@ -215,6 +224,13 @@ export type ModalState =
   | {
       type: "commandForm";
       specId: string;
+    }
+  | {
+      type: "deviceFlow";
+    }
+  | {
+      type: "confirmPermanentDelete";
+      key: string;
     };
 
 export interface StoreSnapshot {
@@ -263,6 +279,7 @@ export interface StoreSnapshot {
   modal: ModalState;
   dialog: DialogState | null;
   contextMenu: ContextMenuState | null;
+  deviceFlow: DeviceFlowState | null;
   modalError: string | null;
   cursor: number;
   sidebarCursor: number;
@@ -392,6 +409,7 @@ export interface StoreDeps {
   searchCodeFn?: (options: SearchCodeOptions) => Promise<CodeSearchResult>;
   runInReposFn?: (options: RunInReposOptions) => Promise<RunInReposResult>;
   workspaceStatusFn?: typeof import("../../services/lifecycle.ts").workspaceStatus;
+  beginDeviceLoginFn?: typeof import("../../services/auth.ts").beginDeviceLogin;
   listWorkspacesFn?: typeof listWorkspaces;
   removeWorkspaceFn?: typeof removeWorkspace;
   detectAppsFn?: (options: { env?: EnvLike }) => Promise<AppEntry[]>;

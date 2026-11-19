@@ -64,6 +64,7 @@ async function deviceFlowAuth(
   env: EnvLike,
   baseUrl?: string,
   requestImpl?: unknown,
+  onVerification?: (verification: { verification_uri: string; user_code: string }) => void,
 ): Promise<AuthInfo> {
   const clientId = env.REPOTRUCK_OAUTH_CLIENT_ID;
   if (clientId === undefined || clientId.length === 0) {
@@ -83,11 +84,13 @@ async function deviceFlowAuth(
     clientType: "oauth-app",
     clientId,
     scopes: DEVICE_FLOW_SCOPES,
-    onVerification: (verification: { verification_uri: string; user_code: string }) => {
-      process.stderr.write(
-        `Open ${verification.verification_uri} in your browser and enter this code: ${verification.user_code}\n`,
-      );
-    },
+    onVerification:
+      onVerification ??
+      ((verification: { verification_uri: string; user_code: string }) => {
+        process.stderr.write(
+          `Open ${verification.verification_uri} in your browser and enter this code: ${verification.user_code}\n`,
+        );
+      }),
   };
   if (request !== undefined) {
     authOptions.request = request;
@@ -176,10 +179,53 @@ export interface DeviceLoginOptions {
   env: EnvLike;
   baseUrl?: string;
   requestImpl?: unknown;
+  /** Extra listener for the issued verification pair (used by beginDeviceLogin callers). */
+  onVerification?: (verification: { verification_uri: string; user_code: string }) => void;
 }
 
 export async function deviceLogin(options: DeviceLoginOptions): Promise<AuthInfo> {
   const info = await deviceFlowAuth(options.env, options.baseUrl, options.requestImpl);
   await writeCachedAuth(options.env, info.token);
   return info;
+}
+
+export interface DeviceFlowHandle {
+  verificationUri: string;
+  userCode: string;
+  /** Resolves with the token once the user authorizes in the browser. */
+  completion: Promise<AuthInfo>;
+}
+
+/**
+ * Non-blocking device flow for interactive surfaces (the TUI): returns as
+ * soon as GitHub issues the verification URL and user code, while the
+ * token exchange continues in the background and lands in `completion`.
+ */
+export async function beginDeviceLogin(options: DeviceLoginOptions): Promise<DeviceFlowHandle> {
+  let settleVerification:
+    | ((verification: { verification_uri: string; user_code: string }) => void)
+    | null = null;
+  const verificationPromise = new Promise<{ verification_uri: string; user_code: string }>(
+    (resolve) => {
+      settleVerification = resolve;
+    },
+  );
+  const completion = deviceFlowAuth(
+    options.env,
+    options.baseUrl,
+    options.requestImpl,
+    (verification) => {
+      options.onVerification?.(verification);
+      settleVerification?.(verification);
+    },
+  ).then(async (info) => {
+    await writeCachedAuth(options.env, info.token);
+    return info;
+  });
+  const verification = await verificationPromise;
+  return {
+    verificationUri: verification.verification_uri,
+    userCode: verification.user_code,
+    completion,
+  };
 }

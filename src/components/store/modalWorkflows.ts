@@ -397,6 +397,9 @@ export function executeRegistryCommand(store: Store, registryId: string, preferF
     case "clone":
       store.openCloneModal();
       return;
+    case "deviceFlow":
+      void store.startDeviceFlow();
+      return;
     case "create":
       store.openCreateModal();
       return;

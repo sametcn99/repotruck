@@ -446,6 +446,64 @@ export class StoreCore extends StoreBase {
   };
 
   // ---- Settings page (t10) ---------------------------------------------------
+  startDeviceFlow = async (): Promise<void> => {
+    if (this.state.deviceFlow?.waiting === true) return;
+    if ((process.env.REPOTRUCK_TOKEN ?? "").length > 0) {
+      this.pushStatus(
+        "FAILED",
+        "[auth]",
+        "already logged in (method: env) — unset REPOTRUCK_TOKEN to use the device flow",
+      );
+      return;
+    }
+    this.openModal({ type: "deviceFlow" });
+    this.set({
+      deviceFlow: {
+        loading: true,
+        verificationUri: null,
+        userCode: null,
+        waiting: false,
+        error: null,
+      },
+    });
+    try {
+      const handle = await this.deps.beginDeviceLoginFn({ env: process.env });
+      this.set({
+        deviceFlow: {
+          loading: false,
+          verificationUri: handle.verificationUri,
+          userCode: handle.userCode,
+          waiting: true,
+          error: null,
+        },
+      });
+      // Background poll: abandoning the handle on cancel is safe — a late
+      // authorization only writes a valid token into the cache.
+      await handle.completion;
+      this.set({ deviceFlow: null });
+      this.closeModal();
+      this.pushStatus("DONE", "[auth]", "logged in via device flow");
+      await this.init();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.pushStatus("FAILED", "[auth]", message);
+      this.set({
+        deviceFlow: {
+          loading: false,
+          verificationUri: null,
+          userCode: null,
+          waiting: false,
+          error: message,
+        },
+      });
+    }
+  };
+
+  cancelDeviceFlow = (): void => {
+    if (this.state.modal?.type === "deviceFlow") this.closeModal();
+    if (this.state.deviceFlow !== null) this.set({ deviceFlow: null });
+  };
+
   refreshSettingsPage = async (): Promise<void> => {
     try {
       const settings = await readSettings(process.env);

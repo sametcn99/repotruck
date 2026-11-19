@@ -4,9 +4,11 @@ import { AliasModal } from "./AliasModal.tsx";
 import { CloneModal } from "./CloneModal.tsx";
 import { CommandFormModal } from "./CommandFormModal.tsx";
 import { ConfirmModal } from "./ConfirmModal.tsx";
+import { ConfirmPermanentDeleteModal } from "./ConfirmPermanentDeleteModal.tsx";
 import { ContextMenu } from "./ContextMenu.tsx";
 import { CreateModal } from "./CreateModal.tsx";
 import { DetailModal } from "./DetailModal.tsx";
+import { DeviceFlowModal } from "./DeviceFlowModal.tsx";
 import { DialogBox } from "./DialogBox.tsx";
 import { HelpModal } from "./HelpModal.tsx";
 import { MoveModal } from "./MoveModal.tsx";
@@ -225,6 +227,10 @@ function renderModal(
       return <OmnibarModal store={store} />;
     case "commandForm":
       return <CommandFormModal store={store} />;
+    case "deviceFlow":
+      return <DeviceFlowModal store={store} />;
+    case "confirmPermanentDelete":
+      return <ConfirmPermanentDeleteModal store={store} />;
     default:
       return assertUnreachable(modal);
   }
@@ -337,6 +343,10 @@ export function Dashboard({
       if (key.name === "escape") {
         if (current.modal.type === "search") {
           store.clearSearch();
+        }
+        if (current.modal.type === "deviceFlow") {
+          store.cancelDeviceFlow();
+          return;
         }
         store.closeModal();
       }

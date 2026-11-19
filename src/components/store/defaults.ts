@@ -1,4 +1,4 @@
-import { getAuthInfo } from "../../services/auth.ts";
+import { beginDeviceLogin, getAuthInfo } from "../../services/auth.ts";
 import { searchCode } from "../../services/codeSearch.ts";
 import { createRepository } from "../../services/creator.ts";
 import { GitHubService } from "../../services/github.ts";
@@ -41,6 +41,7 @@ export function buildStoreDeps(deps: StoreDeps = {}): ResolvedStoreDeps {
     searchCodeFn: deps.searchCodeFn ?? searchCode,
     runInReposFn: deps.runInReposFn ?? runInRepos,
     workspaceStatusFn: deps.workspaceStatusFn ?? workspaceStatus,
+    beginDeviceLoginFn: deps.beginDeviceLoginFn ?? beginDeviceLogin,
     listWorkspacesFn: deps.listWorkspacesFn ?? listWorkspaces,
     removeWorkspaceFn: deps.removeWorkspaceFn ?? removeWorkspace,
     detectAppsFn: deps.detectAppsFn ?? ((options) => detectApps(options)),
@@ -105,6 +106,7 @@ export function buildInitialSnapshot(root: string): StoreSnapshot {
     modal: null,
     dialog: null,
     contextMenu: null,
+    deviceFlow: null,
     modalError: null,
     cursor: 0,
     sidebarCursor: 0,

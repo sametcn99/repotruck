@@ -94,15 +94,10 @@ export function SettingsView({ store, width }: { store: Store; width: number }) 
               fg={theme.accent()}
               onMouseDown={(event) => {
                 event.stopPropagation?.();
-                store.pushStatus(
-                  "DONE",
-                  "[auth]",
-                  "device flow runs in your terminal: repotruck auth login (copied)",
-                );
-                copyText("auth login", "repotruck auth login");
+                void store.startDeviceFlow();
               }}
             >
-              {" [login] copy device-flow command"}
+              {" [login] device flow (non-blocking)"}
             </text>
             <text
               fg={theme.error()}

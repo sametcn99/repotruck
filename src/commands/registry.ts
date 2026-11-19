@@ -784,7 +784,7 @@ export const REGISTRY: readonly CommandSpec[] = [
     group: "Platform",
     summary: "Authenticate via the OAuth device flow",
     args: [],
-    surface: { kind: "planned", ticket: "t10" },
+    surface: { kind: "modal", modal: "deviceFlow" },
     requires: ["auth"],
     flags: [
       f(
