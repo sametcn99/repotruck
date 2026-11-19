@@ -164,18 +164,26 @@ export function CodeSearchView({ store, width }: { store: Store; width: number }
         {[...byRepo.entries()].map(([repo, list]) => (
           <box key={repo} flexDirection="column">
             <text fg={theme.accent()}>{` ▸ ${repo} (${list.length})`}</text>
-            {list.map((match, index) => (
-              <text
-                key={`${match.repo}:${index}`}
-                fg={theme.normal()}
-                onMouseDown={(event) => {
-                  event.stopPropagation?.();
-                  store.openDetailModal(match.repo);
-                }}
-              >
-                {`   ${match.formatted}`}
-              </text>
-            ))}
+            {(() => {
+              const seen = new Map<string, number>();
+              return list.map((match) => {
+                const base = `${match.repo}:${match.path}:${match.line}:${match.name}`;
+                const count = (seen.get(base) ?? 0) + 1;
+                seen.set(base, count);
+                return (
+                  <text
+                    key={`${base}#${count}`}
+                    fg={theme.normal()}
+                    onMouseDown={(event) => {
+                      event.stopPropagation?.();
+                      store.openDetailModal(match.repo);
+                    }}
+                  >
+                    {`   ${match.formatted}`}
+                  </text>
+                );
+              });
+            })()}
           </box>
         ))}
       </box>

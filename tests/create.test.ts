@@ -102,6 +102,12 @@ function testGitSeam(overrides: Partial<GitSeam> = {}): GitSeam & { pushes: Push
   return {
     pushes,
     ...defaultGitSeam,
+    initMain: async (dir: string) => {
+      await defaultGitSeam.initMain(dir);
+      const git = simpleGit(dir);
+      await git.addConfig("user.name", "repotruck-test");
+      await git.addConfig("user.email", "repotruck-test@localhost");
+    },
     pushMain: async (dir: string, token: string | null) => {
       pushes.push({ dir, token });
     },
@@ -298,6 +304,8 @@ describe("createRepository import rules", () => {
     const fromDir = tempDir("repotruck-import-dirty-");
     const git = simpleGit(fromDir);
     await git.raw(["init", "-b", "main"]);
+    await git.addConfig("user.name", "repotruck-test");
+    await git.addConfig("user.email", "repotruck-test@localhost");
     writeFileSync(path.join(fromDir, "a.txt"), "one", "utf8");
     await git.raw(["add", "-A"]);
     await git.raw(["commit", "-m", "init"]);

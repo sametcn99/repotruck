@@ -10,11 +10,11 @@ import { theme } from "./theme.ts";
  */
 export function ConfirmPermanentDeleteModal({ store }: { store: Store }) {
   const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot);
+  const [value, setValue] = useState("");
   const modal = snapshot.modal;
   if (modal === null || modal.type !== "confirmPermanentDelete") return null;
   const key = modal.key;
   const repoName = key.split("/").pop() ?? key;
-  const [value, setValue] = useState("");
   const armed = value === repoName;
 
   return (

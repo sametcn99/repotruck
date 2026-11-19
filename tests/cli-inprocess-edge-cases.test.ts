@@ -1,5 +1,5 @@
-﻿import { afterAll, beforeAll, describe, expect, test } from "bun:test";
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { simpleGit } from "simple-git";
@@ -182,12 +182,6 @@ afterAll(() => {
   if (savedVerbose === undefined) delete process.env.REPOTRUCK_VERBOSE;
   else process.env.REPOTRUCK_VERBOSE = savedVerbose;
 
-  for (const dir of tempDirs) {
-    rmSync(dir, { recursive: true, force: true });
-  }
-});
-
-afterAll(() => {
   process.exitCode = 0;
   for (const dir of tempDirs) {
     try {
@@ -601,4 +595,65 @@ describe("in-process CLI workspace lifecycle, sync, clone, create, discover, sca
     expect((await runCli(["workspaces", "remove", wsRoot])).exitCode).toBe(0);
     expect((await runCli(["workspaces", "remove", wsRoot])).exitCode).toBe(1);
   }, 25_000);
+
+  test("worktree, changelog, and mcp validation subcommands run cleanly in-process", async () => {
+    const wsRoot = makeTempDir("rt-cli-wtcl-");
+    const apiRemote = await createBareRemote("rt-cli-wtcl-api");
+    const ctx = makeFakeGithub({ "acme/api": apiRemote.fileUrl });
+    await runCli(["sync", "-d", wsRoot, "--preset", "categorized"], ctx);
+
+    // Changelog: markdown, json, --out, invalid format
+    const clMd = await runCli(["changelog", "--since", "30 days ago", "-d", wsRoot]);
+    expect(clMd.exitCode).toBe(0);
+    expect(clMd.stdout).toContain("Workspace Changelog");
+
+    const clJson = await runCli(["changelog", "--since", "30 days ago", "--json", "-d", wsRoot]);
+    expect(clJson.exitCode).toBe(0);
+    expect(JSON.parse(clJson.stdout).command).toBe("changelog");
+
+    const clFile = path.join(wsRoot, "CHANGELOG.md");
+    const clOut = await runCli(["changelog", "--since", "30 days ago", "-o", clFile, "-d", wsRoot]);
+    expect(clOut.exitCode).toBe(0);
+    expect(readFileSync(clFile, "utf8")).toContain("acme/api");
+    expect((await runCli(["changelog", "--format", "xml", "-d", wsRoot])).exitCode).toBe(1);
+
+    // Worktree: list, create, scan, remove, missing repo
+    expect((await runCli(["worktree", "list", "acme/missing", "-d", wsRoot])).exitCode).toBe(1);
+    const wtList = await runCli(["worktree", "list", "acme/api", "--json", "-d", wsRoot]);
+    expect(wtList.exitCode).toBe(0);
+
+    const wtPath = path.join(wsRoot, "wt-feat");
+    const wtCreate = await runCli([
+      "worktree",
+      "create",
+      "acme/api",
+      "feat-x",
+      wtPath,
+      "-b",
+      "-d",
+      wsRoot,
+      "--json",
+    ]);
+    expect(wtCreate.exitCode).toBe(0);
+
+    const wtScan = await runCli(["worktree", "scan", "--json", "-d", wsRoot]);
+    expect(wtScan.exitCode).toBe(0);
+    expect(JSON.parse(wtScan.stdout).worktrees.length).toBeGreaterThanOrEqual(1);
+
+    const wtRemove = await runCli([
+      "worktree",
+      "remove",
+      "acme/api",
+      wtPath,
+      "-f",
+      "-d",
+      wsRoot,
+      "--json",
+    ]);
+    expect(wtRemove.exitCode).toBe(0);
+
+    // MCP HTTP bind rejection without token
+    const mcpBad = await runCli(["mcp", "--http", "--host", "0.0.0.0"]);
+    expect(mcpBad.exitCode).toBe(1);
+  }, 20_000);
 });

@@ -1,5 +1,5 @@
 import { useKeyboard } from "@opentui/react";
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { PRESET_IDS } from "../../presets/index.ts";
 import type { Store } from "../store.ts";
 import { theme } from "../theme.ts";
@@ -32,7 +32,7 @@ export function PresetsView({ store, width }: { store: Store; width: number }) {
   const custom = snapshot.customPresets;
   const cardWidth = Math.max(24, Math.floor((width - 8) / 3));
   const preview = (segmentsList: readonly string[]): string =>
-    segmentsList.map((segment) => `${segment}/`).join("") + "repo/";
+    `${segmentsList.map((segment) => `${segment}/`).join("")}repo/`;
 
   return (
     <box flexDirection="column" flexGrow={1} width="100%">

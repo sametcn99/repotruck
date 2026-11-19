@@ -67,11 +67,18 @@ export function ConflictResolverView({ store }: { store: Store }) {
       </box>
       <box border borderColor={theme.border()} flexDirection="column" flexGrow={1} padding={0}>
         <text fg={theme.accent()}>{" Resolution output & workflow"}</text>
-        {output.map((line, index) => (
-          <text key={`${index}-${line.slice(0, 12)}`} fg={theme.dim()}>
-            {` ${line}`}
-          </text>
-        ))}
+        {(() => {
+          const seen = new Map<string, number>();
+          return output.map((line) => {
+            const count = (seen.get(line) ?? 0) + 1;
+            seen.set(line, count);
+            return (
+              <text key={`${line}#${count}`} fg={theme.dim()}>
+                {` ${line}`}
+              </text>
+            );
+          });
+        })()}
         <text fg={theme.dim()}>
           {" 1. inspect conflicting files in the repo directory or open via cockpit [o]"}
         </text>

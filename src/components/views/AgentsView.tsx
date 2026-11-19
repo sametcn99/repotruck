@@ -14,7 +14,7 @@ type Format = (typeof FORMATS)[number];
  * defaults, and MCP server controls with a copyable client config.
  */
 export function AgentsView({ store, width }: { store: Store; width: number }) {
-  const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot);
+  useSyncExternalStore(store.subscribe, store.getSnapshot);
   const [format, setFormat] = useState<Format>("cursor");
   const [port, setPort] = useState(3000);
   const [templates, setTemplates] = useState<readonly { name: string; description: string }[]>([]);

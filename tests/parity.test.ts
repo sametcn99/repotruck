@@ -102,8 +102,7 @@ describe("CLI ↔ registry parity (warning mode)", () => {
         const covered =
           spec.flags.some((entry) => entry.flag === flag) ||
           (globalFallback.has(flag) &&
-            globals !== undefined &&
-            globals.flags.some((entry) => entry.flag === flag));
+            Boolean(globals?.flags.some((entry) => entry.flag === flag)));
         if (!covered) {
           gaps.push(`flag missing from registry: ${cli.path} ${flag}`);
         }

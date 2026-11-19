@@ -5,7 +5,6 @@ import path from "node:path";
 import { testRender } from "@opentui/react/test-utils";
 import { Dashboard } from "../src/components/Dashboard.tsx";
 import { Store, type StoreDeps } from "../src/components/store.ts";
-import { activateTheme } from "../src/components/theme.ts";
 import type { RepotruckConfig } from "../src/services/config.ts";
 import { writeWorkspaceConfig } from "../src/services/workspaceRegistry.ts";
 
@@ -174,6 +173,7 @@ describe("t10 settings page", () => {
 
     await store.setSetting("sync.concurrency", 5);
     await store.refreshSettingsPage();
+    await settle(setup);
     expect(String(store.getSnapshot().settingsPage?.settings?.sync?.concurrency)).toBe("5");
     frame = norm(await capture(setup));
     expect(frame).toContain("5");
@@ -419,7 +419,7 @@ describe("permanent delete typed-name guard (t13 follow-up)", () => {
     const root = makeWorkspace("rt-perm-delete-");
     const deletes: Array<{ key: string; yes: boolean }> = [];
     const store = makeStoreWithDeps(root, {
-      deleteRepo: async (rootArg, config, ref, options = {}) => {
+      deleteRepo: async (_rootArg, _config, ref, options = {}) => {
         deletes.push({ key: ref, yes: options.yes === true });
         return { ok: true, message: `deleted ${ref}` } as never;
       },

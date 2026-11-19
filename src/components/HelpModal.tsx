@@ -76,11 +76,7 @@ export function HelpModal({ store }: { store: Store }) {
         const absIndex = window.start + index;
         const isCursor = absIndex === bounded;
         const isSection = action.length === 0 || key.startsWith("—");
-        const fg = isCursor
-          ? theme.cursorFg()
-          : isSection
-            ? keyFg
-            : theme.normal();
+        const fg = isCursor ? theme.cursorFg() : isSection ? keyFg : theme.normal();
         return (
           <text
             key={key}

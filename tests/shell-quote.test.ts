@@ -109,7 +109,7 @@ describe("shellQuote unit tests & golden values", () => {
     );
 
     // Default platform (process.platform)
-    const def = quoteForShell("node", ["test"]);
+    const def = quoteForShell(Bun.which("node") ?? process.execPath, ["test"]);
     expect(typeof def).toBe("string");
     expect(def.length).toBeGreaterThan(0);
   });
@@ -126,6 +126,7 @@ describe("shellQuote unit tests & golden values", () => {
 
 describe("Round-trip execution tests", () => {
   const isWin = process.platform === "win32";
+  const runtimeBin = Bun.which("node") ?? process.execPath;
   const tmpBase = path.join(os.tmpdir(), `rt-shell-quote-${process.pid}-${randomUUID()}`);
   const spacedDir = path.join(tmpBase, "path with spaces");
   const echoScriptPath = path.join(tmpBase, "echo-argv.js");
@@ -236,7 +237,7 @@ describe("Round-trip execution tests", () => {
     "C12: Windows direct spawn round-trip preserves all cases through production harness",
     async () => {
       for (const arg of roundTripMatrix) {
-        const quoted = quoteForShell("node", [echoScriptPath, arg]);
+        const quoted = quoteForShell(runtimeBin, [echoScriptPath, arg]);
         const outcome = await runInProductionHarness(quoted);
         expect(outcome.exitCode).toBe(0);
         const parsed = JSON.parse(outcome.stdout.trim());
@@ -254,7 +255,7 @@ describe("Round-trip execution tests", () => {
         "\\\\",
         'a\\\\"b',
       ];
-      const multiQuoted = quoteForShell("node", [echoScriptPath, ...multiArgs]);
+      const multiQuoted = quoteForShell(runtimeBin, [echoScriptPath, ...multiArgs]);
       const multiOutcome = await runInProductionHarness(multiQuoted);
       expect(multiOutcome.exitCode).toBe(0);
       const multiParsed = JSON.parse(multiOutcome.stdout.trim());
@@ -281,7 +282,7 @@ describe("Round-trip execution tests", () => {
     "C14: Spaced directory script and .cmd shim round-trip succeeds",
     async () => {
       // 1. Direct node script in directory with spaces
-      const quotedScript = quoteForShell("node", [
+      const quotedScript = quoteForShell(runtimeBin, [
         echoSpacedScriptPath,
         "arg with spaces",
         "%PATH%",
@@ -351,7 +352,7 @@ describe("Round-trip execution tests", () => {
         "multi\nline\nargument\nwith\rnewlines",
       ];
       for (const arg of posixMatrix) {
-        const quoted = quoteForShell("node", [echoScriptPath, arg], "linux");
+        const quoted = quoteForShell(runtimeBin, [echoScriptPath, arg], "linux");
         const outcome = await runInProductionHarness(quoted);
         expect(outcome.exitCode).toBe(0);
         const parsed = JSON.parse(outcome.stdout.trim());

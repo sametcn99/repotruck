@@ -60,15 +60,18 @@ export function ChangelogView({ store, width }: { store: Store; width: number })
         {preview.length === 0 ? (
           <text fg={theme.dim()}>{" no commits in range (or not a git workspace yet)"}</text>
         ) : (
-          preview.map((line, index) => (
-            <text
-              key={`${index}-${line.text.slice(0, 12)}`}
-              fg={line.fg ?? theme.normal()}
-              wrapMode="none"
-            >
-              {` ${line.text}`}
-            </text>
-          ))
+          (() => {
+            const seen = new Map<string, number>();
+            return preview.map((line) => {
+              const count = (seen.get(line.text) ?? 0) + 1;
+              seen.set(line.text, count);
+              return (
+                <text key={`${line.text}#${count}`} fg={line.fg ?? theme.normal()} wrapMode="none">
+                  {` ${line.text}`}
+                </text>
+              );
+            });
+          })()
         )}
       </box>
       {styledLines.length > 28 ? (

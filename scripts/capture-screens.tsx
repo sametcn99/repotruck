@@ -274,11 +274,7 @@ async function main(): Promise<void> {
     "acme-labs/dashboard",
     "rebase conflict in src/config.ts (divergence=rebase)",
   );
-  store.pushStatus(
-    "FAILED",
-    "acme-labs/core-api",
-    "diverged from origin/main (1 ahead, 1 behind)",
-  );
+  store.pushStatus("FAILED", "acme-labs/core-api", "diverged from origin/main (1 ahead, 1 behind)");
   store.setView("resolve");
   await shot("conflicts");
 

@@ -26,7 +26,7 @@ export function ProfilesView({ store, width }: { store: Store; width: number }) 
         setProfiles({});
       }
     })();
-  }, [store, snapshot.pinnedCount]);
+  }, [store]);
 
   useKeyboard((key) => {
     if (editing) {

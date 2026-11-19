@@ -1,7 +1,7 @@
 import { useKeyboard } from "@opentui/react";
 import { useSyncExternalStore } from "react";
-import type { ModalState, Store } from "./store.ts";
 import { ModalShell } from "./ModalShell.tsx";
+import type { ModalState, Store } from "./store.ts";
 import { theme } from "./theme.ts";
 
 type ConfirmModalState = Extract<
