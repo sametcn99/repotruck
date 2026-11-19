@@ -101,6 +101,10 @@ export type ViewId =
 
 export type OmnibarMode = "commands" | "symbols" | "github" | "runner";
 
+export interface ContextMenuState {
+  key: string;
+}
+
 /** Thin confirmation rendered above views and modals (y/n). */
 export interface DialogState {
   title: string;
@@ -243,6 +247,7 @@ export interface StoreSnapshot {
   runConsole: RunConsoleState | null;
   statsPage: StatsPageState | null;
   trashPage: TrashPageState | null;
+  settingsPage: SettingsPageState | null;
   omnibarLoading: boolean;
   omnibarSymbols: readonly CodeSearchMatch[];
   omnibarGithubRepos: readonly RepoInfo[];
@@ -252,6 +257,7 @@ export interface StoreSnapshot {
   view: ViewId;
   modal: ModalState;
   dialog: DialogState | null;
+  contextMenu: ContextMenuState | null;
   modalError: string | null;
   cursor: number;
   sidebarCursor: number;
@@ -310,6 +316,12 @@ export interface StatsPageState {
   stats: WorkspaceStatsOutput | null;
   health: HealthScoreResult | null;
   checks: readonly DoctorCheck[];
+}
+
+export interface SettingsPageState {
+  settings: import("../../services/settings.ts").RepotruckSettings | null;
+  authMethod: string | null;
+  userLogin: string | null;
 }
 
 export interface TrashPageState {

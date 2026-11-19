@@ -6,6 +6,7 @@ import { CommandFormModal } from "./CommandFormModal.tsx";
 import { ConfirmModal } from "./ConfirmModal.tsx";
 import { CreateModal } from "./CreateModal.tsx";
 import { DetailModal } from "./DetailModal.tsx";
+import { ContextMenu } from "./ContextMenu.tsx";
 import { DialogBox } from "./DialogBox.tsx";
 import { HelpModal } from "./HelpModal.tsx";
 import { MoveModal } from "./MoveModal.tsx";
@@ -27,6 +28,10 @@ import { RunConsoleView } from "./views/RunConsoleView.tsx";
 import { StatsView } from "./views/StatsView.tsx";
 import { StatusMatrixView } from "./views/StatusMatrixView.tsx";
 import { TrashBackupsView } from "./views/TrashBackupsView.tsx";
+import { AgentsView } from "./views/AgentsView.tsx";
+import { PresetsView } from "./views/PresetsView.tsx";
+import { ProfilesView } from "./views/ProfilesView.tsx";
+import { SettingsView } from "./views/SettingsView.tsx";
 import { VIEW_BY_ID, VIEW_GO_KEYS } from "./views/viewRegistry.ts";
 import { WorkspacePicker } from "./WorkspacePicker.tsx";
 import { WorkspaceSkeleton } from "./WorkspaceSkeleton.tsx";
@@ -146,6 +151,14 @@ function renderPage(view: ViewId, store: Store, width: number, height: number) {
       return <StatsView store={store} width={width} />;
     case "trash":
       return <TrashBackupsView store={store} width={width} />;
+    case "presets":
+      return <PresetsView store={store} width={width} />;
+    case "profiles":
+      return <ProfilesView store={store} width={width} />;
+    case "agents":
+      return <AgentsView store={store} width={width} />;
+    case "settings":
+      return <SettingsView store={store} width={width} />;
     case "cockpit":
       return null;
     default: {
@@ -300,8 +313,8 @@ export function Dashboard({
 
   useKeyboard((key) => {
     const current = store.getSnapshot();
-    if (current.dialog !== null) {
-      // DialogBox owns y/n/Escape while it is open.
+    if (current.dialog !== null || current.contextMenu !== null) {
+      // DialogBox / ContextMenu own their keys while open.
       return;
     }
     if (current.modal !== null) {
@@ -542,6 +555,11 @@ export function Dashboard({
         if (repo !== undefined) {
           void store.openMoveModal(repoKeyOf(repo));
         }
+      } else if (key.name === "right") {
+        const repo = current.filteredRepos[current.cursor];
+        if (repo !== undefined) {
+          store.openRepoContextMenu(repoKeyOf(repo));
+        }
       }
       return;
     }
@@ -654,6 +672,7 @@ export function Dashboard({
         </box>
       ) : null}
       {snapshot.dialog !== null ? <DialogBox store={store} /> : null}
+      {snapshot.contextMenu !== null ? <ContextMenu store={store} /> : null}
       <box
         border
         borderColor={theme.border()}

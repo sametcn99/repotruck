@@ -557,4 +557,93 @@ export class Store extends StoreCore {
       this.set({ running: false });
     }
   };
+
+  // ---- Repo context menu (t13) --------------------------------------------------
+  openRepoContextMenu = (key: string): void => {
+    this.set({ contextMenu: { key } });
+  };
+
+  closeRepoContextMenu = (): void => {
+    if (this.state.contextMenu !== null) this.set({ contextMenu: null });
+  };
+
+  /** Restrict the selection to the context target so batch confirms hit it. */
+  private focusSelectionOn = (key: string): void => {
+    this.set({ selected: new Set([key]) });
+  };
+
+  executeContextAction = (action: string): void => {
+    const menu = this.state.contextMenu;
+    this.set({ contextMenu: null });
+    if (menu === null) return;
+    const key = menu.key;
+    switch (action) {
+      case "detail":
+        this.openDetailModal(key);
+        return;
+      case "open":
+        void this.openOpenModal(key);
+        return;
+      case "sync":
+        void this.submitClone(key);
+        return;
+      case "move":
+        void this.openMoveModal(key);
+        return;
+      case "alias":
+        void this.openAliasModal(key);
+        return;
+      case "pin":
+        this.focusSelectionOn(key);
+        void this.togglePinSelection();
+        return;
+      case "worktree":
+        void this.openWorktreeModal(key);
+        return;
+      case "archive":
+        this.focusSelectionOn(key);
+        this.openSelectionArchiveConfirm();
+        return;
+      case "untrack":
+        this.focusSelectionOn(key);
+        this.openSelectionUntrackConfirm();
+        return;
+      case "delete":
+        this.focusSelectionOn(key);
+        void this.openSelectionDeleteConfirm();
+        return;
+      case "delete-permanent":
+        this.confirmDialog(
+          {
+            title: `Permanently delete ${key}?`,
+            message: `delete --yes without trash — the directory is removed for good (undo impossible).`,
+            confirmLabel: "Delete forever",
+            danger: true,
+          },
+          () => {
+            void (async () => {
+              try {
+                const config = await loadWorkspace(this.rootValue);
+                await this.deps.deleteRepo(this.rootValue, config, key, { yes: true });
+                this.pushStatus("DONE", "[delete]", `${key} permanently deleted`);
+                await this.refreshLocalState();
+              } catch (error) {
+                this.pushStatus(
+                  "FAILED",
+                  "[delete]",
+                  error instanceof Error ? error.message : String(error),
+                );
+              }
+            })();
+          },
+        );
+        return;
+      case "resolve":
+        this.setView("resolve");
+        this.pushStatus("DONE", "[resolve]", `sync resolve ${key} — guide page arrives with t15`);
+        return;
+      default:
+        return;
+    }
+  };
 }

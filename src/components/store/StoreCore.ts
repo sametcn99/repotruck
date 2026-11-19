@@ -1,9 +1,13 @@
-import { PRESET_IDS, type PresetRef } from "../../presets/index.ts";
+import { deleteWorkspaceProfile, saveWorkspaceProfile } from "../../core/profiles.ts";
+import { PRESET_IDS, type PresetRef, validateCustomPreset } from "../../presets/index.ts";
+import type { GenerateAgentsMdInput } from "../../services/agentsMd.ts";
 import { listWorkspaceSnapshots } from "../../services/backups.ts";
 import { firstErrorLine } from "../../services/cloner.ts";
 import { warnQuiet } from "../../services/diagnostics.ts";
 import { computeWorkspaceHealthScore } from "../../services/healthScore.ts";
+import { exportInstructionsFile } from "../../services/instructionExport.ts";
 import { readSettings, writeSettings } from "../../services/settings.ts";
+import { applyAgentsMdTemplate, clearAgentsMdTemplate } from "../../services/templates.ts";
 import { listTrashEntries, restoreTrashEntry } from "../../services/trash.ts";
 import { loadWorkspace } from "../../services/workspace.ts";
 import { restoreWorkspaceSnapshot } from "../../services/workspaceRegistry.ts";
@@ -118,6 +122,196 @@ export class StoreCore extends StoreBase {
 
   openCommandForm = (specId: string): void => {
     this.openModal({ type: "commandForm", specId });
+  };
+
+  // ---- Settings page (t10) ---------------------------------------------------
+  refreshSettingsPage = async (): Promise<void> => {
+    try {
+      const settings = await readSettings(process.env);
+      const auth = await this.deps.auth().catch(() => null);
+      this.set({
+        settingsPage: {
+          settings,
+          authMethod: auth?.method ?? null,
+          userLogin: this.userLoginValue,
+        },
+      });
+    } catch {
+      this.set({
+        settingsPage: { settings: null, authMethod: null, userLogin: this.userLoginValue },
+      });
+    }
+  };
+
+  setSetting = async (key: string, value: string | boolean | number): Promise<void> => {
+    try {
+      const settings = await readSettings(process.env);
+      const next = setNestedSetting(settings, key, value);
+      await writeSettings(process.env, next);
+      this.pushStatus("DONE", "[config]", `set ${key} = ${String(value)}`);
+      await this.refreshSettingsPage();
+    } catch (error) {
+      this.pushStatus("FAILED", "[config]", error instanceof Error ? error.message : String(error));
+    }
+  };
+
+  unsetSetting = async (key: string): Promise<void> => {
+    try {
+      const settings = await readSettings(process.env);
+      const next = unsetNestedSetting(settings, key);
+      await writeSettings(process.env, next);
+      this.pushStatus("DONE", "[config]", `unset ${key}`);
+      await this.refreshSettingsPage();
+    } catch (error) {
+      this.pushStatus("FAILED", "[config]", error instanceof Error ? error.message : String(error));
+    }
+  };
+
+  resetDefaultRoot = async (): Promise<void> => {
+    await this.setSetting("defaultRoot", "");
+    await this.unsetSetting("defaultRoot");
+    await this.refreshLocalState();
+  };
+
+  // ---- Presets page (t11) ------------------------------------------------------
+  addCustomPreset = async (id: string, segments: readonly string[]): Promise<void> => {
+    const validated = validateCustomPreset({ id, segments: [...segments] });
+    if (validated === null) {
+      this.pushStatus(
+        "FAILED",
+        "[preset]",
+        "segments must be 1-4 distinct tokens from owner, category, language, name, ending with name",
+      );
+      return;
+    }
+    try {
+      const settings = await readSettings(process.env);
+      await writeSettings(process.env, {
+        ...settings,
+        presets: { ...(settings.presets ?? {}), [validated.id]: { segments: validated.segments } },
+      });
+      this.pushStatus("DONE", "[preset]", `${validated.id} -> ${validated.segments.join("/")}`);
+      await this.refreshLocalState();
+    } catch (error) {
+      this.pushStatus("FAILED", "[preset]", error instanceof Error ? error.message : String(error));
+    }
+  };
+
+  removeCustomPreset = async (id: string): Promise<void> => {
+    try {
+      const settings = await readSettings(process.env);
+      const presets = { ...(settings.presets ?? {}) };
+      if (presets[id] === undefined) {
+        this.pushStatus("FAILED", "[preset]", `preset not found: ${id}`);
+        return;
+      }
+      delete presets[id];
+      await writeSettings(process.env, { ...settings, presets });
+      this.pushStatus("DONE", "[preset]", `${id} removed`);
+      await this.refreshLocalState();
+    } catch (error) {
+      this.pushStatus("FAILED", "[preset]", error instanceof Error ? error.message : String(error));
+    }
+  };
+
+  // ---- Profiles page (t11) ------------------------------------------------------
+  profileSaveFromSelection = async (name: string): Promise<void> => {
+    try {
+      const refs =
+        this.state.selected.size > 0
+          ? [...this.state.selected]
+          : [...this.state.localHealth.entries()].filter(([, h]) => h.pinned).map(([key]) => key);
+      const result = await saveWorkspaceProfile(this.rootValue, name, refs);
+      this.pushStatus(result.ok ? "DONE" : "FAILED", "[profile]", result.message);
+      if (result.ok) await this.refreshLocalState();
+    } catch (error) {
+      this.pushStatus(
+        "FAILED",
+        "[profile]",
+        error instanceof Error ? error.message : String(error),
+      );
+    }
+  };
+
+  profileDelete = async (name: string): Promise<void> => {
+    try {
+      const result = await deleteWorkspaceProfile(this.rootValue, name);
+      this.pushStatus(result.ok ? "DONE" : "FAILED", "[profile]", result.message);
+      if (result.ok) await this.refreshLocalState();
+    } catch (error) {
+      this.pushStatus(
+        "FAILED",
+        "[profile]",
+        error instanceof Error ? error.message : String(error),
+      );
+    }
+  };
+
+  // ---- Agents page (t12) ---------------------------------------------------------
+  applyAgentsTemplate = async (name: string, clear = false): Promise<void> => {
+    try {
+      const input = await this.agentsMdInput();
+      const templateInput = { ...input, root: this.rootValue };
+      const result = clear
+        ? await clearAgentsMdTemplate(templateInput)
+        : await applyAgentsMdTemplate(templateInput, name);
+      this.pushStatus(result.ok ? "DONE" : "FAILED", "[instructions]", result.message);
+    } catch (error) {
+      this.pushStatus(
+        "FAILED",
+        "[instructions]",
+        error instanceof Error ? error.message : String(error),
+      );
+    }
+  };
+
+  exportInstructions = async (
+    format: "agents" | "cursor" | "claude" | "copilot",
+    outPath?: string,
+  ): Promise<void> => {
+    try {
+      const input = await this.agentsMdInput();
+      const result = await exportInstructionsFile(this.rootValue, input, format, outPath);
+      this.pushStatus("DONE", "[instructions]", `exported ${format} -> ${result.targetPath}`);
+    } catch (error) {
+      this.pushStatus(
+        "FAILED",
+        "[instructions]",
+        error instanceof Error ? error.message : String(error),
+      );
+    }
+  };
+
+  private async agentsMdInput(): Promise<GenerateAgentsMdInput> {
+    const config = this.localConfig ?? (await loadWorkspace(this.rootValue));
+    this.localConfig = config;
+    return {
+      preset: config.preset,
+      lastSync: config.lastSync,
+      repos: config.repos,
+      ...(config.aliases !== undefined ? { aliases: config.aliases } : {}),
+      ...(config.pinned !== undefined ? { pinned: config.pinned } : {}),
+    };
+  }
+
+  startMcpServer = async (port: number): Promise<void> => {
+    if (this.taskLabel("mcp") !== null) return;
+    try {
+      const child = Bun.spawn(
+        [process.execPath, process.argv[1] ?? "repotruck", "mcp", "--http", "--port", String(port)],
+        { stdout: "ignore", stderr: "ignore", stdin: "ignore" },
+      );
+      this.beginTask("mcp", `mcp --http --port ${port}`, () => child.kill());
+      this.pushStatus("DONE", "[mcp]", `serving on http://127.0.0.1:${port}/mcp`);
+    } catch (error) {
+      this.pushStatus("FAILED", "[mcp]", error instanceof Error ? error.message : String(error));
+    }
+  };
+
+  stopMcpServer = (): void => {
+    if (this.taskLabel("mcp") === null) return;
+    this.cancelTask("mcp");
+    this.pushStatus("DONE", "[mcp]", "server stopped");
   };
 
   // ---- Code Search page (t06) ---------------------------------------------
@@ -631,4 +825,34 @@ async function profileRefs(root: string, profile: string): Promise<string[]> {
   } catch {
     return [];
   }
+}
+
+
+function setNestedSetting(
+  settings: import("../../services/settings.ts").RepotruckSettings,
+  key: string,
+  value: string | boolean | number,
+): import("../../services/settings.ts").RepotruckSettings {
+  if (!key.includes(".")) return { ...settings, [key]: value };
+  const [head, tail] = key.split(".") as [string, string];
+  const current = (settings as Record<string, unknown>)[head];
+  const base = typeof current === "object" && current !== null ? current : {};
+  return { ...settings, [head]: { ...(base as object), [tail]: value } };
+}
+
+function unsetNestedSetting(
+  settings: import("../../services/settings.ts").RepotruckSettings,
+  key: string,
+): import("../../services/settings.ts").RepotruckSettings {
+  if (!key.includes(".")) {
+    const next = { ...settings } as Record<string, unknown>;
+    delete next[key];
+    return next as import("../../services/settings.ts").RepotruckSettings;
+  }
+  const [head, tail] = key.split(".") as [string, string];
+  const current = (settings as Record<string, unknown>)[head];
+  if (typeof current !== "object" || current === null) return settings;
+  const section = { ...(current as Record<string, unknown>) };
+  delete section[tail];
+  return { ...settings, [head]: section };
 }

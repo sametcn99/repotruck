@@ -27,6 +27,7 @@ export interface MouseRouterHost {
   closeModal(): void;
   setCursor(index: number): void;
   openDetailModal(key: string): void;
+  openRepoContextMenu(key: string): void;
   dismissUpdateToast(): void;
   cycleFocus(): void;
   toggleCurrent(): void;
@@ -103,7 +104,7 @@ export function routeMouseEvent(
         const repo = state.filteredRepos[clickedIndex];
         if (repo !== undefined) {
           host.setCursor(clickedIndex);
-          host.openDetailModal(repoKey(repo));
+          host.openRepoContextMenu(repoKey(repo));
         }
       }
     }

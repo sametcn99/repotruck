@@ -192,7 +192,8 @@ describe("t01 view layer — dashboard render", () => {
     await settle(setup);
     frame = norm(setup.captureCharFrame());
     expect(frame).toContain("Settings");
-    expect(frame).toContain("configuration, auth, update");
+    expect(frame).toContain("Configuration");
+    expect(frame).toContain("sync concurrency");
     expect(frame).toContain("[Esc] Cockpit");
 
     store.setView("cockpit");

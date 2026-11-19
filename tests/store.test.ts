@@ -1705,7 +1705,7 @@ describe("mouse mapping", () => {
     expect(store.getSnapshot().modal?.type).toBe("detail");
   });
 
-  test("right-clicking a repo row opens DetailModal", async () => {
+  test("right-clicking a repo row opens the context menu (detail one action away)", async () => {
     const root = tempWorkspace();
     const items = [repo("monalisa", "alpha")];
     const h = makeStore(root, items);
@@ -1714,6 +1714,9 @@ describe("mouse mapping", () => {
 
     expect(store.getSnapshot().modal).toBeNull();
     store.handleMouse({ button: 2, x: 60, y: 4 }, 120, 40);
+    expect(store.getSnapshot().contextMenu?.key).toBe("monalisa/alpha");
+    // the first entry jumps straight to details
+    store.executeContextAction("detail");
     expect(store.getSnapshot().modal?.type).toBe("detail");
   });
 
