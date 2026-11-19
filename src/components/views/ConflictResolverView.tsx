@@ -33,16 +33,18 @@ export function ConflictResolverView({ store }: { store: Store }) {
   return (
     <box flexDirection="column" flexGrow={1} width="100%">
       <text fg={theme.dim()}>{" Conflicts — sync resolve"}</text>
-      <text fg={theme.normal()}>{" recent failures:"}</text>
-      {failed.length === 0 ? (
-        <text fg={theme.dim()}>{"  none — last sync was clean"}</text>
-      ) : (
-        failed.map((entry) => (
-          <text key={`${entry.id}`} fg={theme.error()}>
-            {` ✗ ${entry.key} — ${entry.message ?? "failed"}`}
-          </text>
-        ))
-      )}
+      <box border borderColor={theme.border()} flexDirection="column" padding={0}>
+        <text fg={theme.normal()}>{` recent failures (${failed.length}):`}</text>
+        {failed.length === 0 ? (
+          <text fg={theme.dim()}>{"  none — last sync was clean"}</text>
+        ) : (
+          failed.map((entry) => (
+            <text key={`${entry.id}`} fg={theme.error()}>
+              {` ✗ ${entry.key} — ${entry.message ?? "failed"}`}
+            </text>
+          ))
+        )}
+      </box>
       <box flexDirection="row" gap={2}>
         <text
           fg={theme.accent()}
@@ -63,12 +65,22 @@ export function ConflictResolverView({ store }: { store: Store }) {
           {"[a] git rebase --abort"}
         </text>
       </box>
-      <box flexDirection="column" flexGrow={1}>
+      <box border borderColor={theme.border()} flexDirection="column" flexGrow={1} padding={0}>
+        <text fg={theme.accent()}>{" Resolution output & workflow"}</text>
         {output.map((line, index) => (
           <text key={`${index}-${line.slice(0, 12)}`} fg={theme.dim()}>
             {` ${line}`}
           </text>
         ))}
+        <text fg={theme.dim()}>
+          {" 1. inspect conflicting files in the repo directory or open via cockpit [o]"}
+        </text>
+        <text fg={theme.dim()}>
+          {" 2. stage resolved files (git add <file>), then press [g] to continue rebase"}
+        </text>
+        <text fg={theme.dim()}>
+          {" 3. or press [a] to abort the rebase and restore the pre-sync branch state"}
+        </text>
       </box>
       <text fg={theme.dim()}>{"actions run in each failed repo's directory · Esc cockpit"}</text>
     </box>

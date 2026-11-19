@@ -1,6 +1,7 @@
 import { useKeyboard } from "@opentui/react";
 import { useSyncExternalStore } from "react";
 import type { ModalState, Store } from "./store.ts";
+import { ModalShell } from "./ModalShell.tsx";
 import { theme } from "./theme.ts";
 
 type ConfirmModalState = Extract<
@@ -96,33 +97,13 @@ export function ConfirmModal({ store }: { store: Store }) {
   const config = confirmConfig(modal, store);
 
   return (
-    <box
+    <ModalShell
+      store={store}
       title={config.title}
-      border
+      hint={config.hint}
       borderColor={warningFg}
-      flexDirection="column"
-      flexGrow={1}
-      padding={1}
       gap={1}
-      onMouseDown={(e) => {
-        if (e.button === 2) {
-          e.stopPropagation();
-          store.closeModal();
-        }
-      }}
     >
-      <box flexDirection="row" justifyContent="space-between" width="100%">
-        <text fg={warningFg}>{config.title}</text>
-        <text
-          fg={dimFg}
-          onMouseDown={(e) => {
-            e.stopPropagation();
-            store.closeModal();
-          }}
-        >
-          {"[× Close]"}
-        </text>
-      </box>
       <text fg={warningFg}>{config.message}</text>
       <text fg={dimFg}>{config.detail}</text>
       <box flexDirection="row" gap={2}>
@@ -146,15 +127,6 @@ export function ConfirmModal({ store }: { store: Store }) {
           {" [ Cancel ] "}
         </text>
       </box>
-      <text
-        fg={dimFg}
-        onMouseDown={(e) => {
-          e.stopPropagation();
-          store.closeModal();
-        }}
-      >
-        {config.hint}
-      </text>
-    </box>
+    </ModalShell>
   );
 }

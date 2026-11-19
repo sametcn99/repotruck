@@ -1,6 +1,7 @@
 import path from "node:path";
 import { simpleGit } from "simple-git";
 import type { RepotruckConfig } from "./config.ts";
+import { inspectGitDotEntry } from "./worktree.ts";
 
 export interface ChangelogCommit {
   hash: string;
@@ -78,6 +79,7 @@ export async function getWorkspaceChangelog(
 
   for (const entry of reposToScan) {
     const repoDir = path.join(root, ...entry.relativePath.split("/"));
+    if (inspectGitDotEntry(repoDir).kind === "none") continue;
     const git = simpleGit(repoDir);
     try {
       const args = [

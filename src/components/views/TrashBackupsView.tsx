@@ -21,21 +21,21 @@ export function TrashBackupsView({ store, width }: { store: Store; width: number
     else if (key.name === "b") void store.backupSnapshotNow();
   });
 
-  const half = Math.max(30, Math.floor((width - 6) / 2));
+  const half = Math.max(30, Math.floor((width - 4) / 2));
   const trash = page?.trash ?? [];
   const backups = page?.backups ?? [];
 
   return (
-    <box flexDirection="column" flexGrow={1} width="100%">
+    <box flexDirection="column" flexGrow={1} width="100%" gap={1}>
       <box flexDirection="row" flexGrow={1} gap={1}>
-        <box border borderColor={theme.border()} flexDirection="column" width={half}>
-          <text fg={theme.dim()}>{" Trash · .repotruck/trash"}</text>
+        <box border borderColor={theme.border()} flexDirection="column" width={half} padding={0}>
+          <text fg={theme.accent()}>{" Trash · .repotruck/trash"}</text>
           {trash.length === 0 ? (
             <text fg={theme.dim()}>{"  trash is empty"}</text>
           ) : (
             trash.map((entry) => (
               <box key={entry.id} flexDirection="column">
-                <text fg={theme.normal()}>
+                <text fg={theme.normal()} wrapMode="none">
                   {` ${entry.owner}/${entry.name} · ${formatSize(entry.sizeBytes)} · ${entry.trashedAt.slice(0, 10)}`}
                 </text>
                 <box flexDirection="row" gap={2}>
@@ -57,7 +57,9 @@ export function TrashBackupsView({ store, width }: { store: Store; width: number
                   >
                     {"  [restore]"}
                   </text>
-                  <text fg={theme.dim()}>{entry.id}</text>
+                  <text fg={theme.dim()} wrapMode="none">
+                    {entry.id}
+                  </text>
                 </box>
               </box>
             ))
@@ -72,25 +74,30 @@ export function TrashBackupsView({ store, width }: { store: Store; width: number
             {" [E] empty trash --yes"}
           </text>
         </box>
-        <box border borderColor={theme.border()} flexDirection="column" width={half}>
-          <text fg={theme.dim()}>{" Backups · 5 generations"}</text>
+        <box border borderColor={theme.border()} flexDirection="column" width={half} padding={0}>
+          <text fg={theme.accent()}>{" Backups · 5 generations"}</text>
           {backups.length === 0 ? (
             <text fg={theme.dim()}>{"  no snapshots yet (written on every workspace change)"}</text>
           ) : (
             backups.map((entry) => (
               <box key={entry.file} flexDirection="column">
-                <text fg={theme.normal()}>
-                  {` ${entry.file} · ${entry.repoCount} repos · ${entry.createdAt.slice(0, 16)}`}
+                <text fg={theme.normal()} wrapMode="none">
+                  {` ${entry.createdAt.slice(0, 19).replace("T", " ")} · ${entry.repoCount} repos`}
                 </text>
-                <text
-                  fg={theme.accent()}
-                  onMouseDown={(event) => {
-                    event.stopPropagation?.();
-                    store.backupRestoreConfirm(entry.file);
-                  }}
-                >
-                  {"  [restore --yes]"}
-                </text>
+                <box flexDirection="row" gap={2}>
+                  <text
+                    fg={theme.accent()}
+                    onMouseDown={(event) => {
+                      event.stopPropagation?.();
+                      store.backupRestoreConfirm(entry.file);
+                    }}
+                  >
+                    {"  [restore --yes]"}
+                  </text>
+                  <text fg={theme.dim()} wrapMode="none">
+                    {entry.file}
+                  </text>
+                </box>
               </box>
             ))
           )}

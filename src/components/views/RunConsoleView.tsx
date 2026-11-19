@@ -155,12 +155,12 @@ export function RunConsoleView({ store, width }: { store: Store; width: number }
       <box border borderColor={theme.border()}>
         <text fg={theme.accent()}>{` ${cliParts.join(" ")}`}</text>
       </box>
-      <text fg={failed > 0 ? theme.error() : theme.dim()}>
-        {running
-          ? "running across repositories…"
-          : `${results.length} results · ${failed} failed · ${skipped.length} skipped`}
-      </text>
-      <box flexDirection="column" flexGrow={1}>
+      <box border borderColor={theme.border()} flexDirection="column" flexGrow={1} padding={0}>
+        <text fg={failed > 0 ? theme.error() : theme.dim()}>
+          {running
+            ? " running across repositories…"
+            : ` ${results.length} results · ${failed} failed · ${skipped.length} skipped`}
+        </text>
         {results.map((result) => (
           <box key={result.key} flexDirection="column">
             <text
@@ -170,7 +170,7 @@ export function RunConsoleView({ store, width }: { store: Store; width: number }
                 setExpanded((current) => (current === result.key ? null : result.key));
               }}
             >
-              {`${result.ok ? "✓" : "✗"} ${result.key} · exit ${result.exitCode ?? "—"} · ${result.durationMs}ms`}
+              {` ${result.ok ? "✓" : "✗"} ${result.key} · exit ${result.exitCode ?? "—"} · ${result.durationMs}ms`}
             </text>
             {expanded === result.key ? (
               <text fg={theme.dim()}>
@@ -181,7 +181,7 @@ export function RunConsoleView({ store, width }: { store: Store; width: number }
         ))}
         {skipped.map((entry) => (
           <text key={entry.key} fg={theme.dim()}>
-            {`· ${entry.key} — ${entry.message}`}
+            {` · ${entry.key} — ${entry.message}`}
           </text>
         ))}
       </box>

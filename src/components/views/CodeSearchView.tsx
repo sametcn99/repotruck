@@ -157,13 +157,13 @@ export function CodeSearchView({ store, width }: { store: Store; width: number }
           {"[J] copy JSON"}
         </text>
       </box>
-      <text fg={theme.dim()}>
-        {page?.loading ? "searching…" : `${matches.length} matches · ${byRepo.size} repos`}
-      </text>
-      <box flexDirection="column" flexGrow={1}>
+      <box border borderColor={theme.border()} flexDirection="column" flexGrow={1} padding={0}>
+        <text fg={theme.dim()}>
+          {page?.loading ? " searching…" : ` ${matches.length} matches · ${byRepo.size} repos`}
+        </text>
         {[...byRepo.entries()].map(([repo, list]) => (
           <box key={repo} flexDirection="column">
-            <text fg={theme.accent()}>{repo}</text>
+            <text fg={theme.accent()}>{` ▸ ${repo} (${list.length})`}</text>
             {list.map((match, index) => (
               <text
                 key={`${match.repo}:${index}`}
@@ -173,7 +173,7 @@ export function CodeSearchView({ store, width }: { store: Store; width: number }
                   store.openDetailModal(match.repo);
                 }}
               >
-                {`  ${match.formatted}`}
+                {`   ${match.formatted}`}
               </text>
             ))}
           </box>

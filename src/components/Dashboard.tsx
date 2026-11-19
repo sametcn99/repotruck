@@ -24,6 +24,7 @@ import { StartPreviewModal } from "./StartPreviewModal.tsx";
 import { StatusPanel } from "./StatusPanel.tsx";
 import type { ModalState, StatusPhase, Store, ViewId } from "./store.ts";
 import { theme } from "./theme.ts";
+import { PageShell } from "./ui/PageShell.tsx";
 import { AgentsView } from "./views/AgentsView.tsx";
 import { CodeSearchView } from "./views/CodeSearchView.tsx";
 import { ConflictResolverView } from "./views/ConflictResolverView.tsx";
@@ -146,37 +147,44 @@ function assertUnreachable(value: never): null {
 // placeholder with a real component; the registry drives rail, help and
 // palette entries so the shell stays consistent meanwhile.
 function renderPage(view: ViewId, store: Store, width: number, height: number) {
+  const innerWidth = Math.max(30, width - 4);
+  const innerHeight = Math.max(12, height - 4);
+  const wrap = (body: React.ReactNode) => (
+    <PageShell view={view} store={store}>
+      {body}
+    </PageShell>
+  );
   switch (view) {
     case "status":
-      return <StatusMatrixView store={store} width={width} height={height} />;
+      return wrap(<StatusMatrixView store={store} width={innerWidth} height={innerHeight} />);
     case "search":
-      return <CodeSearchView store={store} width={width} />;
+      return wrap(<CodeSearchView store={store} width={innerWidth} />);
     case "run":
-      return <RunConsoleView store={store} width={width} />;
+      return wrap(<RunConsoleView store={store} width={innerWidth} />);
     case "stats":
-      return <StatsView store={store} width={width} />;
+      return wrap(<StatsView store={store} width={innerWidth} />);
     case "trash":
-      return <TrashBackupsView store={store} width={width} />;
+      return wrap(<TrashBackupsView store={store} width={innerWidth} />);
     case "presets":
-      return <PresetsView store={store} width={width} />;
+      return wrap(<PresetsView store={store} width={innerWidth} />);
     case "profiles":
-      return <ProfilesView store={store} width={width} />;
+      return wrap(<ProfilesView store={store} width={innerWidth} />);
     case "agents":
-      return <AgentsView store={store} width={width} />;
+      return wrap(<AgentsView store={store} width={innerWidth} />);
     case "settings":
-      return <SettingsView store={store} width={width} />;
+      return wrap(<SettingsView store={store} width={innerWidth} />);
     case "sync":
-      return <SyncCenterView store={store} width={width} />;
+      return wrap(<SyncCenterView store={store} width={innerWidth} />);
     case "discover":
-      return <DiscoverView store={store} width={width} />;
+      return wrap(<DiscoverView store={store} width={innerWidth} />);
     case "resolve":
-      return <ConflictResolverView store={store} />;
+      return wrap(<ConflictResolverView store={store} />);
     case "changelog":
-      return <ChangelogView store={store} width={width} />;
+      return wrap(<ChangelogView store={store} width={innerWidth} />);
     case "scan":
-      return <ScanAdoptView store={store} />;
+      return wrap(<ScanAdoptView store={store} />);
     case "worktree":
-      return <WorktreesView store={store} />;
+      return wrap(<WorktreesView store={store} />);
     case "cockpit":
       return null;
     default: {
@@ -667,12 +675,18 @@ export function Dashboard({
             </text>
           </box>
         </box>
+      ) : snapshot.dialog !== null ? (
+        <DialogBox store={store} />
       ) : showCockpit && snapshot.view === "cockpit" ? (
         <box flexDirection="row" flexGrow={1}>
           {railVisible ? <NavRail store={store} width={NAV_RAIL_WIDTH} /> : null}
           <Sidebar store={store} width={sidebarWidth(pageWidth)} />
           <RepoList store={store} />
-          <StatusPanel store={store} width={statusWidth(pageWidth)} />
+          {snapshot.contextMenu !== null ? (
+            <ContextMenu store={store} />
+          ) : (
+            <StatusPanel store={store} width={statusWidth(pageWidth)} />
+          )}
         </box>
       ) : snapshot.modal !== null ? (
         renderModal(snapshot.modal, store, onSuspendAndRun)
@@ -697,8 +711,6 @@ export function Dashboard({
           </text>
         </box>
       ) : null}
-      {snapshot.dialog !== null ? <DialogBox store={store} /> : null}
-      {snapshot.contextMenu !== null ? <ContextMenu store={store} /> : null}
       <box
         border
         borderColor={theme.border()}

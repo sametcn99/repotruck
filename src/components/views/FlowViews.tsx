@@ -2,6 +2,7 @@ import { useKeyboard } from "@opentui/react";
 import { useEffect, useSyncExternalStore } from "react";
 import type { Store } from "../store.ts";
 import { theme } from "../theme.ts";
+import { renderMarkdownLines } from "../ui/MarkdownPane.tsx";
 
 /**
  * `repotruck changelog` as a page: since/until/author/repo filter form,
@@ -20,12 +21,13 @@ export function ChangelogView({ store, width }: { store: Store; width: number })
     else if (key.name === "m") void store.generateChangelog({ since: "30 days ago" });
   });
 
-  const lines = page?.markdown.split("\n") ?? [];
-  const preview = lines.slice(0, 24);
+  const styledLines = page !== null ? renderMarkdownLines(page.markdown, width) : [];
+  const preview = styledLines.slice(0, 28);
 
   return (
-    <box flexDirection="column" flexGrow={1} width="100%">
+    <box flexDirection="column" flexGrow={1} width="100%" gap={1}>
       <box flexDirection="row" gap={2}>
+        <text fg={theme.dim()}>{"range:"}</text>
         <text
           fg={theme.accent()}
           onMouseDown={(event) => {
@@ -42,7 +44,7 @@ export function ChangelogView({ store, width }: { store: Store; width: number })
             void store.generateChangelog({ since: "14 days ago" });
           }}
         >
-          {"[14d]"}
+          {"[g · 14d]"}
         </text>
         <text
           fg={theme.accent()}
@@ -51,25 +53,28 @@ export function ChangelogView({ store, width }: { store: Store; width: number })
             void store.generateChangelog({ since: "30 days ago" });
           }}
         >
-          {"[30d]"}
+          {"[m · 30d]"}
         </text>
       </box>
-      <box flexDirection="column" flexGrow={1}>
+      <box border borderColor={theme.border()} flexDirection="column" flexGrow={1} padding={0}>
         {preview.length === 0 ? (
-          <text fg={theme.dim()}>{"no commits in range (or not a git workspace yet)"}</text>
+          <text fg={theme.dim()}>{" no commits in range (or not a git workspace yet)"}</text>
         ) : (
           preview.map((line, index) => (
             <text
-              key={`${index}-${line.slice(0, 10)}`}
-              fg={line.startsWith("#") ? theme.accent() : theme.normal()}
+              key={`${index}-${line.text.slice(0, 12)}`}
+              fg={line.fg ?? theme.normal()}
+              wrapMode="none"
             >
-              {` ${line}`}
+              {` ${line.text}`}
             </text>
           ))
         )}
       </box>
-      {lines.length > 24 ? (
-        <text fg={theme.dim()}>{`… ${lines.length - 24} more lines (full markdown via copy)`}</text>
+      {styledLines.length > 28 ? (
+        <text fg={theme.dim()}>
+          {`… ${styledLines.length - 28} more lines (full markdown via copy)`}
+        </text>
       ) : null}
       <text fg={theme.dim()}>{"g 14d · m 30d · Esc cockpit"}</text>
     </box>
@@ -82,6 +87,7 @@ export function ChangelogView({ store, width }: { store: Store; width: number })
 export function ScanAdoptView({ store }: { store: Store }) {
   const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot);
   const page = snapshot.scanPage;
+  const unregistered = page?.unregistered ?? [];
 
   useKeyboard((key) => {
     if (key.name === "s") void store.scanAndAdopt(false);
@@ -90,7 +96,7 @@ export function ScanAdoptView({ store }: { store: Store }) {
   });
 
   return (
-    <box flexDirection="column" flexGrow={1} width="100%">
+    <box flexDirection="column" flexGrow={1} width="100%" gap={1}>
       <box flexDirection="row" gap={2}>
         <text
           fg={theme.accent()}
@@ -129,12 +135,14 @@ export function ScanAdoptView({ store }: { store: Store }) {
           {"[p] prune untrack deleted"}
         </text>
       </box>
-      <text fg={theme.dim()}>{"unregistered repositories:"}</text>
-      <box flexDirection="column" flexGrow={1}>
-        {(page?.unregistered ?? []).length === 0 ? (
+      <box border borderColor={theme.border()} flexDirection="column" flexGrow={1} padding={0}>
+        <text fg={theme.dim()}>
+          {` unregistered repositories (${unregistered.length} discovered):`}
+        </text>
+        {unregistered.length === 0 ? (
           <text fg={theme.dim()}>{"  (none discovered yet — run a scan)"}</text>
         ) : (
-          (page?.unregistered ?? []).map((line) => (
+          unregistered.map((line) => (
             <text key={line} fg={theme.normal()}>
               {` • ${line}`}
             </text>
@@ -155,28 +163,37 @@ export function ScanAdoptView({ store }: { store: Store }) {
 export function WorktreesView({ store }: { store: Store }) {
   const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot);
   const page = snapshot.worktreePage;
+  const rows = page?.rows ?? [];
+
+  useEffect(() => {
+    if (page === null) void store.scanWorkspaceWorktrees();
+  }, [page, store]);
 
   useKeyboard((key) => {
     if (key.name === "s") void store.scanWorkspaceWorktrees();
   });
 
   return (
-    <box flexDirection="column" flexGrow={1} width="100%">
-      <text
-        fg={theme.accent()}
-        onMouseDown={(event) => {
-          event.stopPropagation();
-          void store.scanWorkspaceWorktrees();
-        }}
-      >
-        {"[s] scan workspace worktrees"}
-      </text>
-      <box flexDirection="column" flexGrow={1}>
-        {(page?.rows ?? []).length === 0 ? (
+    <box flexDirection="column" flexGrow={1} width="100%" gap={1}>
+      <box flexDirection="row" gap={2}>
+        <text
+          fg={theme.accent()}
+          onMouseDown={(event) => {
+            event.stopPropagation();
+            void store.scanWorkspaceWorktrees();
+          }}
+        >
+          {"[s] scan workspace worktrees"}
+        </text>
+        <text fg={theme.dim()}>{`${rows.length} linked worktree(s)`}</text>
+      </box>
+      <box border borderColor={theme.border()} flexDirection="column" flexGrow={1} padding={0}>
+        <text fg={theme.dim()}>{" parent repo · branch · linked checkout path"}</text>
+        {rows.length === 0 ? (
           <text fg={theme.dim()}>{"  no scan yet — run [s] (worktree scan)"}</text>
         ) : (
-          (page?.rows ?? []).map((row) => (
-            <text key={row} fg={theme.normal()}>
+          rows.map((row) => (
+            <text key={row} fg={theme.normal()} wrapMode="none">
               {` ⑂ ${row}`}
             </text>
           ))

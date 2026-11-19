@@ -108,6 +108,7 @@ export function parseWorktreeListPorcelain(raw: string): RepoWorktreeDetail[] {
 
 /** Lists worktrees belonging to a git repository using `git worktree list --porcelain`. */
 export async function listRepoWorktrees(repoDir: string): Promise<RepoWorktreeDetail[]> {
+  if (inspectGitDotEntry(repoDir).kind === "none") return [];
   const git = simpleGit(repoDir);
   try {
     const raw = await git.raw(["worktree", "list", "--porcelain"]);

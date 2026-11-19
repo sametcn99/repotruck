@@ -114,10 +114,12 @@ export function DiscoverView({ store, width }: { store: Store; width: number }) 
           {`[c] clone selected (${state.selected.size})`}
         </text>
       </box>
-      <text fg={theme.dim()}>
-        {state.loading ? "searching…" : `${state.results.length} results`}
-      </text>
-      <box flexDirection="column" flexGrow={1}>
+      <box border borderColor={theme.border()} flexDirection="column" flexGrow={1} padding={0}>
+        <text fg={theme.dim()}>
+          {state.loading
+            ? " searching…"
+            : ` ${state.results.length} results · ${state.selected.size} selected`}
+        </text>
         {state.results.map((repo) => {
           const key = `${repo.owner}/${repo.name}`;
           const isSelected = state.selected.has(key);
@@ -134,7 +136,7 @@ export function DiscoverView({ store, width }: { store: Store; width: number }) 
                 store.updateDiscoverPage({ selected: next });
               }}
             >
-              {` ${isSelected ? "[x]" : "[ ]"} ${key}${isTracked ? " · tracked" : ""} · ${repo.language ?? "—"} · ★${repo.stars ?? 0}${repo.description !== null ? ` · ${String(repo.description).slice(0, 40)}` : ""}`}
+              {` ${isSelected ? "[x]" : "[ ]"} ${key.padEnd(28)}${isTracked ? " · tracked" : ""} · ${(repo.language ?? "—").padEnd(10)} · ★${String(repo.stars ?? 0).padStart(5)}${repo.description !== null ? ` · ${String(repo.description).slice(0, 44)}` : ""}`}
             </text>
           );
         })}

@@ -129,7 +129,7 @@ export function frameToSvg(frame: FrameLike, slug: string, charRows: readonly st
       const x = PAD;
       const y = PAD + row * LH + FS;
       parts.push(
-        `<text x="${x.toFixed(1)}" y="${y}" fill="${dominant}" textLength="${(frame.cols * CW).toFixed(1)}" lengthAdjust="spacingAndGlyphs">${esc(charText)}</text>`,
+        `<text x="${x.toFixed(1)}" y="${y}" fill="${dominant}" textLength="${(charText.length * CW).toFixed(1)}" lengthAdjust="spacingAndGlyphs">${esc(charText)}</text>`,
       );
     }
   });
@@ -207,7 +207,7 @@ async function main(): Promise<void> {
   // --- Cockpit -----------------------------------------------------------------
   void store.toggleOrg("acme-labs");
   void store.toggleOrg("vertex-soft");
-  await waitFor(() => snapshot().repos.length >= 14);
+  await waitFor(() => snapshot().repos.length >= 12);
   await waitFor(() => snapshot().localHealth.get("devuser/primary")?.dirty === true);
 
   await shot("cockpit");
@@ -259,7 +259,7 @@ async function main(): Promise<void> {
   await store.discoverSearch();
   await waitFor(() => snapshot().discoverPage?.loading === false);
   store.updateDiscoverPage({
-    selected: new Set(["open-tools/mcp-mirror-svcs", "indie-dev/mcp-runner"]),
+    selected: new Set(["open-tools/mcp-servers", "indie-dev/mcp-runner"]),
   });
   store.setView("discover");
   await shot("discover");
@@ -269,6 +269,16 @@ async function main(): Promise<void> {
   store.setView("scan");
   await shot("scan");
 
+  store.pushStatus(
+    "FAILED",
+    "acme-labs/dashboard",
+    "rebase conflict in src/config.ts (divergence=rebase)",
+  );
+  store.pushStatus(
+    "FAILED",
+    "acme-labs/core-api",
+    "diverged from origin/main (1 ahead, 1 behind)",
+  );
   store.setView("resolve");
   await shot("conflicts");
 

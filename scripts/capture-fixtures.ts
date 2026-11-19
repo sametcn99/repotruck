@@ -123,6 +123,7 @@ export function buildFixtureWorkspace(): string {
   const root = FIXTURE_ROOT;
   rmSync(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   process.env.REPOTRUCK_CONFIG_DIR = path.join(root, ".config");
+  process.env.HOME = `/home/${USER}`;
 
   for (const repo of REPOS) {
     mkdirSync(path.join(root, repo.dir), { recursive: true });
@@ -247,8 +248,8 @@ function repoInfo(repo: FixtureRepo, stars: number): RepoInfo {
   };
 }
 
-const PERSONAL = REPOS.filter((r) => r.owner === USER && r.category === "source");
-const ACME = REPOS.filter((r) => r.owner === ORG_A && r.category === "source");
+const PERSONAL = REPOS.filter((r) => r.owner === USER);
+const ACME = REPOS.filter((r) => r.owner === ORG_A);
 const VERTEX = REPOS.filter((r) => r.owner === ORG_B);
 
 function statusLines(): RepoStatusLine[] {
