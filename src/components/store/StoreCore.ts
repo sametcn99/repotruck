@@ -110,6 +110,10 @@ export class StoreCore extends StoreBase {
     this.setView(nextViewId(this.state.view, direction));
   };
 
+  openCommandForm = (specId: string): void => {
+    this.openModal({ type: "commandForm", specId });
+  };
+
   runHealthDoctorFix = async (): Promise<void> => {
     await performDoctorFixAction(this.pushStatus);
     await this.refreshLocalState();

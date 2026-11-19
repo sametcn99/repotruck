@@ -20,6 +20,40 @@ function osc52Sequence(text: string): string {
   return `\x1b]52;c;${Buffer.from(text, "utf8").toString("base64")}\x07`;
 }
 
+/** Copy an arbitrary text payload (OSC 52, temp-file fallback). */
+export function copyText(label: string, payload: string): JsonCopyResult {
+  let clipboard = false;
+  if (process.stdout.isTTY === true) {
+    try {
+      process.stdout.write(osc52Sequence(payload));
+      clipboard = true;
+    } catch {
+      clipboard = false;
+    }
+  }
+  if (clipboard) {
+    return { ok: true, clipboard: true, filePath: null, message: `${label} copied to clipboard` };
+  }
+  try {
+    const dir = mkdtempSync(path.join(tmpdir(), "repotruck-copy-"));
+    const filePath = path.join(dir, "payload.txt");
+    writeFileSync(filePath, payload, "utf8");
+    return {
+      ok: true,
+      clipboard: false,
+      filePath,
+      message: `${label} written to ${filePath} (terminal has no OSC 52 clipboard)`,
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      clipboard: false,
+      filePath: null,
+      message: `${label} copy failed: ${error instanceof Error ? error.message : String(error)}`,
+    };
+  }
+}
+
 export function copyJson(label: string, data: unknown, writeFile = false): JsonCopyResult {
   const json = JSON.stringify(data, null, 2);
   let clipboard = false;

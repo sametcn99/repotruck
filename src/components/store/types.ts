@@ -207,6 +207,10 @@ export type ModalState =
       type: "omnibar";
       mode: OmnibarMode;
       query: string;
+    }
+  | {
+      type: "commandForm";
+      specId: string;
     };
 
 export interface StoreSnapshot {
@@ -250,6 +254,8 @@ export interface StoreSnapshot {
   movePrefill: string | null;
   updateToast: { version: string } | null;
   running: boolean;
+  /** Background tasks tracked by the task model (MCP server, run console…). */
+  activeTaskCount: number;
   root: string;
   lastSync: string | null;
   canUndo: boolean;

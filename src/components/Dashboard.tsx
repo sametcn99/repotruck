@@ -2,6 +2,7 @@ import { useKeyboard, useRenderer, useTerminalDimensions } from "@opentui/react"
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { AliasModal } from "./AliasModal.tsx";
 import { CloneModal } from "./CloneModal.tsx";
+import { CommandFormModal } from "./CommandFormModal.tsx";
 import { ConfirmModal } from "./ConfirmModal.tsx";
 import { CreateModal } from "./CreateModal.tsx";
 import { DetailModal } from "./DetailModal.tsx";
@@ -172,6 +173,8 @@ function renderModal(
       return <WorktreeModal store={store} />;
     case "omnibar":
       return <OmnibarModal store={store} />;
+    case "commandForm":
+      return <CommandFormModal store={store} />;
     default:
       return assertUnreachable(modal);
   }

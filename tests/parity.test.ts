@@ -176,9 +176,14 @@ describe("registry dispatch", () => {
       require("../src/components/store/modalWorkflows.ts") as typeof import("../src/components/store/modalWorkflows.ts");
     const store = new Store("/tmp/parity-dispatch-root");
     const before = store.getSnapshot().statuses.length;
+    // flag-bearing commands open the command form first (t04)
     executeRegistryCommand(store, "status");
-    expect(store.getSnapshot().view).toBe("status");
-    executeRegistryCommand(store, "auth.login");
+    expect(store.getSnapshot().modal?.type).toBe("commandForm");
+    store.closeModal();
+    // no-flag view commands navigate directly
+    executeRegistryCommand(store, "trash");
+    expect(store.getSnapshot().view).toBe("trash");
+    executeRegistryCommand(store, "auth.logout");
     expect(store.getSnapshot().statuses.length).toBe(before + 1);
     expect(store.getSnapshot().statuses.at(-1)?.message).toContain("t10");
     executeRegistryCommand(store, "__nonexistent__");

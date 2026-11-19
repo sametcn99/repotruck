@@ -94,6 +94,7 @@ export function buildInitialSnapshot(root: string): StoreSnapshot {
     movePrefill: null,
     updateToast: null,
     running: false,
+    activeTaskCount: 0,
     root,
     lastSync: null,
     canUndo: false,

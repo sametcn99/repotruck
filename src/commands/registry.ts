@@ -713,6 +713,17 @@ export const REGISTRY: readonly CommandSpec[] = [
     ],
   },
   {
+    id: "instructions",
+    path: "instructions",
+    title: "AGENTS.md instructions",
+    group: "Search",
+    summary: "Manage workspace agent instructions",
+    args: [],
+    surface: { kind: "view", view: "agents" },
+    requires: ["workspace"],
+    flags: [],
+  },
+  {
     id: "instructions.template",
     path: "instructions template",
     title: "AGENTS.md templates",

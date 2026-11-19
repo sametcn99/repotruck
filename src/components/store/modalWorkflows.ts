@@ -332,10 +332,23 @@ export async function performRemoveWorktree(
  * implemented navigate/open; planned tickets log their arrival notice so
  * every CLI command is at least reachable and honest about its state.
  */
-export function executeRegistryCommand(store: Store, registryId: string): void {
+export function executeRegistryCommand(store: Store, registryId: string, preferForm = true): void {
   const spec = REGISTRY_BY_ID.get(registryId);
   if (spec === undefined) {
     store.pushStatus("FAILED", "[palette]", `unknown command: ${registryId}`);
+    return;
+  }
+  // Flag-bearing commands open the auto-generated command form first so
+  // every flag is reachable; the form keeps the direct surface one button
+  // away. Action surfaces (confirm flows) and no-flag commands dispatch
+  // directly.
+  if (
+    preferForm &&
+    spec.flags.length > 0 &&
+    spec.surface.kind !== "action" &&
+    spec.id !== "__globals__"
+  ) {
+    store.openCommandForm(spec.id);
     return;
   }
   store.closeModal();

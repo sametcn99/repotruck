@@ -113,6 +113,38 @@ export class StoreBase {
     this.set({ dialog: null });
     if (confirmed && callback !== null) callback();
   };
+
+  // ---- background task model ---------------------------------------------
+  // Generic long-running work (MCP server, command runs) tracked beside
+  // the sync-specific `running` flag so the nav rail dot reflects both.
+
+  protected activeTasks = new Map<string, { label: string; cancel?: () => void }>();
+
+  beginTask = (id: string, label: string, cancel?: () => void): void => {
+    this.activeTasks.set(id, { label, ...(cancel !== undefined ? { cancel } : {}) });
+    this.set({ activeTaskCount: this.activeTasks.size });
+    this.pushStatus("DONE", `[${label}]`, "started");
+  };
+
+  endTask = (id: string, message?: string, failed = false): void => {
+    const task = this.activeTasks.get(id);
+    this.activeTasks.delete(id);
+    this.set({ activeTaskCount: this.activeTasks.size });
+    if (task !== undefined) {
+      this.pushStatus(
+        failed ? "FAILED" : "DONE",
+        `[${task.label}]`,
+        message ?? (failed ? "failed" : "done"),
+      );
+    }
+  };
+
+  cancelTask = (id: string): void => {
+    this.activeTasks.get(id)?.cancel?.();
+    this.endTask(id, "cancelled");
+  };
+
+  taskLabel = (id: string): string | null => this.activeTasks.get(id)?.label ?? null;
   openHelpModal = (): void => this.openModal({ type: "help" });
   openDetailModal = (key: string): void => this.openModal({ type: "detail", key });
   openCloneModal = (): void => this.openModal({ type: "clone" });
