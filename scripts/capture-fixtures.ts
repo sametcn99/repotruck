@@ -174,15 +174,17 @@ export function buildFixtureWorkspace(): string {
   git(stray, ["commit", "-q", "-m", "fork"]);
   git(stray, ["remote", "add", "origin", "https://github.com/sametcn99/rcptx-fork.git"]);
 
-  // Soft-deleted entries for the Trash page.
+  // Soft-deleted entries for the Trash page (with realistic sizes).
   const trash = path.join(root, ".repotruck", "trash");
+  const filler = "x".repeat(1024);
   for (const entry of [
-    { dir: "sametcn99-rock-paper-scissors-1763000000000", file: "main.py" },
-    { dir: "sametcn99-tic-tac-toe-1761000000000", file: "index.ts" },
+    { dir: "sametcn99-rock-paper-scissors-1763000000000", file: "main.py", kb: 4 },
+    { dir: "sametcn99-tic-tac-toe-1761000000000", file: "index.ts", kb: 1024 },
   ]) {
     const dir = path.join(trash, entry.dir);
     mkdirSync(dir, { recursive: true });
-    writeFileSync(path.join(dir, entry.file), "# soft-deleted\n", "utf8");
+    const chunk = `${filler}\n`.repeat(entry.kb);
+    writeFileSync(path.join(dir, entry.file), chunk, "utf8");
   }
 
   writeFileSync(
@@ -200,7 +202,7 @@ export function buildFixtureWorkspace(): string {
             relativePath: repo.dir,
             category:
               repo.category === "forks"
-                ? "fork"
+                ? "forks"
                 : repo.category === "archived"
                   ? "archived"
                   : "source",

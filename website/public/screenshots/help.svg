@@ -1,186 +1,236 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="738" viewBox="0 0 1200 738" role="img" aria-label="repotruck TUI — help">
+<svg xmlns="http://www.w3.org/2000/svg" width="1368" height="908" viewBox="0 0 1368 908" role="img" aria-label="repotruck TUI — help">
 <title>repotruck TUI — help</title>
-<rect width="1200" height="738" fill="#0d1117"/>
+<rect width="1368" height="908" fill="#0d1117"/>
 <style>text{font-family:ui-monospace,"SF Mono","Cascadia Code",Consolas,"Liberation Mono",Menlo,monospace;font-size:14px;white-space:pre}</style>
-<text x="12.0" y="26" fill="rgb(48,54,61)" textLength="1176.0" lengthAdjust="spacingAndGlyphs">┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐</text>
+<text x="12.0" y="26" fill="rgb(48,54,61)" textLength="1344.0" lengthAdjust="spacingAndGlyphs">┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐</text>
 <text x="12.0" y="43" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="43" fill="rgb(88,166,255)" textLength="856.8" lengthAdjust="spacingAndGlyphs"> repotruck · sametcn99 (auth: gh-cli) · preset: categorized · root: /tmp/repotruck-shots-ws · 13 repos</text>
-<text x="877.2" y="43" fill="rgb(255,255,255)" textLength="302.4" lengthAdjust="spacingAndGlyphs">                                    </text>
-<text x="1179.6" y="43" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="12.0" y="60" fill="rgb(48,54,61)" textLength="1176.0" lengthAdjust="spacingAndGlyphs">└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘</text>
-<text x="12.0" y="77" fill="rgb(210,168,255)" textLength="1176.0" lengthAdjust="spacingAndGlyphs">┌─Keyboard shortcuts───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐</text>
+<text x="877.2" y="43" fill="rgb(255,255,255)" textLength="470.4" lengthAdjust="spacingAndGlyphs">                                                        </text>
+<text x="1347.6" y="43" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="12.0" y="60" fill="rgb(48,54,61)" textLength="1344.0" lengthAdjust="spacingAndGlyphs">└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘</text>
+<text x="12.0" y="77" fill="rgb(210,168,255)" textLength="1344.0" lengthAdjust="spacingAndGlyphs">┌─Keyboard shortcuts───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐</text>
 <text x="12.0" y="94" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="94" fill="rgb(255,255,255)" textLength="1159.2" lengthAdjust="spacingAndGlyphs">                                                                                                                                          </text>
-<text x="1179.6" y="94" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="94" fill="rgb(255,255,255)" textLength="1327.2" lengthAdjust="spacingAndGlyphs">                                                                                                                                                              </text>
+<text x="1347.6" y="94" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="111" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="111" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
 <text x="28.8" y="111" fill="rgb(210,168,255)" textLength="151.2" lengthAdjust="spacingAndGlyphs">Keyboard shortcuts</text>
-<text x="180.0" y="111" fill="rgb(255,255,255)" textLength="915.6" lengthAdjust="spacingAndGlyphs">                                                                                                             </text>
-<text x="1095.6" y="111" fill="rgb(110,118,129)" textLength="75.6" lengthAdjust="spacingAndGlyphs">[× Close]</text>
-<text x="1171.2" y="111" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="1179.6" y="111" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="180.0" y="111" fill="rgb(255,255,255)" textLength="1083.6" lengthAdjust="spacingAndGlyphs">                                                                                                                                 </text>
+<text x="1263.6" y="111" fill="rgb(110,118,129)" textLength="75.6" lengthAdjust="spacingAndGlyphs">[× Close]</text>
+<text x="1339.2" y="111" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="1347.6" y="111" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="128" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="128" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="128" fill="rgb(210,168,255)" textLength="915.6" lengthAdjust="spacingAndGlyphs">Up/Down, j/k    Moveetheccursordinatherfocusedrregion; withutheastatus panel focused, scroll the activity log</text>
-<text x="944.4" y="128" fill="rgb(255,255,255)" textLength="235.2" lengthAdjust="spacingAndGlyphs">                            </text>
-<text x="1179.6" y="128" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="28.8" y="128" fill="rgb(210,168,255)" textLength="126.0" lengthAdjust="spacingAndGlyphs">Tab            </text>
+<text x="154.8" y="128" fill="rgb(255,255,255)" textLength="1192.8" lengthAdjust="spacingAndGlyphs">Cycle focus: sidebar, repository list, status panel                                                                                           </text>
+<text x="1347.6" y="128" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="145" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="145" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="145" fill="rgb(210,168,255)" textLength="562.8" lengthAdjust="spacingAndGlyphs">Home/End, g/G   Jump the repository cursor to the first or last row</text>
-<text x="591.6" y="145" fill="rgb(255,255,255)" textLength="588.0" lengthAdjust="spacingAndGlyphs">                                                                      </text>
-<text x="1179.6" y="145" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="28.8" y="145" fill="rgb(210,168,255)" textLength="126.0" lengthAdjust="spacingAndGlyphs">Up/Down, j/k   </text>
+<text x="154.8" y="145" fill="rgb(255,255,255)" textLength="1192.8" lengthAdjust="spacingAndGlyphs">Move cursor; status panel focus scrolls the activity log                                                                                      </text>
+<text x="1347.6" y="145" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="162" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="162" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="162" fill="rgb(210,168,255)" textLength="487.2" lengthAdjust="spacingAndGlyphs">PgUp / PgDn     Page the repository cursor by one viewport</text>
-<text x="516.0" y="162" fill="rgb(255,255,255)" textLength="663.6" lengthAdjust="spacingAndGlyphs">                                                                               </text>
-<text x="1179.6" y="162" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="28.8" y="162" fill="rgb(210,168,255)" textLength="126.0" lengthAdjust="spacingAndGlyphs">Home/End, g/G  </text>
+<text x="154.8" y="162" fill="rgb(255,255,255)" textLength="1192.8" lengthAdjust="spacingAndGlyphs">Jump the repository cursor to the first or last row                                                                                           </text>
+<text x="1347.6" y="162" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="179" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="179" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="179" fill="rgb(210,168,255)" textLength="982.8" lengthAdjust="spacingAndGlyphs">Space           Select/deselect the highlighted repository; sidebar: toggle the row; wizard: toggle source/visibility</text>
-<text x="1011.6" y="179" fill="rgb(255,255,255)" textLength="168.0" lengthAdjust="spacingAndGlyphs">                    </text>
-<text x="1179.6" y="179" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="28.8" y="179" fill="rgb(210,168,255)" textLength="126.0" lengthAdjust="spacingAndGlyphs">PgUp / PgDn    </text>
+<text x="154.8" y="179" fill="rgb(255,255,255)" textLength="1192.8" lengthAdjust="spacingAndGlyphs">Page the repository cursor by one viewport                                                                                                    </text>
+<text x="1347.6" y="179" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="196" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="196" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="196" fill="rgb(210,168,255)" textLength="806.4" lengthAdjust="spacingAndGlyphs">/               Inline livefsearchdbyeowner,rname,pors@aliasn(Enterekeeps filter, Escape clears)</text>
-<text x="835.2" y="196" fill="rgb(255,255,255)" textLength="344.4" lengthAdjust="spacingAndGlyphs">                                         </text>
-<text x="1179.6" y="196" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="28.8" y="196" fill="rgb(210,168,255)" textLength="126.0" lengthAdjust="spacingAndGlyphs">Space          </text>
+<text x="154.8" y="196" fill="rgb(255,255,255)" textLength="1192.8" lengthAdjust="spacingAndGlyphs">Select repo; sidebar/wizard toggle                                                                                                            </text>
+<text x="1347.6" y="196" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="213" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="213" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="213" fill="rgb(210,168,255)" textLength="596.4" lengthAdjust="spacingAndGlyphs">: / Ctrl+K      Open Omnibar in Command Palette mode (Tab cycles modes)</text>
-<text x="625.2" y="213" fill="rgb(255,255,255)" textLength="554.4" lengthAdjust="spacingAndGlyphs">                                                                  </text>
-<text x="1179.6" y="213" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="28.8" y="213" fill="rgb(210,168,255)" textLength="126.0" lengthAdjust="spacingAndGlyphs">a              </text>
+<text x="154.8" y="213" fill="rgb(255,255,255)" textLength="1192.8" lengthAdjust="spacingAndGlyphs">Select all filtered repositories (press again to clear)                                                                                       </text>
+<text x="1347.6" y="213" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="230" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="230" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="230" fill="rgb(210,168,255)" textLength="747.6" lengthAdjust="spacingAndGlyphs">@               Open Omnibar in Workspace Code Search mode (prefix text: for line search)</text>
-<text x="776.4" y="230" fill="rgb(255,255,255)" textLength="403.2" lengthAdjust="spacingAndGlyphs">                                                </text>
-<text x="1179.6" y="230" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="28.8" y="230" fill="rgb(210,168,255)" textLength="126.0" lengthAdjust="spacingAndGlyphs">/              </text>
+<text x="154.8" y="230" fill="rgb(255,255,255)" textLength="1192.8" lengthAdjust="spacingAndGlyphs">Live search: owner, name, @alias                                                                                                              </text>
+<text x="1347.6" y="230" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="247" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="247" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="247" fill="rgb(210,168,255)" textLength="638.4" lengthAdjust="spacingAndGlyphs">#               Open Omnibar in GitHub Discover mode (Enter clones directly)</text>
-<text x="667.2" y="247" fill="rgb(255,255,255)" textLength="512.4" lengthAdjust="spacingAndGlyphs">                                                             </text>
-<text x="1179.6" y="247" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="28.8" y="247" fill="rgb(210,168,255)" textLength="126.0" lengthAdjust="spacingAndGlyphs">: / Ctrl+K     </text>
+<text x="154.8" y="247" fill="rgb(255,255,255)" textLength="1192.8" lengthAdjust="spacingAndGlyphs">Omnibar command palette (Tab cycles modes)                                                                                                    </text>
+<text x="1347.6" y="247" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="264" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="264" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="264" fill="rgb(210,168,255)" textLength="823.2" lengthAdjust="spacingAndGlyphs">f               CycleOlocalrGit healthofilterR(all, dirty,rahead,rbehind,epinned,llocal,)uncloned)</text>
-<text x="852.0" y="264" fill="rgb(255,255,255)" textLength="327.6" lengthAdjust="spacingAndGlyphs">                                       </text>
-<text x="1179.6" y="264" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="28.8" y="264" fill="rgb(210,168,255)" textLength="126.0" lengthAdjust="spacingAndGlyphs">@              </text>
+<text x="154.8" y="264" fill="rgb(255,255,255)" textLength="1192.8" lengthAdjust="spacingAndGlyphs">Omnibar code search (text: prefix for line search)                                                                                            </text>
+<text x="1347.6" y="264" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="281" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="281" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="281" fill="rgb(210,168,255)" textLength="772.8" lengthAdjust="spacingAndGlyphs">P               Pin / unpin selected or highlighted repositories (Active Focus in AGENTS.md)</text>
-<text x="801.6" y="281" fill="rgb(255,255,255)" textLength="378.0" lengthAdjust="spacingAndGlyphs">                                             </text>
-<text x="1179.6" y="281" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="28.8" y="281" fill="rgb(210,168,255)" textLength="126.0" lengthAdjust="spacingAndGlyphs">#              </text>
+<text x="154.8" y="281" fill="rgb(255,255,255)" textLength="1192.8" lengthAdjust="spacingAndGlyphs">Omnibar GitHub discover (Enter clones)                                                                                                        </text>
+<text x="1347.6" y="281" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="298" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="298" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="298" fill="rgb(210,168,255)" textLength="781.2" lengthAdjust="spacingAndGlyphs">1 / 2 / 3       Switch right pane tab: [1] Activity · [2] Git Inspector · [3] Health &amp; Doctor</text>
-<text x="810.0" y="298" fill="rgb(255,255,255)" textLength="369.6" lengthAdjust="spacingAndGlyphs">                                            </text>
-<text x="1179.6" y="298" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="28.8" y="298" fill="rgb(210,168,255)" textLength="126.0" lengthAdjust="spacingAndGlyphs">!              </text>
+<text x="154.8" y="298" fill="rgb(255,255,255)" textLength="1192.8" lengthAdjust="spacingAndGlyphs">Omnibar bulk runner (selected/all repos)                                                                                                      </text>
+<text x="1347.6" y="298" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="315" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="315" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="315" fill="rgb(210,168,255)" textLength="579.6" lengthAdjust="spacingAndGlyphs">F               Run Doctor auto-fix when the [3] Health tab is active</text>
-<text x="608.4" y="315" fill="rgb(255,255,255)" textLength="571.2" lengthAdjust="spacingAndGlyphs">                                                                    </text>
-<text x="1179.6" y="315" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="28.8" y="315" fill="rgb(210,168,255)" textLength="126.0" lengthAdjust="spacingAndGlyphs">f              </text>
+<text x="154.8" y="315" fill="rgb(255,255,255)" textLength="1192.8" lengthAdjust="spacingAndGlyphs">Cycle git health filter (all/dirty/ahead/behind/pinned)                                                                                       </text>
+<text x="1347.6" y="315" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="332" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="332" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="332" fill="rgb(210,168,255)" textLength="756.0" lengthAdjust="spacingAndGlyphs">s               Cycle sort: default,vname,flanguage,hupdatedr(use Omnibarsfor stars/dirty)</text>
-<text x="784.8" y="332" fill="rgb(255,255,255)" textLength="394.8" lengthAdjust="spacingAndGlyphs">                                               </text>
-<text x="1179.6" y="332" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="28.8" y="332" fill="rgb(210,168,255)" textLength="126.0" lengthAdjust="spacingAndGlyphs">P              </text>
+<text x="154.8" y="332" fill="rgb(255,255,255)" textLength="1192.8" lengthAdjust="spacingAndGlyphs">Pin / unpin selected or highlighted repositories (Active Focus in AGENTS.md)                                                                  </text>
+<text x="1347.6" y="332" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="349" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="349" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="349" fill="rgb(210,168,255)" textLength="420.0" lengthAdjust="spacingAndGlyphs">S               Reverse the current sort direction</text>
-<text x="448.8" y="349" fill="rgb(255,255,255)" textLength="730.8" lengthAdjust="spacingAndGlyphs">                                                                                       </text>
-<text x="1179.6" y="349" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="28.8" y="349" fill="rgb(210,168,255)" textLength="126.0" lengthAdjust="spacingAndGlyphs">1 / 2 / 3      </text>
+<text x="154.8" y="349" fill="rgb(255,255,255)" textLength="1192.8" lengthAdjust="spacingAndGlyphs">Switch right pane tab: [1] Activity · [2] Git Inspector · [3] Health &amp; Doctor                                                                 </text>
+<text x="1347.6" y="349" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="366" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="366" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="366" fill="rgb(210,168,255)" textLength="848.4" lengthAdjust="spacingAndGlyphs">i               Show details for the highlighted repository (description, stars, ahead/behind, alias)</text>
-<text x="877.2" y="366" fill="rgb(255,255,255)" textLength="302.4" lengthAdjust="spacingAndGlyphs">                                    </text>
-<text x="1179.6" y="366" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="28.8" y="366" fill="rgb(210,168,255)" textLength="126.0" lengthAdjust="spacingAndGlyphs">F              </text>
+<text x="154.8" y="366" fill="rgb(255,255,255)" textLength="1192.8" lengthAdjust="spacingAndGlyphs">Run Doctor auto-fix when the [3] Health tab is active                                                                                         </text>
+<text x="1347.6" y="366" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="383" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="383" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="383" fill="rgb(210,168,255)" textLength="470.4" lengthAdjust="spacingAndGlyphs">c               Open the clone modal (URL or owner/name)</text>
-<text x="499.2" y="383" fill="rgb(255,255,255)" textLength="680.4" lengthAdjust="spacingAndGlyphs">                                                                                 </text>
-<text x="1179.6" y="383" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="28.8" y="383" fill="rgb(210,168,255)" textLength="126.0" lengthAdjust="spacingAndGlyphs">t              </text>
+<text x="154.8" y="383" fill="rgb(255,255,255)" textLength="1192.8" lengthAdjust="spacingAndGlyphs">Cycle color theme live (default, light, contrast) and persist to settings                                                                     </text>
+<text x="1347.6" y="383" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="400" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="400" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="400" fill="rgb(210,168,255)" textLength="588.0" lengthAdjust="spacingAndGlyphs">m               Open the movermodaltfor theahighlightederepositorytep)</text>
-<text x="616.8" y="400" fill="rgb(255,255,255)" textLength="562.8" lengthAdjust="spacingAndGlyphs">                                                                   </text>
-<text x="1179.6" y="400" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="28.8" y="400" fill="rgb(210,168,255)" textLength="126.0" lengthAdjust="spacingAndGlyphs">s              </text>
+<text x="154.8" y="400" fill="rgb(255,255,255)" textLength="1192.8" lengthAdjust="spacingAndGlyphs">Cycle sort: default/name/language/updated                                                                                                     </text>
+<text x="1347.6" y="400" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="417" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="417" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="417" fill="rgb(210,168,255)" textLength="781.2" lengthAdjust="spacingAndGlyphs">z               Undo the last move or delete (restores the directory and its inventory entry)</text>
-<text x="810.0" y="417" fill="rgb(255,255,255)" textLength="369.6" lengthAdjust="spacingAndGlyphs">                                            </text>
-<text x="1179.6" y="417" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="28.8" y="417" fill="rgb(210,168,255)" textLength="126.0" lengthAdjust="spacingAndGlyphs">S              </text>
+<text x="154.8" y="417" fill="rgb(255,255,255)" textLength="1192.8" lengthAdjust="spacingAndGlyphs">Reverse the current sort direction                                                                                                            </text>
+<text x="1347.6" y="417" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="434" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="434" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="434" fill="rgb(210,168,255)" textLength="873.6" lengthAdjust="spacingAndGlyphs">u               Untrack selected or highlighted repository — asks for confirmation (clones stay on disk)</text>
-<text x="902.4" y="434" fill="rgb(255,255,255)" textLength="277.2" lengthAdjust="spacingAndGlyphs">                                 </text>
-<text x="1179.6" y="434" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="28.8" y="434" fill="rgb(210,168,255)" textLength="126.0" lengthAdjust="spacingAndGlyphs">i              </text>
+<text x="154.8" y="434" fill="rgb(255,255,255)" textLength="1192.8" lengthAdjust="spacingAndGlyphs">Repo details: stars, ahead/behind, alias                                                                                                      </text>
+<text x="1347.6" y="434" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="451" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="451" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="451" fill="rgb(210,168,255)" textLength="848.4" lengthAdjust="spacingAndGlyphs">D               Delete selected or highlighted repository to .repotruck/trash (asks for confirmation)</text>
-<text x="877.2" y="451" fill="rgb(255,255,255)" textLength="302.4" lengthAdjust="spacingAndGlyphs">                                    </text>
-<text x="1179.6" y="451" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="28.8" y="451" fill="rgb(210,168,255)" textLength="126.0" lengthAdjust="spacingAndGlyphs">c              </text>
+<text x="154.8" y="451" fill="rgb(255,255,255)" textLength="1192.8" lengthAdjust="spacingAndGlyphs">Open the clone modal (URL or owner/name)                                                                                                      </text>
+<text x="1347.6" y="451" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="468" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="468" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="468" fill="rgb(210,168,255)" textLength="806.4" lengthAdjust="spacingAndGlyphs">R               Reorganize:epick arpreset,gpreviewpthetmoves, thenuapply (kvtogglesckeep-custom)</text>
-<text x="835.2" y="468" fill="rgb(255,255,255)" textLength="344.4" lengthAdjust="spacingAndGlyphs">                                         </text>
-<text x="1179.6" y="468" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="28.8" y="468" fill="rgb(210,168,255)" textLength="126.0" lengthAdjust="spacingAndGlyphs">m              </text>
+<text x="154.8" y="468" fill="rgb(255,255,255)" textLength="1192.8" lengthAdjust="spacingAndGlyphs">Openrmovewmodal forfrepoes back)                                                                                                              </text>
+<text x="1347.6" y="468" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="485" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="485" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="485" fill="rgb(210,168,255)" textLength="588.0" lengthAdjust="spacingAndGlyphs">W               Open the worktree modal for the highlighted repository</text>
-<text x="616.8" y="485" fill="rgb(255,255,255)" textLength="562.8" lengthAdjust="spacingAndGlyphs">                                                                   </text>
-<text x="1179.6" y="485" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="28.8" y="485" fill="rgb(210,168,255)" textLength="126.0" lengthAdjust="spacingAndGlyphs">z              </text>
+<text x="154.8" y="485" fill="rgb(255,255,255)" textLength="1192.8" lengthAdjust="spacingAndGlyphs">Undo the last move or delete (restores the directory and its inventory entry)                                                                 </text>
+<text x="1347.6" y="485" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="502" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="502" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="502" fill="rgb(210,168,255)" textLength="730.8" lengthAdjust="spacingAndGlyphs">w               Open the workspace picker (x inside removes an entry from the registry)</text>
-<text x="759.6" y="502" fill="rgb(255,255,255)" textLength="420.0" lengthAdjust="spacingAndGlyphs">                                                  </text>
-<text x="1179.6" y="502" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="28.8" y="502" fill="rgb(210,168,255)" textLength="126.0" lengthAdjust="spacingAndGlyphs">u              </text>
+<text x="154.8" y="502" fill="rgb(255,255,255)" textLength="1192.8" lengthAdjust="spacingAndGlyphs">Untrack repo (files stay on disk)                                                                                                             </text>
+<text x="1347.6" y="502" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="519" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="519" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="519" fill="rgb(210,168,255)" textLength="445.2" lengthAdjust="spacingAndGlyphs">p               Cycle the preset (affects new clones)</text>
-<text x="474.0" y="519" fill="rgb(255,255,255)" textLength="705.6" lengthAdjust="spacingAndGlyphs">                                                                                    </text>
-<text x="1179.6" y="519" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="28.8" y="519" fill="rgb(210,168,255)" textLength="126.0" lengthAdjust="spacingAndGlyphs">D              </text>
+<text x="154.8" y="519" fill="rgb(255,255,255)" textLength="1192.8" lengthAdjust="spacingAndGlyphs">Delete repo to .repotruck/trash                                                                                                               </text>
+<text x="1347.6" y="519" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="536" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="536" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="536" fill="rgb(210,168,255)" textLength="798.0" lengthAdjust="spacingAndGlyphs">r               Setnanhaliashforhthe highlightedirepositoryo(ornretryfconnection on auth error)</text>
-<text x="826.8" y="536" fill="rgb(255,255,255)" textLength="352.8" lengthAdjust="spacingAndGlyphs">                                          </text>
-<text x="1179.6" y="536" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="28.8" y="536" fill="rgb(210,168,255)" textLength="126.0" lengthAdjust="spacingAndGlyphs">A              </text>
+<text x="154.8" y="536" fill="rgb(255,255,255)" textLength="1192.8" lengthAdjust="spacingAndGlyphs">Archive repo on GitHub to archived/                                                                                                           </text>
+<text x="1347.6" y="536" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="553" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="553" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="553" fill="rgb(210,168,255)" textLength="361.2" lengthAdjust="spacingAndGlyphs">d               Open the default-root modal</text>
-<text x="390.0" y="553" fill="rgb(255,255,255)" textLength="789.6" lengthAdjust="spacingAndGlyphs">                                                                                              </text>
-<text x="1179.6" y="553" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="28.8" y="553" fill="rgb(210,168,255)" textLength="126.0" lengthAdjust="spacingAndGlyphs">R              </text>
+<text x="154.8" y="553" fill="rgb(255,255,255)" textLength="1192.8" lengthAdjust="spacingAndGlyphs">Reorganize: preset, preview, apply                                                                                                            </text>
+<text x="1347.6" y="553" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="570" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="570" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="570" fill="rgb(210,168,255)" textLength="1134.0" lengthAdjust="spacingAndGlyphs">Enter           List focus: open the start preview for the selected repositories. Sidebar focus: confirm the row. Wizard: advance steps</text>
-<text x="1162.8" y="570" fill="rgb(255,255,255)" textLength="16.8" lengthAdjust="spacingAndGlyphs">  </text>
-<text x="1179.6" y="570" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="28.8" y="570" fill="rgb(210,168,255)" textLength="126.0" lengthAdjust="spacingAndGlyphs">W              </text>
+<text x="154.8" y="570" fill="rgb(255,255,255)" textLength="1192.8" lengthAdjust="spacingAndGlyphs">Open the worktree modal for the highlighted repository                                                                                        </text>
+<text x="1347.6" y="570" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="587" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="587" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="587" fill="rgb(210,168,255)" textLength="655.2" lengthAdjust="spacingAndGlyphs">q               Quit (press twice in quick succession while a sync is running)</text>
-<text x="684.0" y="587" fill="rgb(255,255,255)" textLength="495.6" lengthAdjust="spacingAndGlyphs">                                                           </text>
-<text x="1179.6" y="587" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="28.8" y="587" fill="rgb(210,168,255)" textLength="126.0" lengthAdjust="spacingAndGlyphs">w              </text>
+<text x="154.8" y="587" fill="rgb(255,255,255)" textLength="1192.8" lengthAdjust="spacingAndGlyphs">Workspace picker (x removes entry)                                                                                                            </text>
+<text x="1347.6" y="587" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="604" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="604" fill="rgb(255,255,255)" textLength="1159.2" lengthAdjust="spacingAndGlyphs">                                                                                                                                          </text>
-<text x="1179.6" y="604" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="604" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="28.8" y="604" fill="rgb(210,168,255)" textLength="126.0" lengthAdjust="spacingAndGlyphs">p              </text>
+<text x="154.8" y="604" fill="rgb(255,255,255)" textLength="1192.8" lengthAdjust="spacingAndGlyphs">Cycle the preset (affects new clones)                                                                                                         </text>
+<text x="1347.6" y="604" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="621" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="621" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="621" fill="rgb(110,118,129)" textLength="75.6" lengthAdjust="spacingAndGlyphs">[ Close ]</text>
-<text x="104.4" y="621" fill="rgb(255,255,255)" textLength="1075.2" lengthAdjust="spacingAndGlyphs">                                                                                                                                </text>
-<text x="1179.6" y="621" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="28.8" y="621" fill="rgb(210,168,255)" textLength="126.0" lengthAdjust="spacingAndGlyphs">o              </text>
+<text x="154.8" y="621" fill="rgb(255,255,255)" textLength="1192.8" lengthAdjust="spacingAndGlyphs">Open repo in app (or Offline Mode)                                                                                                            </text>
+<text x="1347.6" y="621" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="638" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="638" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="638" fill="rgb(110,118,129)" textLength="310.8" lengthAdjust="spacingAndGlyphs">Up/Down or j/k scroll · Escape closes</text>
-<text x="339.6" y="638" fill="rgb(255,255,255)" textLength="840.0" lengthAdjust="spacingAndGlyphs">                                                                                                    </text>
-<text x="1179.6" y="638" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="28.8" y="638" fill="rgb(210,168,255)" textLength="126.0" lengthAdjust="spacingAndGlyphs">r              </text>
+<text x="154.8" y="638" fill="rgb(255,255,255)" textLength="1192.8" lengthAdjust="spacingAndGlyphs">Set alias (or retry on auth error)                                                                                                            </text>
+<text x="1347.6" y="638" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="655" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="655" fill="rgb(255,255,255)" textLength="1159.2" lengthAdjust="spacingAndGlyphs">                                                                                                                                          </text>
-<text x="1179.6" y="655" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="12.0" y="672" fill="rgb(210,168,255)" textLength="1176.0" lengthAdjust="spacingAndGlyphs">└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘</text>
-<text x="12.0" y="689" fill="rgb(48,54,61)" textLength="1176.0" lengthAdjust="spacingAndGlyphs">┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐</text>
-<text x="12.0" y="706" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="706" fill="rgb(110,118,129)" textLength="714.0" lengthAdjust="spacingAndGlyphs"> [Tab] Focus  [Space] Select  [?] Help  [q] Quit  [:] Omnibar  [/] Search  [f] Health</text>
-<text x="734.4" y="706" fill="rgb(255,255,255)" textLength="445.2" lengthAdjust="spacingAndGlyphs">                                                     </text>
-<text x="1179.6" y="706" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="12.0" y="723" fill="rgb(48,54,61)" textLength="1176.0" lengthAdjust="spacingAndGlyphs">└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘</text>
+<text x="20.4" y="655" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="28.8" y="655" fill="rgb(210,168,255)" textLength="126.0" lengthAdjust="spacingAndGlyphs">d              </text>
+<text x="154.8" y="655" fill="rgb(255,255,255)" textLength="1192.8" lengthAdjust="spacingAndGlyphs">Open the default-root modal                                                                                                                   </text>
+<text x="1347.6" y="655" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="12.0" y="672" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="672" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="28.8" y="672" fill="rgb(210,168,255)" textLength="126.0" lengthAdjust="spacingAndGlyphs">Enter          </text>
+<text x="154.8" y="672" fill="rgb(255,255,255)" textLength="1192.8" lengthAdjust="spacingAndGlyphs">Open sync preview; sidebar confirm; wizard advance                                                                                            </text>
+<text x="1347.6" y="672" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="12.0" y="689" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="689" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="28.8" y="689" fill="rgb(210,168,255)" textLength="126.0" lengthAdjust="spacingAndGlyphs">q              </text>
+<text x="154.8" y="689" fill="rgb(255,255,255)" textLength="1192.8" lengthAdjust="spacingAndGlyphs">Quit (press twice in quick succession while a sync is running)                                                                                </text>
+<text x="1347.6" y="689" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="12.0" y="706" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="706" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="28.8" y="706" fill="rgb(210,168,255)" textLength="126.0" lengthAdjust="spacingAndGlyphs">x              </text>
+<text x="154.8" y="706" fill="rgb(255,255,255)" textLength="1192.8" lengthAdjust="spacingAndGlyphs">Dismiss the update toast (remembered once per version)                                                                                        </text>
+<text x="1347.6" y="706" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="12.0" y="723" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="723" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="28.8" y="723" fill="rgb(210,168,255)" textLength="126.0" lengthAdjust="spacingAndGlyphs">v + letter     </text>
+<text x="154.8" y="723" fill="rgb(255,255,255)" textLength="1192.8" lengthAdjust="spacingAndGlyphs">Open a page directly (letters listed in the Views section below)                                                                              </text>
+<text x="1347.6" y="723" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="12.0" y="740" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="740" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="28.8" y="740" fill="rgb(210,168,255)" textLength="126.0" lengthAdjust="spacingAndGlyphs">[ / ]          </text>
+<text x="154.8" y="740" fill="rgb(255,255,255)" textLength="1192.8" lengthAdjust="spacingAndGlyphs">Cycle to the previous / next page                                                                                                             </text>
+<text x="1347.6" y="740" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="12.0" y="757" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="757" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="28.8" y="757" fill="rgb(210,168,255)" textLength="126.0" lengthAdjust="spacingAndGlyphs">→ (Right)      </text>
+<text x="154.8" y="757" fill="rgb(255,255,255)" textLength="1192.8" lengthAdjust="spacingAndGlyphs">Repository list: open the context menu for the cursor row                                                                                     </text>
+<text x="1347.6" y="757" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="12.0" y="774" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="774" fill="rgb(255,255,255)" textLength="1327.2" lengthAdjust="spacingAndGlyphs">                                                                                                                                                              </text>
+<text x="1347.6" y="774" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="12.0" y="791" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="791" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="28.8" y="791" fill="rgb(110,118,129)" textLength="75.6" lengthAdjust="spacingAndGlyphs">[ Close ]</text>
+<text x="104.4" y="791" fill="rgb(255,255,255)" textLength="1243.2" lengthAdjust="spacingAndGlyphs">                                                                                                                                                    </text>
+<text x="1347.6" y="791" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="12.0" y="808" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="808" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="28.8" y="808" fill="rgb(110,118,129)" textLength="310.8" lengthAdjust="spacingAndGlyphs">Up/Down or j/k scroll · Escape closes</text>
+<text x="339.6" y="808" fill="rgb(255,255,255)" textLength="1008.0" lengthAdjust="spacingAndGlyphs">                                                                                                                        </text>
+<text x="1347.6" y="808" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="12.0" y="825" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="825" fill="rgb(255,255,255)" textLength="1327.2" lengthAdjust="spacingAndGlyphs">                                                                                                                                                              </text>
+<text x="1347.6" y="825" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="12.0" y="842" fill="rgb(210,168,255)" textLength="1344.0" lengthAdjust="spacingAndGlyphs">└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘</text>
+<text x="12.0" y="859" fill="rgb(48,54,61)" textLength="1344.0" lengthAdjust="spacingAndGlyphs">┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐</text>
+<text x="12.0" y="876" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="876" fill="rgb(110,118,129)" textLength="714.0" lengthAdjust="spacingAndGlyphs"> [Tab] Focus  [Space] Select  [?] Help  [q] Quit  [:] Omnibar  [/] Search  [f] Health</text>
+<text x="734.4" y="876" fill="rgb(255,255,255)" textLength="613.2" lengthAdjust="spacingAndGlyphs">                                                                         </text>
+<text x="1347.6" y="876" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="12.0" y="893" fill="rgb(48,54,61)" textLength="1344.0" lengthAdjust="spacingAndGlyphs">└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘</text>
 <rect x="20.4" y="29.0" width="8.4" height="17" fill="none" stroke="#e6edf3" stroke-opacity="0.55" rx="1"/>
 </svg>

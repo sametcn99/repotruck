@@ -10,8 +10,11 @@ import type { Store } from "./store.ts";
 import { theme } from "./theme.ts";
 import { visibleSlice } from "./windowing.ts";
 
-// Border (2) + padding (2) + hint (1) + breathing room (2).
-const HELP_VIEW_RESERVED_ROWS = 7;
+// Border (2) + padding (2) + hint (1) + breathing room (2) + dashboard
+// chrome (header 3 + footer 3). Without the chrome rows the windowed slice
+// overflows its box and the layout engine squeezes rows onto fractional
+// heights — visibly interleaving consecutive shortcut rows.
+const HELP_VIEW_RESERVED_ROWS = 13;
 
 const HELP_ROWS: readonly (readonly [string, string])[] = [
   ...KEYBINDING_ROWS,
@@ -20,7 +23,7 @@ const HELP_ROWS: readonly (readonly [string, string])[] = [
 ];
 
 export function HelpModal({ store }: { store: Store }) {
-  const { height } = useTerminalDimensions();
+  const { height, width } = useTerminalDimensions();
   const [cursor, setCursor] = useState(0);
   const total = HELP_ROWS.length;
   const bounded = Math.min(Math.max(cursor, 0), Math.max(0, total - 1));
@@ -61,16 +64,20 @@ export function HelpModal({ store }: { store: Store }) {
       }}
     >
       {shown.map(([key, action], index) => (
-        <text
-          key={key}
-          fg={keyFg}
-          onMouseDown={(e) => {
-            if (e.button === 0) {
-              e.stopPropagation();
-              setCursor(window.start + index);
-            }
-          }}
-        >{`${key.padEnd(15)} ${action}`}</text>
+        <box key={key} flexDirection="row">
+          <text
+            fg={keyFg}
+            onMouseDown={(e) => {
+              if (e.button === 0) {
+                e.stopPropagation();
+                setCursor(window.start + index);
+              }
+            }}
+          >
+            {key.padEnd(15)}
+          </text>
+          <text>{action}</text>
+        </box>
       ))}
       <box flexDirection="row" gap={2} marginTop={1}>
         <text

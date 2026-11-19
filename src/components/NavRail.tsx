@@ -48,7 +48,8 @@ export function NavRail({ store, width }: { store: Store; width: number }) {
           )),
         ];
       })}
-      <text fg={theme.dim()}>{" [v]+go · [ ] cycle"}</text>
+      <text fg={theme.dim()}>{" [v]+key opens"}</text>
+      <text fg={theme.dim()}>{" [ ] cycles"}</text>
     </box>
   );
 }

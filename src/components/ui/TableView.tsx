@@ -47,7 +47,10 @@ export function TableView<R>({
   }
 
   const slice = visibleSlice(cursor, rows.length, viewportRows);
-  const header = formatHeader(columns, rows, width);
+  // Column widths are computed once from the full row set so every row
+  // (and the header) shares the same grid.
+  const widths = columnWidths(columns, rows, width);
+  const header = formatHeader(columns, widths);
 
   return (
     <box flexDirection="column" width="100%">
@@ -55,7 +58,7 @@ export function TableView<R>({
       {rows.slice(slice.start, slice.end).map((entry, offset) => {
         const index = slice.start + offset;
         const active = index === cursor;
-        const line = formatRow(columns, entry, active, width);
+        const line = formatRow(entry, active, widths);
         const rowId = entry.cells[0] ?? String(index);
         return (
           <box key={rowId} flexDirection="column">
@@ -102,28 +105,17 @@ function columnWidths<R>(
   return wanted.map((w) => Math.max(3, Math.floor((w * usable) / wantedTotal)));
 }
 
-function formatHeader<R>(
-  columns: readonly TableColumn<R>[],
-  rows: readonly TableRow<R>[],
-  width: number,
-): string {
-  const widths = columnWidths(columns, rows, width);
+function formatHeader<R>(columns: readonly TableColumn<R>[], widths: readonly number[]): string {
   const parts = columns.map((col, i) => pad(col.label, widths[i]!));
-  return ` ${parts.join(" ")}`.slice(0, Math.max(4, width - 2));
+  return ` ${parts.join(" ")}`;
 }
 
 function pad(text: string, width: number): string {
   return text.length >= width ? text.slice(0, width) : text.padEnd(width);
 }
 
-function formatRow<R>(
-  columns: readonly TableColumn<R>[],
-  entry: TableRow<R>,
-  active: boolean,
-  width: number,
-): string {
-  const widths = columnWidths(columns, [entry], width);
+function formatRow<R>(entry: TableRow<R>, active: boolean, widths: readonly number[]): string {
   const marker = active ? ">" : " ";
   const parts = entry.cells.map((cell, i) => pad(String(cell), widths[i]!));
-  return `${marker}${parts.join(" ")}`.slice(0, Math.max(4, width - 2));
+  return `${marker}${parts.join(" ")}`;
 }

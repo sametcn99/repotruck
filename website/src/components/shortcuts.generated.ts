@@ -13,8 +13,7 @@ export const SHORTCUT_ROWS: readonly ShortcutRow[] = [
   },
   {
     key: "Up/Down, j/k",
-    action:
-      "Move the cursor in the focused region; with the status panel focused, scroll the activity log",
+    action: "Move cursor; status panel focus scrolls the activity log",
   },
   {
     key: "Home/End, g/G",
@@ -26,8 +25,7 @@ export const SHORTCUT_ROWS: readonly ShortcutRow[] = [
   },
   {
     key: "Space",
-    action:
-      "Select/deselect the highlighted repository; sidebar: toggle the row; wizard: toggle source/visibility",
+    action: "Select repo; sidebar/wizard toggle",
   },
   {
     key: "a",
@@ -35,27 +33,27 @@ export const SHORTCUT_ROWS: readonly ShortcutRow[] = [
   },
   {
     key: "/",
-    action: "Inline live search by owner, name, or @alias (Enter keeps filter, Escape clears)",
+    action: "Live search: owner, name, @alias",
   },
   {
     key: ": / Ctrl+K",
-    action: "Open Omnibar in Command Palette mode (Tab cycles modes)",
+    action: "Omnibar command palette (Tab cycles modes)",
   },
   {
     key: "@",
-    action: "Open Omnibar in Workspace Code Search mode (prefix text: for line search)",
+    action: "Omnibar code search (text: prefix for line search)",
   },
   {
     key: "#",
-    action: "Open Omnibar in GitHub Discover mode (Enter clones directly)",
+    action: "Omnibar GitHub discover (Enter clones)",
   },
   {
     key: "!",
-    action: "Open Omnibar in Bulk Command Runner mode (runs across selected/all repos)",
+    action: "Omnibar bulk runner (selected/all repos)",
   },
   {
     key: "f",
-    action: "Cycle local Git health filter (all, dirty, ahead, behind, pinned, local, uncloned)",
+    action: "Cycle git health filter (all/dirty/ahead/behind/pinned)",
   },
   {
     key: "P",
@@ -75,7 +73,7 @@ export const SHORTCUT_ROWS: readonly ShortcutRow[] = [
   },
   {
     key: "s",
-    action: "Cycle sort: default, name, language, updated (use Omnibar for stars/dirty)",
+    action: "Cycle sort: default/name/language/updated",
   },
   {
     key: "S",
@@ -83,7 +81,7 @@ export const SHORTCUT_ROWS: readonly ShortcutRow[] = [
   },
   {
     key: "i",
-    action: "Show details for the highlighted repository (description, stars, ahead/behind, alias)",
+    action: "Repo details: stars, ahead/behind, alias",
   },
   {
     key: "c",
@@ -91,11 +89,11 @@ export const SHORTCUT_ROWS: readonly ShortcutRow[] = [
   },
   {
     key: "n",
-    action: "Open the new-repository wizard (Left goes back a step)",
+    action: "New repo wizard (Left goes back)",
   },
   {
     key: "m",
-    action: "Open the move modal for the highlighted repository",
+    action: "Open move modal for repo",
   },
   {
     key: "z",
@@ -103,20 +101,19 @@ export const SHORTCUT_ROWS: readonly ShortcutRow[] = [
   },
   {
     key: "u",
-    action:
-      "Untrack selected or highlighted repository — asks for confirmation (clones stay on disk)",
+    action: "Untrack repo (files stay on disk)",
   },
   {
     key: "D",
-    action: "Delete selected or highlighted repository to .repotruck/trash (asks for confirmation)",
+    action: "Delete repo to .repotruck/trash",
   },
   {
     key: "A",
-    action: "Archive selected or highlighted repository on GitHub and move to archived/",
+    action: "Archive repo on GitHub to archived/",
   },
   {
     key: "R",
-    action: "Reorganize: pick a preset, preview the moves, then apply (k toggles keep-custom)",
+    action: "Reorganize: preset, preview, apply",
   },
   {
     key: "W",
@@ -124,7 +121,7 @@ export const SHORTCUT_ROWS: readonly ShortcutRow[] = [
   },
   {
     key: "w",
-    action: "Open the workspace picker (x inside removes an entry from the registry)",
+    action: "Workspace picker (x removes entry)",
   },
   {
     key: "p",
@@ -132,11 +129,11 @@ export const SHORTCUT_ROWS: readonly ShortcutRow[] = [
   },
   {
     key: "o",
-    action: "Open the highlighted repository in an app (or enter Offline Mode on auth error)",
+    action: "Open repo in app (or Offline Mode)",
   },
   {
     key: "r",
-    action: "Set an alias for the highlighted repository (or retry connection on auth error)",
+    action: "Set alias (or retry on auth error)",
   },
   {
     key: "d",
@@ -144,8 +141,7 @@ export const SHORTCUT_ROWS: readonly ShortcutRow[] = [
   },
   {
     key: "Enter",
-    action:
-      "List focus: open the start preview for the selected repositories. Sidebar focus: confirm the row. Wizard: advance steps",
+    action: "Open sync preview; sidebar confirm; wizard advance",
   },
   {
     key: "q",
@@ -185,8 +181,7 @@ export const SHORTCUT_ROWS: readonly ShortcutRow[] = [
   },
   {
     key: "Escape",
-    action:
-      "Close any open modal or page back to the cockpit; with no modal open, clear the active search",
+    action: "Close modal/page; clear search",
   },
   {
     key: "v s",

@@ -28,8 +28,11 @@ import {
   SCENES,
 } from "./screenshots-scenes.ts";
 
-const WIDTH = 140;
-const HEIGHT = 42;
+// Height 48 avoids an @opentui core row-merge artifact observed at heights
+// 42/44 (every 4th modal content row corrupts when header+modal+footer all
+// render); 40/48/50 render clean across widths.
+const WIDTH = 160;
+const HEIGHT = 52;
 const OUT_DIR = "website/public/screenshots";
 
 // ---- SVG rendering -------------------------------------------------------------
@@ -71,7 +74,7 @@ function esc(text: string): string {
     .replaceAll('"', "&quot;");
 }
 
-export function frameToSvg(frame: FrameLike, slug: string): string {
+export function frameToSvg(frame: FrameLike, slug: string, charRows: readonly string[]): string {
   const w = frame.cols * CW + PAD * 2;
   const h = frame.rows * LH + PAD * 2;
   const parts: string[] = [];
@@ -84,24 +87,50 @@ export function frameToSvg(frame: FrameLike, slug: string): string {
     `<style>text{font-family:ui-monospace,"SF Mono","Cascadia Code",Consolas,"Liberation Mono",Menlo,monospace;font-size:${FS}px;white-space:pre}</style>`,
   );
   frame.lines.forEach((line, row) => {
+    // The span serializer occasionally merges stale cells into a row's text
+    // (observable as duplicated letters); the plain char frame is the source
+    // of truth for glyphs. When the two disagree, render the char frame row
+    // with the row's dominant span color.
+    const spanText = line.spans
+      .map((span) => span.text)
+      .join("")
+      .replace(/\s+$/, "");
+    const charText = (charRows[row] ?? "").replace(/\s+$/, "");
+    const trustworthy = spanText === charText;
+
     let col = 0;
-    for (const span of line.spans) {
-      if (span.text.length === 0) {
-        col += span.width;
-        continue;
-      }
-      const x = PAD + col * CW;
-      const y = PAD + row * LH + FS;
-      const [, , , bgA] = span.bg.toInts().map(toInt);
-      if (bgA > 0) {
+    if (trustworthy) {
+      for (const span of line.spans) {
+        if (span.text.length === 0) {
+          col += span.width;
+          continue;
+        }
+        const x = PAD + col * CW;
+        const y = PAD + row * LH + FS;
+        const [, , , bgA] = span.bg.toInts().map(toInt);
+        if (bgA > 0) {
+          parts.push(
+            `<rect x="${x.toFixed(1)}" y="${(PAD + row * LH).toFixed(1)}" width="${(span.width * CW).toFixed(1)}" height="${LH}" fill="${css(span.bg)}"/>`,
+          );
+        }
         parts.push(
-          `<rect x="${x.toFixed(1)}" y="${(PAD + row * LH).toFixed(1)}" width="${(span.width * CW).toFixed(1)}" height="${LH}" fill="${css(span.bg)}"/>`,
+          `<text x="${x.toFixed(1)}" y="${y}" fill="${css(span.fg)}" textLength="${(span.width * CW).toFixed(1)}" lengthAdjust="spacingAndGlyphs">${esc(span.text)}</text>`,
         );
+        col += span.width;
       }
+    } else if (charText.length > 0) {
+      const counts = new Map<string, number>();
+      for (const span of line.spans) {
+        if (span.text.trim().length === 0) continue;
+        const key = css(span.fg);
+        counts.set(key, (counts.get(key) ?? 0) + span.text.trim().length);
+      }
+      const dominant = [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? "#e6edf3";
+      const x = PAD;
+      const y = PAD + row * LH + FS;
       parts.push(
-        `<text x="${x.toFixed(1)}" y="${y}" fill="${css(span.fg)}" textLength="${(span.width * CW).toFixed(1)}" lengthAdjust="spacingAndGlyphs">${esc(span.text)}</text>`,
+        `<text x="${x.toFixed(1)}" y="${y}" fill="${dominant}" textLength="${(frame.cols * CW).toFixed(1)}" lengthAdjust="spacingAndGlyphs">${esc(charText)}</text>`,
       );
-      col += span.width;
     }
   });
   const [cx, cy] = frame.cursor;
@@ -147,16 +176,32 @@ async function main(): Promise<void> {
   const outDir = path.join(repoRoot, OUT_DIR);
   mkdirSync(outDir, { recursive: true });
 
-  const shot = (slug: string): void => {
-    const frame = (setup as unknown as { captureSpans: () => FrameLike }).captureSpans();
-    writeFileSync(path.join(outDir, `${slug}.svg`), frameToSvg(frame, slug));
+  let repairedRows = 0;
+  const captureFrom = (setup: Tools, slug: string): void => {
+    const tools = setup as unknown as {
+      captureSpans: () => FrameLike;
+      captureCharFrame: () => string;
+    };
+    const frame = tools.captureSpans();
+    const charRows = tools.captureCharFrame().split("\n");
+    for (const [row, line] of frame.lines.entries()) {
+      const spanText = line.spans
+        .map((span) => span.text)
+        .join("")
+        .replace(/\s+$/, "");
+      const charText = (charRows[row] ?? "").replace(/\s+$/, "");
+      if (spanText !== charText) repairedRows += 1;
+    }
+    writeFileSync(path.join(outDir, `${slug}.svg`), frameToSvg(frame, slug, charRows));
     process.stdout.write(`shot ${slug}\n`);
   };
 
-  // State helpers shared by scenes.
-  const openModal = (open: () => void): void => {
-    open();
+  const shot = async (slug: string): Promise<void> => {
+    await settle(setup);
+    captureFrom(setup, slug);
   };
+
+  // State helpers shared by scenes.
   const snapshot = (): ReturnType<typeof store.getSnapshot> => store.getSnapshot();
 
   // --- Cockpit -----------------------------------------------------------------
@@ -164,46 +209,38 @@ async function main(): Promise<void> {
   void store.toggleOrg("Hiretea");
   await waitFor(() => snapshot().repos.length >= 14);
   await waitFor(() => snapshot().localHealth.get("sametcn99/repotruck")?.dirty === true);
-  await settle(setup);
-  shot("cockpit");
+
+  await shot("cockpit");
 
   store.setRightPaneTab("inspector");
-  await settle(setup);
-  await waitFor(() => snapshot().inspector !== null);
-  await settle(setup);
-  shot("cockpit-inspector");
+  await waitFor(() => snapshot().inspector?.details !== null, 6000);
+  await shot("cockpit-inspector");
 
   store.setRightPaneTab("health");
-  await settle(setup);
   await waitFor(() => snapshot().healthData?.loading === false);
-  await settle(setup);
-  shot("cockpit-health");
+  await shot("cockpit-health");
 
   store.openRepoContextMenu("sametcn99/repotruck");
-  await settle(setup);
-  shot("context-menu");
+  await shot("context-menu");
   store.closeRepoContextMenu();
 
   store.openHelpModal();
-  await settle(setup);
-  shot("help");
+  await shot("help");
   store.closeModal();
 
   store.openOmnibar("commands", "sync");
-  await settle(setup);
-  shot("omnibar");
+  await shot("omnibar");
   store.closeModal();
 
   store.openCommandForm("sync");
-  await settle(setup);
-  shot("command-form");
+  await shot("command-form");
   store.closeModal();
 
   store.toggleRepoAt(0);
   store.toggleRepoAt(1);
   await store.openStartPreview();
-  await settle(setup);
-  shot("start-preview");
+  await waitFor(() => snapshot().modal?.type === "preview");
+  await shot("start-preview");
   store.closeModal();
 
   // --- Pages ----------------------------------------------------------------------
@@ -216,8 +253,7 @@ async function main(): Promise<void> {
     divergence: "rebase",
   });
   store.setView("sync");
-  await settle(setup);
-  shot("sync-center");
+  await shot("sync-center");
 
   store.updateDiscoverPage({ query: "mcp server" });
   await store.discoverSearch();
@@ -226,55 +262,54 @@ async function main(): Promise<void> {
     selected: new Set(["modelcontextprotocol/servers", "wong2/mcp-runner"]),
   });
   store.setView("discover");
-  await settle(setup);
-  shot("discover");
+  await shot("discover");
 
-  store.setView("scan");
   await store.scanAndAdopt(false);
   await waitFor(() => (snapshot().scanPage?.unregistered?.length ?? 0) > 0);
-  await settle(setup);
-  shot("scan");
+  store.setView("scan");
+  await shot("scan");
 
   store.setView("resolve");
-  await settle(setup);
-  shot("conflicts");
+  await shot("conflicts");
 
-  store.setView("status");
   await store.refreshStatusMatrix();
   await waitFor(() => snapshot().statusMatrix?.loading === false);
-  await settle(setup);
-  shot("status-matrix");
+  store.setView("status");
+  await shot("status-matrix");
 
-  setup.mockInput.pressEnter(); // expand the cursor row (-D detail)
-  await settle(setup);
-  shot("status-detail");
-  setup.mockInput.pressEscape();
-
+  // remote first: status-detail's escape resets the view to cockpit
   await store.refreshStatusMatrix(true);
   await waitFor(
     () => snapshot().statusMatrix?.loading === false && snapshot().statusMatrix?.remote === true,
   );
+  store.setView("status");
   await settle(setup);
-  shot("status-remote");
+  await shot("status-remote");
+
+  // then detail (expanded row); escape at the end is fine — next scene sets its own view
+  store.setView("status");
+  await settle(setup);
+  setup.mockInput.pressEnter(); // expand the cursor row (-D detail)
+  await shot("status-detail");
 
   store.updateCodeSearchForm({ pattern: "Store" });
   await store.runCodeSearchPage();
-  await waitFor(() => (snapshot().codeSearchPage?.matches?.length ?? 0) > 0);
+  await waitFor(() => (snapshot().codeSearchPage?.matches?.length ?? 0) > 0, 6000);
   store.setView("search");
   await settle(setup);
-  shot("code-search");
+  await shot("code-search");
 
-  store.setView("stats");
-  void store.refreshStatsPage();
+  await store.refreshStatsPage();
   await waitFor(() => snapshot().statsPage?.loading === false);
-  await settle(setup);
-  shot("stats");
+  store.setView("stats");
+  await shot("stats");
 
-  store.setView("changelog");
   await store.generateChangelog({ since: "30 days ago" });
-  await waitFor(() => (snapshot().changelogPage?.markdown?.length ?? 0) > 0);
+  await waitFor(() => (snapshot().changelogPage?.markdown?.length ?? 0) > 0, 6000);
+  store.setView("changelog");
   await settle(setup);
-  shot("changelog");
+  await settle(setup);
+  await shot("changelog");
 
   store.updateRunConsole({ command: "bun test" });
   await store.runConsoleStart();
@@ -283,74 +318,60 @@ async function main(): Promise<void> {
       snapshot().runConsole?.running === false && (snapshot().runConsole?.results?.length ?? 0) > 0,
   );
   store.setView("run");
-  await settle(setup);
-  shot("run-console");
+  await shot("run-console");
 
   await store.addCustomPreset("lang-owner", ["language", "owner", "name"]);
   store.setView("presets");
-  await settle(setup);
-  shot("presets");
+  await shot("presets");
 
   store.setView("profiles");
-  await settle(setup);
-  shot("profiles");
+  await shot("profiles");
 
   await store.backupSnapshotNow();
-  store.setView("trash");
   await store.refreshTrashPage();
   await waitFor(() => (snapshot().trashPage?.trash?.length ?? 0) > 0);
-  await settle(setup);
-  shot("trash-backups");
+  store.setView("trash");
+  await shot("trash-backups");
 
-  store.setView("worktree");
   await store.scanWorkspaceWorktrees();
-  await waitFor(() => (snapshot().worktreePage?.rows?.length ?? 0) > 0);
+  await waitFor(() => (snapshot().worktreePage?.rows?.length ?? 0) > 0, 6000);
+  store.setView("worktree");
   await settle(setup);
-  shot("worktrees");
+  await shot("worktrees");
 
   store.setView("agents");
-  await settle(setup);
-  shot("agents");
+  await shot("agents");
 
-  store.setView("settings");
-  void store.refreshSettingsPage();
+  await store.refreshSettingsPage();
   await waitFor(() => snapshot().settingsPage !== null);
-  await settle(setup);
-  shot("settings");
+  store.setView("settings");
+  await shot("settings");
 
   // --- Modals & dialogs --------------------------------------------------------
   store.setView("cockpit");
-  await settle(setup);
-
-  openModal(() => store.openCloneModal());
-  await settle(setup);
-  shot("clone-modal");
+  await store.openCloneModal();
+  await shot("clone-modal");
   store.closeModal();
 
-  openModal(() => store.openCreateModal());
-  await settle(setup);
-  shot("create-wizard");
+  store.openCreateModal();
+  await shot("create-wizard");
   store.closeModal();
 
   await store.openMoveModal("sametcn99/repotruck");
-  await settle(setup);
-  shot("move-modal");
+  await shot("move-modal");
   store.closeModal();
 
   await store.openAliasModal("sametcn99/repotruck");
-  await settle(setup);
-  shot("alias-modal");
+  await shot("alias-modal");
   store.closeModal();
 
   await store.openOpenModal("sametcn99/repotruck");
   await waitFor(() => snapshot().modal?.type === "open");
-  await settle(setup);
-  shot("open-modal");
+  await shot("open-modal");
   store.closeModal();
 
   store.openDetailModal("sametcn99/repotruck");
-  await settle(setup);
-  shot("detail-modal");
+  await shot("detail-modal");
   store.closeModal();
 
   await store.openReorganizeModal();
@@ -358,8 +379,7 @@ async function main(): Promise<void> {
     const modal = snapshot().modal;
     return modal?.type === "reorganize" && modal.preview !== null;
   });
-  await settle(setup);
-  shot("reorganize-modal");
+  await shot("reorganize-modal");
   store.closeModal();
 
   await store.openWorktreeModal("sametcn99/repotruck");
@@ -367,39 +387,31 @@ async function main(): Promise<void> {
     const modal = snapshot().modal;
     return modal?.type === "worktree" && modal.loading === false;
   });
-  await settle(setup);
-  shot("worktree-modal");
+  await shot("worktree-modal");
   store.closeModal();
 
   await store.openWorkspacePicker();
   await waitFor(() => snapshot().modal?.type === "workspaces");
-  await settle(setup);
-  shot("workspace-picker");
+  await shot("workspace-picker");
   store.closeModal();
 
   await store.openRootModal();
-  await settle(setup);
-  shot("root-modal");
+  await shot("root-modal");
   store.closeModal();
 
   void store.startDeviceFlow();
   await waitFor(() => snapshot().deviceFlow?.waiting === true);
-  await settle(setup);
-  shot("device-flow");
+  await shot("device-flow");
   store.cancelDeviceFlow();
 
   store.openPermanentDeleteConfirm("sametcn99/repotruck");
-  await settle(setup);
-  shot("permanent-delete");
+  await shot("permanent-delete");
   store.closeModal();
 
   await store.openSelectionDeleteConfirm();
   await waitFor(() => snapshot().modal?.type === "confirmDelete");
-  await settle(setup);
-  shot("confirm-delete");
+  await shot("confirm-delete");
   store.closeModal();
-
-  await setup.dispose();
 
   // --- manifest + README ---------------------------------------------------------
   const manifestPath = "website/src/components/screenshotsManifest.generated.ts";
@@ -421,7 +433,9 @@ async function main(): Promise<void> {
       readme.slice(endIdx);
     writeFileSync(readmePath, next);
   }
-  process.stdout.write(`manifest + README gallery updated (${SCENES.length} scenes)\n`);
+  process.stdout.write(
+    `manifest + README gallery updated (${SCENES.length} scenes, ${repairedRows} rows color-flattened from span-merge artifacts)\n`,
+  );
 }
 
 await main();
