@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **TUI v2 — full CLI parity surface (tuiv2)**:
+  - Persistent nav rail + 16 full-screen pages reachable with `v`+letter, `[`/`]` cycling, the command palette and the repo context menu (`→` or right-click): Sync Center, Discover, Scan & Adopt, Conflicts, Status Matrix, Code Search, Stats, Changelog, Run Console, Presets, Profiles, Trash & Backups, Worktrees, Agents & MCP, Settings — every page maps a CLI command's full flag set (scope/limit/depth/blobless/stash/divergence/globs/watch, search modes and filters, run scopes, remote PR/CI, scorecards, MCP HTTP controls, …).
+  - Command registry (`src/commands/registry.ts`) as the single source of truth: the palette (now fuzzy), the auto-generated Command Form modal with a live `repotruck …` CLI line, help sections and a strict CLI↔registry parity test that fails CI when a CLI flag lacks a TUI surface binding.
+  - Repo context menu covering every repo-targeted action including confirm-guarded permanent delete; thin confirmation dialogs layered above pages and modals; OSC 52 clipboard (`J` copy-as-JSON on data pages) with temp-file fallback; background task model beside the sync runner.
+  - All existing keyboard shortcuts, modals and mouse behaviors preserved.
+
 ## [0.4.1] - 2026-10-28
 
 ### Added

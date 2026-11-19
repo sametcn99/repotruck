@@ -119,7 +119,10 @@ describe("CLI ↔ registry parity (warning mode)", () => {
     }
 
     if (gaps.length > 0) {
-      console.warn(
+      // t19: parity is a hard guarantee — a CLI command or flag without a
+      // registry entry (and therefore without a TUI surface binding) fails
+      // CI instead of warning.
+      throw new Error(
         `[parity] ${gaps.length} gap(s) between CLI and registry:\n  ${gaps.join("\n  ")}`,
       );
     }

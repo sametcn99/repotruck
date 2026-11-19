@@ -1,5 +1,6 @@
 import { useKeyboard, useTerminalDimensions } from "@opentui/react";
 import { useState } from "react";
+import { buildRegistrySummaryLine, buildViewHelpRows } from "../commands/helpData.ts";
 import { ModalShell } from "./ModalShell.tsx";
 import type { Store } from "./store.ts";
 import { theme } from "./theme.ts";
@@ -8,7 +9,7 @@ import { visibleSlice } from "./windowing.ts";
 // Border (2) + padding (2) + hint (1) + breathing room (2).
 const HELP_VIEW_RESERVED_ROWS = 7;
 
-const HELP_ROWS: readonly [string, string][] = [
+const HELP_ROWS: readonly (readonly [string, string])[] = [
   ["Tab", "Cycle focus: sidebar, repository list, status panel"],
   [
     "Up/Down, j/k",
@@ -53,11 +54,16 @@ const HELP_ROWS: readonly [string, string][] = [
   ],
   ["q", "Quit (press twice in quick succession while a sync is running)"],
   ["x", "Dismiss the update toast (remembered once per version)"],
+  ["v + letter", "Open a page directly (letters listed in the Views section below)"],
+  ["[ / ]", "Cycle to the previous / next page"],
+  ["→ (Right)", "Repository list: open the context menu for the cursor row"],
   ["Wheel", "Scroll lists (repositories, status log, sidebar, modals)"],
   ["Click", "Select/activate items, toggle checkboxes, click buttons, focus panes"],
   ["Double-click", "Open repository details / switch workspace / launch app"],
-  ["Right-click", "Show repository details / dismiss open modal"],
-  ["Escape", "Close any open modal; with no modal open, clear the active search"],
+  ["Right-click", "Open the repository context menu / dismiss open modal"],
+  ["Escape", "Close any open modal or page back to the cockpit; clear the active search"],
+  ...buildViewHelpRows(),
+  ["— Parity —", buildRegistrySummaryLine()],
 ];
 
 export function HelpModal({ store }: { store: Store }) {

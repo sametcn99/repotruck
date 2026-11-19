@@ -33,6 +33,8 @@ Three panes share the screen. A **Scope** sidebar holds your account (checked by
 
 The mouse works too — the wheel scrolls, a click focuses and moves the cursor. Themes: `default`, `light` and `contrast`. The dashboard needs Node.js >= 26.4 or Bun >= 1.3.14; everything below runs headless on Node.js >= 20.
 
+**Pages (TUI v2).** A persistent nav rail turns the dashboard into a multi-page program — every page maps one CLI command with its full flag set. Open pages with `v` followed by the page letter (`v s` Sync Center, `v t` Status Matrix, `v e` Code Search, `v r` Run Console, `v a` Settings, …), cycle with `[` / `]`, return with `Escape`, or pick them from the `:` palette. Right-clicking (or pressing `→` on) a repository opens a context menu with every repo-targeted action. Data pages copy their table as JSON with `J` (the `--json` counterpart), and the palette's Command Form edits any command's flags with the equivalent CLI line built live at the bottom.
+
 ## Install
 
 ```bash
