@@ -48,11 +48,19 @@ export function LogView({
   const rows = [...entries].reverse();
   const win = scrollSlice(scrollIdx, rows.length, viewportRows);
   const visible = rows.slice(win.start, win.end);
+  const maxScroll = Math.max(0, rows.length - viewportRows);
+  const scroll = (delta: number) =>
+    setScrollIdx((current) =>
+      Math.max(0, Math.min(maxScroll, Math.min(current, maxScroll) + delta)),
+    );
 
   const counts = { error: 0, warn: 0, info: 0 };
   for (const entry of entries) counts[entry.level] += 1;
 
   useKeyboard((key) => {
+    const snap = store.getSnapshot();
+    if (snap.navFocused || snap.dialog !== null || snap.modal !== null || snap.contextMenu !== null)
+      return;
     if (key.name === "c") {
       diagClear();
       setScrollIdx(0);
@@ -69,9 +77,17 @@ export function LogView({
       });
       store.pushStatus(result.ok ? "DONE" : "FAILED", "[log]", result.message);
     } else if (key.name === "up" || key.sequence === "k") {
-      setScrollIdx((s) => Math.max(0, s - 1));
+      scroll(-1);
     } else if (key.name === "down" || key.sequence === "j") {
-      setScrollIdx((s) => Math.min(Math.max(0, rows.length - 1), s + 1));
+      scroll(1);
+    } else if (key.name === "pageup") {
+      scroll(-viewportRows);
+    } else if (key.name === "pagedown") {
+      scroll(viewportRows);
+    } else if (key.name === "home") {
+      setScrollIdx(0);
+    } else if (key.name === "end") {
+      setScrollIdx(maxScroll);
     }
   });
 
@@ -82,9 +98,7 @@ export function LogView({
       width="100%"
       onMouseScroll={(e) => {
         const isUp = e.scroll?.direction === "up" || e.button === 4;
-        setScrollIdx((s) =>
-          Math.min(Math.max(0, rows.length - 1), Math.max(0, s + (isUp ? -1 : 1))),
-        );
+        scroll(isUp ? -1 : 1);
       }}
     >
       <box
@@ -124,7 +138,7 @@ export function LogView({
         )}
       </box>
       <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
-        {clampBoxLine("newest first · j/k scroll · c clear · J copy JSON · Esc cockpit", width)}
+        {clampBoxLine("↑↓ / PgUp / PgDn scroll · [c] Clear · [J] JSON", width)}
       </text>
     </box>
   );

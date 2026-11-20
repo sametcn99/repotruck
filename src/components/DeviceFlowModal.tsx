@@ -19,6 +19,7 @@ export function DeviceFlowModal({ store }: { store: Store }) {
       title="GitHub login · device flow"
       hint="authorization continues in the background · Esc cancels"
       borderColor={accent}
+      onClose={store.cancelDeviceFlow}
     >
       {flow === null ? (
         <text fg={theme.dim()}>{"starting…"}</text>

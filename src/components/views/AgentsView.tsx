@@ -4,6 +4,7 @@ import { listAgentsMdTemplates } from "../../services/templates.ts";
 import type { Store } from "../store.ts";
 import { theme } from "../theme.ts";
 import { copyText } from "../ui/JsonCopy.ts";
+import { PaneTabs } from "../ui/PaneTabs.tsx";
 import { clampBoxLine, visibleSlice } from "../windowing.ts";
 
 const FORMATS = ["agents", "cursor", "claude", "copilot"] as const;
@@ -29,6 +30,7 @@ export function AgentsView({
   const [format, setFormat] = useState<Format>("cursor");
   const [port, setPort] = useState(3000);
   const [templates, setTemplates] = useState<readonly { name: string; description: string }[]>([]);
+  const [pane, setPane] = useState<"templates" | "mcp">("templates");
   const [cursor, setCursor] = useState(0);
 
   useEffect(() => {
@@ -39,13 +41,16 @@ export function AgentsView({
 
   const mcpRunning = snapshot.activeTaskCount > 0 && store.taskLabel("mcp") !== null;
   const stacked = width < 82;
+  const compactPanes = stacked && height < 22;
   const boxInnerCols = stacked
     ? Math.max(10, width - 3)
     : Math.max(10, Math.floor((width - 1) / 2) - 3);
   // Left box has 2 borders + 1 header + 3 bottom export lines = 6 fixed rows inside (height - 1) outer rows.
-  const templateBudget = stacked
-    ? Math.max(1, Math.floor((height - 12) / 2))
-    : Math.max(1, Math.floor((height - 7) / 2));
+  const templateBudget = compactPanes
+    ? Math.max(1, Math.floor((height - 9) / 2))
+    : stacked
+      ? Math.max(1, Math.floor((height - 12) / 2))
+      : Math.max(1, Math.floor((height - 7) / 2));
   const maxCursor = Math.max(0, templates.length - 1);
   const clampedCursor = Math.min(cursor, maxCursor);
   const focused =
@@ -53,6 +58,15 @@ export function AgentsView({
     snapshot.dialog === null &&
     snapshot.modal === null &&
     snapshot.contextMenu === null;
+
+  const copyStdioConfig = () => {
+    const result = copyText("stdio config", "claude mcp add repotruck -- repotruck mcp");
+    store.pushStatus(
+      result.ok ? "DONE" : "FAILED",
+      "[mcp]",
+      result.ok ? "stdio client config copied (repotruck mcp)" : result.message,
+    );
+  };
 
   useKeyboard((key) => {
     const snap = store.getSnapshot();
@@ -64,7 +78,9 @@ export function AgentsView({
     ) {
       return;
     }
-    if (key.name === "f") {
+    if (key.name === "tab" && compactPanes) {
+      setPane(pane === "templates" ? "mcp" : "templates");
+    } else if (key.name === "f") {
       setFormat(FORMATS[(FORMATS.indexOf(format) + 1) % FORMATS.length]!);
     } else if (key.name === "m") {
       void store.startMcpServer(port);
@@ -77,6 +93,8 @@ export function AgentsView({
       void store.runWorkspaceMaintenance("instructions");
     } else if (key.name === "p") {
       setPort((p) => (p + 100 > 9000 ? 3000 : p + 100));
+    } else if (key.name === "i") {
+      copyStdioConfig();
     } else if (key.name === "y") {
       const config = `claude mcp add repotruck --transport http --url http://127.0.0.1:${port}/mcp`;
       const result = copyText("client config", config);
@@ -121,6 +139,18 @@ export function AgentsView({
         );
       }}
     >
+      {compactPanes ? (
+        <PaneTabs
+          panes={
+            [
+              ["templates", "Templates"],
+              ["mcp", "MCP server"],
+            ] as const
+          }
+          selected={pane}
+          onSelect={setPane}
+        />
+      ) : null}
       <box
         flexDirection={stacked ? "column" : "row"}
         flexGrow={1}
@@ -128,6 +158,7 @@ export function AgentsView({
         width="100%"
       >
         <box
+          visible={!compactPanes || pane === "templates"}
           border
           borderColor={focused ? theme.focusBorder() : theme.border()}
           flexDirection="column"
@@ -171,7 +202,7 @@ export function AgentsView({
                       void store.applyAgentsTemplate(template.name);
                     }}
                   >
-                    {"  [apply]"}
+                    {"  [Enter] Apply"}
                   </text>
                   <text
                     fg={theme.dim()}
@@ -230,6 +261,7 @@ export function AgentsView({
           </text>
         </box>
         <box
+          visible={!compactPanes || pane === "mcp"}
           border
           borderColor={theme.border()}
           flexDirection="column"
@@ -308,18 +340,10 @@ export function AgentsView({
             flexShrink={0}
             onMouseDown={(event) => {
               event.stopPropagation?.();
-              const result = copyText("stdio config", "claude mcp add repotruck -- repotruck mcp");
-              store.pushStatus(
-                result.ok ? "DONE" : "FAILED",
-                "[mcp]",
-                result.ok ? "stdio client config copied (repotruck mcp)" : result.message,
-              );
+              copyStdioConfig();
             }}
           >
-            {" [stdio] copy stdio setup"}
-          </text>
-          <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
-            {" 25 tools · 6 resources · prompts"}
+            {" [i] Copy stdio setup"}
           </text>
         </box>
       </box>

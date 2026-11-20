@@ -304,7 +304,7 @@ export function executeRegistryCommand(store: Store, registryId: string, preferF
         void store.runHealthDoctorFix();
         return;
       case "trash-empty":
-        void store.runWorkspaceMaintenance("trash-empty");
+        store.trashEmptyConfirm();
         return;
       default:
         store.pushStatus("FAILED", `[${spec.path}]`, "action surface not wired yet");
@@ -565,7 +565,7 @@ export function executeOmnibarCommandById(store: Store, id: string): void {
       void store.runWorkspaceMaintenance("backup");
       return;
     case "trash-empty":
-      void store.runWorkspaceMaintenance("trash-empty");
+      store.trashEmptyConfirm();
       return;
     case "offline":
       void store.enterOfflineMode();

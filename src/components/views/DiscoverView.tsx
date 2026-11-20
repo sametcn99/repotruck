@@ -47,6 +47,18 @@ export function DiscoverView({
     snapshot.modal === null &&
     snapshot.contextMenu === null;
 
+  const copyCommand = () => {
+    const result = copyText("discover CLI", `repotruck discover ${state?.query ?? ""} --clone`);
+    store.pushStatus(result.ok ? "DONE" : "FAILED", "[discover]", result.message);
+  };
+  const cycleLimit = () => {
+    const limits = [10, 20, 50, 100, 200];
+    store.updateDiscoverPage({
+      limit: limits[(limits.indexOf(state?.limit ?? 20) + 1) % limits.length]!,
+    });
+  };
+  const toggleBlobless = () => store.updateDiscoverPage({ blobless: !state?.blobless });
+
   useKeyboard((key) => {
     const snap = store.getSnapshot();
     if (
@@ -104,11 +116,11 @@ export function DiscoverView({
     } else if (key.name === "c") {
       void store.discoverCloneSelected();
     } else if (key.name === "l") {
-      const limits = [10, 20, 50, 100, 200];
-      const currentIdx = limits.indexOf(state?.limit ?? 20);
-      store.updateDiscoverPage({ limit: limits[(currentIdx + 1) % limits.length]! });
+      cycleLimit();
     } else if (key.name === "b") {
-      store.updateDiscoverPage({ blobless: !(state?.blobless ?? false) });
+      toggleBlobless();
+    } else if (key.name === "y") {
+      copyCommand();
     }
   });
 
@@ -175,10 +187,26 @@ export function DiscoverView({
         </text>
       </box>
       <box flexDirection="row" flexWrap="wrap" gap={1} flexShrink={0}>
-        <text fg={theme.normal()} wrapMode="none" flexShrink={0}>
+        <text
+          fg={theme.normal()}
+          wrapMode="none"
+          flexShrink={0}
+          onMouseDown={(event) => {
+            event.stopPropagation();
+            cycleLimit();
+          }}
+        >
           {`[l] limit: ${state.limit}`}
         </text>
-        <text fg={state.blobless ? theme.accent() : theme.normal()} wrapMode="none" flexShrink={0}>
+        <text
+          fg={state.blobless ? theme.accent() : theme.normal()}
+          wrapMode="none"
+          flexShrink={0}
+          onMouseDown={(event) => {
+            event.stopPropagation();
+            toggleBlobless();
+          }}
+        >
           {`[b] blobless: ${state.blobless ? "on" : "off"}`}
         </text>
         <text
@@ -210,6 +238,17 @@ export function DiscoverView({
           }}
         >
           {`[c] clone selected (${state.selected.size})`}
+        </text>
+        <text
+          fg={theme.dim()}
+          wrapMode="none"
+          flexShrink={0}
+          onMouseDown={(event) => {
+            event.stopPropagation();
+            copyCommand();
+          }}
+        >
+          {"[y] Copy CLI"}
         </text>
       </box>
       <box
@@ -265,18 +304,11 @@ export function DiscoverView({
           );
         })}
       </box>
-      <text
-        fg={theme.dim()}
-        wrapMode="none"
-        flexShrink={0}
-        onMouseDown={(event) => {
-          event.stopPropagation();
-          const result = copyText("discover CLI", `repotruck discover ${state.query} --clone`);
-          store.pushStatus(result.ok ? "DONE" : "FAILED", "[discover]", result.message);
-        }}
-      >
+      <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
         {clampBoxLine(
-          "Enter edit · ↑↓/jk move · Space select · a all · c clone · s search · Esc cockpit",
+          editing
+            ? "Enter search query · Esc actions · F1 help"
+            : "Enter edit · ↑↓ results · Space select",
           width,
         )}
       </text>

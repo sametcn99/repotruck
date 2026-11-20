@@ -7,23 +7,22 @@ import { repoViewportRows, visibleSlice } from "./windowing.ts";
 interface MenuEntry {
   id: string;
   label: string;
-  keyHint: string;
   danger?: boolean;
 }
 
 const ENTRIES: readonly MenuEntry[] = [
-  { id: "detail", label: "Details", keyHint: "i" },
-  { id: "open", label: "Open in app…", keyHint: "o" },
-  { id: "sync", label: "Sync this repo", keyHint: "Enter" },
-  { id: "move", label: "Move to path…", keyHint: "m" },
-  { id: "alias", label: "Set alias…", keyHint: "r" },
-  { id: "pin", label: "Pin / unpin", keyHint: "P" },
-  { id: "worktree", label: "Worktrees…", keyHint: "W" },
-  { id: "resolve", label: "Resolve conflicts…", keyHint: "v x" },
-  { id: "archive", label: "Archive on GitHub", keyHint: "A" },
-  { id: "untrack", label: "Untrack (keep files)", keyHint: "u" },
-  { id: "delete", label: "Delete → trash", keyHint: "D", danger: true },
-  { id: "delete-permanent", label: "Delete permanently", keyHint: "del --yes", danger: true },
+  { id: "detail", label: "Details" },
+  { id: "open", label: "Open in app…" },
+  { id: "sync", label: "Sync this repo" },
+  { id: "move", label: "Move to path…" },
+  { id: "alias", label: "Set alias…" },
+  { id: "pin", label: "Pin / unpin" },
+  { id: "worktree", label: "Worktrees…" },
+  { id: "resolve", label: "Resolve conflicts…" },
+  { id: "archive", label: "Archive on GitHub" },
+  { id: "untrack", label: "Untrack (keep files)" },
+  { id: "delete", label: "Delete → trash", danger: true },
+  { id: "delete-permanent", label: "Delete permanently", danger: true },
 ];
 
 function clampMenuLine(raw: string, maxCols: number): string {
@@ -63,6 +62,10 @@ export function ContextMenu({
       setCursor((c) => (c - 1 + ENTRIES.length) % ENTRIES.length);
     } else if (key.name === "down" || key.sequence === "j") {
       setCursor((c) => (c + 1) % ENTRIES.length);
+    } else if (key.name === "home") {
+      setCursor(0);
+    } else if (key.name === "end") {
+      setCursor(ENTRIES.length - 1);
     } else if (key.name === "return" || key.name === "space") {
       const target = ENTRIES[bounded];
       if (target !== undefined) store.executeContextAction(target.id);
@@ -72,7 +75,6 @@ export function ContextMenu({
   if (!open || menu === null) return null;
 
   const innerCols = Math.max(16, width - 2);
-  const labelWidth = Math.max(12, Math.min(21, innerCols - 11));
   const bodyRows = Math.max(
     3,
     repoViewportRows(height, snapshot.updateToast !== null || snapshot.toast !== null) +
@@ -112,14 +114,7 @@ export function ContextMenu({
         const absIdx = start + idx;
         const isCursor = absIdx === bounded;
         const baseFg = entry.danger === true ? theme.error() : theme.normal();
-        const paddedLabel =
-          entry.label.length > labelWidth
-            ? entry.label.slice(0, labelWidth)
-            : entry.label.padEnd(labelWidth);
-        const line = clampMenuLine(
-          `${isCursor ? "> " : "  "}${paddedLabel} ${entry.keyHint}`,
-          innerCols,
-        );
+        const line = clampMenuLine(`${isCursor ? "> " : "  "}${entry.label}`, innerCols);
         return (
           <text
             key={entry.id}
@@ -139,7 +134,7 @@ export function ContextMenu({
       })}
       {showHint ? (
         <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
-          {clampMenuLine(" ↑↓/Enter or click · Esc closes", innerCols)}
+          {clampMenuLine(" ↑↓ select · Enter open · Esc close", innerCols)}
         </text>
       ) : null}
     </box>

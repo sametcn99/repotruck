@@ -3,9 +3,6 @@ import { useState, useSyncExternalStore } from "react";
 import type { Store } from "./store.ts";
 import { theme } from "./theme.ts";
 import {
-  contentWidth,
-  NAV_RAIL_WIDTH,
-  navRailVisible,
   repoKeyOf,
   repoRowLabel,
   repoViewportRows,
@@ -43,17 +40,16 @@ export function RepoList({
   const cursorBg = theme.cursorBg();
   const normalFg = theme.muted();
   const dimFg = theme.dim();
-  const pageWidth = contentWidth(width);
   const computedListWidth =
-    listWidthProp ?? Math.max(14, pageWidth - sidebarWidth(pageWidth) - statusWidth(pageWidth));
+    listWidthProp ?? Math.max(14, width - sidebarWidth(width) - statusWidth(width));
   const maxCols = Math.max(10, computedListWidth - 2);
-  const effectiveOffsetX =
-    offsetXProp ?? (navRailVisible(width) ? NAV_RAIL_WIDTH : 0) + sidebarWidth(pageWidth);
+  const effectiveOffsetX = offsetXProp ?? sidebarWidth(width);
 
   const extraTopRows = (isSearchOpen ? 2 : 0) + extraReservedRows;
   const viewportRows = Math.max(
     1,
-    repoViewportRows(height, snapshot.updateToast !== null) - extraTopRows,
+    repoViewportRows(height, snapshot.updateToast !== null || snapshot.toast !== null) -
+      extraTopRows,
   );
   const { start, end } = visibleSlice(snapshot.cursor, snapshot.filteredRepos.length, viewportRows);
   const slice = snapshot.filteredRepos.slice(start, end);

@@ -55,7 +55,7 @@ function assertUnreachable(value: never): null {
 }
 
 // Page body for a non-cockpit view. Implementing tickets replace the
-// placeholder with a real component; the registry drives rail, help and
+// placeholder with a real component; the registry drives menu, help and
 // palette entries so the shell stays consistent meanwhile.
 export function renderPage(
   view: ViewId,

@@ -9,15 +9,10 @@ import { activateTheme } from "../src/components/theme.ts";
 import {
   nextViewId,
   VIEW_GO_KEYS,
+  VIEW_MENU_GROUPS,
   VIEW_ORDER,
   VIEW_SPECS,
 } from "../src/components/views/viewRegistry.ts";
-import {
-  contentWidth,
-  NAV_RAIL_MIN_TERMINAL,
-  NAV_RAIL_WIDTH,
-  navRailVisible,
-} from "../src/components/windowing.ts";
 import type { RepoInfo } from "../src/services/github.ts";
 
 const tempDirs: string[] = [];
@@ -123,7 +118,7 @@ describe("t01 view layer — registry & windowing", () => {
     const ids = VIEW_SPECS.map((spec) => spec.id);
     expect(new Set(ids).size).toBe(VIEW_SPECS.length);
     expect(VIEW_ORDER).toContain("cockpit");
-    const letters = VIEW_SPECS.filter((s) => s.id !== "cockpit").map((s) => s.go);
+    const letters = VIEW_SPECS.map((s) => s.go);
     expect(new Set(letters).size).toBe(letters.length);
     for (const [letter, view] of VIEW_GO_KEYS) {
       expect(VIEW_ORDER).toContain(view);
@@ -139,11 +134,9 @@ describe("t01 view layer — registry & windowing", () => {
     expect(nextViewId("cockpit", 1)).not.toBe("cockpit");
   });
 
-  test("nav rail visibility and content width budget", () => {
-    expect(navRailVisible(NAV_RAIL_MIN_TERMINAL)).toBe(true);
-    expect(navRailVisible(NAV_RAIL_MIN_TERMINAL - 1)).toBe(false);
-    expect(contentWidth(200)).toBe(200 - NAV_RAIL_WIDTH);
-    expect(contentWidth(60)).toBe(60);
+  test("the top menu includes every view exactly once", () => {
+    const menuViews = VIEW_MENU_GROUPS.flatMap(({ views }) => views.map(({ id }) => id));
+    expect(menuViews.toSorted()).toEqual([...VIEW_ORDER].toSorted());
   });
 });
 
@@ -170,7 +163,7 @@ describe("t01 view layer — store actions", () => {
 });
 
 describe("t01 view layer — dashboard render", () => {
-  test("nav rail renders view titles and opens a placeholder page", async () => {
+  test("top bar displays groups and pages use the full content width", async () => {
     const root = makeWorkspace("rt-view-render-ws-");
     const store = makeStore(root, [makeRepo("acme", "api")]);
     const setup = await testRender(
@@ -184,8 +177,9 @@ describe("t01 view layer — dashboard render", () => {
     await settle(setup);
 
     let frame = norm(setup.captureCharFrame());
-    expect(frame).toContain("views");
-    expect(frame).toContain("Sync Center");
+    expect(frame).toContain("[F10] Views");
+    expect(frame).toContain("Workspace ▾");
+    expect(frame).toContain("System ▾");
     expect(frame).toContain("[ ] api");
 
     store.setView("settings");
@@ -243,96 +237,370 @@ describe("t01 view layer — dashboard render", () => {
     await setup.dispose();
   });
 
-  test("nav rail is focusable via Tab/Left, navigates via j/k/arrows, activates with Enter, and protects page inputs", async () => {
-    const root = makeWorkspace("rt-view-navrail-focus-");
+  test("the top menu opens with F10, navigates groups, and restores the text field on Escape", async () => {
+    const root = makeWorkspace("rt-view-menu-focus-");
     const store = makeStore(root, [makeRepo("acme", "api")]);
+    await store.ensureInit();
+    store.setView("discover");
     const setup = await testRender(
       <Dashboard store={store} onQuit={() => {}} onSuspendAndRun={async () => {}} />,
-      { width: 140, height: 40, exitOnCtrlC: false },
+      { width: 58, height: 18, exitOnCtrlC: false },
     );
-    for (let i = 0; i < 40 && store.getSnapshot().phase !== "ready"; i += 1) {
-      await new Promise((resolve) => setTimeout(resolve, 25));
+    try {
+      await settle(setup);
+      setup.mockInput.pressKey("F10");
+      await settle(setup);
+      expect(store.getSnapshot().navFocused).toBe(true);
+      expect(norm(setup.captureCharFrame())).toContain("Sync Center");
+      expect(norm(setup.captureCharFrame())).toContain("Enter Open");
+
+      setup.mockInput.pressKey("j");
+      await settle(setup);
+      expect(VIEW_ORDER[store.getSnapshot().navCursor]).toBe("scan");
+      expect(store.getSnapshot().discoverPage?.query).toBe("");
+
+      setup.mockInput.pressEscape();
+      await settle(setup);
+      expect(store.getSnapshot().view).toBe("discover");
+      expect(store.getSnapshot().navFocused).toBe(false);
+      for (const char of "repo:acme/api [test] #tag @me !fork ?") setup.mockInput.pressKey(char);
+      await settle(setup);
+      expect(store.getSnapshot().discoverPage?.query).toBe("repo:acme/api [test] #tag @me !fork ?");
+      expect(store.getSnapshot().modal).toBeNull();
+
+      setup.mockInput.pressKey("F1");
+      await settle(setup);
+      const help = norm(setup.captureCharFrame());
+      expect(help).toContain("Discover");
+      expect(help).toContain("Edit query");
+      setup.mockInput.pressEscape();
+      await settle(setup);
+      setup.mockInput.pressEscape();
+      await settle(setup);
+      expect(store.getSnapshot().view).toBe("discover");
+
+      setup.mockInput.pressKey("F10");
+      await settle(setup);
+      setup.mockInput.pressArrow("right");
+      await settle(setup);
+      expect(VIEW_ORDER[store.getSnapshot().navCursor]).toBe("status");
+      setup.mockInput.pressArrow("down");
+      await settle(setup);
+      setup.mockInput.pressEnter();
+      await settle(setup);
+      expect(store.getSnapshot().view).toBe("search");
+      expect(store.getSnapshot().navFocused).toBe(false);
+    } finally {
+      await setup.dispose();
     }
-    await settle(setup);
+  });
 
-    // Tab cycles cockpit panes -> navFocused: list -> status -> sidebar -> navFocused -> list
-    setup.mockInput.pressKey("\t");
-    await settle(setup);
-    expect(store.getSnapshot().focus).toBe("status");
-    expect(store.getSnapshot().navFocused).toBe(false);
+  test("Code Search filters and the Run Console profile field work without a mouse", async () => {
+    const store = makeStore(makeWorkspace("rt-view-actions-"));
+    await store.ensureInit();
+    store.setView("search");
+    const setup = await testRender(
+      <Dashboard store={store} onQuit={() => {}} onSuspendAndRun={async () => {}} />,
+      { width: 76, height: 26, exitOnCtrlC: false },
+    );
+    try {
+      await settle(setup);
+      setup.mockInput.pressEscape();
+      await settle(setup);
+      await setup.mockInput.pressKeys(["t", "l", "n"]);
+      await settle(setup);
+      expect(store.getSnapshot().codeSearchPage).toMatchObject({
+        kind: "function",
+        lang: "ts",
+        limit: 100,
+      });
+      expect(norm(setup.captureCharFrame())).toContain("[t] kind: function");
 
-    setup.mockInput.pressKey("\t");
-    await settle(setup);
-    expect(store.getSnapshot().focus).toBe("sidebar");
-    expect(store.getSnapshot().navFocused).toBe(false);
+      store.setView("run");
+      await settle(setup);
+      setup.mockInput.pressEscape();
+      await settle(setup);
+      setup.mockInput.pressKey("s");
+      await settle(setup);
+      setup.mockInput.pressKey("s");
+      await settle(setup);
+      expect(norm(setup.captureCharFrame())).toContain("[p] profile");
+      setup.mockInput.pressKey("p");
+      await settle(setup);
+      await setup.mockInput.typeText("core@work");
+      setup.mockInput.pressEnter();
+      await settle(setup);
+      expect(store.getSnapshot().runConsole).toMatchObject({
+        scope: "profile",
+        profile: "core@work",
+        running: false,
+      });
+    } finally {
+      await setup.dispose();
+    }
+  });
 
-    setup.mockInput.pressKey("\t");
-    await settle(setup);
-    expect(store.getSnapshot().navFocused).toBe(true);
-    const frame = norm(setup.captureCharFrame());
-    expect(frame).toContain("Enter opens");
+  test.each([
+    { width: 58, height: 18 },
+    { width: 120, height: 36 },
+  ])(
+    "every view opens and shows help using only keys ($width × $height)",
+    async ({ width, height }) => {
+      process.env.REPOTRUCK_CONFIG_DIR = tempDir("rt-keys-all-config-");
+      const store = makeStore(makeWorkspace("rt-keys-all-"), [makeRepo("acme", "api")]);
+      await store.ensureInit();
+      const setup = await testRender(
+        <Dashboard store={store} onQuit={() => {}} onSuspendAndRun={async () => {}} />,
+        { width, height, exitOnCtrlC: false },
+      );
+      try {
+        await settle(setup);
+        let previousGroup = 0;
+        for (const [groupIndex, group] of VIEW_MENU_GROUPS.entries()) {
+          for (const [index, view] of group.views.entries()) {
+            setup.mockInput.pressKey("F10");
+            await setup.flush();
+            for (let step = previousGroup; step < groupIndex; step++)
+              setup.mockInput.pressArrow("right");
+            setup.mockInput.pressKey("HOME");
+            for (let row = 0; row < index; row++) setup.mockInput.pressArrow("down");
+            setup.mockInput.pressEnter();
+            await settle(setup);
+            expect(store.getSnapshot().view).toBe(view.id);
+            expect(norm(setup.captureCharFrame())).toContain("[F1] Help");
+            setup.mockInput.pressKey("F1");
+            await settle(setup);
+            const frame = norm(setup.captureCharFrame());
+            expect(frame).toContain("Keyboard shortcuts");
+            expect(frame).toContain(view.id === "cockpit" ? "Navigation" : view.title);
+            setup.mockInput.pressEscape();
+            await settle(setup);
+            expect(store.getSnapshot().modal).toBeNull();
+            const visible = () => norm(setup.captureCharFrame());
+            const press = async (key: string) => {
+              setup.mockInput.pressKey(key);
+              await settle(setup);
+            };
+            switch (view.id) {
+              case "cockpit":
+                await press("TAB");
+                expect(store.getSnapshot().focus).toBe("status");
+                break;
+              case "sync": {
+                expect(visible()).toContain("[e] Start Sync");
+                const before = store.getSnapshot().syncCenter?.blobless;
+                await press("b");
+                expect(store.getSnapshot().syncCenter?.blobless).toBe(!before);
+                break;
+              }
+              case "discover":
+                await press(":");
+                expect(store.getSnapshot().discoverPage?.query).toBe(":");
+                break;
+              case "scan":
+                await press("a");
+                expect(store.getSnapshot().dialog?.title).toContain("Adopt");
+                setup.mockInput.pressEscape();
+                await settle(setup);
+                break;
+              case "status":
+                await press("f");
+                expect(visible()).toContain("[x] dirty");
+                break;
+              case "search":
+                setup.mockInput.pressEscape();
+                await settle(setup);
+                await press("t");
+                expect(store.getSnapshot().codeSearchPage?.kind).toBe("function");
+                break;
+              case "stats":
+                await press("TAB");
+                expect(visible()).toContain("Doctor checks");
+                await press("END");
+                break;
+              case "changelog":
+                await press("7");
+                expect(visible()).toContain("[7 · 7d]");
+                break;
+              case "run":
+                setup.mockInput.pressEscape();
+                await settle(setup);
+                await press("s");
+                expect(store.getSnapshot().runConsole?.scope).toBe("pinned");
+                break;
+              case "presets":
+                await press("a");
+                expect(visible()).toContain("Add custom preset");
+                break;
+              case "profiles":
+                await press("n");
+                expect(visible()).toContain("Enter save profile");
+                break;
+              case "trash":
+                await press("E");
+                expect(store.getSnapshot().dialog?.title).toBe("Empty trash");
+                setup.mockInput.pressEscape();
+                await settle(setup);
+                break;
+              case "worktree":
+                await press("s");
+                expect(visible()).toContain("[Enter] Manage worktrees");
+                break;
+              case "agents":
+                if (width < 64) await press("TAB");
+                await press("p");
+                expect(visible()).toContain("3100");
+                break;
+              case "settings":
+                if (width < 64) await press("TAB");
+                expect(visible()).toContain("[l] Login".slice(0, 3));
+                await press("r");
+                break;
+              case "resolve":
+                await press("TAB");
+                expect(visible()).toContain("Resolution output");
+                await press("END");
+                break;
+              case "log":
+                await press("END");
+                expect(visible()).toContain("[c] Clear");
+                break;
+            }
+            previousGroup = groupIndex;
+          }
+        }
+      } finally {
+        await setup.dispose();
+      }
+    },
+    20_000,
+  );
 
-    // Navigate nav rail with j / k / End / Home and open view with Enter
-    const startCursor = store.getSnapshot().navCursor;
-    setup.mockInput.pressKey("j");
-    await settle(setup);
-    expect(store.getSnapshot().navCursor).toBe((startCursor + 1) % VIEW_ORDER.length);
-    setup.mockInput.pressKey("k");
-    await settle(setup);
-    expect(store.getSnapshot().navCursor).toBe(startCursor);
+  test("all cockpit windows open with keys and return focus to the repo list", async () => {
+    process.env.REPOTRUCK_CONFIG_DIR = tempDir("rt-keyboard-modal-config-");
+    const root = makeWorkspace("rt-keyboard-modal-tour-");
+    writeFileSync(
+      path.join(root, "repotruck.json"),
+      JSON.stringify({
+        version: 1,
+        root,
+        preset: "categorized",
+        lastSync: null,
+        repos: [
+          {
+            owner: "acme",
+            name: "api",
+            relativePath: "acme/source/api",
+            category: "source",
+            internal: true,
+            language: "TypeScript",
+            updatedAt: null,
+          },
+        ],
+        aliases: {},
+      }),
+    );
+    const store = makeStore(root, [makeRepo("acme", "api")]);
+    await store.ensureInit();
+    store.startDeviceFlow = async () => store.openModal({ type: "deviceFlow" });
+    const setup = await testRender(
+      <Dashboard store={store} onQuit={() => {}} onSuspendAndRun={async () => {}} />,
+      { width: 100, height: 28, exitOnCtrlC: false },
+    );
+    const open = async (
+      key: string,
+      type: NonNullable<ReturnType<Store["getSnapshot"]>["modal"]>["type"],
+    ) => {
+      setup.mockInput.pressKey(key);
+      await settle(setup);
+      expect(store.getSnapshot().modal?.type).toBe(type);
+    };
+    const close = async () => {
+      setup.mockInput.pressEscape();
+      await settle(setup);
+      expect(store.getSnapshot().modal).toBeNull();
+    };
+    try {
+      await settle(setup);
+      for (const [key, type] of [
+        ["c", "clone"],
+        ["n", "create"],
+        ["d", "root"],
+        ["w", "workspaces"],
+        ["o", "open"],
+        ["r", "alias"],
+        ["m", "move"],
+        ["i", "detail"],
+        ["u", "confirmUntrack"],
+        ["D", "confirmDelete"],
+        ["A", "confirmArchive"],
+        ["R", "reorganize"],
+        ["W", "worktree"],
+        ["/", "search"],
+        ["F1", "help"],
+      ] as const) {
+        await open(key!, type!);
+        await close();
+      }
+      setup.mockInput.pressKey(" ");
+      await settle(setup);
+      await open("RETURN", "preview");
+      await close();
 
-    setup.mockInput.pressArrow("down");
-    await settle(setup);
-    const targetView = VIEW_ORDER[store.getSnapshot().navCursor]!;
-    setup.mockInput.pressEnter();
-    await settle(setup);
-    expect(store.getSnapshot().view).toBe(targetView);
-    expect(store.getSnapshot().navFocused).toBe(false);
+      setup.mockInput.pressArrow("right");
+      await settle(setup);
+      expect(store.getSnapshot().contextMenu).not.toBeNull();
+      setup.mockInput.pressKey("END");
+      await settle(setup);
+      expect(norm(setup.captureCharFrame())).toContain("Delete permanently");
+      await open("RETURN", "confirmPermanentDelete");
+      await close();
 
-    // Open a view with an active <input> (DiscoverView), press Tab to focus NavRail,
-    // verify j/k navigate NavRail rather than typing into the query input
-    store.setView("discover");
-    await settle(setup);
-    setup.mockInput.pressKey("\t");
-    await settle(setup);
-    expect(store.getSnapshot().navFocused).toBe(true);
+      await open(":", "omnibar");
+      await setup.mockInput.typeText("backup — Backups");
+      await settle(setup);
+      await open("RETURN", "commandForm");
+      setup.mockInput.pressEnter();
+      await settle(setup);
+      setup.mockInput.pressEscape();
+      await settle(setup);
+      expect(store.getSnapshot().modal?.type).toBe("commandForm");
+      await close();
 
-    const discoverIdx = VIEW_ORDER.indexOf("discover");
-    expect(store.getSnapshot().navCursor).toBe(discoverIdx);
-    setup.mockInput.pressKey("j");
-    await settle(setup);
-    expect(store.getSnapshot().navCursor).toBe((discoverIdx + 1) % VIEW_ORDER.length);
-    expect(store.getSnapshot().discoverPage?.query ?? "").toBe("");
+      await setup.mockInput.pressKeys(["v", "a"]);
+      await settle(setup);
+      expect(store.getSnapshot().view).toBe("settings");
+      await open("l", "deviceFlow");
+      await close();
+    } finally {
+      await setup.dispose();
+    }
+  }, 20_000);
 
-    // Escape from navFocused unfocuses rail without leaving current view
-    setup.mockInput.pressEscape();
-    await settle(setup);
-    expect(store.getSnapshot().navFocused).toBe(false);
-    expect(store.getSnapshot().view).toBe("discover");
-
-    // Tab again + Enter opens the highlighted view
-    setup.mockInput.pressKey("\t");
-    await settle(setup);
-    setup.mockInput.pressArrow("down");
-    await settle(setup);
-    const chosen = VIEW_ORDER[store.getSnapshot().navCursor]!;
-    setup.mockInput.pressKey(" ");
-    await settle(setup);
-    expect(store.getSnapshot().view).toBe(chosen);
-    expect(store.getSnapshot().navFocused).toBe(false);
-
-    // Left from sidebar focuses NavRail in cockpit
-    store.setView("cockpit");
-    store.setFocus("sidebar");
-    await settle(setup);
-    setup.mockInput.pressArrow("left");
-    await settle(setup);
-    expect(store.getSnapshot().navFocused).toBe(true);
-    setup.mockInput.pressArrow("right");
-    await settle(setup);
-    expect(store.getSnapshot().navFocused).toBe(false);
-
-    await setup.dispose();
+  test("clicking a group and a dropdown item opens that view", async () => {
+    const store = makeStore(makeWorkspace("rt-view-menu-mouse-"));
+    await store.ensureInit();
+    const setup = await testRender(
+      <Dashboard store={store} onQuit={() => {}} onSuspendAndRun={async () => {}} />,
+      { width: 120, height: 36, exitOnCtrlC: false },
+    );
+    try {
+      await settle(setup);
+      const click = async (label: string) => {
+        const rows = setup.captureCharFrame().split("\n");
+        const y = rows.findIndex((row) => row.includes(label));
+        expect(y).toBeGreaterThanOrEqual(0);
+        await setup.mockMouse.click(rows[y]!.indexOf(label), y);
+        await settle(setup);
+      };
+      await click("Organize ▾");
+      expect(store.getSnapshot().navFocused).toBe(true);
+      await click("Profiles");
+      expect(store.getSnapshot().view).toBe("profiles");
+      expect(store.getSnapshot().navFocused).toBe(false);
+    } finally {
+      await setup.dispose();
+    }
   });
 
   test("narrow and short terminal adapts cockpit to single-pane switcher and stacks views cleanly", async () => {

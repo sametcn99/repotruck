@@ -46,7 +46,7 @@ export function StartPreviewModal({ store }: { store: Store }) {
     <ModalShell
       store={store}
       title="Start preview"
-      hint="Enter Start · p Preset · Escape Cancel"
+      hint="↑↓ / PgUp / PgDn browse · Enter start · p preset"
       borderColor={accentColor}
       gap={0}
       onMouseScroll={(e) => {
@@ -89,7 +89,7 @@ export function StartPreviewModal({ store }: { store: Store }) {
             void store.confirmStartPreview();
           }}
         >
-          {"[ Start Sync ]"}
+          {"[Enter] Start Sync"}
         </text>
         <text
           fg={accentColor}
@@ -98,7 +98,7 @@ export function StartPreviewModal({ store }: { store: Store }) {
             void store.cyclePreset();
           }}
         >
-          {"[ Change Preset ]"}
+          {"[p] Change Preset"}
         </text>
         <text
           fg={dimFg}

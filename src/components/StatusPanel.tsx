@@ -1,10 +1,10 @@
-import { useTerminalDimensions } from "@opentui/react";
+import { useKeyboard, useTerminalDimensions } from "@opentui/react";
 import { useSyncExternalStore } from "react";
 import { formatDiffBar } from "../services/gitState.ts";
 import { formatDiskSize } from "../services/stats.ts";
 import type { RightPaneTab, Store, StoreSnapshot } from "./store.ts";
 import { theme } from "./theme.ts";
-import { repoViewportRows } from "./windowing.ts";
+import { repoViewportRows, scrollSlice } from "./windowing.ts";
 
 const TABS: readonly { id: RightPaneTab; label: string; shortLabel: string }[] = [
   { id: "activity", label: "[1]Activity", shortLabel: "[1]Act" },
@@ -37,13 +37,17 @@ function PanelLine({
   );
 }
 
+function activityHeaderRows(snapshot: StoreSnapshot, bodyRows: number): number {
+  return Math.min(snapshot.running ? 3 : 2, bodyRows - 1);
+}
+
 function renderActivityBody(snapshot: StoreSnapshot, maxCols: number, bodyRows: number) {
   const dimFg = theme.dim();
   const counts = { CLONING: 0, PULLING: 0, DONE: 0, FAILED: 0 };
   for (const status of snapshot.statuses) {
     counts[status.phase] += 1;
   }
-  const headerRows = snapshot.running ? 3 : 2;
+  const headerRows = activityHeaderRows(snapshot, bodyRows);
   const viewCap = Math.max(1, bodyRows - headerRows);
   const total = snapshot.statuses.length;
   const maxScroll = Math.max(0, total - viewCap);
@@ -65,11 +69,11 @@ function renderActivityBody(snapshot: StoreSnapshot, maxCols: number, bodyRows: 
 
   return (
     <>
-      {snapshot.running && bodyRows >= 2 ? (
+      {headerRows === 3 ? (
         <PanelLine text={`Progress: [${progressBar}]`} fg={theme.accent()} maxCols={maxCols} />
       ) : null}
-      <PanelLine text={countsText} fg={dimFg} maxCols={maxCols} />
-      {bodyRows >= 2 ? (
+      {headerRows >= 1 ? <PanelLine text={countsText} fg={dimFg} maxCols={maxCols} /> : null}
+      {headerRows >= 2 ? (
         <PanelLine text={`last sync: ${lastSync}${scrollHint}`} fg={dimFg} maxCols={maxCols} />
       ) : null}
       {bodyRows > headerRows
@@ -89,16 +93,16 @@ function renderActivityBody(snapshot: StoreSnapshot, maxCols: number, bodyRows: 
   );
 }
 
-function renderInspectorBody(snapshot: StoreSnapshot, maxCols: number, bodyRows: number) {
+type InspectorLine = { id: string; text: string; fg: string | undefined };
+
+function inspectorLines(snapshot: StoreSnapshot): InspectorLine[] {
   const dimFg = theme.dim();
   const insp = snapshot.inspector;
   if (insp === null) {
-    return (
-      <PanelLine text="highlight a repository to inspect Git state" fg={dimFg} maxCols={maxCols} />
-    );
+    return [{ id: "hint", text: "highlight a repository to inspect Git state", fg: dimFg }];
   }
   if (insp.loading) {
-    return <PanelLine text={`inspecting ${insp.key}\u2026`} fg={dimFg} maxCols={maxCols} />;
+    return [{ id: "loading", text: `inspecting ${insp.key}…`, fg: dimFg }];
   }
   const tags: string[] = [];
   if (insp.pinned) tags.push("\u2605 pinned");
@@ -106,7 +110,7 @@ function renderInspectorBody(snapshot: StoreSnapshot, maxCols: number, bodyRows:
   if (insp.worktree) tags.push("worktree");
   if (insp.missing) tags.push("missing");
 
-  const lines: Array<{ id: string; text: string; fg: string | undefined }> = [];
+  const lines: InspectorLine[] = [];
   if (!insp.tracked) {
     lines.push({ id: "key", text: insp.key, fg: theme.normal() });
     lines.push({
@@ -157,13 +161,12 @@ function renderInspectorBody(snapshot: StoreSnapshot, maxCols: number, bodyRows:
     }
   }
 
-  return (
-    <>
-      {lines.slice(0, Math.max(1, bodyRows)).map((row) => (
-        <PanelLine key={row.id} text={row.text} fg={row.fg} maxCols={maxCols} />
-      ))}
-    </>
-  );
+  return lines;
+}
+
+function healthSummaryRows(snapshot: StoreSnapshot, bodyRows: number): number {
+  if (snapshot.healthData?.stats == null || bodyRows < 5) return 0;
+  return bodyRows >= 9 ? 3 : 2;
 }
 
 function renderHealthBody(
@@ -179,7 +182,8 @@ function renderHealthBody(
   }
   const stats = health.stats;
   const summaryLines: Array<{ id: string; text: string; fg: string | undefined }> = [];
-  if (stats !== null && bodyRows >= 5) {
+  const summaryRows = healthSummaryRows(snapshot, bodyRows);
+  if (stats !== null && summaryRows > 0) {
     summaryLines.push({
       id: "disk",
       text: `disk: ${stats.disk.repoCount} repos \u00b7 ${formatDiskSize(stats.disk.totalSizeBytes)}`,
@@ -190,7 +194,7 @@ function renderHealthBody(
       text: `stale (>=180d): ${stats.stale.totalStale} \u00b7 trash: ${health.trashCount} (${formatDiskSize(health.trashBytes)})`,
       fg: dimFg,
     });
-    if (bodyRows >= 7) {
+    if (summaryRows >= 3) {
       summaryLines.push({
         id: "langs",
         text: `top langs: ${
@@ -204,7 +208,7 @@ function renderHealthBody(
     }
   }
 
-  const checkBudget = Math.max(1, bodyRows - summaryLines.length - 1);
+  const checkBudget = Math.max(1, bodyRows - summaryRows - 1);
   const totalChecks = health.checks.length;
   const maxScroll = Math.max(0, totalChecks - checkBudget);
   const scroll = Math.min(snapshot.statusScroll, maxScroll);
@@ -265,11 +269,44 @@ export function StatusPanel({
   const maxCols = Math.max(8, width - 2);
   const bodyRows = Math.max(
     1,
-    repoViewportRows(height, snapshot.updateToast !== null) - extraReservedRows,
+    repoViewportRows(height, snapshot.updateToast !== null || snapshot.toast !== null) -
+      extraReservedRows,
   );
   const compactTabs = maxCols < 34;
   const padActive = maxCols >= 36 || compactTabs;
   const focused = snapshot.focus === "status" && !snapshot.navFocused;
+
+  const tab = snapshot.rightPaneTab;
+  const inspector = tab === "inspector" ? inspectorLines(snapshot) : [];
+  const limit = Math.max(
+    0,
+    tab === "health"
+      ? (snapshot.healthData?.checks.length ?? 0) -
+          Math.max(1, bodyRows - healthSummaryRows(snapshot, bodyRows) - 1)
+      : tab === "activity"
+        ? snapshot.statuses.length - (bodyRows - activityHeaderRows(snapshot, bodyRows))
+        : inspector.length - bodyRows,
+  );
+  const window = scrollSlice(snapshot.statusScroll, inspector.length, bodyRows);
+  const scroll = (rows: number) => store.moveStatusScroll(tab === "activity" ? -rows : rows, limit);
+
+  useKeyboard((key) => {
+    const current = store.getSnapshot();
+    if (
+      !focused ||
+      current.view !== "cockpit" ||
+      current.modal !== null ||
+      current.dialog !== null ||
+      current.contextMenu !== null
+    )
+      return;
+    if (key.name === "up" || key.sequence === "k") scroll(-1);
+    else if (key.name === "down" || key.sequence === "j") scroll(1);
+    else if (key.name === "pageup") scroll(-bodyRows);
+    else if (key.name === "pagedown") scroll(bodyRows);
+    else if (key.name === "home") scroll(-limit);
+    else if (key.name === "end") scroll(limit);
+  });
 
   return (
     <box
@@ -286,8 +323,7 @@ export function StatusPanel({
         e.stopPropagation();
         store.setFocus("status");
         const isUp = e.scroll?.direction === "up" || e.button === 4;
-        const delta = snapshot.rightPaneTab === "health" ? (isUp ? -1 : 1) : isUp ? 3 : -3;
-        store.moveStatusScroll(delta);
+        scroll(isUp ? -3 : 3);
       }}
     >
       <box flexDirection="row" gap={1} height={1} flexShrink={0}>
@@ -303,6 +339,7 @@ export function StatusPanel({
               bg={active ? theme.cursorBg() : undefined}
               onMouseDown={(e) => {
                 e.stopPropagation();
+                store.setFocus("status");
                 store.setRightPaneTab(tab.id);
               }}
             >
@@ -314,7 +351,11 @@ export function StatusPanel({
       {snapshot.rightPaneTab === "activity"
         ? renderActivityBody(snapshot, maxCols, bodyRows)
         : snapshot.rightPaneTab === "inspector"
-          ? renderInspectorBody(snapshot, maxCols, bodyRows)
+          ? inspector
+              .slice(window.start, window.end)
+              .map((row) => (
+                <PanelLine key={row.id} text={row.text} fg={row.fg} maxCols={maxCols} />
+              ))
           : renderHealthBody(snapshot, store, maxCols, bodyRows)}
     </box>
   );

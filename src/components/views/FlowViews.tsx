@@ -111,7 +111,7 @@ export function ChangelogView({
             void store.generateChangelog({ since: "7 days ago" });
           }}
         >
-          {"[7d]"}
+          {"[7 · 7d]"}
         </text>
         <text
           fg={theme.accent()}
@@ -230,6 +230,19 @@ export function ScanAdoptView({
     snapshot.modal === null &&
     snapshot.contextMenu === null;
 
+  const confirmAdopt = () => {
+    store.confirmDialog(
+      {
+        title: "Adopt unregistered repos",
+        message: "Move unregistered repositories into the preset layout? (scan --move)",
+        confirmLabel: "Adopt",
+      },
+      () => {
+        void store.scanAndAdopt(true);
+      },
+    );
+  };
+
   useKeyboard((key) => {
     const snap = store.getSnapshot();
     if (
@@ -243,7 +256,7 @@ export function ScanAdoptView({
     if (key.name === "s") {
       void store.scanAndAdopt(false);
     } else if (key.name === "a") {
-      void store.scanAndAdopt(true);
+      confirmAdopt();
     } else if (key.name === "p") {
       store.pruneWorkspaceConfirm();
     } else if (key.name === "up" || key.sequence === "k") {
@@ -295,16 +308,7 @@ export function ScanAdoptView({
           flexShrink={0}
           onMouseDown={(event) => {
             event.stopPropagation();
-            store.confirmDialog(
-              {
-                title: "Adopt unregistered repos",
-                message: "Move unregistered repositories into the preset layout? (scan --move)",
-                confirmLabel: "Adopt",
-              },
-              () => {
-                void store.scanAndAdopt(true);
-              },
-            );
+            confirmAdopt();
           }}
         >
           {"[a] adopt (--move)"}
@@ -404,6 +408,11 @@ export function WorktreesView({
     snapshot.modal === null &&
     snapshot.contextMenu === null;
 
+  const openSelected = () => {
+    const row = rows[clampedCursor];
+    if (row !== undefined) void store.openWorktreeModal(row.repo);
+  };
+
   useKeyboard((key) => {
     const snap = store.getSnapshot();
     if (
@@ -416,6 +425,8 @@ export function WorktreesView({
     }
     if (key.name === "s") {
       void store.scanWorkspaceWorktrees();
+    } else if (key.name === "return") {
+      openSelected();
     } else if (key.name === "up" || key.sequence === "k") {
       setCursor((c) => Math.max(0, Math.min(c, maxCursor) - 1));
     } else if (key.name === "down" || key.sequence === "j") {
@@ -485,24 +496,32 @@ export function WorktreesView({
             const isCursor = focused && idx === clampedCursor;
             return (
               <text
-                key={row}
+                key={row.path}
                 fg={isCursor ? theme.cursorFg() : theme.normal()}
                 bg={isCursor ? theme.cursorBg() : undefined}
                 wrapMode="none"
                 flexShrink={0}
                 onMouseDown={() => setCursor(idx)}
               >
-                {clampBoxLine(`${isCursor ? ">" : " "}⑂ ${row}`, boxInnerCols)}
+                {clampBoxLine(
+                  `${isCursor ? ">" : " "}⑂ ${row.repo} · ${row.branch ?? "detached"} · ${row.path}`,
+                  boxInnerCols,
+                )}
               </text>
             );
           })
         )}
       </box>
-      <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
-        {clampBoxLine(
-          "↑↓/jk move · s scan · per-repo create/remove lives in W modal · Esc cockpit",
-          effectiveWidth,
-        )}
+      <text
+        fg={theme.accent()}
+        wrapMode="none"
+        flexShrink={0}
+        onMouseDown={(event) => {
+          event.stopPropagation();
+          if (event.button === 0) openSelected();
+        }}
+      >
+        {"↑↓ select · [Enter] Manage worktrees"}
       </text>
     </box>
   );

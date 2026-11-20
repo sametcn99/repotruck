@@ -251,7 +251,7 @@ describe("dashboard render smoke", () => {
       await settle(setup);
       frame = norm(setup.captureCharFrame());
       expect(frame).toContain("Keyboard shortcuts");
-      expect(frame).toContain("[Tab] Focus");
+      expect(frame).toContain("[Esc] Close");
       setup.mockInput.pressEscape();
       await settle(setup);
 
@@ -558,12 +558,14 @@ describe("dashboard render smoke", () => {
         ).processSingleMouseEvent(event);
       };
 
-      // Click footer [?] Help at x=40, y=38
+      const rows = setup.captureCharFrame().split("\n");
+      const helpY = rows.findIndex((row) => row.includes("[F1] Help"));
+      expect(helpY).toBeGreaterThanOrEqual(0);
       emitMouse({
         type: "down",
         button: 0,
-        x: 40,
-        y: 38,
+        x: rows[helpY]!.indexOf("[F1] Help"),
+        y: helpY,
         modifiers: { shift: false, alt: false, ctrl: false },
       });
       await settle(setup);
@@ -589,7 +591,7 @@ describe("dashboard render smoke", () => {
         type: "down",
         button: 0,
         x: 60,
-        y: 5,
+        y: 6,
         modifiers: { shift: false, alt: false, ctrl: false },
       });
       await settle(setup);
@@ -601,7 +603,7 @@ describe("dashboard render smoke", () => {
         type: "down",
         button: 0,
         x: 28,
-        y: 5,
+        y: 6,
         modifiers: { shift: false, alt: false, ctrl: false },
       });
       await settle(setup);

@@ -144,7 +144,7 @@ export class StoreBase {
 
   // ---- background task model ---------------------------------------------
   // Generic long-running work (MCP server, command runs) tracked beside
-  // the sync-specific `running` flag so the nav rail dot reflects both.
+  // the sync-specific `running` flag so the dashboard reflects both.
 
   protected activeTasks = new Map<string, { label: string; cancel?: () => void }>();
 
@@ -192,38 +192,16 @@ export class StoreBase {
     }
   };
 
-  moveNavCursor = (delta: number): void => {
-    const total = VIEW_ORDER.length;
-    if (total === 0) return;
-    const next = (this.state.navCursor + delta + total) % total;
-    this.set({ navCursor: next });
-  };
-
   setNavCursor = (index: number): void => {
     const total = VIEW_ORDER.length;
     if (total === 0) return;
     this.set({ navCursor: Math.min(Math.max(0, index), total - 1) });
   };
 
-  cycleFocus = (includeNav = false): void => {
-    if (this.state.view !== "cockpit") {
-      if (includeNav) {
-        this.setNavFocused(!this.state.navFocused);
-      }
-      return;
-    }
-    if (includeNav) {
-      if (this.state.navFocused) {
-        this.set({ navFocused: false, focus: "list" });
-        return;
-      }
-      if (this.state.focus === "sidebar") {
-        this.setNavFocused(true);
-        return;
-      }
-    }
+  cycleFocus = (direction: 1 | -1 = 1): void => {
+    if (this.state.view !== "cockpit") return;
     const index = FOCUS_ORDER.indexOf(this.state.focus);
-    this.set({ focus: FOCUS_ORDER[(index + 1) % FOCUS_ORDER.length]!, navFocused: false });
+    this.setFocus(FOCUS_ORDER[(index + direction + FOCUS_ORDER.length) % FOCUS_ORDER.length]!);
   };
 
   pushStatus = (phase: StatusPhase, key: string, message?: string): void => {
@@ -447,11 +425,6 @@ export class StoreBase {
   init = async (): Promise<void> => {
     this.initialized = true;
     this.set({ phase: "loading", errorMessage: null, offline: false });
-    try {
-      this.dismissedVersionValue = (await this.deps.readUpdateStateFn()).dismissedVersion;
-    } catch {
-      this.dismissedVersionValue = null;
-    }
     void this.runStartupUpdateCheck();
     if (process.env.REPOTRUCK_OFFLINE === "1") {
       await this.enterOfflineMode();

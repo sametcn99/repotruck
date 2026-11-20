@@ -30,7 +30,7 @@ interface ResultRow {
 
 export function OmnibarModal({ store }: { store: Store }) {
   const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot);
-  const { height } = useTerminalDimensions();
+  const { height, width } = useTerminalDimensions();
   const modal = snapshot.modal;
   const mode: OmnibarMode = modal?.type === "omnibar" ? modal.mode : "commands";
   const query = modal?.type === "omnibar" ? modal.query : "";
@@ -89,7 +89,7 @@ export function OmnibarModal({ store }: { store: Store }) {
   useKeyboard((key) => {
     if (key.name === "tab") {
       setCursor(0);
-      store.cycleOmnibarTab();
+      store.cycleOmnibarTab(key.shift ? -1 : 1);
       return;
     }
     if (total === 0) return;
@@ -121,7 +121,9 @@ export function OmnibarModal({ store }: { store: Store }) {
       store={store}
       title="Omnibar"
       hint={
-        "Tab switches mode \u00b7 Up/Down/PgUp/PgDn/Wheel browse \u00b7 Enter executes \u00b7 Escape closes"
+        mode === "runner"
+          ? "Tab mode · Enter run · Esc close"
+          : `Tab mode · ↑↓ browse · Enter ${mode === "github" ? "clone" : "open"}`
       }
       borderColor={accentFg}
       gap={0}
@@ -136,7 +138,7 @@ export function OmnibarModal({ store }: { store: Store }) {
       }}
     >
       <box flexDirection="row" gap={2} flexShrink={0}>
-        {OMNIBAR_MODES.map((m) => (
+        {(width < 80 ? [mode] : OMNIBAR_MODES).map((m) => (
           <text
             key={m}
             wrapMode="none"

@@ -91,6 +91,15 @@ export function CodeSearchView({
     snapshot.modal === null &&
     snapshot.contextMenu === null;
 
+  const search = () => {
+    setEditing(false);
+    setCursor(0);
+    void store.runCodeSearchPage();
+  };
+  const cycleKind = () => store.updateCodeSearchForm({ kind: nextKind(page?.kind ?? "") });
+  const cycleLang = () => store.updateCodeSearchForm({ lang: nextLang(page?.lang ?? "") });
+  const cycleLimit = () => store.updateCodeSearchForm({ limit: nextLimit(page?.limit ?? 50) });
+
   useKeyboard((key) => {
     const snap = store.getSnapshot();
     if (
@@ -107,6 +116,14 @@ export function CodeSearchView({
     }
     if (key.name === "return" || key.sequence === "e") {
       setEditing(true);
+    } else if (key.name === "s") {
+      search();
+    } else if (key.name === "t") {
+      cycleKind();
+    } else if (key.name === "l") {
+      cycleLang();
+    } else if (key.name === "n") {
+      cycleLimit();
     } else if (key.name === "up" || key.sequence === "k") {
       setCursor((c) => Math.max(0, Math.min(c, maxCursor) - 1));
     } else if (key.name === "down" || key.sequence === "j") {
@@ -166,11 +183,7 @@ export function CodeSearchView({
             focused={inputFocused}
             value={page?.pattern ?? ""}
             onInput={(value) => store.updateCodeSearchForm({ pattern: value })}
-            onSubmit={() => {
-              setEditing(false);
-              setCursor(0);
-              void store.runCodeSearchPage();
-            }}
+            onSubmit={search}
             width={Math.max(12, Math.min(36, inner - 14))}
           />
         ) : (
@@ -216,12 +229,10 @@ export function CodeSearchView({
           flexShrink={0}
           onMouseDown={(event) => {
             event.stopPropagation?.();
-            setEditing(false);
-            setCursor(0);
-            void store.runCodeSearchPage();
+            search();
           }}
         >
-          {"[Enter] search"}
+          {editing ? "[Enter] search" : "[s] search"}
         </text>
         <text
           fg={theme.dim()}
@@ -242,10 +253,10 @@ export function CodeSearchView({
           flexShrink={0}
           onMouseDown={(event) => {
             event.stopPropagation?.();
-            store.updateCodeSearchForm({ kind: nextKind(page?.kind ?? "") });
+            cycleKind();
           }}
         >
-          {`kind: ${page?.kind || "any"}`}
+          {`[t] kind: ${page?.kind || "any"}`}
         </text>
         <text
           fg={theme.normal()}
@@ -253,10 +264,10 @@ export function CodeSearchView({
           flexShrink={0}
           onMouseDown={(event) => {
             event.stopPropagation?.();
-            store.updateCodeSearchForm({ lang: nextLang(page?.lang ?? "") });
+            cycleLang();
           }}
         >
-          {`lang: ${page?.lang || "any"}`}
+          {`[l] lang: ${page?.lang || "any"}`}
         </text>
         <text
           fg={theme.normal()}
@@ -264,10 +275,10 @@ export function CodeSearchView({
           flexShrink={0}
           onMouseDown={(event) => {
             event.stopPropagation?.();
-            store.updateCodeSearchForm({ limit: nextLimit(page?.limit ?? 50) });
+            cycleLimit();
           }}
         >
-          {`limit: ${page?.limit ?? 50}`}
+          {`[n] limit: ${page?.limit ?? 50}`}
         </text>
         <text
           fg={theme.dim()}
@@ -334,7 +345,9 @@ export function CodeSearchView({
       </box>
       <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
         {clampBoxLine(
-          "Enter edit pattern · ↑↓/jk move · Space detail · m mode · o offline · r rebuild · J JSON · Esc cockpit",
+          editing
+            ? "Enter search pattern · Esc actions · F1 help"
+            : "Enter edit · ↑↓ results · Space detail",
           width,
         )}
       </text>

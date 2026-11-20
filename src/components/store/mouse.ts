@@ -3,6 +3,7 @@ import {
   FOOTER_ROWS,
   HEADER_ROWS,
   repoViewportRows,
+  TOAST_BAND_MIN_HEIGHT,
   TOAST_RESERVED_ROWS,
   visibleSlice,
 } from "../windowing.ts";
@@ -129,7 +130,7 @@ export function routeMouseEvent(
     return;
   }
 
-  if (state.updateToast !== null || state.toast !== null) {
+  if (height >= TOAST_BAND_MIN_HEIGHT && (state.updateToast !== null || state.toast !== null)) {
     const toastTop = height - FOOTER_ROWS - TOAST_RESERVED_ROWS;
     if (event.y >= toastTop && event.y < toastTop + TOAST_RESERVED_ROWS) {
       host.dismissToast();

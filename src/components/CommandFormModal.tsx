@@ -1,5 +1,6 @@
-import { useTerminalDimensions } from "@opentui/react";
-import { useSyncExternalStore } from "react";
+import { InputRenderable } from "@opentui/core";
+import { useKeyboard, useRenderer, useTerminalDimensions } from "@opentui/react";
+import { useState, useSyncExternalStore } from "react";
 import { type CommandSpec, REGISTRY_BY_ID } from "../commands/registry.ts";
 import { ModalShell } from "./ModalShell.tsx";
 import { executeRegistryCommand } from "./store/modalWorkflows.ts";
@@ -14,152 +15,136 @@ import {
 import { copyText } from "./ui/JsonCopy.ts";
 import { clampBoxLine } from "./windowing.ts";
 
-type Executor = (
-  store: Store,
-  values: FieldValues,
-  positional: readonly string[],
-) => Promise<string>;
-
-/**
- * Wired command executors: run the real service through the store. Every
- * other command runs with its page ticket (t05–t18); Run reports the exact
- * CLI equivalent until then.
- */
-const EXECUTORS: Record<string, Executor> = {
-  scan: async (store) => {
-    await store.runWorkspaceMaintenance("scan");
-    return "scan complete";
-  },
-  backup: async (store) => {
-    await store.runWorkspaceMaintenance("backup");
-    return "snapshot written";
-  },
-  trash: async (store) => {
-    await store.runWorkspaceMaintenance("trash-empty");
-    return "trash emptied";
-  },
-};
-
-/**
- * Auto-generated command form: registry flag schema → fields, with the
- * equivalent CLI command line built live at the bottom. Run executes wired
- * commands through their services; every entry also keeps its direct
- * surface (page / modal / action) one button away.
- */
 export function CommandFormModal({ store }: { store: Store }) {
-  const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot);
+  const modal = useSyncExternalStore(store.subscribe, store.getSnapshot).modal;
+  const spec = modal?.type === "commandForm" ? REGISTRY_BY_ID.get(modal.specId) : undefined;
+  return spec === undefined ? null : <CommandForm key={spec.id} store={store} spec={spec} />;
+}
+
+function CommandForm({ store, spec }: { store: Store; spec: CommandSpec }) {
+  const renderer = useRenderer();
   const { width, height } = useTerminalDimensions();
-  const modal = snapshot.modal;
-  if (modal === null || modal.type !== "commandForm") return null;
-  const spec = REGISTRY_BY_ID.get(modal.specId);
-  if (spec === undefined) return null;
+  const [actionIndex, setActionIndex] = useState<number | null>(null);
+  const [, refresh] = useState(0);
+  const { values, positional } = stateFor(store, spec);
+  const args = spec.args.map((arg) => ({
+    flag: arg.required ? `${arg.name}*` : arg.name,
+    type: "string" as const,
+    summary: arg.summary,
+    tui: arg.summary,
+  }));
+  const fields = [...args, ...spec.flags];
+  const fieldValues = { ...values };
+  args.forEach((arg, index) => {
+    fieldValues[arg.flag] = positional[index] ?? "";
+  });
+  const cli = buildCliArguments(
+    `repotruck ${spec.path}`,
+    spec.flags,
+    values,
+    positional.filter(Boolean),
+  );
+  const formWidth = Math.max(16, width - 6);
+  // Reserve space for the title, hint, summary, CLI preview, actions and one inline editor.
+  const maxFlagRows = Math.max(1, height - (height < 22 || width < 64 ? 19 : 21));
+  const [copied, setCopied] = useState<string | null>(null);
+  const actions: { label: string; run: () => void }[] = [];
+  if (spec.id === "scan" || spec.id === "backup") {
+    actions.push({
+      label: spec.id === "scan" ? "Run" : "Snapshot",
+      run: () => {
+        store.closeModal();
+        void store.runWorkspaceMaintenance(spec.id === "scan" ? "scan" : "backup");
+      },
+    });
+  }
+  actions.push({
+    label: "Copy CLI",
+    run: () => {
+      const result = copyText("command", cli);
+      store.setModalError(result.ok ? null : result.message);
+      if (result.ok) setCopied(result.message);
+    },
+  });
+  if (spec.surface.kind === "view" || spec.surface.kind === "modal") {
+    actions.push({
+      label: spec.surface.kind === "view" ? "Open page" : "Open",
+      run: () => executeRegistryCommand(store, spec.id, false),
+    });
+  }
+  actions.push({ label: "Close", run: store.closeModal });
 
-  const defaultValues = defaultFieldValues(spec.flags);
-  const values: FieldValues = specFormValues(store, spec, defaultValues);
-  const positional = specPositionalValues(store, spec);
-
-  const cli = buildCliArguments(`repotruck ${spec.path}`, spec.flags, values, positional);
-  const formWidth = Math.max(24, width - 6);
-  const cliBoxInnerCols = Math.max(12, formWidth - 3);
-  const argRows = spec.args.length > 0 ? spec.args.length + 1 : 0;
-  const maxFlagRows = Math.max(2, height - 18 - argRows);
+  const focus = actionIndex ?? (fields.length === 0 ? 0 : null);
+  useKeyboard((key) => {
+    if (store.getSnapshot().modal?.type !== "commandForm") return;
+    if (renderer.currentFocusedRenderable instanceof InputRenderable) return;
+    if (key.name === "tab") {
+      key.stopPropagation();
+      const zones = fields.length === 0 ? actions.length : actions.length + 1;
+      const next = ((focus ?? actions.length) + (key.shift ? -1 : 1) + zones) % zones;
+      setActionIndex(next === actions.length ? null : next);
+    } else if (focus !== null && (key.name === "left" || key.name === "right")) {
+      setActionIndex((focus + (key.name === "left" ? -1 : 1) + actions.length) % actions.length);
+    } else if (focus !== null && (key.name === "return" || key.name === "space")) {
+      key.stopPropagation();
+      actions[focus]?.run();
+    }
+  });
 
   return (
     <ModalShell
       store={store}
       title={`${spec.path} — ${spec.title}`}
-      hint="Ctrl-free: buttons below · Esc closes"
+      hint="Tab focus · ↑↓ fields · Enter choose · Esc back"
+      gap={0}
+      status={copied === null ? null : clampBoxLine(copied, formWidth)}
     >
       <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
         {clampBoxLine(spec.summary, formWidth)}
       </text>
-      {spec.args.length > 0 ? (
-        <box flexDirection="column" flexShrink={0}>
-          {spec.args.map((arg: CommandSpec["args"][number]) => (
-            <text key={arg.name} fg={theme.normal()} wrapMode="none" flexShrink={0}>
-              {clampBoxLine(formatArgLine(arg, positional), formWidth)}
-            </text>
-          ))}
-          <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
-            {"arg editing arrives with the arg inputs (page tickets)"}
-          </text>
-        </box>
-      ) : null}
-      {spec.flags.length > 0 ? (
+      {fields.length > 0 ? (
         <FieldGroup
-          flags={spec.flags}
-          values={values}
-          onChange={(flag, value) => setFormValue(store, spec, flag, value)}
+          flags={fields}
+          values={fieldValues}
+          active={focus === null}
+          onFocus={() => setActionIndex(null)}
+          onChange={(field, value) => {
+            const arg = args.findIndex((entry) => entry.flag === field);
+            if (arg < 0) values[field] = value;
+            else positional[arg] = String(value);
+            setCopied(null);
+            store.setModalError(null);
+            refresh((revision) => revision + 1);
+          }}
           width={formWidth}
           maxRows={maxFlagRows}
         />
-      ) : (
-        <text fg={theme.dim()} flexShrink={0}>
-          {"no flags"}
-        </text>
-      )}
-      <box
-        border
-        borderColor={theme.border()}
-        padding={0}
-        overflow="hidden"
-        flexShrink={0}
-        width="100%"
-      >
-        <text fg={theme.accent()} wrapMode="none" flexShrink={0}>
-          {clampBoxLine(` $ ${cli}`, cliBoxInnerCols)}
-        </text>
-      </box>
-      <box flexDirection="row" flexWrap="wrap" gap={2} flexShrink={0}>
-        <text
-          fg={theme.accent()}
-          flexShrink={0}
-          onMouseDown={(event) => {
-            event.stopPropagation?.();
-            void runCommand(store, spec, values, positional);
-          }}
-        >
-          {"[ Run ]"}
-        </text>
-        <text
-          fg={theme.normal()}
-          flexShrink={0}
-          onMouseDown={(event) => {
-            event.stopPropagation?.();
-            const result = copyText("command", cli);
-            store.pushStatus(result.ok ? "DONE" : "FAILED", `[${spec.path}]`, result.message);
-          }}
-        >
-          {"[ Copy ]"}
-        </text>
-        {spec.surface.kind === "view" || spec.surface.kind === "modal" ? (
+      ) : null}
+      <text fg={theme.accent()} wrapMode="none" flexShrink={0}>
+        {clampBoxLine(` $ ${cli}`, formWidth)}
+      </text>
+      <box flexDirection="row" flexWrap="wrap" gap={1} flexShrink={0}>
+        {actions.map(({ label, run }, index) => (
           <text
-            fg={theme.normal()}
+            key={label}
+            fg={focus === index ? theme.cursorFg() : theme.normal()}
+            bg={focus === index ? theme.cursorBg() : undefined}
+            wrapMode="none"
             flexShrink={0}
             onMouseDown={(event) => {
-              event.stopPropagation?.();
-              executeRegistryCommand(store, spec.id, false);
+              event.stopPropagation();
+              if (event.button === 0) run();
             }}
           >
-            {spec.surface.kind === "view" ? "[ Open page ]" : "[ Open ]"}
+            {`[${label}]${focus === index ? " Enter" : ""}`}
           </text>
-        ) : null}
-        <text
-          fg={theme.dim()}
-          flexShrink={0}
-          onMouseDown={(event) => {
-            event.stopPropagation?.();
-            store.closeModal();
-          }}
-        >
-          {"[ Cancel ]"}
-        </text>
+        ))}
       </box>
-      <text
-        fg={theme.dim()}
-        wrapMode="none"
-        flexShrink={0}
-      >{`requires: ${spec.requires.join(", ") || "nothing"}`}</text>
+      {height >= 24 ? (
+        <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
+          {`requires: ${spec.requires.join(", ") || "nothing"}`}
+        </text>
+      ) : null}
     </ModalShell>
   );
 }
@@ -178,75 +163,9 @@ function stateFor(store: Store, spec: CommandSpec): { values: FieldValues; posit
   if (entry === undefined) {
     entry = {
       values: defaultFieldValues(spec.flags),
-      positional: spec.args.map((arg: CommandSpec["args"][number]) => (arg.required ? "" : "")),
+      positional: spec.args.map(() => ""),
     };
     byStore.set(spec.id, entry);
   }
   return entry;
-}
-
-function specFormValues(store: Store, spec: CommandSpec, fallback: FieldValues): FieldValues {
-  return { ...fallback, ...stateFor(store, spec).values };
-}
-
-function specPositionalValues(store: Store, spec: CommandSpec): string[] {
-  return stateFor(store, spec).positional;
-}
-
-function setFormValue(
-  store: Store,
-  spec: CommandSpec,
-  flag: string,
-  value: boolean | string,
-): void {
-  stateFor(store, spec).values[flag] = value;
-  // force a re-render through the store without touching real state
-  store.setModal({ type: "commandForm", specId: spec.id });
-}
-
-async function runCommand(
-  store: Store,
-  spec: CommandSpec,
-  values: FieldValues,
-  positional: readonly string[],
-): Promise<void> {
-  const cli = buildCliArguments(`repotruck ${spec.path}`, spec.flags, values, positional);
-  const executor = EXECUTORS[executorKey(spec)];
-  if (executor === undefined) {
-    const ticket = spec.surface.kind === "planned" ? spec.surface.ticket : "its page ticket";
-    store.closeModal();
-    store.pushStatus(
-      "DONE",
-      `[${spec.path}]`,
-      `executed as: ${cli} — full surface arrives with ${ticket}`,
-    );
-    return;
-  }
-  const taskId = `cmd:${spec.id}`;
-  store.beginTask(taskId, spec.path);
-  try {
-    const message = await executor(store, values, positional);
-    store.endTask(taskId, message);
-    store.closeModal();
-    store.pushStatus("DONE", `[${spec.path}]`, `${cli} — ${message}`);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    store.endTask(taskId, message, true);
-    store.pushStatus("FAILED", `[${spec.path}]`, `${cli} — ${message}`);
-  }
-}
-
-function executorKey(spec: CommandSpec): string {
-  if (spec.id === "scan" || spec.id === "backup" || spec.id === "trash.empty") return spec.id;
-  if (spec.id === "trash") return "trash";
-  return spec.id;
-}
-
-function formatArgLine(
-  arg: { name: string; required: boolean; summary: string },
-  positional: string[],
-): string {
-  const value = positional[0] ?? "";
-  const required = arg.required ? "*" : "";
-  return ` ${arg.name}${required}: ${value === "" ? "—" : value}  (${arg.summary})`;
 }

@@ -9,14 +9,21 @@ export type HelpRow = readonly [string, string];
  * action are section headers.
  */
 export const KEYBINDING_ROWS: readonly (readonly [string, string])[] = [
-  ["Tab", "Cycle focus: sidebar, repository list, status panel"],
+  ["F10", "Open Views menu · ←/→ groups · ↑/↓ views · Enter opens"],
+  ["? / F1", "Show shortcuts for this screen (F1 also works while typing)"],
+  ["Tab / Shift+Tab", "Move focus between cockpit panes or worktree fields"],
+  ["Escape", "Leave input, close the menu or dialog, or return to Cockpit"],
+  ["v + letter", "Open a page directly (letters listed in the Views section below)"],
+  ["[ / ]", "Cycle to the previous / next page"],
+  [": / Ctrl+K", "Omnibar command palette (Tab cycles modes)"],
+  ["q", "Quit (press twice in quick succession while a sync is running)"],
+  ["— Cockpit —", ""],
   ["Up/Down, j/k", "Move cursor; status panel focus scrolls the activity log"],
   ["Home/End, g/G", "Jump the repository cursor to the first or last row"],
   ["PgUp / PgDn", "Page the repository cursor by one viewport"],
   ["Space", "Select repo; sidebar/wizard toggle"],
   ["a", "Select all filtered repositories (press again to clear)"],
   ["/", "Live search: owner, name, @alias"],
-  [": / Ctrl+K", "Omnibar command palette (Tab cycles modes)"],
   ["@", "Omnibar code search (text: prefix for line search)"],
   ["#", "Omnibar GitHub discover (Enter clones)"],
   ["!", "Omnibar bulk runner (selected/all repos)"],
@@ -29,7 +36,7 @@ export const KEYBINDING_ROWS: readonly (readonly [string, string])[] = [
   ["S", "Reverse the current sort direction"],
   ["i", "Repo details: stars, ahead/behind, alias"],
   ["c", "Open the clone modal (URL or owner/name)"],
-  ["n", "New repo wizard (Left goes back)"],
+  ["n", "New repo wizard (Shift+Tab goes back)"],
   ["m", "Open move modal for repo"],
   ["z", "Undo the last move or delete (restores the directory and its inventory entry)"],
   ["u", "Untrack repo (files stay on disk)"],
@@ -43,16 +50,12 @@ export const KEYBINDING_ROWS: readonly (readonly [string, string])[] = [
   ["r", "Set alias (or retry on auth error)"],
   ["d", "Open the default-root modal"],
   ["Enter", "Open sync preview; sidebar confirm; wizard advance"],
-  ["q", "Quit (press twice in quick succession while a sync is running)"],
   ["x", "Dismiss the update toast (remembered once per version)"],
-  ["v + letter", "Open a page directly (letters listed in the Views section below)"],
-  ["[ / ]", "Cycle to the previous / next page"],
   ["→ (Right)", "Repository list: open the context menu for the cursor row"],
   ["Wheel", "Scroll lists (repositories, status log, sidebar, modals)"],
   ["Click", "Select/activate items, toggle checkboxes, click buttons, focus panes"],
   ["Double-click", "Open repository details / switch workspace / launch app"],
   ["Right-click", "Open the repository context menu / dismiss open modal"],
-  ["Escape", "Close modal/page; clear search"],
 ];
 
 /**
@@ -63,7 +66,6 @@ export const KEYBINDING_ROWS: readonly (readonly [string, string])[] = [
 export function buildViewHelpRows(): HelpRow[] {
   const groups = new Map<string, HelpRow[]>();
   for (const spec of VIEW_SPECS) {
-    if (spec.id === "cockpit") continue;
     const rows = groups.get(spec.group) ?? [];
     rows.push([`v ${spec.go}`, `${spec.title} — ${spec.summary}`]);
     groups.set(spec.group, rows);

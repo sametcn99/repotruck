@@ -274,14 +274,15 @@ export class Store extends StorePages {
   };
 
   openWorktreeModal = async (key: string): Promise<void> => {
-    this.openModal({ type: "worktree", key, worktrees: [], loading: true, error: null });
+    const pending = { type: "worktree", key, worktrees: [], loading: true, error: null } as const;
+    this.openModal(pending);
     try {
       const worktrees = await performOpenWorktreeModal(this.rootValue, key);
-      if (this.state.modal?.type === "worktree") {
+      if (this.state.modal === pending) {
         this.set({ modal: { type: "worktree", key, worktrees, loading: false, error: null } });
       }
     } catch (error) {
-      if (this.state.modal?.type === "worktree") {
+      if (this.state.modal === pending) {
         this.set({
           modal: {
             type: "worktree",
@@ -301,9 +302,12 @@ export class Store extends StorePages {
     targetPath?: string,
     newBranch = false,
   ): Promise<{ ok: boolean; message: string }> => {
+    const modal = this.state.modal;
     const res = await performCreateWorktree(this.rootValue, key, branch, targetPath, newBranch);
     if (res.ok) {
-      await this.openWorktreeModal(key);
+      if (modal?.type === "worktree" && this.state.modal === modal) {
+        await this.openWorktreeModal(key);
+      }
       await this.refreshLocalState();
     }
     return res;
@@ -314,9 +318,12 @@ export class Store extends StorePages {
     targetPath: string,
     force = false,
   ): Promise<{ ok: boolean; message: string }> => {
+    const modal = this.state.modal;
     const res = await performRemoveWorktree(this.rootValue, key, targetPath, force);
     if (res.ok) {
-      await this.openWorktreeModal(key);
+      if (modal?.type === "worktree" && this.state.modal === modal) {
+        await this.openWorktreeModal(key);
+      }
       await this.refreshLocalState();
     }
     return res;

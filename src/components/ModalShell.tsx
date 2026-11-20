@@ -3,6 +3,7 @@ import { useTerminalDimensions } from "@opentui/react";
 import { type ReactNode, useRef, useSyncExternalStore } from "react";
 import type { Store } from "./store.ts";
 import { theme } from "./theme.ts";
+import { clampBoxLine } from "./windowing.ts";
 
 /**
  * Shared scaffolding for every modal: a bordered, padded, growing box with a
@@ -18,6 +19,7 @@ export function ModalShell({
   children,
   onClose,
   onMouseScroll,
+  status,
 }: {
   store: Store;
   title: string;
@@ -27,11 +29,14 @@ export function ModalShell({
   children: ReactNode;
   onClose?: () => void;
   onMouseScroll?: (event: MouseEvent) => void;
+  status?: string | null;
 }) {
   const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot);
   const { width, height } = useTerminalDimensions();
   const handleClose = onClose ?? (() => store.closeModal());
   const compact = height < 22 || width < 64;
+  const inner = Math.max(1, width - (compact ? 2 : 4));
+  const closeLabel = "[× Close]";
   return (
     <box
       title={title}
@@ -52,7 +57,7 @@ export function ModalShell({
     >
       <box flexDirection="row" justifyContent="space-between" width="100%" flexShrink={0}>
         <text fg={borderColor ?? theme.focusBorder()} wrapMode="none" flexShrink={0}>
-          {title}
+          {clampBoxLine(title, inner - closeLabel.length - 1)}
         </text>
         <text
           fg={theme.dim()}
@@ -63,28 +68,25 @@ export function ModalShell({
             handleClose();
           }}
         >
-          {"[\u00d7 Close]"}
+          {closeLabel}
         </text>
       </box>
-      {children}
-      {snapshot.modalError !== null ? (
-        <text fg={theme.error()} wrapMode="none" flexShrink={0}>
-          {snapshot.modalError}
-        </text>
-      ) : null}
       {hint !== null ? (
-        <text
-          fg={theme.dim()}
-          wrapMode="none"
-          flexShrink={0}
-          onMouseDown={(e) => {
-            e.stopPropagation();
-            handleClose();
-          }}
-        >
+        <text fg={theme.dim()} wrapMode="word" flexShrink={0} width="100%">
           {hint}
         </text>
       ) : null}
+      {snapshot.modalError !== null || status ? (
+        <text
+          fg={snapshot.modalError !== null ? theme.error() : theme.success()}
+          wrapMode="word"
+          flexShrink={0}
+          width="100%"
+        >
+          {snapshot.modalError ?? status}
+        </text>
+      ) : null}
+      {children}
     </box>
   );
 }

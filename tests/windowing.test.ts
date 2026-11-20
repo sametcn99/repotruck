@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { buildFooterLines, buildHeaderLine } from "../src/components/Dashboard.tsx";
+import { buildHeaderLine } from "../src/components/Dashboard.tsx";
+import { fitFooterItems } from "../src/components/DashboardFooter.tsx";
 import { sidebarRowIndexForY, sidebarTotalLines } from "../src/components/store/filters.ts";
 import {
   clampBoxLine,
@@ -16,13 +17,13 @@ import {
 
 describe("repoViewportRows", () => {
   test("reserves chrome rows so the list never overflows its box", () => {
-    expect(repoViewportRows(38, false)).toBe(29);
-    expect(repoViewportRows(24, false)).toBe(15);
+    expect(repoViewportRows(38, false)).toBe(28);
+    expect(repoViewportRows(24, false)).toBe(14);
   });
 
   test("reserves three more rows while the update toast is visible", () => {
-    expect(repoViewportRows(38, true)).toBe(26);
-    expect(repoViewportRows(24, true)).toBe(12);
+    expect(repoViewportRows(38, true)).toBe(25);
+    expect(repoViewportRows(24, true)).toBe(11);
   });
 
   test("degrades to a single row on tiny terminals", () => {
@@ -198,37 +199,25 @@ describe("panel widths", () => {
   });
 });
 
-describe("buildFooterLines", () => {
-  test("never overflows terminal width across widths from 40 to 220", () => {
-    for (let w = 40; w <= 220; w += 5) {
-      const lines = buildFooterLines(w);
-      expect(lines.length).toBe(1);
-      for (const line of lines) {
-        expect(line.length).toBeLessThanOrEqual(Math.max(30, w - 4));
-      }
-    }
+describe("fitFooterItems", () => {
+  test("keeps whole clickable labels and fits progress text at compact widths", () => {
+    const items = [
+      { label: "[?] Help", activate: () => {} },
+      { label: "working… · 2 cloning/pulling · 3 done · 1 failed" },
+    ];
+    const compact = fitFooterItems(40, items);
+    expect(compact[0]).toEqual(items[0]!);
+    expect(compact[1]!.label.endsWith("…")).toBe(true);
+    expect(compact.map(({ label }) => label).join("  ").length).toBeLessThanOrEqual(37);
+    expect(fitFooterItems(120, items)).toEqual(items);
   });
 
-  test("contains primary shortcuts on typical widths", () => {
-    const lines = buildFooterLines(120);
-    const combined = lines.join(" ");
-    expect(combined).toContain("[Tab] Focus");
-    expect(combined).toContain("[Space] Select");
-    expect(combined).toContain("[?] Help");
-    expect(combined).toContain("[q] Quit");
-  });
-
-  test("running summary replaces the shortcuts and is width-trimmed", () => {
-    const lines = buildFooterLines(120, "working… · 2 cloning/pulling · 3 done · 1 failed");
-    expect(lines.length).toBe(1);
-    expect(lines[0]).toContain("working…");
-    expect(lines[0]).toContain("2 cloning/pulling");
-    expect(lines[0]).not.toContain("[Tab] Focus");
-    for (let w = 40; w <= 220; w += 5) {
-      const trimmed = buildFooterLines(w, "x".repeat(300));
-      expect(trimmed.length).toBe(1);
-      expect(trimmed[0]!.length).toBeLessThanOrEqual(Math.max(30, w - 4));
-    }
+  test("skips a clickable label that cannot fit", () => {
+    const items = [
+      { label: "Too wide for the footer", activate: () => {} },
+      { label: "[?] Help", activate: () => {} },
+    ];
+    expect(fitFooterItems(15, items)).toEqual([items[1]!]);
   });
 });
 

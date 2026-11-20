@@ -21,7 +21,7 @@ export function ConfirmPermanentDeleteModal({ store }: { store: Store }) {
     <ModalShell
       store={store}
       title={`Delete permanently — ${key}`}
-      hint="type the repository name to arm · Esc cancels"
+      hint="Type the repository name · Enter delete · Esc cancel"
       borderColor={theme.error()}
     >
       <text fg={theme.error()}>
@@ -45,7 +45,7 @@ export function ConfirmPermanentDeleteModal({ store }: { store: Store }) {
             if (armed) void store.confirmPermanentDelete(key);
           }}
         >
-          {armed ? "[ Delete forever ]" : `[ delete — type ${repoName} ]`}
+          {armed ? "[Enter] Delete forever" : `[ delete — type ${repoName} ]`}
         </text>
         <text
           fg={theme.dim()}

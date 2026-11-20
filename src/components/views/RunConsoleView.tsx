@@ -24,7 +24,7 @@ export function RunConsoleView({
   const height = heightProp ?? Math.max(8, termHeight - 11);
   const boxInnerCols = Math.max(10, width - 3);
   const state = snapshot.runConsole;
-  const [editing, setEditing] = useState(true);
+  const [editing, setEditing] = useState<"command" | "profile" | null>("command");
   const [expanded, setExpanded] = useState<string | null>(null);
   const [cursor, setCursor] = useState(0);
 
@@ -44,13 +44,13 @@ export function RunConsoleView({
   const maxCursor = Math.max(0, results.length - 1);
   const clampedCursor = Math.min(cursor, maxCursor);
   const inputFocused =
-    editing &&
+    editing !== null &&
     !snapshot.navFocused &&
     snapshot.dialog === null &&
     snapshot.modal === null &&
     snapshot.contextMenu === null;
   const listFocused =
-    !editing &&
+    editing === null &&
     !snapshot.navFocused &&
     snapshot.dialog === null &&
     snapshot.modal === null &&
@@ -66,12 +66,14 @@ export function RunConsoleView({
     ) {
       return;
     }
-    if (editing) {
-      if (key.name === "escape") setEditing(false);
+    if (editing !== null) {
+      if (key.name === "escape") setEditing(null);
       return;
     }
     if (key.name === "return") {
-      setEditing(true);
+      setEditing("command");
+    } else if (key.name === "p" && scope === "profile") {
+      setEditing("profile");
     } else if (key.name === "up" || key.sequence === "k") {
       setCursor((c) => Math.max(0, Math.min(c, maxCursor) - 1));
     } else if (key.name === "down" || key.sequence === "j") {
@@ -154,13 +156,13 @@ export function RunConsoleView({
         <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
           $
         </text>
-        {editing ? (
+        {editing === "command" ? (
           <input
-            focused={inputFocused}
+            focused={inputFocused && editing === "command"}
             value={state?.command ?? ""}
             onInput={(value) => store.updateRunConsole({ command: value })}
             onSubmit={() => {
-              setEditing(false);
+              setEditing(null);
               setCursor(0);
               void store.runConsoleStart();
             }}
@@ -173,10 +175,10 @@ export function RunConsoleView({
             flexShrink={0}
             onMouseDown={(event) => {
               event.stopPropagation?.();
-              setEditing(true);
+              setEditing("command");
             }}
           >
-            {state?.command || "(enter a command)"}
+            {`[Enter] edit: ${state?.command || "(empty command)"}`}
           </text>
         )}
         <text
@@ -223,14 +225,29 @@ export function RunConsoleView({
         >
           {`[c] -c ${state?.concurrency ?? 3}`}
         </text>
-        {scope === "profile" ? (
-          <input
-            value={state?.profile ?? ""}
-            onInput={(value) => store.updateRunConsole({ profile: value })}
-            width={16}
-            placeholder="profile"
-          />
-        ) : null}
+        {scope === "profile" &&
+          (editing === "profile" ? (
+            <input
+              focused={inputFocused}
+              value={state?.profile ?? ""}
+              onInput={(value) => store.updateRunConsole({ profile: value })}
+              onSubmit={() => setEditing(null)}
+              width={16}
+              placeholder="profile name"
+            />
+          ) : (
+            <text
+              fg={theme.accent()}
+              wrapMode="none"
+              flexShrink={0}
+              onMouseDown={(event) => {
+                event.stopPropagation();
+                setEditing("profile");
+              }}
+            >
+              {`[p] profile: ${state?.profile || "—"}`}
+            </text>
+          ))}
         <text
           fg={theme.dim()}
           wrapMode="none"
@@ -283,7 +300,7 @@ export function RunConsoleView({
                 flexShrink={0}
                 onMouseDown={(event) => {
                   event.stopPropagation?.();
-                  setEditing(false);
+                  setEditing(null);
                   setCursor(idx);
                   setExpanded((current) => (current === result.key ? null : result.key));
                 }}
@@ -312,7 +329,11 @@ export function RunConsoleView({
       </box>
       <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
         {clampBoxLine(
-          "Enter edit · ↑↓/jk move · Space expand · e run · s scope · c conc · J JSON · Esc cockpit",
+          editing === "command"
+            ? "Enter run command · Esc actions · F1 help"
+            : editing === "profile"
+              ? "Enter apply profile · Esc actions · F1 help"
+              : "↑↓ results · Space expand · Enter edit",
           width,
         )}
       </text>

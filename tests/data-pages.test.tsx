@@ -224,7 +224,7 @@ describe("t08 stats page", () => {
     let frame = norm(setup.captureCharFrame());
     expect(frame).toContain("grade:");
     expect(frame).toContain("cleanliness");
-    expect(frame).toContain("languages");
+    expect(frame).toContain("Languages");
     expect(store.getSnapshot().statsPage?.stats).not.toBeNull();
 
     // J copy mirrors into the transient toast line above the footer.

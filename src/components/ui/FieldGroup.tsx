@@ -1,8 +1,9 @@
 import { useKeyboard } from "@opentui/react";
 import { useState } from "react";
 import type { FlagSpec } from "../../commands/registry.ts";
+import { quoteForShell } from "../../services/shellQuote.ts";
 import { theme } from "../theme.ts";
-import { visibleSlice } from "../windowing.ts";
+import { clampBoxLine, visibleSlice } from "../windowing.ts";
 
 /**
  * Values map for a FlagSpec set: bools as booleans, everything else as
@@ -31,6 +32,8 @@ export function FieldGroup({
   width,
   maxRows,
   showFlags = true,
+  active = true,
+  onFocus,
 }: {
   flags: readonly FlagSpec[];
   values: FieldValues;
@@ -38,6 +41,8 @@ export function FieldGroup({
   width: number;
   maxRows?: number;
   showFlags?: boolean;
+  active?: boolean;
+  onFocus?: () => void;
 }) {
   const [focusIndex, setFocusIndex] = useState(0);
   const [editing, setEditing] = useState<string | null>(null);
@@ -61,9 +66,9 @@ export function FieldGroup({
     }
   };
 
-  const commitEdit = (): void => {
+  const commitEdit = (value = editValue): void => {
     if (editing !== null) {
-      onChange(editing, editValue);
+      onChange(editing, value);
     }
     setEditing(null);
   };
@@ -94,12 +99,14 @@ export function FieldGroup({
   };
 
   useKeyboard((key) => {
-    if (current === undefined) return;
+    if (!active || current === undefined) return;
     if (editing !== null) {
-      // The focused <input> owns typing; only intercept Escape/Enter here
-      // when the input is not focused (input onSubmit handles Enter).
       if (key.name === "escape") {
+        key.stopPropagation();
         setEditing(null);
+      } else if (key.name === "tab") {
+        key.stopPropagation();
+        commitEdit();
       }
       return;
     }
@@ -107,11 +114,9 @@ export function FieldGroup({
       setFocusIndex((i) => (i > 0 ? i - 1 : flags.length - 1));
     } else if (key.name === "down") {
       setFocusIndex((i) => (i < flags.length - 1 ? i + 1 : 0));
-    } else if (key.name === "space") {
+    } else if (key.name === "space" || key.name === "return") {
       if (current.type === "bool") onChange(current.flag, !(values[current.flag] ?? false));
       else beginEdit(current);
-    } else if (key.name === "return") {
-      beginEdit(current);
     } else if (key.name === "left") {
       if (current.type === "enum") cycleEnum(current, -1);
       else if (current.type === "int" || current.type === "optional-int") stepInt(current, -1);
@@ -127,7 +132,7 @@ export function FieldGroup({
     <box flexDirection="column" width="100%" flexShrink={0}>
       {visibleFlags.map((flag, idx) => {
         const index = win.start + idx;
-        const focused = index === boundedFocus;
+        const focused = active && index === boundedFocus;
         const value: boolean | string = values[flag.flag] ?? "";
         const label = showFlags ? flagLabel(flag) : flag.summary;
         return (
@@ -138,6 +143,7 @@ export function FieldGroup({
               flexShrink={0}
               onMouseDown={(e) => {
                 e.stopPropagation();
+                onFocus?.();
                 setFocusIndex(index);
                 if (flag.type === "bool") {
                   onChange(flag.flag, !(values[flag.flag] ?? false));
@@ -150,12 +156,12 @@ export function FieldGroup({
             >
               {formatFieldLine(label, flag, value, focused, inner)}
             </text>
-            {editing === flag.flag ? (
+            {active && editing === flag.flag ? (
               <input
                 focused
                 value={editValue}
                 onInput={setEditValue}
-                onSubmit={() => commitEdit()}
+                onSubmit={(value) => commitEdit(typeof value === "string" ? value : editValue)}
                 width="100%"
               />
             ) : null}
@@ -163,9 +169,18 @@ export function FieldGroup({
         );
       })}
       <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
-        {flags.length > viewport
-          ? `↑↓ field (${win.start + 1}-${win.end}/${flags.length}) · Space toggle/edit · ←→ cycle`
-          : "↑↓ field · Space toggle/edit · ←→ cycle · Enter edit · Esc close input"}
+        {clampBoxLine(
+          editing !== null
+            ? "Enter save · Esc cancel edit"
+            : current?.type === "bool"
+              ? "Space toggle"
+              : current?.type === "enum" ||
+                  current?.type === "int" ||
+                  current?.type === "optional-int"
+                ? "←→ change value"
+                : "Enter edit field",
+          inner,
+        )}
       </text>
     </box>
   );
@@ -205,12 +220,11 @@ export function buildCliArguments(
   values: FieldValues,
   positional: readonly string[] = [],
 ): string {
-  const parts = [commandPath];
-  for (const arg of positional) parts.push(arg);
+  const args = [...positional];
   for (const flag of flags) {
     const value = values[flag.flag];
     if (flag.type === "bool") {
-      if (value === true && flag.default !== "true") parts.push(flag.flag);
+      if (value === true && flag.default !== "true") args.push(flag.flag);
       continue;
     }
     const text = String(value ?? "");
@@ -220,11 +234,12 @@ export function buildCliArguments(
         .split(",")
         .map((piece) => piece.trim())
         .filter(Boolean)) {
-        parts.push(`${flag.flag} ${item.includes(" ") ? `'${item}'` : item}`);
+        args.push(flag.flag, item);
       }
       continue;
     }
-    parts.push(`${flag.flag} ${text.includes(" ") ? `'${text}'` : text}`);
+    args.push(flag.flag, text);
   }
-  return parts.join(" ");
+  const [command, ...subcommands] = commandPath.split(" ");
+  return quoteForShell(command ?? "", [...subcommands, ...args], "linux");
 }

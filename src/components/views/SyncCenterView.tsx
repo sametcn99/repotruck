@@ -26,6 +26,11 @@ export function SyncCenterView({ store, width }: { store: Store; width: number }
     snapshot.modal === null &&
     snapshot.contextMenu === null;
 
+  const preview = () => {
+    store.setView("cockpit");
+    void store.openStartPreview();
+  };
+
   useKeyboard((key) => {
     const snap = store.getSnapshot();
     if (
@@ -42,6 +47,8 @@ export function SyncCenterView({ store, width }: { store: Store; width: number }
     }
     if (key.name === "e" && key.shift !== true && key.sequence !== "E") {
       void store.startSyncCenter();
+    } else if (key.sequence === "V" || (key.shift && key.name === "v")) {
+      preview();
     } else if (key.name === "x") {
       store.stopSyncCenter();
     } else if (key.name === "s") {
@@ -72,6 +79,48 @@ export function SyncCenterView({ store, width }: { store: Store; width: number }
 
   return (
     <box flexDirection="column" flexGrow={1} width="100%">
+      {state.divergence === "reset" ? (
+        <text fg={theme.error()} wrapMode="none" flexShrink={0}>
+          {clampBoxLine(
+            " divergence=reset discards local commits — double-check before running",
+            width,
+          )}
+        </text>
+      ) : null}
+      <box flexDirection="row" flexWrap="wrap" gap={2} flexShrink={0}>
+        <text
+          fg={running ? theme.dim() : theme.accent()}
+          flexShrink={0}
+          onMouseDown={(event) => {
+            event.stopPropagation();
+            if (!running) void store.startSyncCenter();
+          }}
+        >
+          {running ? "running…" : "[e] Start Sync"}
+        </text>
+        {running ? (
+          <text
+            fg={theme.error()}
+            flexShrink={0}
+            onMouseDown={(event) => {
+              event.stopPropagation();
+              store.stopSyncCenter();
+            }}
+          >
+            {"[x] Stop"}
+          </text>
+        ) : null}
+        <text
+          fg={theme.dim()}
+          flexShrink={0}
+          onMouseDown={(event) => {
+            event.stopPropagation();
+            preview();
+          }}
+        >
+          {"[V] Preview cockpit selection"}
+        </text>
+      </box>
       <box flexDirection="row" gap={1} flexWrap="wrap" flexShrink={0}>
         <text fg={theme.accent()} flexShrink={0}>{`[s] scope: ${state.scope}`}</text>
         <text
@@ -126,57 +175,16 @@ export function SyncCenterView({ store, width }: { store: Store; width: number }
           width={Math.max(14, Math.min(50, inner - 10))}
         />
       ) : null}
-      {state.divergence === "reset" ? (
-        <text fg={theme.error()} wrapMode="none" flexShrink={0}>
-          {clampBoxLine(
-            " divergence=reset discards local commits — double-check before running",
-            width,
-          )}
-        </text>
-      ) : null}
       <box border borderColor={theme.border()} overflow="hidden" flexShrink={0} width="100%">
         <text fg={theme.accent()} wrapMode="none" flexShrink={0}>
           {clampBoxLine(` $ ${syncCenterCliLine(state)}`, boxInnerCols)}
         </text>
       </box>
-      <box flexDirection="row" flexWrap="wrap" gap={2} flexShrink={0}>
-        <text
-          fg={running ? theme.dim() : theme.accent()}
-          flexShrink={0}
-          onMouseDown={(event) => {
-            event.stopPropagation();
-            if (!running) void store.startSyncCenter();
-          }}
-        >
-          {running ? "running…" : "[e] Start Sync"}
-        </text>
-        {running ? (
-          <text
-            fg={theme.error()}
-            flexShrink={0}
-            onMouseDown={(event) => {
-              event.stopPropagation();
-              store.stopSyncCenter();
-            }}
-          >
-            {"[x] Stop"}
-          </text>
-        ) : null}
-        <text
-          fg={theme.dim()}
-          flexShrink={0}
-          onMouseDown={(event) => {
-            event.stopPropagation();
-            store.setView("cockpit");
-            void store.openStartPreview();
-          }}
-        >
-          {"[preview via cockpit Enter]"}
-        </text>
-      </box>
       <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
         {clampBoxLine(
-          "progress streams to the Activity panel · failures surface in Conflicts (v x) · Esc cockpit",
+          editing !== null
+            ? "Enter accept filter · Esc actions · F1 help"
+            : "Progress in Activity · Conflicts with v x",
           width,
         )}
       </text>

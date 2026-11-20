@@ -1,8 +1,10 @@
-import { useKeyboard } from "@opentui/react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { InputRenderable, type KeyEvent } from "@opentui/core";
+import { useRenderer } from "@opentui/react";
+import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
 import type { Store } from "./store.ts";
-import { VIEW_GO_KEYS, VIEW_ORDER } from "./views/viewRegistry.ts";
-import { repoKeyOf, repoViewportRows } from "./windowing.ts";
+import { moveViewMenuGroup, moveViewMenuRow } from "./ViewMenu.tsx";
+import { VIEW_GO_KEYS } from "./views/viewRegistry.ts";
+import { computeCockpitPanes, repoKeyOf, repoViewportRows } from "./windowing.ts";
 
 // A second q inside this window while a sync runs actually quits.
 const QUIT_CONFIRM_WINDOW_MS = 3000;
@@ -40,8 +42,8 @@ export function useDashboardKeys(
   onQuit: () => void,
   height: number,
   width: number,
-  navRailVisible: (w: number) => boolean,
 ): { quitArmed: boolean; handleQuit: () => void } {
+  const renderer = useRenderer();
   const [quitArmedAt, setQuitArmedAt] = useState(0);
   // `v`-prefix arming lives in a ref: key handling must not depend on a
   // pending React re-render between the two keypresses.
@@ -68,23 +70,21 @@ export function useDashboardKeys(
 
   const quitArmed = store.getSnapshot().running && quitArmedAt !== 0;
 
-  useKeyboard((key) => {
+  // Shell shortcuts run before page handlers even when a page is already
+  // mounted. Consumed navigation keys must never fall through to that page.
+  const handleKey = useEffectEvent((key: KeyEvent) => {
     const current = store.getSnapshot();
-    const railVisibleNow = navRailVisible(width);
-    if (current.dialog !== null || current.contextMenu !== null) {
-      // DialogBox / ContextMenu own their keys while open.
-      return;
-    }
+    if (current.dialog !== null || current.contextMenu !== null) return;
+    const editing = renderer.currentFocusedRenderable instanceof InputRenderable;
     if (current.modal !== null) {
-      if (key.name === "escape") {
-        if (current.modal.type === "search") {
-          store.clearSearch();
-        }
+      if (key.name === "escape" && !(current.modal.type === "commandForm" && editing)) {
+        key.stopPropagation();
         if (current.modal.type === "deviceFlow") {
           store.cancelDeviceFlow();
-          return;
+        } else {
+          if (current.modal.type === "search") store.clearSearch();
+          store.closeModal();
         }
-        store.closeModal();
       }
       return;
     }
@@ -94,113 +94,102 @@ export function useDashboardKeys(
       else if (key.name === "r") void store.init();
       return;
     }
-    if ((key as { ctrl?: boolean }).ctrl === true && key.name === "k") {
+    if (current.phase !== "ready") {
+      if (key.name === "q") handleQuit();
+      return;
+    }
+
+    if (key.name === "f1" || (!editing && isKey(key, "?"))) {
+      key.stopPropagation();
+      viewPrefixRef.current = 0;
+      store.setNavFocused(false);
+      store.openHelpModal();
+      return;
+    }
+    if (key.ctrl && key.name === "k") {
+      key.stopPropagation();
+      viewPrefixRef.current = 0;
+      store.setNavFocused(false);
       store.openOmnibar("commands");
       return;
     }
-    if (key.sequence === ":") {
-      store.openOmnibar("commands");
-      return;
-    }
-    if (key.sequence === "@") {
-      store.openOmnibar("symbols");
-      return;
-    }
-    if (key.sequence === "#") {
-      store.openOmnibar("github");
-      return;
-    }
-    if (key.sequence === "!") {
-      store.openOmnibar("runner");
-      return;
-    }
-    // ---- nav rail (views panel) keyboard focus & navigation ---------------
-    if (
-      key.name === "tab" &&
-      railVisibleNow &&
-      (current.navFocused || current.view !== "cockpit")
-    ) {
-      store.cycleFocus(true);
+    if (key.name === "f10") {
+      key.stopPropagation();
+      viewPrefixRef.current = 0;
+      store.setNavFocused(!current.navFocused);
       return;
     }
     if (current.navFocused) {
-      if (key.name === "escape" || key.name === "right") {
-        store.setNavFocused(false);
-        return;
-      }
-      if (key.name === "up" || key.sequence === "k") {
-        store.moveNavCursor(-1);
-        return;
-      }
-      if (key.name === "down" || key.sequence === "j") {
-        store.moveNavCursor(1);
-        return;
-      }
-      if (key.name === "home" || key.sequence === "g") {
-        store.setNavCursor(0);
-        return;
-      }
-      if (key.name === "end" || isShiftLetter(key, "G")) {
-        store.setNavCursor(VIEW_ORDER.length - 1);
-        return;
-      }
-      if (key.name === "pageup") {
-        store.moveNavCursor(-5);
-        return;
-      }
-      if (key.name === "pagedown") {
-        store.moveNavCursor(5);
-        return;
-      }
-      if (key.name === "return" || key.name === "space") {
-        store.activateNavRow();
-        return;
-      }
-      if (key.name === "q" && current.view === "cockpit") {
-        handleQuit();
-        return;
-      }
-      if (key.sequence === "[") {
-        store.cycleView(-1);
-        return;
-      }
-      if (key.sequence === "]") {
-        store.cycleView(1);
-        return;
-      }
+      key.stopPropagation();
+      if (key.name === "escape" || key.name === "tab") store.setNavFocused(false);
+      else if (key.name === "left" || key.sequence === "h") moveViewMenuGroup(store, -1);
+      else if (key.name === "right" || key.sequence === "l") moveViewMenuGroup(store, 1);
+      else if (key.name === "up" || key.sequence === "k") moveViewMenuRow(store, -1);
+      else if (key.name === "down" || key.sequence === "j") moveViewMenuRow(store, 1);
+      else if (key.name === "home") moveViewMenuRow(store, "first");
+      else if (key.name === "end") moveViewMenuRow(store, "last");
+      else if (key.name === "return" || key.name === "space") store.activateNavRow();
       return;
     }
-    // ---- view layer: Escape back, [ ] cycling, v-prefix go-to -------------
-    if (key.name === "escape" && current.view !== "cockpit") {
-      store.setView("cockpit");
+    if (key.name === "tab" && current.view === "cockpit") {
+      key.stopPropagation();
       viewPrefixRef.current = 0;
+      store.cycleFocus(key.shift ? -1 : 1);
       return;
     }
-    if (key.sequence === "[") {
-      store.cycleView(-1);
+    if (editing) return;
+
+    if (key.name === "escape" && current.view !== "cockpit") {
+      key.stopPropagation();
+      viewPrefixRef.current = 0;
+      store.setView("cockpit");
       return;
     }
-    if (key.sequence === "]") {
-      store.cycleView(1);
+    if (key.sequence === "[" || key.sequence === "]") {
+      key.stopPropagation();
+      viewPrefixRef.current = 0;
+      store.cycleView(key.sequence === "[" ? -1 : 1);
       return;
     }
     if (isPlainLetter(key, "v")) {
+      key.stopPropagation();
       const now = Date.now();
       const armedAt = viewPrefixRef.current;
       viewPrefixRef.current = armedAt !== 0 && now - armedAt <= VIEW_PREFIX_WINDOW_MS ? 0 : now;
       return;
     }
-    if (
-      viewPrefixRef.current !== 0 &&
-      Date.now() - viewPrefixRef.current <= VIEW_PREFIX_WINDOW_MS
-    ) {
-      viewPrefixRef.current = 0;
-      const target = VIEW_GO_KEYS.get(key.sequence ?? key.name ?? "");
+    const armedAt = viewPrefixRef.current;
+    viewPrefixRef.current = 0;
+    if (armedAt !== 0 && Date.now() - armedAt <= VIEW_PREFIX_WINDOW_MS) {
+      const target = VIEW_GO_KEYS.get(key.sequence ?? key.name);
       if (target !== undefined) {
+        key.stopPropagation();
         store.setView(target);
         return;
       }
-      // not a view letter: disarm and fall through to the normal handler
+    }
+    switch (key.sequence) {
+      case ":":
+      case "@":
+      case "#":
+      case "!": {
+        key.stopPropagation();
+        const mode =
+          key.sequence === "@"
+            ? "symbols"
+            : key.sequence === "#"
+              ? "github"
+              : key.sequence === "!"
+                ? "runner"
+                : "commands";
+        store.openOmnibar(mode);
+        return;
+      }
+    }
+    if (isPlainLetter(key, "q")) {
+      key.stopPropagation();
+      handleQuit();
+      return;
     }
     // Pages own their keyboard surface (like modals do); only the shell
     // keys above and the global ones handled earlier still apply.
@@ -243,14 +232,23 @@ export function useDashboardKeys(
       return;
     }
     if (key.sequence === "1") {
+      if (!computeCockpitPanes(width, current.focus, false).showStatus) {
+        store.setFocus("status");
+      }
       store.setRightPaneTab("activity");
       return;
     }
     if (key.sequence === "2") {
+      if (!computeCockpitPanes(width, current.focus, false).showStatus) {
+        store.setFocus("status");
+      }
       store.setRightPaneTab("inspector");
       return;
     }
     if (key.sequence === "3") {
+      if (!computeCockpitPanes(width, current.focus, false).showStatus) {
+        store.setFocus("status");
+      }
       store.setRightPaneTab("health");
       return;
     }
@@ -259,13 +257,6 @@ export function useDashboardKeys(
       return;
     }
     switch (key.name) {
-      case "q": {
-        handleQuit();
-        return;
-      }
-      case "tab":
-        store.cycleFocus(railVisibleNow);
-        return;
       case "c":
         store.openCloneModal();
         return;
@@ -332,10 +323,6 @@ export function useDashboardKeys(
       store.openSearchModal();
       return;
     }
-    if (isKey(key, "?")) {
-      store.openHelpModal();
-      return;
-    }
     if (key.name === "escape") {
       store.clearSearch();
       return;
@@ -347,8 +334,6 @@ export function useDashboardKeys(
         store.moveSidebarCursor(1);
       } else if (key.name === "space" || key.name === "return") {
         store.activateSidebarRow();
-      } else if (key.name === "left" && railVisibleNow) {
-        store.setNavFocused(true);
       }
       return;
     }
@@ -390,14 +375,15 @@ export function useDashboardKeys(
       }
       return;
     }
-    if (current.focus === "status") {
-      if (key.name === "up" || key.sequence === "k") {
-        store.moveStatusScroll(1);
-      } else if (key.name === "down" || key.sequence === "j") {
-        store.moveStatusScroll(-1);
-      }
-    }
   });
+
+  useEffect(() => {
+    const input = renderer.keyInput;
+    input.prependListener("keypress", handleKey);
+    return () => {
+      input.off("keypress", handleKey);
+    };
+  }, [renderer]);
 
   return { quitArmed, handleQuit };
 }

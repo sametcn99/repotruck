@@ -5,41 +5,55 @@ import {
   buildViewHelpRows,
   KEYBINDING_ROWS,
 } from "../commands/helpData.ts";
+import { PAGE_SHORTCUTS } from "../commands/pageHelp.ts";
 import { ModalShell } from "./ModalShell.tsx";
 import type { Store } from "./store.ts";
 import { theme } from "./theme.ts";
-import { visibleSlice } from "./windowing.ts";
+import { VIEW_BY_ID } from "./views/viewRegistry.ts";
+import { FOOTER_ROWS, HEADER_ROWS, visibleSlice } from "./windowing.ts";
 
-// Border (2) + padding (2) + title (1) + status (1) + close (2) + hint (1) +
-// dashboard chrome (header 3 + footer 3). Single-element rows avoid @opentui's
-// multi-box row-merge artifact across consecutive shortcut rows.
-const HELP_VIEW_RESERVED_ROWS = 15;
+// Border, optional padding, title and hint.
+const HELP_VIEW_RESERVED_ROWS = 6 + HEADER_ROWS + FOOTER_ROWS;
 
-const HELP_ROWS: readonly (readonly [string, string])[] = [
-  ...KEYBINDING_ROWS,
-  ...buildViewHelpRows(),
-  ["— Parity —", buildRegistrySummaryLine()],
-];
-
-function formatHelpRow(key: string, action: string, isCursor: boolean, maxCols: number): string {
-  const prefix = isCursor ? "> " : "  ";
-  const body = action.length > 0 ? `${key.padEnd(16)}${action}` : key;
-  const line = `${prefix}${body}`;
-  if (line.length <= maxCols) return line;
-  return `${line.slice(0, Math.max(1, maxCols - 1))}\u2026`;
+function formatHelpRows(key: string, action: string, width: number): string[] {
+  if (action === "") return [key];
+  const column = Math.max(16, key.length + 1);
+  const available = Math.max(8, width - column);
+  const lines: string[] = [];
+  let line = "";
+  for (const word of action.split(" ")) {
+    if (line !== "" && line.length + word.length + 1 > available) {
+      lines.push(line);
+      line = "";
+    }
+    line += line === "" ? word : ` ${word}`;
+  }
+  lines.push(line);
+  return lines.map((text, index) => `${(index === 0 ? key : "").padEnd(column)}${text}`);
 }
 
 export function HelpModal({ store }: { store: Store }) {
   const { height, width } = useTerminalDimensions();
   const [cursor, setCursor] = useState(0);
-  const total = HELP_ROWS.length;
+  const { view } = store.getSnapshot();
+  const viewTitle = VIEW_BY_ID.get(view)?.title ?? "Cockpit";
+  const local = view === "cockpit" ? [] : PAGE_SHORTCUTS[view];
+  const maxCols = Math.max(24, width - 6);
+  const rows = [
+    ...(local.length > 0 ? [[`— ${viewTitle} —`, ""] as const, ...local] : []),
+    ["— Navigation —", ""] as const,
+    ...KEYBINDING_ROWS,
+    ...buildViewHelpRows(),
+    ["— Parity —", buildRegistrySummaryLine()] as const,
+  ].flatMap(([key, action]) =>
+    formatHelpRows(key, action, maxCols - 2).map((text) => ({ text, heading: action === "" })),
+  );
+  const total = rows.length;
   const bounded = Math.min(Math.max(cursor, 0), Math.max(0, total - 1));
   const viewportRows = Math.max(1, height - HELP_VIEW_RESERVED_ROWS);
   const window = visibleSlice(bounded, total, viewportRows);
-  const shown = HELP_ROWS.slice(window.start, window.end);
-  const maxCols = Math.max(24, width - 6);
+  const shown = rows.slice(window.start, window.end);
   const keyFg = theme.focusBorder();
-  const dimFg = theme.dim();
 
   useKeyboard((key) => {
     if (key.name === "escape" || key.name === "return") {
@@ -65,21 +79,20 @@ export function HelpModal({ store }: { store: Store }) {
     <ModalShell
       store={store}
       title="Keyboard shortcuts"
-      hint={`Up/Down or j/k scroll (${window.start + 1}\u2013${window.end} of ${total}) \u00b7 Escape closes`}
+      hint={`↑↓ / PgUp / PgDn browse · ${window.start + 1}–${window.end}/${total} · Esc close`}
       gap={0}
       onMouseScroll={(e) => {
         const isUp = e.scroll?.direction === "up" || e.button === 4;
         setCursor((c) => Math.min(total - 1, Math.max(0, c + (isUp ? -3 : 3))));
       }}
     >
-      {shown.map(([key, action], index) => {
+      {shown.map(({ text, heading }, index) => {
         const absIndex = window.start + index;
         const isCursor = absIndex === bounded;
-        const isSection = action.length === 0 || key.startsWith("—");
-        const fg = isCursor ? theme.cursorFg() : isSection ? keyFg : theme.normal();
+        const fg = isCursor ? theme.cursorFg() : heading ? keyFg : theme.normal();
         return (
           <text
-            key={key}
+            key={absIndex}
             fg={fg}
             bg={isCursor ? theme.cursorBg() : undefined}
             wrapMode="none"
@@ -91,21 +104,10 @@ export function HelpModal({ store }: { store: Store }) {
               }
             }}
           >
-            {formatHelpRow(key, action, isCursor, maxCols)}
+            {`${isCursor ? "> " : "  "}${text}`}
           </text>
         );
       })}
-      <box flexDirection="row" gap={2} marginTop={1} flexShrink={0}>
-        <text
-          fg={dimFg}
-          onMouseDown={(e) => {
-            e.stopPropagation();
-            store.closeModal();
-          }}
-        >
-          {"[ Close ]"}
-        </text>
-      </box>
     </ModalShell>
   );
 }

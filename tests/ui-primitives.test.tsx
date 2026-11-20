@@ -138,8 +138,8 @@ describe("FieldGroup helpers & component", () => {
     expect(cli).toContain("repotruck sync extra");
     expect(cli).toContain("--blobless");
     expect(cli).toContain("--depth 1");
-    expect(cli).toContain("--exclude fork/*");
-    expect(cli).toContain("--exclude archived/*");
+    expect(cli).toContain("--exclude 'fork/*'");
+    expect(cli).toContain("--exclude 'archived/*'");
     // divergence stays at its default and must not appear
     expect(cli).not.toContain("--divergence");
   });

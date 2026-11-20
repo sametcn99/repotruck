@@ -276,6 +276,9 @@ describe("t16 discover", () => {
     await settle(setup);
     setup.mockInput.pressEscape();
     await settle(setup);
+    expect(store.getSnapshot().view).toBe("discover");
+    setup.mockInput.pressEscape();
+    await settle(setup);
     expect(store.getSnapshot().view).toBe("cockpit");
 
     await setup.dispose();
@@ -330,7 +333,7 @@ describe("t17 changelog + scan + prune guard", () => {
     store.setView("changelog");
     await waitUntil(() => store.getSnapshot().changelogPage !== null, setup);
     const frame = norm(await capture(setup));
-    expect(frame).toContain("[7d]");
+    expect(frame).toContain("[7 · 7d]");
     expect(frame).toContain("[g · 14d]");
     expect(frame).toContain("more lines (full markdown via copy)");
 

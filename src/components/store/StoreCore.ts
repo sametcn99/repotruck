@@ -22,8 +22,22 @@ import {
 } from "./types.ts";
 
 export class StoreCore extends StoreBase {
+  private startupUpdatePending = false;
+
   protected override async runStartupUpdateCheck(): Promise<void> {
-    await this.runUpdateCheck();
+    if (this.startupUpdatePending) return;
+    this.startupUpdatePending = true;
+    try {
+      const { dismissedVersion } = await this.deps.readUpdateStateFn();
+      this.dismissedVersionValue ??= dismissedVersion;
+    } catch {
+      // A missing update record does not prevent checking for a new release.
+    }
+    try {
+      await this.runUpdateCheck();
+    } finally {
+      this.startupUpdatePending = false;
+    }
   }
 
   togglePersonal = (): void => {
@@ -137,9 +151,9 @@ export class StoreCore extends StoreBase {
     });
   };
 
-  cycleOmnibarTab = (): void => {
+  cycleOmnibarTab = (direction: 1 | -1 = 1): void => {
     if (this.state.modal?.type !== "omnibar") return;
-    const mode = cycleOmnibarMode(this.state.modal.mode);
+    const mode = cycleOmnibarMode(this.state.modal.mode, direction);
     this.set({
       modal: { type: "omnibar", mode, query: "" },
       omnibarSymbols: [],
@@ -253,12 +267,12 @@ export class StoreCore extends StoreBase {
   pageCursor = (delta: number, viewportRows: number): void =>
     this.moveCursor(delta * Math.max(1, viewportRows));
 
-  moveStatusScroll = (delta: number): void => {
+  moveStatusScroll = (delta: number, limit?: number): void => {
     const isHealth = this.state.rightPaneTab === "health";
     const total = isHealth
       ? (this.state.healthData?.checks.length ?? 0)
       : this.state.statuses.length;
-    const maxScroll = Math.max(0, total - (isHealth ? 4 : STATUS_VIEW_ROWS));
+    const maxScroll = limit ?? Math.max(0, total - (isHealth ? 4 : STATUS_VIEW_ROWS));
     const statusScroll = Math.min(Math.max(this.state.statusScroll + delta, 0), maxScroll);
     if (statusScroll !== this.state.statusScroll) this.set({ statusScroll });
   };

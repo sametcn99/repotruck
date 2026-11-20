@@ -1,15 +1,15 @@
 import type { ViewId } from "../store/types.ts";
 
 /**
- * Static metadata for every dashboard view. The nav rail, `v`-prefix
+ * Static metadata for every dashboard view. The Views menu, `v`-prefix
  * dispatch, `[`/`]` cycling and the help screen all render from this
  * registry so a new page can never miss a surface.
  */
 export interface ViewSpec {
   readonly id: ViewId;
-  /** Short label shown in the nav rail and page headers. */
+  /** Short label shown in the Views menu and page headers. */
   readonly title: string;
-  /** Nav rail group heading. */
+  /** Views menu group heading. */
   readonly group: string;
   /** Letter pressed after the `v` prefix to open this view. */
   readonly go: string;
@@ -166,16 +166,12 @@ export const VIEW_BY_ID: ReadonlyMap<ViewId, ViewSpec> = new Map(
 
 /** `v` + letter dispatch table; letters are unique across views. */
 export const VIEW_GO_KEYS: ReadonlyMap<string, ViewId> = new Map(
-  VIEW_SPECS.filter((spec) => spec.id !== "cockpit").map((spec) => [spec.go, spec.id]),
+  VIEW_SPECS.map((spec) => [spec.go, spec.id]),
 );
 
-export const NAV_GROUPS: readonly string[] = [
-  "Workspace",
-  "Inspect",
-  "Automate",
-  "Organize",
-  "System",
-];
+export const VIEW_MENU_GROUPS = ["Workspace", "Inspect", "Automate", "Organize", "System"].map(
+  (title) => ({ title, views: VIEW_SPECS.filter((spec) => spec.group === title) }),
+);
 
 export function nextViewId(current: ViewId, direction: 1 | -1): ViewId {
   const index = VIEW_ORDER.indexOf(current);

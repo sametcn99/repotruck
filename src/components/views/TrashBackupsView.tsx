@@ -2,6 +2,7 @@ import { useKeyboard, useTerminalDimensions } from "@opentui/react";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import type { Store } from "../store.ts";
 import { theme } from "../theme.ts";
+import { PaneTabs } from "../ui/PaneTabs.tsx";
 import { clampBoxLine, visibleSlice } from "../windowing.ts";
 
 /**
@@ -34,14 +35,17 @@ export function TrashBackupsView({
   const backups = page?.backups ?? [];
 
   const stacked = width < 78;
+  const compactPanes = stacked && height < 22;
   const boxInnerCols = stacked
     ? Math.max(10, width - 3)
     : Math.max(10, Math.floor((width - 1) / 2) - 3);
   // Side-by-side: each box has outer height (height - 1), inner height (height - 3),
   // minus 1 header line and 1 bottom action line = (height - 5) rows for 2-row items.
-  const boxBudgetRows = stacked
-    ? Math.max(1, Math.floor((Math.floor((height - 1) / 2) - 4) / 2))
-    : Math.max(1, Math.floor((height - 5) / 2));
+  const boxBudgetRows = compactPanes
+    ? Math.max(1, Math.floor((height - 6) / 2))
+    : stacked
+      ? Math.max(1, Math.floor((Math.floor((height - 1) / 2) - 4) / 2))
+      : Math.max(1, Math.floor((height - 5) / 2));
 
   const maxTrash = Math.max(0, trash.length - 1);
   const clampedTrash = Math.min(trashCursor, maxTrash);
@@ -76,7 +80,9 @@ export function TrashBackupsView({
     ) {
       return;
     }
-    if (key.name === "r") {
+    if (key.name === "tab") {
+      setPane(pane === "trash" ? "backups" : "trash");
+    } else if (key.name === "r") {
       void store.refreshTrashPage();
     } else if (key.name === "b") {
       void store.backupSnapshotNow();
@@ -136,6 +142,18 @@ export function TrashBackupsView({
         }
       }}
     >
+      {compactPanes ? (
+        <PaneTabs
+          panes={
+            [
+              ["trash", "Trash"],
+              ["backups", "Backups"],
+            ] as const
+          }
+          selected={pane}
+          onSelect={setPane}
+        />
+      ) : null}
       <box
         flexDirection={stacked ? "column" : "row"}
         flexGrow={1}
@@ -143,6 +161,7 @@ export function TrashBackupsView({
         width="100%"
       >
         <box
+          visible={!compactPanes || pane === "trash"}
           border
           borderColor={focused && pane === "trash" ? theme.focusBorder() : theme.border()}
           flexDirection="column"
@@ -225,6 +244,7 @@ export function TrashBackupsView({
           </text>
         </box>
         <box
+          visible={!compactPanes || pane === "backups"}
           border
           borderColor={focused && pane === "backups" ? theme.focusBorder() : theme.border()}
           flexDirection="column"

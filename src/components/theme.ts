@@ -37,6 +37,7 @@ export function cycleThemeName(current: ThemeName): ThemeName {
 }
 
 export interface Palette {
+  background: string;
   dim: string;
   normal: string;
   muted: string;
@@ -54,6 +55,7 @@ export interface Palette {
 }
 
 const DEFAULT_PALETTE: Palette = {
+  background: "#161b22",
   dim: "#6e7681",
   normal: "#c9d1d9",
   muted: "#8b949e",
@@ -71,6 +73,7 @@ const DEFAULT_PALETTE: Palette = {
 };
 
 const LIGHT_PALETTE: Palette = {
+  background: "#f6f8fa",
   dim: "#57606a",
   normal: "#24292f",
   muted: "#6e7781",
@@ -88,6 +91,7 @@ const LIGHT_PALETTE: Palette = {
 };
 
 const CONTRAST_PALETTE: Palette = {
+  background: "#000000",
   dim: "#b0b0b0",
   normal: "#ffffff",
   muted: "#d0d0d0",
@@ -132,6 +136,7 @@ function c(key: keyof Palette): Fg {
 }
 
 export const theme = {
+  background: (): Fg => c("background"),
   dim: (): Fg => c("dim"),
   normal: (): Fg => c("normal"),
   muted: (): Fg => c("muted"),

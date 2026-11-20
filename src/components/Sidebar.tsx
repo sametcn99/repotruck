@@ -117,7 +117,7 @@ export function Sidebar({
     </text>,
   ];
 
-  // repoViewportRows reserves 9 rows (header 3 + footer 3 + box border 2 + 1 extra);
+  // repoViewportRows reserves the dashboard chrome, box border and one interior row;
   // Sidebar has no bottom count line inside its box, so it can fit 1 more row than repoViewportRows.
   const availableRows = Math.max(
     2,

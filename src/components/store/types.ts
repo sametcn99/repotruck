@@ -90,7 +90,7 @@ export type RightPaneTab = "activity" | "inspector" | "health";
 /**
  * Full-screen views of the dashboard shell. The cockpit is the classic
  * three-pane layout; every other id is a dedicated page reachable from the
- * nav rail, the `v`-prefix keys, `[`/`]` cycling, or the command palette.
+ * Views menu, the `v`-prefix keys, `[`/`]` cycling, or the command palette.
  */
 export type ViewId =
   | "cockpit"
@@ -389,7 +389,7 @@ export interface ScanPageState {
 }
 
 export interface WorktreePageState {
-  rows: readonly string[];
+  rows: readonly { repo: string; branch: string | null; path: string }[];
 }
 
 export interface SettingsPageState {

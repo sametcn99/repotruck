@@ -2,6 +2,7 @@ import { useKeyboard, useTerminalDimensions } from "@opentui/react";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import type { Store } from "../store.ts";
 import { theme } from "../theme.ts";
+import { PaneTabs } from "../ui/PaneTabs.tsx";
 import { clampBoxLine, visibleSlice } from "../windowing.ts";
 
 /**
@@ -48,15 +49,20 @@ export function ProfilesView({
   const profileEntries = Object.entries(profiles);
 
   const stacked = width < 78;
+  const compactPanes = stacked && height < 22;
   const boxInnerCols = stacked
     ? Math.max(10, width - 3)
     : Math.max(10, Math.floor((width - 1) / 2) - 3);
-  const pinnedBudget = stacked
-    ? Math.max(1, Math.floor((height - 1) / 2) - 4)
-    : Math.max(1, height - 5);
-  const profileBudget = stacked
-    ? Math.max(1, Math.floor((Math.floor((height - 1) / 2) - 4) / 3))
-    : Math.max(1, Math.floor((height - 5) / 3));
+  const pinnedBudget = compactPanes
+    ? Math.max(1, height - 6)
+    : stacked
+      ? Math.max(1, Math.floor((height - 1) / 2) - 4)
+      : Math.max(1, height - 5);
+  const profileBudget = compactPanes
+    ? Math.max(1, Math.floor((height - 7) / 2))
+    : stacked
+      ? Math.max(1, Math.floor((Math.floor((height - 1) / 2) - 4) / 3))
+      : Math.max(1, Math.floor((height - 5) / 3));
 
   const maxPinned = Math.max(0, pinned.length - 1);
   const clampedPinnedCursor = Math.min(pinnedCursor, maxPinned);
@@ -109,7 +115,10 @@ export function ProfilesView({
       if (key.name === "escape") setEditing(false);
       return;
     }
-    if (key.name === "n") {
+    if (key.name === "tab") {
+      setPane(pane === "pinned" ? "profiles" : "pinned");
+    } else if (key.name === "n") {
+      setPane("profiles");
       setEditing(true);
     } else if (key.name === "p") {
       void store.togglePinSelection();
@@ -178,6 +187,18 @@ export function ProfilesView({
         }
       }}
     >
+      {compactPanes ? (
+        <PaneTabs
+          panes={
+            [
+              ["pinned", "Pinned"],
+              ["profiles", "Profiles"],
+            ] as const
+          }
+          selected={pane}
+          onSelect={setPane}
+        />
+      ) : null}
       <box
         flexDirection={stacked ? "column" : "row"}
         flexGrow={1}
@@ -185,6 +206,7 @@ export function ProfilesView({
         width="100%"
       >
         <box
+          visible={!compactPanes || pane === "pinned"}
           border
           borderColor={viewFocused && pane === "pinned" ? theme.focusBorder() : theme.border()}
           flexDirection="column"
@@ -245,6 +267,7 @@ export function ProfilesView({
           </text>
         </box>
         <box
+          visible={!compactPanes || pane === "profiles"}
           border
           borderColor={viewFocused && pane === "profiles" ? theme.focusBorder() : theme.border()}
           flexDirection="column"
@@ -393,7 +416,9 @@ export function ProfilesView({
       </box>
       <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
         {clampBoxLine(
-          "←→/hl pane · ↑↓/jk move · s/Enter sync · r run · d delete · n save · p pin · Esc cockpit",
+          editing
+            ? "Enter save profile · Esc actions · F1 help"
+            : "←→ pane · ↑↓ move · Enter open/sync · r run · d delete · n save · p pin",
           width,
         )}
       </text>

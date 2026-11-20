@@ -382,7 +382,7 @@ describe("Phase 3 interactive view coverage", () => {
     await settle(setup);
     const presetFrame = await capture(setup);
     expect(presetFrame).toContain("my-layout");
-    expect(presetFrame).toContain("[owner]");
+    expect(presetFrame).toContain("[1] owner");
     setup.mockInput.pressKey("a");
     setup.mockInput.pressEscape();
     await settle(setup);

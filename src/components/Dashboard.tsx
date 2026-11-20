@@ -1,24 +1,25 @@
 import { useRenderer, useTerminalDimensions } from "@opentui/react";
 import { useEffect, useSyncExternalStore } from "react";
 import { ContextMenu } from "./ContextMenu.tsx";
+import { DashboardFooter } from "./DashboardFooter.tsx";
 import { DialogBox } from "./DialogBox.tsx";
 import { useDashboardKeys } from "./dashboardKeys.ts";
-import { NavRail } from "./NavRail.tsx";
 import { renderModal, renderPage, toastGlyph } from "./pageRouter.tsx";
 import { RepoList } from "./RepoList.tsx";
 import { Sidebar } from "./Sidebar.tsx";
 import { StatusPanel } from "./StatusPanel.tsx";
 import type { StatusPhase, Store } from "./store.ts";
 import { theme } from "./theme.ts";
+import { ViewMenuBar, ViewMenuDropdown } from "./ViewMenu.tsx";
 import { VIEW_BY_ID } from "./views/viewRegistry.ts";
 import { WorkspaceSkeleton } from "./WorkspaceSkeleton.tsx";
 import {
+  clampBoxLine,
   computeCockpitPanes,
-  contentWidth,
   FOOTER_ROWS,
   HEADER_ROWS,
-  NAV_RAIL_WIDTH,
-  navRailVisible,
+  TOAST_BAND_MIN_HEIGHT,
+  TOAST_RESERVED_ROWS,
 } from "./windowing.ts";
 
 function trimToWidth(line: string, innerWidth: number): string {
@@ -26,40 +27,22 @@ function trimToWidth(line: string, innerWidth: number): string {
   return `${line.slice(0, Math.max(1, innerWidth - 1))}…`;
 }
 
-export function buildFooterLines(
-  width: number,
-  runningSummary: string | null = null,
-  viewTitle: string | null = null,
-): string[] {
-  const innerWidth = Math.max(30, width - 4);
-  if (runningSummary !== null) {
-    return [trimToWidth(` ${runningSummary}`, innerWidth)];
-  }
-  const items = [
-    ...(viewTitle !== null ? ["[Esc] Cockpit", `[v] ${viewTitle}`] : []),
-    "[Tab] Focus",
-    "[Space] Select",
-    "[?] Help",
-    "[q] Quit",
-    "[:] Omnibar",
-    "[/] Search",
-    "[f] Health",
-  ];
-
-  let line = "";
-  for (const item of items) {
-    const next = line.length === 0 ? ` ${item}` : `${line}  ${item}`;
-    if (next.length <= innerWidth) {
-      line = next;
-    }
-  }
-
-  return [line];
-}
-
 export function buildHeaderLine(width: number, header: string): string {
   const innerWidth = Math.max(30, width - 4);
   return trimToWidth(` ${header}`, innerWidth);
+}
+
+function updateNoticeText(version: string, width: number): string {
+  const command = "repotruck update";
+  const available = width - 5;
+  const message = `Update available (${version}) · Run ${command}`;
+  if (message.length <= available) return message;
+
+  const instruction = ` · ${command}`;
+  const labelWidth = available - instruction.length;
+  if (labelWidth < 2) return command;
+  const label = `Update ${version}`;
+  return `${label.length <= labelWidth ? label : clampBoxLine(`↑${version}`, labelWidth)}${instruction}`;
 }
 
 export function buildRunningSummary(
@@ -94,14 +77,9 @@ export function Dashboard({
   }, [store]);
 
   // Quit arming, `v`-prefix view dispatch and the full cockpit keymap.
-  const { quitArmed, handleQuit } = useDashboardKeys(store, onQuit, height, width, navRailVisible);
+  const { quitArmed, handleQuit } = useDashboardKeys(store, onQuit, height, width);
 
-  // Mouse support: the renderer reports wheel and click events on the
-  // root renderable; the store maps coordinates to list rows / pane focus.
-  // The nav rail occupies the leftmost columns of the content area (header
-  // and footer span the full width), so content-row events are shifted by
-  // the rail width and clicks landing on the rail itself are left to its
-  // own component handlers.
+  // Pages own their content mouse events. Route cockpit coordinates to the store.
   const renderer = useRenderer();
   useEffect(() => {
     const root = renderer.root as unknown as {
@@ -120,19 +98,13 @@ export function Dashboard({
       type: "down" | "scroll",
     ) => {
       const state = store.getSnapshot();
-      const railActive = state.modal === null && state.view === "cockpit" && navRailVisible(width);
-      let x = event.x;
-      if (railActive && event.y >= HEADER_ROWS && event.y < height - FOOTER_ROWS) {
-        x = event.x - NAV_RAIL_WIDTH;
-        if (x < 0) return; // nav rail: its rows handle their own clicks
-      }
+      if (state.navFocused) return;
       if (state.modal === null && state.view !== "cockpit") {
-        // Pages own their content area; only header/footer bands route.
         if (event.y >= HEADER_ROWS && event.y < height - FOOTER_ROWS) return;
       }
       store.handleMouse(
-        { button: event.button, x, y: event.y, type, scroll: event.scroll },
-        railActive ? width - NAV_RAIL_WIDTH : width,
+        { button: event.button, x: event.x, y: event.y, type, scroll: event.scroll },
+        width,
         height,
         {
           onQuit: handleQuit,
@@ -161,14 +133,27 @@ export function Dashboard({
   const header = `${offlinePrefix}repotruck · ${login} (auth: ${snapshot.authMethod ?? "?"}) · preset: ${snapshot.preset} · root: ${snapshot.root} · ${reposCount}${viewTitle !== null ? ` · view: ${viewTitle}` : ""}`;
   const showCockpit = snapshot.modal === null || snapshot.modal.type === "search";
   const shellVisible = snapshot.modal === null;
+  const showToastBand = shellVisible && height >= TOAST_BAND_MIN_HEIGHT;
+  const notice =
+    shellVisible && snapshot.toast !== null
+      ? {
+          text: `${toastGlyph(snapshot.toast.phase)} ${snapshot.toast.message}`,
+          color: theme.phaseColor(snapshot.toast.phase),
+          dismiss: store.dismissToast,
+        }
+      : shellVisible && snapshot.updateToast !== null
+        ? {
+            text: updateNoticeText(snapshot.updateToast.version, width),
+            color: theme.toast(),
+            dismiss: store.dismissUpdateToast,
+          }
+        : null;
+  const inlineNotice = showToastBand ? null : notice;
   const runningSummary =
     snapshot.running && shellVisible ? buildRunningSummary(snapshot.statuses, quitArmed) : null;
-  const railVisible = navRailVisible(width);
-  const pageWidth = contentWidth(width);
-  const panes = computeCockpitPanes(pageWidth, snapshot.focus, snapshot.contextMenu !== null);
+  const panes = computeCockpitPanes(width, snapshot.focus, snapshot.contextMenu !== null);
   const showCompactSwitcher = panes.mode !== "three-pane";
   const switcherRows = showCompactSwitcher ? 1 : 0;
-  const railOffset = railVisible ? NAV_RAIL_WIDTH : 0;
   const dimFg = theme.dim();
 
   return (
@@ -176,18 +161,37 @@ export function Dashboard({
       <box
         border
         borderColor={theme.border()}
-        height={3}
+        height={HEADER_ROWS}
+        flexShrink={0}
+        flexDirection="column"
         onMouseDown={(event) => {
-          event.stopPropagation?.();
-          if (event.x >= 35 && event.x <= 65) {
-            void store.cyclePreset();
-          } else if (event.x > 65 && event.x <= 95) {
-            void store.openRootModal();
-          }
+          event.stopPropagation();
+          if (snapshot.navFocused) store.setNavFocused(false);
         }}
       >
-        <text fg={snapshot.offline ? theme.warning() : theme.accent()}>
-          {buildHeaderLine(width, header)}
+        <ViewMenuBar
+          store={store}
+          enabled={
+            snapshot.phase === "ready" &&
+            shellVisible &&
+            snapshot.dialog === null &&
+            snapshot.contextMenu === null
+          }
+        />
+        <text
+          fg={inlineNotice?.color ?? (snapshot.offline ? theme.warning() : theme.accent())}
+          wrapMode="none"
+          onMouseDown={(event) => {
+            if (event.button !== 0 || !shellVisible || snapshot.navFocused) return;
+            if (inlineNotice !== null) {
+              inlineNotice.dismiss();
+              return;
+            }
+            if (event.x >= 35 && event.x <= 65) void store.cyclePreset();
+            else if (event.x > 65 && event.x <= 95) void store.openRootModal();
+          }}
+        >
+          {buildHeaderLine(width, inlineNotice?.text ?? header)}
         </text>
       </box>
       {snapshot.phase === "loading" ? (
@@ -275,21 +279,9 @@ export function Dashboard({
               >
                 {" [Status] "}
               </text>
-              <text
-                fg={theme.accent()}
-                wrapMode="none"
-                flexShrink={0}
-                onMouseDown={(e) => {
-                  e.stopPropagation();
-                  store.openOmnibar("commands");
-                }}
-              >
-                {" [:]Views "}
-              </text>
             </box>
           ) : null}
           <box flexDirection="row" flexGrow={1}>
-            {railVisible ? <NavRail store={store} width={NAV_RAIL_WIDTH} /> : null}
             {panes.showSidebar ? (
               <Sidebar store={store} width={panes.sidebarCols} extraReservedRows={switcherRows} />
             ) : null}
@@ -297,7 +289,7 @@ export function Dashboard({
               <RepoList
                 store={store}
                 width={panes.listCols}
-                offsetX={railOffset + panes.listOffsetX}
+                offsetX={panes.listOffsetX}
                 extraReservedRows={switcherRows}
               />
             ) : null}
@@ -318,85 +310,42 @@ export function Dashboard({
             ) : null}
           </box>
         </box>
-      ) : snapshot.modal !== null ? (
-        renderModal(snapshot.modal, store, onSuspendAndRun)
-      ) : (
-        <box flexDirection="row" flexGrow={1}>
-          {railVisible ? <NavRail store={store} width={NAV_RAIL_WIDTH} /> : null}
-          {renderPage(
-            snapshot.view,
-            store,
-            pageWidth,
-            height,
-            snapshot.updateToast !== null || snapshot.toast !== null,
-          )}
-        </box>
-      )}
-      {snapshot.toast !== null && shellVisible ? (
-        <box
-          border
-          borderColor={theme.phaseColor(snapshot.toast.phase)}
-          height={3}
-          onMouseDown={(event) => {
-            event.stopPropagation?.();
-            store.dismissToast();
-          }}
-        >
-          <text fg={theme.phaseColor(snapshot.toast.phase)}>
-            {trimToWidth(
-              ` ${toastGlyph(snapshot.toast.phase)} ${snapshot.toast.message}`,
-              Math.max(30, width - 4),
-            )}
-          </text>
-        </box>
-      ) : snapshot.updateToast !== null && shellVisible ? (
-        <box
-          border
-          borderColor={theme.toast()}
-          height={3}
-          onMouseDown={(event) => {
-            event.stopPropagation?.();
-            store.dismissUpdateToast();
-          }}
-        >
-          <text fg={theme.toast()}>
-            {` repotruck ${snapshot.updateToast.version} available — update with: repotruck update`}
-          </text>
+      ) : null}
+      {snapshot.phase === "ready" && snapshot.view !== "cockpit" ? (
+        <box flexDirection="row" flexGrow={1} visible={shellVisible && snapshot.dialog === null}>
+          {renderPage(snapshot.view, store, width, height, showToastBand && notice !== null)}
         </box>
       ) : null}
-      <box
-        border
-        borderColor={theme.border()}
-        height={3}
-        onMouseDown={(event) => {
-          event.stopPropagation?.();
-          if (snapshot.running && shellVisible) {
-            handleQuit();
-            return;
-          }
-          if (event.x <= 15) {
-            store.cycleFocus(railVisible);
-          } else if (event.x <= 32) {
-            store.toggleCurrent();
-          } else if (event.x <= 45) {
-            store.openHelpModal();
-          } else if (event.x <= 60) {
-            handleQuit();
-          } else if (event.x <= 75) {
-            store.openOmnibar("commands");
-          } else if (event.x <= 88) {
-            store.openSearchModal();
-          } else {
-            store.cycleHealthFilter();
-          }
-        }}
-      >
-        {buildFooterLines(width, runningSummary, viewTitle).map((line) => (
-          <text key={line} fg={dimFg}>
-            {line}
-          </text>
-        ))}
-      </box>
+      {snapshot.phase === "ready" &&
+      snapshot.dialog === null &&
+      snapshot.modal !== null &&
+      !(snapshot.view === "cockpit" && snapshot.modal.type === "search")
+        ? renderModal(snapshot.modal, store, onSuspendAndRun)
+        : null}
+      {showToastBand && notice !== null ? (
+        <box
+          border
+          height={TOAST_RESERVED_ROWS}
+          flexShrink={0}
+          borderColor={notice.color}
+          onMouseDown={(event) => {
+            event.stopPropagation();
+            notice.dismiss();
+          }}
+        >
+          <text fg={notice.color}>{buildHeaderLine(width, notice.text)}</text>
+        </box>
+      ) : null}
+      <DashboardFooter
+        store={store}
+        snapshot={snapshot}
+        width={width}
+        runningSummary={runningSummary}
+        onQuit={handleQuit}
+      />
+      {snapshot.navFocused && shellVisible && snapshot.dialog === null ? (
+        <ViewMenuDropdown store={store} />
+      ) : null}
     </box>
   );
 }

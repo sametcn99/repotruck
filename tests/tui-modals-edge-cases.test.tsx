@@ -272,6 +272,13 @@ describe("TUI Modals Edge Cases & Omni-actions", () => {
     await settle(setup);
     expect(store.getSnapshot().modalError).toContain("source directory path is required");
 
+    await setup.mockInput.pressKeys(["a", " ", "c"]);
+    setup.mockInput.pressArrow("left");
+    setup.mockInput.pressKey("b");
+    await settle(setup);
+    expect(norm(setup.captureCharFrame())).toContain("a bc");
+    setup.mockInput.pressTab();
+    await settle(setup);
     setup.mockInput.pressKey(" ");
     await settle(setup);
     setup.mockInput.pressEnter();
@@ -406,7 +413,7 @@ describe("TUI Modals Edge Cases & Omni-actions", () => {
     await setup.dispose();
   });
 
-  test("WorktreeModal renders loading, worktrees with states, and error state", async () => {
+  test("WorktreeModal exposes its form and linked list through the keyboard", async () => {
     const ws = tempDir("rt-tui-wt-modal-");
     const store = makeStore(ws);
     store.openModal({
@@ -416,6 +423,16 @@ describe("TUI Modals Edge Cases & Omni-actions", () => {
       loading: true,
       error: null,
     });
+    const created: unknown[][] = [];
+    const removed: unknown[][] = [];
+    store.createWorktree = async (...args) => {
+      created.push(args);
+      return { ok: true, message: "added" };
+    };
+    store.removeWorktree = async (...args) => {
+      removed.push(args);
+      return { ok: true, message: "removed" };
+    };
     const setup = await testRender(<WorktreeModal store={store} />, { width: 100, height: 28 });
     await settle(setup);
     expect(norm(setup.captureCharFrame())).toContain("Loading worktrees...");
@@ -449,9 +466,33 @@ describe("TUI Modals Edge Cases & Omni-actions", () => {
     expect(frame).toContain("Active Worktrees (2):");
     expect(frame).toContain("[main] (main)");
     expect(frame).toContain("[detached] [locked]");
-    expect(frame).toContain("[ Remove ]");
-    expect(frame).toContain("[ Add Worktree ]");
+    expect(frame).toContain("[Del] Remove");
+    expect(frame).toContain("[Enter] Add Worktree");
     expect(frame).toContain("minor warning");
+    await setup.mockInput.typeText("feature");
+    setup.mockInput.pressTab();
+    await settle(setup);
+    await setup.mockInput.typeText("/tmp/new-checkout");
+    setup.mockInput.pressTab();
+    await settle(setup);
+    setup.mockInput.pressKey(" ");
+    await settle(setup);
+    setup.mockInput.pressTab();
+    await settle(setup);
+    setup.mockInput.pressEnter();
+    await settle(setup);
+    expect(created).toEqual([["acme/api", "feature", "/tmp/new-checkout", true]]);
+
+    setup.mockInput.pressTab({ shift: true });
+    await settle(setup);
+    setup.mockInput.pressKey("DELETE");
+    await settle(setup);
+    expect(removed).toEqual([]);
+    setup.mockInput.pressArrow("down");
+    await settle(setup);
+    setup.mockInput.pressKey("DELETE");
+    await settle(setup);
+    expect(removed).toEqual([["acme/api", "/tmp/acme/api+feat"]]);
     await setup.dispose();
   });
 
@@ -516,19 +557,44 @@ describe("TUI Modals Edge Cases & Omni-actions", () => {
     await settle(setup);
     let frame = norm(setup.captureCharFrame());
     expect(frame).toContain("create — Create repository");
-    setup.mockInput.pressArrow("down");
-    setup.mockInput.pressArrow("down");
-    setup.mockInput.pressKey(" ");
+    setup.mockInput.pressEnter();
     await settle(setup);
-    expect(norm(setup.captureCharFrame())).toContain("--public");
+    await setup.mockInput.typeText("demo");
+    setup.mockInput.pressEnter();
+    await settle(setup);
+    expect(norm(setup.captureCharFrame())).toContain("$ repotruck create demo");
     expect(frame).toContain("requires:");
+
+    setup.mockInput.pressTab();
+    await settle(setup);
+    expect(norm(setup.captureCharFrame())).toContain("[Copy CLI] Enter");
+    setup.mockInput.pressEnter();
+    await settle(setup);
+    expect(norm(setup.captureCharFrame())).toContain("command");
+    setup.mockInput.pressTab();
+    await settle(setup);
+    expect(norm(setup.captureCharFrame())).toContain("[Open] Enter");
+    setup.mockInput.pressEnter();
+    await settle(setup);
+    expect(store.getSnapshot().modal?.type).toBe("create");
 
     store.openCommandForm("scan");
     await settle(setup);
     frame = norm(setup.captureCharFrame());
-    expect(frame).toContain("[ Run ]");
-    expect(frame).toContain("[ Copy ]");
-    expect(frame).toContain("[ Open page ]");
+    expect(frame).toContain("[Run]");
+    expect(frame).toContain("[Copy CLI]");
+    expect(frame).toContain("[Open page]");
+    let ran = false;
+    store.runWorkspaceMaintenance = async (kind) => {
+      ran = kind === "scan";
+    };
+    setup.mockInput.pressTab();
+    await settle(setup);
+    expect(norm(setup.captureCharFrame())).toContain("[Run] Enter");
+    setup.mockInput.pressEnter();
+    await settle(setup);
+    expect(ran).toBe(true);
+    expect(store.getSnapshot().modal).toBeNull();
     await setup.dispose();
   });
 

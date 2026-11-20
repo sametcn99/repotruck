@@ -3,7 +3,8 @@ import { useKeyboard, useTerminalDimensions } from "@opentui/react";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import type { Store } from "../store.ts";
 import { theme } from "../theme.ts";
-import { clampBoxLine, visibleSlice } from "../windowing.ts";
+import { PaneTabs } from "../ui/PaneTabs.tsx";
+import { clampBoxLine, scrollSlice, visibleSlice } from "../windowing.ts";
 
 /**
  * `repotruck sync resolve` as a page: repositories that ended a sync in a
@@ -26,6 +27,8 @@ export function ConflictResolverView({
   const boxInnerCols = Math.max(10, effectiveWidth - 3);
   const [output, setOutput] = useState<string[]>([]);
   const [cursor, setCursor] = useState(0);
+  const [pane, setPane] = useState<"failures" | "output">("failures");
+  const [outputOffset, setOutputOffset] = useState(0);
 
   useEffect(() => {
     setOutput((current) =>
@@ -38,15 +41,28 @@ export function ConflictResolverView({
   }, []);
 
   const failed = snapshot.statuses.filter((entry) => entry.phase === "FAILED").slice(-12);
-  // Fixed rows: title (1) + top box borders/header (3) + action row (1) + bottom box borders/header/3 workflow lines (6) + footer (1) = 12.
-  const dynamicBudget = Math.max(2, height - 12);
-  const outputUsed = Math.min(
-    Math.max(1, output.length),
-    Math.max(1, Math.floor(dynamicBudget / 2)),
+  const compact = height < 16;
+  const failedCap = Math.max(1, compact ? height - 5 : Math.floor((height - 8) / 2));
+  const outputCap = Math.max(
+    1,
+    compact ? height - 5 : height - 8 - Math.min(failedCap, Math.max(1, failed.length)),
   );
-  const failedCap = Math.max(1, dynamicBudget - outputUsed);
-  const actualFailedRows = Math.max(1, Math.min(failed.length, failedCap));
-  const outputCap = Math.max(1, dynamicBudget - actualFailedRows);
+  const guide = [
+    "Inspect conflicting files with o or Enter.",
+    "Stage resolved files with git add, then press g to continue.",
+    "Press a to abort the rebase and restore the pre-sync branch.",
+  ];
+  const outputRows = [...output, ...guide];
+  const outputWin = scrollSlice(outputOffset, outputRows.length, outputCap);
+  const moveOutput = (delta: number) =>
+    setOutputOffset(Math.max(0, Math.min(outputRows.length - outputCap, outputWin.start + delta)));
+
+  const resolve = (action: "continue" | "abort") => {
+    setOutputOffset(0);
+    setPane("output");
+    void gitAll(store, action, setOutput);
+  };
+
   const maxCursor = Math.max(0, failed.length - 1);
   const clampedCursor = Math.min(cursor, maxCursor);
   const failedWin = visibleSlice(clampedCursor, failed.length, failedCap);
@@ -67,10 +83,19 @@ export function ConflictResolverView({
     ) {
       return;
     }
-    if (key.name === "g" && !key.shift) {
-      void gitAll(store, "continue", setOutput);
+    if (key.name === "tab") {
+      setPane(pane === "failures" ? "output" : "failures");
+    } else if (key.name === "g" && !key.shift) {
+      resolve("continue");
     } else if (key.name === "a") {
-      void gitAll(store, "abort", setOutput);
+      resolve("abort");
+    } else if (pane === "output") {
+      if (key.name === "up" || key.sequence === "k") moveOutput(-1);
+      else if (key.name === "down" || key.sequence === "j") moveOutput(1);
+      else if (key.name === "pageup") moveOutput(-outputCap);
+      else if (key.name === "pagedown") moveOutput(outputCap);
+      else if (key.name === "home") setOutputOffset(0);
+      else if (key.name === "end") moveOutput(outputRows.length);
     } else if (key.name === "up" || key.sequence === "k") {
       setCursor((c) => Math.max(0, Math.min(c, maxCursor) - 1));
     } else if (key.name === "down" || key.sequence === "j") {
@@ -100,17 +125,29 @@ export function ConflictResolverView({
       width="100%"
       onMouseScroll={(e) => {
         const isUp = e.scroll?.direction === "up" || e.button === 4;
+        if (pane === "output") {
+          moveOutput(isUp ? -1 : 1);
+          return;
+        }
         setCursor((c) =>
           Math.min(maxCursor, Math.max(0, Math.min(c, maxCursor) + (isUp ? -1 : 1))),
         );
       }}
     >
-      <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
-        {" Conflicts — sync resolve"}
-      </text>
+      <PaneTabs
+        panes={
+          [
+            ["failures", "Failures"],
+            ["output", "Resolution output"],
+          ] as const
+        }
+        selected={pane}
+        onSelect={setPane}
+      />
       <box
         border
-        borderColor={focused ? theme.focusBorder() : theme.border()}
+        visible={!compact || pane === "failures"}
+        borderColor={focused && pane === "failures" ? theme.focusBorder() : theme.border()}
         flexDirection="column"
         width="100%"
         padding={0}
@@ -132,7 +169,7 @@ export function ConflictResolverView({
         ) : (
           visibleFailed.map((entry, offset) => {
             const idx = failedWin.start + offset;
-            const isCursor = focused && idx === clampedCursor;
+            const isCursor = focused && pane === "failures" && idx === clampedCursor;
             return (
               <text
                 key={`${entry.id}`}
@@ -161,7 +198,7 @@ export function ConflictResolverView({
           flexShrink={0}
           onMouseDown={(event) => {
             event.stopPropagation();
-            void gitAll(store, "continue", setOutput);
+            resolve("continue");
           }}
         >
           {"[g] git rebase --continue"}
@@ -172,58 +209,39 @@ export function ConflictResolverView({
           flexShrink={0}
           onMouseDown={(event) => {
             event.stopPropagation();
-            void gitAll(store, "abort", setOutput);
+            resolve("abort");
           }}
         >
           {"[a] git rebase --abort"}
         </text>
       </box>
       <box
+        visible={!compact || pane === "output"}
         border
-        borderColor={theme.border()}
+        borderColor={focused && pane === "output" ? theme.focusBorder() : theme.border()}
         flexDirection="column"
         flexGrow={1}
         width="100%"
-        padding={0}
         overflow="hidden"
       >
         <text fg={theme.accent()} wrapMode="none" flexShrink={0}>
-          {" Resolution output & workflow"}
+          {` Resolution output · ${outputWin.start + 1}–${outputWin.end}/${outputRows.length}`}
         </text>
-        {(() => {
-          const seen = new Map<string, number>();
-          return output.slice(0, outputCap).map((line) => {
-            const count = (seen.get(line) ?? 0) + 1;
-            seen.set(line, count);
-            return (
-              <text key={`${line}#${count}`} fg={theme.dim()} wrapMode="none" flexShrink={0}>
-                {clampBoxLine(` ${line}`, boxInnerCols)}
-              </text>
-            );
-          });
-        })()}
-        <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
-          {clampBoxLine(
-            " 1. inspect conflicting files via [o] / Enter or open via cockpit [o]",
-            boxInnerCols,
-          )}
-        </text>
-        <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
-          {clampBoxLine(
-            " 2. stage resolved files (git add <file>), then press [g] to continue rebase",
-            boxInnerCols,
-          )}
-        </text>
-        <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
-          {clampBoxLine(
-            " 3. or press [a] to abort the rebase and restore the pre-sync branch state",
-            boxInnerCols,
-          )}
-        </text>
+        {outputRows.slice(outputWin.start, outputWin.end).map((line, offset) => (
+          <text
+            // biome-ignore lint/suspicious/noArrayIndexKey: output is sequential text
+            key={outputWin.start + offset}
+            fg={theme.dim()}
+            wrapMode="none"
+            flexShrink={0}
+          >
+            {clampBoxLine(` ${line}`, boxInnerCols)}
+          </text>
+        ))}
       </box>
       <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
         {clampBoxLine(
-          "↑↓/jk select · o/Enter detail · g continue · a abort · Esc cockpit",
+          pane === "output" ? "↑↓ scroll · PgUp / PgDn page" : "↑↓ select · [Enter] Details",
           effectiveWidth,
         )}
       </text>

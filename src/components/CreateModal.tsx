@@ -15,20 +15,17 @@ const STEP_LABELS: Record<string, string> = {
   visibility: "[6/6] visibility",
 };
 
-function createHint(step: CreateStep): string {
-  if (step === "visibility") {
-    return "Space flips visibility \u00b7 Enter creates \u00b7 Left back \u00b7 Escape cancels";
-  }
+function createHint(step: CreateStep, editingSource: boolean): string {
+  if (step === "name") return "Enter next · Esc cancel";
+  const back = "Shift+Tab back · Esc cancel";
+  if (step === "visibility") return `Space visibility · Enter create · ${back}`;
   if (step === "source") {
-    return "Space toggles the source \u00b7 Enter continues \u00b7 Left back \u00b7 Escape cancels";
+    return editingSource
+      ? `Tab source options · Enter next · ${back}`
+      : `Space change source · Enter next · ${back}`;
   }
-  if (step === "org") {
-    return "Up/Down choose the owner \u00b7 Enter continues \u00b7 Left back \u00b7 Escape cancels";
-  }
-  if (step === "name") {
-    return "Enter continues \u00b7 Escape cancels";
-  }
-  return "Enter continues \u00b7 Left back \u00b7 Escape cancels";
+  if (step === "org") return `↑↓ owner · Enter next · ${back}`;
+  return `Enter next · ${back}`;
 }
 
 export function CreateModal({ store }: { store: Store }) {
@@ -46,6 +43,7 @@ export function CreateModal({ store }: { store: Store }) {
   const [description, setDescription] = useState(draft.description ?? "");
   const [fromDir, setFromDir] = useState(draft.fromDir ?? "");
   const [sourceImport, setSourceImport] = useState(draft.fromDir !== undefined);
+  const [sourceInput, setSourceInput] = useState(true);
   const [orgCursor, setOrgCursor] = useState(0);
   const dimFg = theme.dim();
   const selectedFg = theme.success();
@@ -121,17 +119,26 @@ export function CreateModal({ store }: { store: Store }) {
     advance({ description: description.length > 0 ? description : undefined });
   };
 
+  const editingSource = step === "source" && sourceImport && sourceInput;
+  const editingText = step === "name" || step === "path" || step === "description" || editingSource;
+
   useKeyboard((key) => {
-    if (key.name === "left") {
+    if ((key.name === "tab" && key.shift) || (key.name === "left" && !editingText)) {
+      key.stopPropagation();
       goBack();
       return;
     }
     if (step === "source") {
-      if (key.name === "space") {
+      if (key.name === "tab" && sourceImport) {
+        key.stopPropagation();
+        setSourceInput((current) => !current);
+      } else if (!editingSource && key.name === "space") {
         store.setModalError(null);
         setSourceImport((current) => !current);
-      } else if (key.name === "return" && !sourceImport) {
-        advanceFromSource();
+        setSourceInput(true);
+      } else if (!editingSource && key.name === "return") {
+        if (sourceImport) setSourceInput(true);
+        else advanceFromSource();
       }
       return;
     }
@@ -165,7 +172,7 @@ export function CreateModal({ store }: { store: Store }) {
   });
 
   return (
-    <ModalShell store={store} title="New repository" hint={createHint(step)}>
+    <ModalShell store={store} title="New repository" hint={createHint(step, editingSource)}>
       <text fg={theme.focusBorder()}>{STEP_LABELS[step] ?? step}</text>
       {step === "name" ? (
         <>
@@ -202,6 +209,7 @@ export function CreateModal({ store }: { store: Store }) {
               e.stopPropagation();
               store.setModalError(null);
               setSourceImport(true);
+              setSourceInput(true);
             }}
           >
             {[`${sourceImport ? "[x]" : "[ ]"} Import from a local directory (--from)`]}
@@ -209,7 +217,9 @@ export function CreateModal({ store }: { store: Store }) {
           {sourceImport ? (
             <input
               key="step-source-dir"
-              focused
+              focused={editingSource}
+              onMouseDown={() => setSourceInput(true)}
+              placeholder="Local directory"
               value={fromDir}
               onInput={(value) => {
                 setFromDir(value);
@@ -305,7 +315,7 @@ export function CreateModal({ store }: { store: Store }) {
               goBack();
             }}
           >
-            {"[ < Back ]"}
+            {"[Shift+Tab] Back"}
           </text>
         ) : null}
         {step === "visibility" ? (
@@ -323,7 +333,7 @@ export function CreateModal({ store }: { store: Store }) {
               });
             }}
           >
-            {"[ Create Repository ]"}
+            {"[Enter] Create Repository"}
           </text>
         ) : (
           <text
@@ -337,7 +347,7 @@ export function CreateModal({ store }: { store: Store }) {
               else if (step === "description") advanceFromDescription();
             }}
           >
-            {"[ Continue > ]"}
+            {"[Enter] Continue"}
           </text>
         )}
         <text

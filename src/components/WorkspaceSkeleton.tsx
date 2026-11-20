@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { theme } from "./theme.ts";
-import { sidebarWidth, statusWidth } from "./windowing.ts";
+import { FOOTER_ROWS, HEADER_ROWS, sidebarWidth, statusWidth } from "./windowing.ts";
 
 const SPINNER_FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
 
@@ -76,7 +76,10 @@ export function WorkspaceSkeleton({
   const centerWidth = Math.max(16, width - sWidth - stWidth - 4);
 
   // Available vertical rows inside Repositories box:
-  const availableRows = Math.max(3, Math.min(SKELETON_PATTERNS.length, (height ?? 24) - 13));
+  const availableRows = Math.max(
+    1,
+    Math.min(SKELETON_PATTERNS.length, height - HEADER_ROWS - FOOTER_ROWS - 7),
+  );
   const visiblePatterns = SKELETON_PATTERNS.slice(0, availableRows);
 
   const innerScopeW = Math.max(8, sWidth - 4);
@@ -109,8 +112,12 @@ export function WorkspaceSkeleton({
         flexDirection="column"
         flexGrow={1}
       >
-        <text fg={theme.accent()}>{`  ${spinner} ${titleText}`}</text>
-        <text fg={theme.dim()}>{`   ${subText}`}</text>
+        <text
+          fg={theme.accent()}
+          flexShrink={0}
+          wrapMode="none"
+        >{`  ${spinner} ${titleText}`}</text>
+        <text fg={theme.dim()} flexShrink={0} wrapMode="none">{`   ${subText}`}</text>
         <text> </text>
         {visiblePatterns.map((pattern, idx) => {
           const isShimmer = idx % 5 === shimmerIndex;

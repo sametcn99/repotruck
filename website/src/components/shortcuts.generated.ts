@@ -8,8 +8,36 @@ export interface ShortcutRow {
 
 export const SHORTCUT_ROWS: readonly ShortcutRow[] = [
   {
-    key: "Tab",
-    action: "Cycle focus: sidebar, repository list, status panel",
+    key: "F10",
+    action: "Open Views menu · ←/→ groups · ↑/↓ views · Enter opens",
+  },
+  {
+    key: "? / F1",
+    action: "Show shortcuts for this screen (F1 also works while typing)",
+  },
+  {
+    key: "Tab / Shift+Tab",
+    action: "Move focus between cockpit panes or worktree fields",
+  },
+  {
+    key: "Escape",
+    action: "Leave input, close the menu or dialog, or return to Cockpit",
+  },
+  {
+    key: "v + letter",
+    action: "Open a page directly (letters listed in the Views section below)",
+  },
+  {
+    key: "[ / ]",
+    action: "Cycle to the previous / next page",
+  },
+  {
+    key: ": / Ctrl+K",
+    action: "Omnibar command palette (Tab cycles modes)",
+  },
+  {
+    key: "q",
+    action: "Quit (press twice in quick succession while a sync is running)",
   },
   {
     key: "Up/Down, j/k",
@@ -34,10 +62,6 @@ export const SHORTCUT_ROWS: readonly ShortcutRow[] = [
   {
     key: "/",
     action: "Live search: owner, name, @alias",
-  },
-  {
-    key: ": / Ctrl+K",
-    action: "Omnibar command palette (Tab cycles modes)",
   },
   {
     key: "@",
@@ -89,7 +113,7 @@ export const SHORTCUT_ROWS: readonly ShortcutRow[] = [
   },
   {
     key: "n",
-    action: "New repo wizard (Left goes back)",
+    action: "New repo wizard (Shift+Tab goes back)",
   },
   {
     key: "m",
@@ -144,20 +168,8 @@ export const SHORTCUT_ROWS: readonly ShortcutRow[] = [
     action: "Open sync preview; sidebar confirm; wizard advance",
   },
   {
-    key: "q",
-    action: "Quit (press twice in quick succession while a sync is running)",
-  },
-  {
     key: "x",
     action: "Dismiss the update toast (remembered once per version)",
-  },
-  {
-    key: "v + letter",
-    action: "Open a page directly (letters listed in the Views section below)",
-  },
-  {
-    key: "[ / ]",
-    action: "Cycle to the previous / next page",
   },
   {
     key: "→ (Right)",
@@ -180,8 +192,8 @@ export const SHORTCUT_ROWS: readonly ShortcutRow[] = [
     action: "Open the repository context menu / dismiss open modal",
   },
   {
-    key: "Escape",
-    action: "Close modal/page; clear search",
+    key: "v h",
+    action: "Cockpit — scope, repository list and activity",
   },
   {
     key: "v s",

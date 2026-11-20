@@ -462,7 +462,7 @@ describe("TUI v2 Store & Cockpit capabilities", () => {
       expect(initialOmnibarFrame).toContain("Omnibar");
       expect(initialOmnibarFrame).toContain(`1/${totalCmds} commands`);
       expect(initialOmnibarFrame).not.toContain("\\u00b7");
-      expect(initialOmnibarFrame).toContain("Tab switches mode \u00b7");
+      expect(initialOmnibarFrame).toContain("Tab mode · ↑↓ browse");
 
       // Press Up once (no typing!) to wrap around to the very last command and verify windowing scrolls
       setup.mockInput.pressArrow("up");

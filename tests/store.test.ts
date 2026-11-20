@@ -26,6 +26,7 @@ import {
   TOAST_MS,
   validateCreateDraft,
 } from "../src/components/store.ts";
+import { HEADER_ROWS } from "../src/components/windowing.ts";
 import { PRESET_IDS } from "../src/presets/index.ts";
 import { appConfigDir } from "../src/services/config.ts";
 import type { CreateRepoOptions, RepoInfo } from "../src/services/github.ts";
@@ -1693,8 +1694,8 @@ describe("mouse mapping", () => {
     expect(store.getSnapshot().cursor).toBe(3);
     store.handleMouse({ button: 4, x: 60, y: 10 }, 120, 40);
     expect(store.getSnapshot().cursor).toBe(0);
-    // Clicking the fifth visible list row (header is 3 rows, y is 1-based).
-    store.handleMouse({ button: 0, x: 60, y: 8 }, 120, 40);
+    // Click the fifth visible list row.
+    store.handleMouse({ button: 0, x: 60, y: HEADER_ROWS + 5 }, 120, 40);
     expect(store.getSnapshot().cursor).toBe(4);
     expect(store.getSnapshot().focus).toBe("list");
     // Side-pane clicks move focus without changing the cursor.
@@ -1740,11 +1741,11 @@ describe("mouse mapping", () => {
 
     expect(store.getSnapshot().selected.has("monalisa/alpha")).toBe(false);
     // sidebarWidth(120) = 24. A click at x=28 is inside the checkbox (relX = 4 <= 6)
-    store.handleMouse({ button: 0, x: 28, y: 4 }, 120, 40);
+    store.handleMouse({ button: 0, x: 28, y: HEADER_ROWS + 1 }, 120, 40);
     expect(store.getSnapshot().selected.has("monalisa/alpha")).toBe(true);
 
     // Clicking again toggles it off
-    store.handleMouse({ button: 0, x: 28, y: 4 }, 120, 40);
+    store.handleMouse({ button: 0, x: 28, y: HEADER_ROWS + 1 }, 120, 40);
     expect(store.getSnapshot().selected.has("monalisa/alpha")).toBe(false);
   });
 
@@ -1758,7 +1759,7 @@ describe("mouse mapping", () => {
     expect(store.getSnapshot().cursor).toBe(0);
     expect(store.getSnapshot().selected.has("monalisa/alpha")).toBe(false);
     // Click on active row at text (x=60)
-    store.handleMouse({ button: 0, x: 60, y: 4 }, 120, 40);
+    store.handleMouse({ button: 0, x: 60, y: HEADER_ROWS + 1 }, 120, 40);
     expect(store.getSnapshot().selected.has("monalisa/alpha")).toBe(true);
   });
 
@@ -1771,9 +1772,9 @@ describe("mouse mapping", () => {
 
     expect(store.getSnapshot().modal).toBeNull();
     // First click
-    store.handleMouse({ button: 0, x: 60, y: 4 }, 120, 40);
+    store.handleMouse({ button: 0, x: 60, y: HEADER_ROWS + 1 }, 120, 40);
     // Second click in rapid succession
-    store.handleMouse({ button: 0, x: 60, y: 4 }, 120, 40);
+    store.handleMouse({ button: 0, x: 60, y: HEADER_ROWS + 1 }, 120, 40);
     expect(store.getSnapshot().modal?.type).toBe("detail");
   });
 
@@ -1785,7 +1786,7 @@ describe("mouse mapping", () => {
     const store = h.store;
 
     expect(store.getSnapshot().modal).toBeNull();
-    store.handleMouse({ button: 2, x: 60, y: 4 }, 120, 40);
+    store.handleMouse({ button: 2, x: 60, y: HEADER_ROWS + 1 }, 120, 40);
     expect(store.getSnapshot().contextMenu?.key).toBe("monalisa/alpha");
     // the first entry jumps straight to details
     store.executeContextAction("detail");

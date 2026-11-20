@@ -34,6 +34,7 @@ export function PresetsView({
   const [inputMode, setInputMode] = useState<"id" | "none">("none");
   const [cursor, setCursor] = useState(0);
 
+  const compactBuilder = builderOpen && height < 14;
   const custom = snapshot.customPresets;
   const cols = width < 56 ? 1 : width < 84 ? 2 : 3;
   const preview = (segmentsList: readonly string[]): string =>
@@ -78,6 +79,7 @@ export function PresetsView({
 
   const cardsFocused =
     !snapshot.navFocused &&
+    !compactBuilder &&
     inputMode !== "id" &&
     snapshot.dialog === null &&
     snapshot.modal === null &&
@@ -134,6 +136,10 @@ export function PresetsView({
     if (key.name === "a") {
       setBuilderOpen(true);
       setInputMode("id");
+    } else if (builderOpen && key.name === "b") {
+      setBuilderOpen(false);
+    } else if (compactBuilder && !["1", "2", "3", "4", "s"].includes(key.sequence)) {
+      return;
     } else if (key.name === "left" || key.sequence === "h") {
       setCursor((c) => Math.max(0, Math.min(c, maxCursor) - 1));
     } else if (key.name === "right" || key.sequence === "l") {
@@ -190,7 +196,7 @@ export function PresetsView({
         );
       }}
     >
-      <box flexDirection="column" flexShrink={0} width="100%">
+      <box visible={!compactBuilder} flexDirection="column" flexShrink={0} width="100%">
         {visibleCardRows.map((row, rowOffsetIdx) => {
           const globalRowIdx = rowWin.start + rowOffsetIdx;
           return (
@@ -254,7 +260,7 @@ export function PresetsView({
                         openApplyConfirm(card);
                       }}
                     >
-                      {clampBoxLine("  [apply · reorganize]", cardInnerCols)}
+                      {clampBoxLine("  [Enter] Apply · reorganize", cardInnerCols)}
                     </text>
                   </box>
                 ) : (
@@ -298,7 +304,7 @@ export function PresetsView({
                           openApplyConfirm(card);
                         }}
                       >
-                        {"  [apply]"}
+                        {"  [Enter] Apply"}
                       </text>
                       <text
                         fg={theme.error()}
@@ -310,7 +316,7 @@ export function PresetsView({
                           openRemoveConfirm(card.id);
                         }}
                       >
-                        {"[remove]"}
+                        {"[d] Remove"}
                       </text>
                     </box>
                   </box>
@@ -346,10 +352,10 @@ export function PresetsView({
                   setInputMode("id");
                 }}
               >
-                {idValue || "(click / a to edit)"}
+                {`[a] ${idValue || "edit preset ID"}`}
               </text>
             )}
-            {TOKENS.map((token) => (
+            {TOKENS.map((token, index) => (
               <text
                 key={token}
                 fg={segments.includes(token) ? theme.accent() : theme.normal()}
@@ -363,7 +369,7 @@ export function PresetsView({
                   });
                 }}
               >
-                {`[${token}]`}
+                {`[${index + 1}] ${token}`}
               </text>
             ))}
             <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
@@ -381,7 +387,17 @@ export function PresetsView({
                 setBuilderOpen(false);
               }}
             >
-              {"[add]"}
+              {"[s] Add"}
+            </text>
+            <text
+              fg={theme.dim()}
+              onMouseDown={(event) => {
+                event.stopPropagation();
+                setBuilderOpen(false);
+                setInputMode("none");
+              }}
+            >
+              {"[b] Back"}
             </text>
           </box>
         </box>
@@ -403,7 +419,11 @@ export function PresetsView({
       )}
       <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
         {clampBoxLine(
-          "←↑↓→/hjkl move · Enter/Space apply · d/x remove custom · a add preset · Esc cockpit",
+          inputMode === "id"
+            ? "Enter accept ID · Esc actions · F1 help"
+            : builderOpen
+              ? "[a] ID · 1–4 tokens · [s] Add · [b] Back"
+              : "Arrow keys move · Enter apply · [d] Remove",
           width,
         )}
       </text>

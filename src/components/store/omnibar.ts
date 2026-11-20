@@ -11,9 +11,11 @@ import type { GithubClient, OmnibarCommandItem, OmnibarMode, StoreSnapshot } fro
 
 export const OMNIBAR_MODES: readonly OmnibarMode[] = ["commands", "symbols", "github", "runner"];
 
-export function cycleOmnibarMode(current: OmnibarMode): OmnibarMode {
+export function cycleOmnibarMode(current: OmnibarMode, direction: 1 | -1 = 1): OmnibarMode {
   const idx = OMNIBAR_MODES.indexOf(current);
-  return OMNIBAR_MODES[(idx + 1) % OMNIBAR_MODES.length] ?? "commands";
+  return (
+    OMNIBAR_MODES[(idx + direction + OMNIBAR_MODES.length) % OMNIBAR_MODES.length] ?? "commands"
+  );
 }
 
 /**
@@ -89,7 +91,7 @@ export function buildRegistryPaletteItems(uiIds: ReadonlySet<string>): OmnibarCo
 
 /**
  * Navigation entries for every dashboard view, derived from the same
- * registry the nav rail renders from — the palette can never miss a page.
+ * registry the Views menu renders from — the palette can never miss a page.
  */
 export function buildViewPaletteItems(snapshot: StoreSnapshot): OmnibarCommandItem[] {
   return VIEW_SPECS.map((spec) => ({

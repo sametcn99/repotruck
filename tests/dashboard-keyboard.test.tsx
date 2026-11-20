@@ -3,15 +3,11 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { testRender } from "@opentui/react/test-utils";
-import {
-  buildFooterLines,
-  buildHeaderLine,
-  buildRunningSummary,
-  Dashboard,
-} from "../src/components/Dashboard.tsx";
+import { buildHeaderLine, buildRunningSummary, Dashboard } from "../src/components/Dashboard.tsx";
 import { Store, type StoreDeps } from "../src/components/store.ts";
 import { activateTheme } from "../src/components/theme.ts";
 import type { RepoInfo } from "../src/services/github.ts";
+import type { UpdateCheckResult, UpdateState } from "../src/services/updater.ts";
 
 const tempDirs: string[] = [];
 let savedConfigDir: string | undefined;
@@ -79,7 +75,7 @@ function makeRepo(owner: string, name: string): RepoInfo {
   };
 }
 
-function makeStore(wsRoot: string, failAuth = false): Store {
+function makeStore(wsRoot: string, failAuth = false, overrides: StoreDeps = {}): Store {
   const deps: StoreDeps = {
     auth: async () => {
       if (failAuth) throw new Error("no auth configured");
@@ -106,6 +102,7 @@ function makeStore(wsRoot: string, failAuth = false): Store {
     detectAppsFn: async () => [],
     resolveAppFn: async () => null,
     listWorkspacesFn: async () => [],
+    ...overrides,
   };
   return new Store(wsRoot, deps);
 }
@@ -116,15 +113,57 @@ async function settle(setup: Awaited<ReturnType<typeof testRender>>): Promise<vo
 }
 
 describe("Dashboard helpers and full keyboard surface", () => {
-  test("buildFooterLines, buildHeaderLine, buildRunningSummary", () => {
+  test("buildHeaderLine and buildRunningSummary", () => {
     expect(buildHeaderLine(40, "a".repeat(80)).endsWith("…")).toBe(true);
     expect(buildRunningSummary([], true)).toContain("press q again to quit");
     expect(
       buildRunningSummary([{ phase: "CLONING" }, { phase: "DONE" }, { phase: "FAILED" }], false),
     ).toContain("1 cloning/pulling · 1 done · 1 failed");
-    expect(buildFooterLines(80, "syncing...", null)[0]).toContain("syncing...");
-    expect(buildFooterLines(120, null, "Stats")[0]).toContain("[v] Stats");
   });
+
+  test.each([
+    { width: 40, height: 18 },
+    { width: 120, height: 36 },
+  ])(
+    "checks for updates in the background and shows the whole command ($width × $height)",
+    async ({ width, height }) => {
+      const ws = makeWorkspace("rt-dash-update-");
+      const cached = Promise.withResolvers<UpdateState>();
+      const release = Promise.withResolvers<UpdateCheckResult>();
+      const store = makeStore(ws, false, {
+        readUpdateStateFn: () => cached.promise,
+        updater: () => release.promise,
+        persistDismissedVersion: async () => {},
+      });
+      const setup = await testRender(
+        <Dashboard store={store} onQuit={() => {}} onSuspendAndRun={async () => {}} />,
+        { width, height, exitOnCtrlC: false },
+      );
+      try {
+        for (let i = 0; i < 40 && store.getSnapshot().phase !== "ready"; i += 1) {
+          await new Promise((resolve) => setTimeout(resolve, 20));
+        }
+        expect(store.getSnapshot().phase).toBe("ready");
+        expect(store.getSnapshot().updateToast).toBeNull();
+
+        cached.resolve({ lastCheck: null, latestVersion: null, dismissedVersion: null });
+        release.resolve({ currentVersion: "1.0.0", latestVersion: "9.9.9", updateAvailable: true });
+        await settle(setup);
+        const notice = setup
+          .captureCharFrame()
+          .split("\n")
+          .find((line) => line.includes("repotruck update"));
+        expect(notice).toContain("9.9.9");
+        expect(store.getSnapshot().phase).toBe("ready");
+
+        setup.mockInput.pressKey("x");
+        await settle(setup);
+        expect(setup.captureCharFrame()).not.toContain("repotruck update");
+      } finally {
+        await setup.dispose();
+      }
+    },
+  );
 
   test("error phase supports r retry, o offline, and q quit", async () => {
     const ws = makeWorkspace("rt-dash-err-");

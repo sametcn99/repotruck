@@ -4,7 +4,7 @@ import type { ViewSpec } from "./viewRegistry.ts";
 /**
  * Temporary page body for views whose implementing ticket has not landed
  * yet. Every placeholder shows what the page will do and which ticket
- * builds it, so the nav rail is complete from day one.
+ * builds it, so the Views menu is complete from day one.
  */
 export function PlaceholderView({ spec }: { spec: ViewSpec; width: number }) {
   return (

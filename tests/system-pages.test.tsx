@@ -488,7 +488,7 @@ describe("device-flow + permanent-delete rendering", () => {
     await setup.mockInput.typeText("i");
     await settle(setup);
     frame = norm(await capture(setup));
-    expect(frame).toContain("[ Delete forever ]");
+    expect(frame).toContain("[Enter] Delete forever");
     setup.mockInput.pressEscape();
     await settle(setup);
     expect(store.getSnapshot().modal).toBeNull();

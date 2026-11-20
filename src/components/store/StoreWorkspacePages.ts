@@ -307,16 +307,18 @@ export class StoreWorkspacePages extends StoreCore {
     try {
       const config = this.localConfig ?? (await loadWorkspace(this.rootValue));
       this.localConfig = config;
-      const rows: string[] = [];
+      const rows: { repo: string; branch: string | null; path: string }[] = [];
       for (const entry of config.repos) {
         const dir = path.join(this.rootValue, ...entry.relativePath.split("/"));
         if (!existsSync(dir)) continue;
         const worktrees = await listRepoWorktrees(dir);
         for (const worktree of worktrees) {
           if (worktree.isMain) continue;
-          rows.push(
-            `${entry.owner}/${entry.name} · ${worktree.branch ?? "detached"} · ${worktree.path}`,
-          );
+          rows.push({
+            repo: `${entry.owner}/${entry.name}`,
+            branch: worktree.branch,
+            path: worktree.path,
+          });
         }
       }
       this.set({ worktreePage: { rows } });

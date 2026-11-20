@@ -1,0 +1,116 @@
+import type { ViewId } from "../components/store.ts";
+import type { HelpRow } from "./helpData.ts";
+
+const LIST_MOVEMENT: HelpRow = ["↑ / ↓, j / k", "Move through rows"];
+
+export const PAGE_SHORTCUTS: Record<Exclude<ViewId, "cockpit">, readonly HelpRow[]> = {
+  sync: [
+    ["e / x", "Start / stop sync"],
+    ["V", "Preview the cockpit selection"],
+    ["s / d", "Cycle scope / divergence strategy"],
+    ["l / c / p", "Cycle limit / concurrency / clone depth"],
+    ["b / t", "Toggle blobless clones / stash"],
+    ["i / E", "Edit include / exclude filters"],
+  ],
+  discover: [
+    ["Enter", "Edit query / submit while editing"],
+    ["Esc", "Leave the query field to use actions"],
+    LIST_MOVEMENT,
+    ["Space / a", "Select one / toggle all results"],
+    ["s / c", "Search / clone selected repositories"],
+    ["l / b", "Cycle limit / toggle blobless clones"],
+    ["y", "Copy the discover command"],
+  ],
+  scan: [
+    ["s / a", "Scan / confirm adoption of unregistered repos"],
+    ["p", "Review pruning deleted repositories"],
+    LIST_MOVEMENT,
+  ],
+  status: [
+    LIST_MOVEMENT,
+    ["Enter / Space", "Expand row"],
+    ["i / o", "Open repository details"],
+    ["f / u", "Cycle filter / toggle remote status"],
+    ["r / J", "Refresh / copy JSON"],
+  ],
+  search: [
+    ["Enter", "Edit pattern / submit while editing"],
+    ["Esc", "Leave the pattern field to use actions"],
+    LIST_MOVEMENT,
+    ["Space / i", "Open repository details"],
+    ["s / r", "Search / rebuild index"],
+    ["m / o", "Cycle search mode / toggle offline"],
+    ["t / l / n", "Cycle kind / language / result limit"],
+    ["J", "Copy JSON"],
+  ],
+  stats: [
+    ["Tab / ← / →", "Switch Breakdown and Doctor checks"],
+    LIST_MOVEMENT,
+    ["r / J", "Refresh / copy JSON"],
+  ],
+  changelog: [
+    ["7 / g / m", "Generate for 7 / 14 / 30 days"],
+    LIST_MOVEMENT,
+    ["c", "Copy changelog"],
+  ],
+  run: [
+    ["Enter / e", "Edit command / run command"],
+    ["Esc", "Leave the input field to use actions"],
+    ["s / p", "Cycle scope / edit name in profile scope"],
+    ["c", "Cycle concurrency"],
+    LIST_MOVEMENT,
+    ["Space", "Expand result output"],
+    ["J", "Copy JSON"],
+  ],
+  presets: [
+    ["Arrow keys", "Move between presets"],
+    ["Enter / d", "Apply preset / remove custom preset"],
+    ["a", "Open builder or edit preset ID"],
+    ["1–4 / s / b", "Toggle tokens / save preset / close builder"],
+  ],
+  profiles: [
+    ["Tab / ← / →", "Switch Pinned and Profiles"],
+    LIST_MOVEMENT,
+    ["Enter", "Open pinned repo / sync highlighted profile"],
+    ["r / d", "Run / delete highlighted profile"],
+    ["n / p", "Name a new profile / toggle cockpit pins"],
+  ],
+  trash: [
+    ["Tab / ← / →", "Switch Trash and Backups"],
+    LIST_MOVEMENT,
+    ["Enter / Space", "Restore highlighted item"],
+    ["r / b", "Refresh / create backup"],
+    ["E", "Confirm emptying trash"],
+  ],
+  worktree: [
+    ["s", "Scan the workspace for linked worktrees"],
+    LIST_MOVEMENT,
+    ["Enter", "Manage worktrees for the highlighted repository"],
+    ["v h, W", "Manage worktrees from the cockpit list"],
+    ["Tab / Shift+Tab", "Move focus in the worktree window"],
+    ["Del", "Remove highlighted linked worktree"],
+  ],
+  agents: [
+    ["Tab", "Switch Templates and MCP on compact screens"],
+    LIST_MOVEMENT,
+    ["Enter / x", "Apply / clear highlighted template"],
+    ["f / e / r", "Cycle format / export / regenerate map"],
+    ["p / m / s", "Cycle MCP port / start / stop server"],
+    ["y / i", "Copy HTTP / stdio client setup"],
+  ],
+  settings: [
+    ["Tab", "Switch Configuration and Tools on compact screens"],
+    LIST_MOVEMENT,
+    ["Enter / u", "Edit current setting / unset override"],
+    ["r / l / x", "Refresh / log in / open logout dialog"],
+    ["y", "Copy update command"],
+    ["1–4", "Copy bash / zsh / fish / PowerShell setup"],
+  ],
+  resolve: [
+    ["Tab", "Switch Failures and Resolution output"],
+    LIST_MOVEMENT,
+    ["Enter / o", "Open repository details"],
+    ["g / a", "Continue / abort rebase for failed repos"],
+  ],
+  log: [LIST_MOVEMENT, ["c / J", "Clear log / copy JSON"]],
+};

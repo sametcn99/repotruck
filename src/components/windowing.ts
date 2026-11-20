@@ -7,17 +7,19 @@ export function repoKeyOf(repo: { owner: string; name: string }): string {
   return `${repo.owner}/${repo.name}`;
 }
 
-// Rows consumed outside the repo rows themselves: header bar (3), footer bar (3),
-// the list box borders (2), and the counts line inside the list box (1).
-// The update toast (bordered, height 3) takes 3 more rows while visible.
-export const REPO_LIST_RESERVED_ROWS = 9;
-/** Height of the dashboard header bar; mouse clicks map list rows below it. */
-export const HEADER_ROWS = 3;
+/** The top bar and workspace summary share a bordered header. */
+export const HEADER_ROWS = 4;
 export const FOOTER_ROWS = 3;
 export const TOAST_RESERVED_ROWS = 3;
+export const TOAST_BAND_MIN_HEIGHT = 22;
+
+// List borders (2) and its counts line (1).
+export const REPO_LIST_RESERVED_ROWS = HEADER_ROWS + FOOTER_ROWS + 3;
 
 export function repoViewportRows(terminalHeight: number, toastVisible: boolean): number {
-  const reserved = REPO_LIST_RESERVED_ROWS + (toastVisible ? TOAST_RESERVED_ROWS : 0);
+  const reserved =
+    REPO_LIST_RESERVED_ROWS +
+    (toastVisible && terminalHeight >= TOAST_BAND_MIN_HEIGHT ? TOAST_RESERVED_ROWS : 0);
   return Math.max(1, terminalHeight - reserved);
 }
 
@@ -60,21 +62,6 @@ export function clampBoxLine(raw: string, maxCols: number): string {
 // Side panels together must leave at least 20 columns for the repository list.
 export const MIN_CENTER_COLUMNS = 20;
 const PANEL_FLOOR = 8;
-
-/** Width of the persistent nav rail when it is visible. */
-export const NAV_RAIL_WIDTH = 18;
-/** Below this terminal width the rail is hidden; v-prefix keys still work.
- *  Wide enough that the three-pane cockpit keeps its full budget. */
-export const NAV_RAIL_MIN_TERMINAL = 132;
-
-export function navRailVisible(terminalWidth: number): boolean {
-  return terminalWidth >= NAV_RAIL_MIN_TERMINAL;
-}
-
-/** Columns remaining for the cockpit/page area after the nav rail. */
-export function contentWidth(terminalWidth: number): boolean extends never ? never : number {
-  return navRailVisible(terminalWidth) ? terminalWidth - NAV_RAIL_WIDTH : terminalWidth;
-}
 
 /**
  * Adaptive cockpit layout breakpoints based on available content width:
