@@ -686,7 +686,7 @@ section[id],
 
 .screenshots-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
   gap: 14px;
 }
 
@@ -700,7 +700,17 @@ section[id],
   border-color: var(--muted);
 }
 
-.screenshot-card img {
+.screenshot-open {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  margin: 0;
+  background: none;
+  cursor: zoom-in;
+}
+
+.screenshot-open img {
   display: block;
   width: 100%;
   height: auto;
@@ -716,6 +726,206 @@ section[id],
 
 .screenshot-card figcaption strong {
   color: var(--text);
+}
+
+/* --- screenshot lightbox ---------------------------------------------------- */
+
+/* Author styles must re-state this or they re-enable the closed dialog. */
+dialog.lightbox:not([open]) {
+  display: none;
+}
+
+dialog.lightbox {
+  flex-direction: column;
+  border: 0;
+  margin: 0;
+  padding: 0;
+  inset: 0;
+  width: 100%;
+  height: 100vh;
+  /* biome-ignore lint/suspicious/noDuplicateProperties: dvh override keeps mobile browser toolbars from clipping the viewer */
+  height: 100dvh;
+  max-width: none;
+  max-height: none;
+  background: transparent;
+  color: var(--text);
+  overflow: hidden;
+  overscroll-behavior: contain;
+}
+
+dialog.lightbox[open] {
+  display: flex;
+  animation: lightbox-in 160ms ease-out;
+}
+
+dialog.lightbox::backdrop {
+  background: rgba(1, 4, 9, 0.9);
+}
+
+@keyframes lightbox-in {
+  from {
+    opacity: 0;
+  }
+}
+
+.lightbox-stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: none; /* gestures are ours: pan, pinch, wheel */
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: zoom-in;
+}
+
+.lightbox-stage.is-pannable {
+  cursor: grab;
+}
+
+.lightbox-stage.is-dragging {
+  cursor: grabbing;
+}
+
+.lightbox-stage img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  pointer-events: none; /* the stage owns every gesture */
+  will-change: transform;
+}
+
+.lightbox-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 2;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.lightbox-close:hover {
+  border-color: var(--muted);
+}
+
+.lightbox-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 16px;
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.lightbox-caption {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+p.lightbox-caption strong {
+  color: var(--text);
+}
+
+.lightbox-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lightbox-controls button {
+  min-width: 36px;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.lightbox-controls button:hover:not(:disabled) {
+  border-color: var(--muted);
+}
+
+.lightbox-controls button:disabled {
+  color: var(--muted);
+  cursor: default;
+}
+
+.lightbox-zoom {
+  min-width: 44px;
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--dim);
+}
+
+.lightbox-hint {
+  font-size: 11.5px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.lightbox-hint .hint-coarse {
+  display: none;
+}
+
+@media (pointer: coarse) {
+  .lightbox-hint .hint-fine {
+    display: none;
+  }
+
+  .lightbox-hint .hint-coarse {
+    display: inline;
+  }
+
+  .lightbox-controls button {
+    min-width: 44px;
+    height: 40px;
+  }
+
+  .lightbox-close {
+    width: 44px;
+    height: 44px;
+  }
+
+  .lightbox-hint {
+    display: none; /* keep the bar to controls + caption on phones */
+  }
+}
+
+@media (max-width: 640px) {
+  .lightbox-bar {
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    padding: 8px 12px;
+  }
+
+  .lightbox-caption {
+    flex-basis: 100%;
+    order: 2;
+    white-space: normal;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  dialog.lightbox[open] {
+    animation: none;
+  }
 }
 
 .ref-panel + .ref-panel,

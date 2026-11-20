@@ -1,10 +1,18 @@
-import { SCREENSHOT_GROUPS, SCREENSHOTS } from "./screenshotsManifest.generated.ts";
+import { useState } from "react";
+import { ScreenshotLightbox } from "./ScreenshotLightbox.tsx";
+import {
+  SCREENSHOT_GROUPS,
+  SCREENSHOTS,
+  type ScreenshotEntry,
+} from "./screenshotsManifest.generated.ts";
 
 /**
  * Auto-captured TUI gallery: every page, modal and dialog, rendered from
- * the generated manifest (bun run shots:gen) against mock data.
+ * the generated manifest (bun run shots:gen) against mock data. Clicking a
+ * frame opens it enlarged in the zoomable lightbox.
  */
 export function Screenshots() {
+  const [active, setActive] = useState<ScreenshotEntry | null>(null);
   return (
     <section className="section" id="screenshots" aria-label="TUI screenshots">
       <h2>Every screen, auto-captured</h2>
@@ -19,11 +27,18 @@ export function Screenshots() {
           <div className="screenshots-grid">
             {SCREENSHOTS.filter((shot) => shot.group === group).map((shot) => (
               <figure className="screenshot-card" key={shot.slug} id={`shot-${shot.slug}`}>
-                <img
-                  src={`${import.meta.env.BASE_URL}screenshots/${shot.slug}.svg`}
-                  alt={`${shot.title} — ${shot.caption}`}
-                  loading="lazy"
-                />
+                <button
+                  type="button"
+                  className="screenshot-open"
+                  aria-label={`Open ${shot.title} screenshot enlarged`}
+                  onClick={() => setActive(shot)}
+                >
+                  <img
+                    src={`${import.meta.env.BASE_URL}screenshots/${shot.slug}.svg`}
+                    alt={`${shot.title} — ${shot.caption}`}
+                    loading="lazy"
+                  />
+                </button>
                 <figcaption>
                   <strong>{shot.title}</strong>
                   <span> — {shot.caption}</span>
@@ -33,6 +48,7 @@ export function Screenshots() {
           </div>
         </div>
       ))}
+      <ScreenshotLightbox shot={active} onClose={() => setActive(null)} />
     </section>
   );
 }
