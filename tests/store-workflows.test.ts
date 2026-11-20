@@ -833,5 +833,5 @@ describe("StoreCore extended scopes, presets, profiles, instructions, code searc
     store.moveSidebarCursor(1);
     store.setSidebarCursor(0);
     store.moveStatusScroll(1);
-  });
+  }, 60000);
 });

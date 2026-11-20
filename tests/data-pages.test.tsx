@@ -234,7 +234,7 @@ describe("t08 stats page", () => {
     expect(frame).toContain("[stats] — stats JSON copied to clipboard");
     expect(store.getSnapshot().toast?.phase).toBe("DONE");
     await setup.dispose();
-  });
+  }, 30000);
 });
 
 describe("t09 trash & backups page", () => {

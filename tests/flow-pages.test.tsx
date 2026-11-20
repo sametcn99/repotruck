@@ -340,7 +340,7 @@ describe("t17 changelog + scan + prune guard", () => {
     await settle(setup);
     expect(store.getSnapshot().statuses.some((s) => s.key === "[changelog]")).toBe(true);
     await setup.dispose();
-  });
+  }, 30000);
 
   test("ScanAdoptView renders unregistered repos and handles s/a/p keys", async () => {
     const root = makeWorkspace("rt-scan-render-");

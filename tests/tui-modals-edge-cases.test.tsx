@@ -60,7 +60,12 @@ afterAll(() => {
     process.env.REPOTRUCK_CONFIG_DIR = savedConfigDir;
   }
   for (const dir of tempDirs) {
-    rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    try {
+      rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    } catch {
+      /* Windows keeps transient handles on temp dirs (EBUSY); the OS temp
+         cleaner reclaims them — failing the suite over cleanup would be noise */
+    }
   }
 });
 
