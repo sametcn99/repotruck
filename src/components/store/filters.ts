@@ -2,6 +2,7 @@ import type { RepoInventoryEntry } from "../../services/config.ts";
 import { validateCreateName } from "../../services/creator.ts";
 import type { RepoInfo } from "../../services/github.ts";
 import { validateMoveDestination } from "../../services/mover.ts";
+import { visibleSlice } from "../windowing.ts";
 import type {
   CreateDraft,
   CreateStep,
@@ -145,8 +146,8 @@ function sortReposAscending(
       else if (b.language === null) result = -1;
       else result = a.language.toLowerCase().localeCompare(b.language.toLowerCase());
     } else if (key === "stars") {
-      const sa = typeof a.stars === "number" ? a.stars : -1;
-      const sb = typeof b.stars === "number" ? b.stars : -1;
+      const sa: number = typeof a.stars === "number" ? a.stars : -1;
+      const sb: number = typeof b.stars === "number" ? b.stars : -1;
       result = sb - sa;
     } else if (key === "dirty") {
       const ha = localHealth?.get(repoOrderKey(a));
@@ -235,17 +236,45 @@ export function buildSidebarRows(snapshot: StoreSnapshot): SidebarRow[] {
   return rows;
 }
 
-export function sidebarRowIndexForY(localY: number, orgCount: number): number | null {
-  if (localY <= 0) return null;
-  if (localY <= 1 + orgCount) {
-    return localY - 1;
+export function sidebarRowToLineIndex(rowIndex: number, orgCount: number): number {
+  const presetIndex = 1 + orgCount;
+  if (rowIndex < presetIndex) {
+    return 1 + rowIndex;
   }
-  if (localY === 2 + orgCount) return null;
-  if (localY === 3 + orgCount) {
+  if (rowIndex === presetIndex) {
+    return 2 + presetIndex;
+  }
+  return 3 + rowIndex;
+}
+
+export function sidebarTotalLines(orgCount: number): number {
+  // 4 headers (SCOPE, PRESET, FILTERS, HEALTH) + (1 + orgCount + 1 + 3) rows + 2 health rows
+  return 11 + orgCount;
+}
+
+export function sidebarRowIndexForY(
+  localY: number,
+  orgCount: number,
+  sidebarCursor = 0,
+  viewportRows?: number,
+): number | null {
+  const totalLines = sidebarTotalLines(orgCount);
+  let y = localY;
+  if (viewportRows !== undefined && viewportRows < totalLines) {
+    const activeLine = sidebarRowToLineIndex(sidebarCursor, orgCount);
+    const { start } = visibleSlice(activeLine, totalLines, Math.max(1, viewportRows));
+    y = start + localY;
+  }
+  if (y <= 0) return null;
+  if (y <= 1 + orgCount) {
+    return y - 1;
+  }
+  if (y === 2 + orgCount) return null;
+  if (y === 3 + orgCount) {
     return 1 + orgCount;
   }
-  if (localY === 4 + orgCount) return null;
-  const filterOffset = localY - (5 + orgCount);
+  if (y === 4 + orgCount) return null;
+  const filterOffset = y - (5 + orgCount);
   if (filterOffset >= 0 && filterOffset < 3) {
     return 2 + orgCount + filterOffset;
   }

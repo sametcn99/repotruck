@@ -242,4 +242,39 @@ describe("t01 view layer — dashboard render", () => {
     expect(store.getSnapshot().sortKey).toBe(sortBefore);
     await setup.dispose();
   });
+
+  test("narrow and short terminal adapts cockpit to single-pane switcher and stacks views cleanly", async () => {
+    const root = makeWorkspace("rt-view-narrow-ws-");
+    const store = makeStore(root, [makeRepo("acme", "api")]);
+    const setup = await testRender(
+      <Dashboard store={store} onQuit={() => {}} onSuspendAndRun={async () => {}} />,
+      { width: 58, height: 18, exitOnCtrlC: false },
+    );
+    for (let i = 0; i < 40 && store.getSnapshot().phase !== "ready"; i += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 25));
+    }
+    await settle(setup);
+
+    // In single-pane mode (width=58 < 64), compact pane switcher strip is shown
+    let frame = norm(setup.captureCharFrame());
+    expect(frame).toContain("[Scope]");
+    expect(frame).toContain("[Repos (1)]");
+    expect(frame).toContain("[Status]");
+    expect(frame).toContain("[ ] api");
+
+    // Tab cycles focus to Status panel in single-pane mode
+    store.setFocus("status");
+    await settle(setup);
+    frame = norm(setup.captureCharFrame());
+    expect(frame).toContain("[1]Act");
+
+    // Two-column views stack vertically on narrow terminals without clipping the second panel
+    store.setView("trash");
+    await settle(setup);
+    frame = norm(setup.captureCharFrame());
+    expect(frame).toContain("Trash");
+    expect(frame).toContain("Backups");
+
+    await setup.dispose();
+  });
 });

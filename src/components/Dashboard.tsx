@@ -44,6 +44,7 @@ import { WorkspacePicker } from "./WorkspacePicker.tsx";
 import { WorkspaceSkeleton } from "./WorkspaceSkeleton.tsx";
 import { WorktreeModal } from "./WorktreeModal.tsx";
 import {
+  computeCockpitPanes,
   contentWidth,
   FOOTER_ROWS,
   HEADER_ROWS,
@@ -51,8 +52,6 @@ import {
   navRailVisible,
   repoKeyOf,
   repoViewportRows,
-  sidebarWidth,
-  statusWidth,
 } from "./windowing.ts";
 
 // A second q inside this window while a sync runs actually quits.
@@ -147,8 +146,9 @@ function assertUnreachable(value: never): null {
 // placeholder with a real component; the registry drives rail, help and
 // palette entries so the shell stays consistent meanwhile.
 function renderPage(view: ViewId, store: Store, width: number, height: number) {
-  const innerWidth = Math.max(30, width - 4);
-  const innerHeight = Math.max(12, height - 4);
+  const compact = height < 22 || width < 68;
+  const innerWidth = Math.max(24, width - (compact ? 2 : 4));
+  const innerHeight = Math.max(8, height - HEADER_ROWS - FOOTER_ROWS - (compact ? 3 : 5));
   const wrap = (body: React.ReactNode) => (
     <PageShell view={view} store={store}>
       {body}
@@ -158,33 +158,33 @@ function renderPage(view: ViewId, store: Store, width: number, height: number) {
     case "status":
       return wrap(<StatusMatrixView store={store} width={innerWidth} height={innerHeight} />);
     case "search":
-      return wrap(<CodeSearchView store={store} width={innerWidth} />);
+      return wrap(<CodeSearchView store={store} width={innerWidth} height={innerHeight} />);
     case "run":
-      return wrap(<RunConsoleView store={store} width={innerWidth} />);
+      return wrap(<RunConsoleView store={store} width={innerWidth} height={innerHeight} />);
     case "stats":
-      return wrap(<StatsView store={store} width={innerWidth} />);
+      return wrap(<StatsView store={store} width={innerWidth} height={innerHeight} />);
     case "trash":
-      return wrap(<TrashBackupsView store={store} width={innerWidth} />);
+      return wrap(<TrashBackupsView store={store} width={innerWidth} height={innerHeight} />);
     case "presets":
       return wrap(<PresetsView store={store} width={innerWidth} />);
     case "profiles":
-      return wrap(<ProfilesView store={store} width={innerWidth} />);
+      return wrap(<ProfilesView store={store} width={innerWidth} height={innerHeight} />);
     case "agents":
-      return wrap(<AgentsView store={store} width={innerWidth} />);
+      return wrap(<AgentsView store={store} width={innerWidth} height={innerHeight} />);
     case "settings":
-      return wrap(<SettingsView store={store} width={innerWidth} />);
+      return wrap(<SettingsView store={store} width={innerWidth} height={innerHeight} />);
     case "sync":
       return wrap(<SyncCenterView store={store} width={innerWidth} />);
     case "discover":
-      return wrap(<DiscoverView store={store} width={innerWidth} />);
+      return wrap(<DiscoverView store={store} width={innerWidth} height={innerHeight} />);
     case "resolve":
-      return wrap(<ConflictResolverView store={store} />);
+      return wrap(<ConflictResolverView store={store} width={innerWidth} height={innerHeight} />);
     case "changelog":
-      return wrap(<ChangelogView store={store} width={innerWidth} />);
+      return wrap(<ChangelogView store={store} width={innerWidth} height={innerHeight} />);
     case "scan":
-      return wrap(<ScanAdoptView store={store} />);
+      return wrap(<ScanAdoptView store={store} width={innerWidth} height={innerHeight} />);
     case "worktree":
-      return wrap(<WorktreesView store={store} />);
+      return wrap(<WorktreesView store={store} width={innerWidth} height={innerHeight} />);
     case "cockpit":
       return null;
     default: {
@@ -619,6 +619,10 @@ export function Dashboard({
     snapshot.running && shellVisible ? buildRunningSummary(snapshot.statuses, quitArmed) : null;
   const railVisible = navRailVisible(width);
   const pageWidth = contentWidth(width);
+  const panes = computeCockpitPanes(pageWidth, snapshot.focus, snapshot.contextMenu !== null);
+  const showCompactSwitcher = panes.mode !== "three-pane";
+  const switcherRows = showCompactSwitcher ? 1 : 0;
+  const railOffset = railVisible ? NAV_RAIL_WIDTH : 0;
   const dimFg = theme.dim();
 
   return (
@@ -645,7 +649,7 @@ export function Dashboard({
       ) : snapshot.phase === "error" ? (
         <box flexGrow={1} flexDirection="column" padding={1} gap={1}>
           <text fg={theme.error()}>{snapshot.errorMessage ?? "unknown error"}</text>
-          <box flexDirection="row" gap={3}>
+          <box flexDirection="row" flexWrap="wrap" gap={3}>
             <text
               fg={theme.warning()}
               onMouseDown={(e) => {
@@ -678,15 +682,87 @@ export function Dashboard({
       ) : snapshot.dialog !== null ? (
         <DialogBox store={store} />
       ) : showCockpit && snapshot.view === "cockpit" ? (
-        <box flexDirection="row" flexGrow={1}>
-          {railVisible ? <NavRail store={store} width={NAV_RAIL_WIDTH} /> : null}
-          <Sidebar store={store} width={sidebarWidth(pageWidth)} />
-          <RepoList store={store} />
-          {snapshot.contextMenu !== null ? (
-            <ContextMenu store={store} />
-          ) : (
-            <StatusPanel store={store} width={statusWidth(pageWidth)} />
-          )}
+        <box flexDirection="column" flexGrow={1}>
+          {showCompactSwitcher ? (
+            <box flexDirection="row" gap={1} height={1} flexShrink={0}>
+              <text
+                fg={snapshot.focus === "sidebar" ? theme.cursorFg() : dimFg}
+                bg={snapshot.focus === "sidebar" ? theme.cursorBg() : undefined}
+                wrapMode="none"
+                flexShrink={0}
+                onMouseDown={(e) => {
+                  e.stopPropagation();
+                  store.setFocus("sidebar");
+                }}
+              >
+                {" [Scope] "}
+              </text>
+              <text
+                fg={snapshot.focus === "list" ? theme.cursorFg() : dimFg}
+                bg={snapshot.focus === "list" ? theme.cursorBg() : undefined}
+                wrapMode="none"
+                flexShrink={0}
+                onMouseDown={(e) => {
+                  e.stopPropagation();
+                  store.setFocus("list");
+                }}
+              >
+                {` [Repos (${snapshot.filteredRepos.length})] `}
+              </text>
+              <text
+                fg={snapshot.focus === "status" ? theme.cursorFg() : dimFg}
+                bg={snapshot.focus === "status" ? theme.cursorBg() : undefined}
+                wrapMode="none"
+                flexShrink={0}
+                onMouseDown={(e) => {
+                  e.stopPropagation();
+                  store.setFocus("status");
+                }}
+              >
+                {" [Status] "}
+              </text>
+              <text
+                fg={theme.accent()}
+                wrapMode="none"
+                flexShrink={0}
+                onMouseDown={(e) => {
+                  e.stopPropagation();
+                  store.openOmnibar("commands");
+                }}
+              >
+                {" [:]Views "}
+              </text>
+            </box>
+          ) : null}
+          <box flexDirection="row" flexGrow={1}>
+            {railVisible ? <NavRail store={store} width={NAV_RAIL_WIDTH} /> : null}
+            {panes.showSidebar ? (
+              <Sidebar store={store} width={panes.sidebarCols} extraReservedRows={switcherRows} />
+            ) : null}
+            {panes.showList ? (
+              <RepoList
+                store={store}
+                width={panes.listCols}
+                offsetX={railOffset + panes.listOffsetX}
+                extraReservedRows={switcherRows}
+              />
+            ) : null}
+            {panes.showStatus ? (
+              snapshot.contextMenu !== null ? (
+                <ContextMenu
+                  store={store}
+                  width={panes.statusCols}
+                  extraReservedRows={switcherRows}
+                />
+              ) : (
+                <StatusPanel
+                  store={store}
+                  width={panes.statusCols}
+                  extraReservedRows={switcherRows}
+                />
+              )
+            ) : null}
+          </box>
         </box>
       ) : snapshot.modal !== null ? (
         renderModal(snapshot.modal, store, onSuspendAndRun)

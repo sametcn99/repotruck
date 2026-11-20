@@ -1,10 +1,13 @@
+import { useTerminalDimensions } from "@opentui/react";
 import { useState, useSyncExternalStore } from "react";
 import { ModalShell } from "./ModalShell.tsx";
 import type { Store, StoreSnapshot } from "./store.ts";
 import { theme } from "./theme.ts";
+import { visibleSlice } from "./windowing.ts";
 
 export function WorktreeModal({ store }: { store: Store }) {
   const snapshot: StoreSnapshot = useSyncExternalStore(store.subscribe, store.getSnapshot);
+  const { height } = useTerminalDimensions();
   const modal = snapshot.modal;
   const key = modal !== null && modal.type === "worktree" ? modal.key : "";
   const worktrees = modal !== null && modal.type === "worktree" ? modal.worktrees : [];
@@ -15,8 +18,15 @@ export function WorktreeModal({ store }: { store: Store }) {
   const [targetPath, setTargetPath] = useState("");
   const [newBranch, setNewBranch] = useState(false);
   const [actionMsg, setActionMsg] = useState<string | null>(null);
+  const [scrollIdx, setScrollIdx] = useState(0);
 
   const accentColor = theme.accent();
+  const compact = height < 24;
+  // Reserve rows for chrome, title, inputs, and buttons so they remain reachable on short terminals
+  const wtViewport = Math.max(1, height - (compact ? 17 : 21));
+  const boundedScroll = Math.min(Math.max(0, scrollIdx), Math.max(0, worktrees.length - 1));
+  const wtWin = visibleSlice(boundedScroll, worktrees.length, wtViewport);
+  const visibleWorktrees = worktrees.slice(wtWin.start, wtWin.end);
 
   return (
     <ModalShell
@@ -24,24 +34,37 @@ export function WorktreeModal({ store }: { store: Store }) {
       title={`Worktrees - ${key}`}
       hint="Escape cancels"
       borderColor={accentColor}
+      gap={0}
+      onMouseScroll={(e) => {
+        const isUp = e.scroll?.direction === "up" || e.button === 4;
+        setScrollIdx((s) =>
+          Math.min(Math.max(0, worktrees.length - 1), Math.max(0, s + (isUp ? -1 : 1))),
+        );
+      }}
     >
       {loading ? (
         <text fg={theme.dim()}>Loading worktrees...</text>
       ) : (
         <>
-          <text fg={theme.normal()}>{`Active Worktrees (${worktrees.length}):`}</text>
-          {worktrees.map((wt) => {
+          <text fg={theme.normal()} wrapMode="none" flexShrink={0}>
+            {`Active Worktrees (${worktrees.length})${
+              worktrees.length > wtViewport ? ` · showing ${wtWin.start + 1}-${wtWin.end}` : ""
+            }:`}
+          </text>
+          {visibleWorktrees.map((wt) => {
             const role = wt.isMain ? " (main)" : "";
             const br = wt.branch ? `[${wt.branch}]` : "[detached]";
             const locked = wt.locked ? " [locked]" : "";
             return (
-              <box key={wt.path} flexDirection="row" gap={1}>
-                <text fg={wt.isMain ? theme.accent() : theme.normal()}>
+              <box key={wt.path} flexDirection="row" gap={1} flexShrink={0}>
+                <text fg={wt.isMain ? theme.accent() : theme.normal()} wrapMode="none">
                   {`  ${wt.path} ${br}${role}${locked}`}
                 </text>
                 {!wt.isMain ? (
                   <text
                     fg={theme.error()}
+                    wrapMode="none"
+                    flexShrink={0}
                     onMouseDown={(e) => {
                       e.stopPropagation();
                       void store.removeWorktree(key, wt.path).then((res) => {
@@ -55,14 +78,28 @@ export function WorktreeModal({ store }: { store: Store }) {
               </box>
             );
           })}
-          {error !== null ? <text fg={theme.error()}>{error}</text> : null}
-          {actionMsg !== null ? <text fg={theme.info()}>{actionMsg}</text> : null}
+          {error !== null ? (
+            <text fg={theme.error()} wrapMode="none" flexShrink={0}>
+              {error}
+            </text>
+          ) : null}
+          {actionMsg !== null ? (
+            <text fg={theme.info()} wrapMode="none" flexShrink={0}>
+              {actionMsg}
+            </text>
+          ) : null}
 
-          <box flexDirection="column" marginTop={1} gap={1}>
-            <text fg={theme.normal()}>Add New Worktree:</text>
-            <text fg={theme.dim()}>Branch name:</text>
+          <box flexDirection="column" marginTop={compact ? 0 : 1} gap={0} flexShrink={0}>
+            <text fg={theme.normal()} wrapMode="none">
+              Add New Worktree:
+            </text>
+            <text fg={theme.dim()} wrapMode="none">
+              Branch name:
+            </text>
             <input value={branch} onInput={setBranch} placeholder="e.g. feature-x" width="100%" />
-            <text fg={theme.dim()}>Custom Path (optional, empty defaults to ../repo+branch):</text>
+            <text fg={theme.dim()} wrapMode="none">
+              Custom Path (optional, empty defaults to ../repo+branch):
+            </text>
             <input
               value={targetPath}
               onInput={setTargetPath}
@@ -72,6 +109,7 @@ export function WorktreeModal({ store }: { store: Store }) {
             <box flexDirection="row" gap={2}>
               <text
                 fg={newBranch ? theme.success() : theme.dim()}
+                wrapMode="none"
                 onMouseDown={(e) => {
                   e.stopPropagation();
                   setNewBranch(!newBranch);
@@ -80,7 +118,7 @@ export function WorktreeModal({ store }: { store: Store }) {
                 {newBranch ? "[x] Create new branch (-b)" : "[ ] Create new branch (-b)"}
               </text>
             </box>
-            <box flexDirection="row" gap={2} marginTop={1}>
+            <box flexDirection="row" flexWrap="wrap" gap={2} marginTop={compact ? 0 : 1}>
               <text
                 fg={accentColor}
                 onMouseDown={(e) => {

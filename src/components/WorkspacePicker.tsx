@@ -1,16 +1,21 @@
-import { useKeyboard } from "@opentui/react";
+import { useKeyboard, useTerminalDimensions } from "@opentui/react";
 import { useState, useSyncExternalStore } from "react";
 import { ModalShell, SelectList } from "./ModalShell.tsx";
 import type { Store } from "./store.ts";
 import { theme } from "./theme.ts";
+import { visibleSlice } from "./windowing.ts";
 
 export function WorkspacePicker({ store }: { store: Store }) {
   const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot);
+  const { height } = useTerminalDimensions();
   const [cursor, setCursor] = useState(0);
   const [notice, setNotice] = useState<string | null>(null);
   const selectable = snapshot.workspaces;
   const boundedCursor = Math.min(cursor, Math.max(0, selectable.length - 1));
   const current = selectable[boundedCursor];
+  const viewportRows = Math.max(2, height - 15);
+  const window = visibleSlice(boundedCursor, selectable.length, viewportRows);
+  const visibleWorkspaces = selectable.slice(window.start, window.end);
   const recordsPath =
     snapshot.modal !== null && snapshot.modal.type === "workspaces"
       ? snapshot.modal.recordsPath
@@ -57,12 +62,20 @@ export function WorkspacePicker({ store }: { store: Store }) {
         );
       }}
     >
-      {recordsPath !== null ? <text fg={dimFg}>{`records: ${recordsPath}`}</text> : null}
-      {notice !== null ? <text fg={selectedFg}>{notice}</text> : null}
+      {recordsPath !== null ? (
+        <text fg={dimFg} wrapMode="none" flexShrink={0}>
+          {`records: ${recordsPath}`}
+        </text>
+      ) : null}
+      {notice !== null ? (
+        <text fg={selectedFg} wrapMode="none" flexShrink={0}>
+          {notice}
+        </text>
+      ) : null}
       {snapshot.workspaces.length === 0 ? <text fg={dimFg}>no registered workspaces</text> : null}
       <SelectList
-        items={snapshot.workspaces}
-        cursor={boundedCursor}
+        items={visibleWorkspaces}
+        cursor={boundedCursor - window.start}
         keyOf={(item) => item.path}
         labelOf={(item) =>
           `${item.path} · ${item.preset} · ${item.repoCount} repos · ${item.lastUsed}${item.missing ? " (missing, not switchable)" : ""}`
@@ -70,12 +83,18 @@ export function WorkspacePicker({ store }: { store: Store }) {
         fgOf={(item, isCursor) =>
           item.missing ? dimFg : isCursor ? theme.cursorFg() : theme.normal()
         }
-        onSelect={(_item, index) => setCursor(index)}
+        onSelect={(_item, index) => setCursor(window.start + index)}
         onActivate={(item) => {
           if (!item.missing) void store.switchWorkspace(item.path);
         }}
       />
-      <box flexDirection="row" gap={2} marginTop={1}>
+      <box
+        flexDirection="row"
+        flexWrap="wrap"
+        gap={2}
+        marginTop={height < 20 ? 0 : 1}
+        flexShrink={0}
+      >
         <text
           fg={current !== undefined && !current.missing ? selectedFg : dimFg}
           onMouseDown={(e) => {

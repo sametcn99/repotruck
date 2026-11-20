@@ -250,12 +250,23 @@ function renderHealthBody(
   );
 }
 
-export function StatusPanel({ store, width }: { store: Store; width: number }) {
+export function StatusPanel({
+  store,
+  width,
+  extraReservedRows = 0,
+}: {
+  store: Store;
+  width: number;
+  extraReservedRows?: number;
+}) {
   const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot);
   const { height } = useTerminalDimensions();
   const dimFg = theme.dim();
   const maxCols = Math.max(8, width - 2);
-  const bodyRows = Math.max(1, repoViewportRows(height, snapshot.updateToast !== null));
+  const bodyRows = Math.max(
+    1,
+    repoViewportRows(height, snapshot.updateToast !== null) - extraReservedRows,
+  );
   const compactTabs = maxCols < 34;
   const padActive = maxCols >= 36 || compactTabs;
 

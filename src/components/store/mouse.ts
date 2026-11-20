@@ -1,9 +1,8 @@
 import {
+  computeCockpitPanes,
   FOOTER_ROWS,
   HEADER_ROWS,
   repoViewportRows,
-  sidebarWidth,
-  statusWidth,
   TOAST_RESERVED_ROWS,
   visibleSlice,
 } from "../windowing.ts";
@@ -51,6 +50,8 @@ export function routeMouseEvent(
   callbacks?: MouseCallbacks,
 ): void {
   const state = host.getSnapshot();
+  const panes = computeCockpitPanes(width, state.focus, state.contextMenu !== null);
+  const switcherRows = panes.mode !== "three-pane" ? 1 : 0;
   const isWheel =
     event.button === 4 ||
     event.button === 5 ||
@@ -70,13 +71,13 @@ export function routeMouseEvent(
       return;
     }
 
-    if (event.x <= sidebarWidth(width)) {
+    if (panes.showSidebar && (!panes.showList || event.x <= panes.sidebarCols)) {
       host.setFocus("sidebar");
       host.moveSidebarCursor(isScrollUp ? -1 : 1);
       return;
     }
 
-    if (event.x > width - statusWidth(width)) {
+    if (panes.showStatus && (!panes.showList || event.x > width - panes.statusCols)) {
       host.setFocus("status");
       host.moveStatusScroll(isScrollUp ? 3 : -3);
       return;
@@ -92,13 +93,17 @@ export function routeMouseEvent(
       host.closeModal();
       return;
     }
-    if (event.x > sidebarWidth(width) && event.x <= width - statusWidth(width)) {
+    const inListArea =
+      panes.showList &&
+      (!panes.showSidebar || event.x > panes.sidebarCols) &&
+      (!panes.showStatus || event.x <= width - panes.statusCols);
+    if (inListArea) {
       host.setFocus("list");
-      const view = repoViewportRows(height, state.updateToast !== null);
+      const view = Math.max(1, repoViewportRows(height, state.updateToast !== null) - switcherRows);
       const total = state.filteredRepos.length;
       if (total === 0) return;
       const slice = visibleSlice(state.cursor, total, view);
-      const local = event.y - 1 - HEADER_ROWS;
+      const local = event.y - 1 - HEADER_ROWS - switcherRows;
       if (local >= 0 && local < slice.end - slice.start) {
         const clickedIndex = slice.start + local;
         const repo = state.filteredRepos[clickedIndex];
@@ -160,10 +165,28 @@ export function routeMouseEvent(
     return;
   }
 
-  if (event.x <= sidebarWidth(width)) {
+  if (switcherRows > 0 && event.y === HEADER_ROWS) {
+    const third = Math.max(8, Math.floor(width / 4));
+    if (event.x < third) {
+      host.setFocus("sidebar");
+    } else if (event.x < third * 2) {
+      host.setFocus("list");
+    } else if (event.x < third * 3) {
+      host.setFocus("status");
+    } else {
+      host.openOmnibar("commands");
+    }
+    return;
+  }
+
+  if (panes.showSidebar && (!panes.showList || event.x <= panes.sidebarCols)) {
     host.setFocus("sidebar");
-    const localY = event.y - 1 - HEADER_ROWS;
-    const rowIndex = sidebarRowIndexForY(localY, state.orgs.length);
+    const localY = event.y - 1 - HEADER_ROWS - switcherRows;
+    const availRows = Math.max(
+      1,
+      repoViewportRows(height, state.updateToast !== null) - switcherRows,
+    );
+    const rowIndex = sidebarRowIndexForY(localY, state.orgs.length, state.sidebarCursor, availRows);
     if (rowIndex !== null) {
       const prevCursor = state.sidebarCursor;
       host.setSidebarCursor(rowIndex);
@@ -174,22 +197,24 @@ export function routeMouseEvent(
     return;
   }
 
-  if (event.x > width - statusWidth(width)) {
+  if (panes.showStatus && (!panes.showList || event.x > width - panes.statusCols)) {
     host.setFocus("status");
     return;
   }
 
+  if (!panes.showList) return;
+
   host.setFocus("list");
-  const view = repoViewportRows(height, state.updateToast !== null);
+  const view = Math.max(1, repoViewportRows(height, state.updateToast !== null) - switcherRows);
   const total = state.filteredRepos.length;
   if (total === 0) return;
   const slice = visibleSlice(state.cursor, total, view);
-  const local = event.y - 1 - HEADER_ROWS;
+  const local = event.y - 1 - HEADER_ROWS - switcherRows;
   if (local < 0 || local >= slice.end - slice.start) return;
   const clickedIndex = slice.start + local;
   const repo = state.filteredRepos[clickedIndex];
   if (repo === undefined) return;
 
-  const relX = event.x - sidebarWidth(width);
+  const relX = event.x - panes.listOffsetX;
   host.handleRepoRowClick(clickedIndex, repoKey(repo), relX);
 }

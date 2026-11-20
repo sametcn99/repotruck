@@ -43,7 +43,7 @@ export function SyncCenterView({ store, width }: { store: Store; width: number }
 
   if (state === null) return null;
   const running = state.running || snapshot.running;
-  const inner = Math.max(30, width - 4);
+  const inner = Math.max(20, width - 4);
 
   return (
     <box flexDirection="column" flexGrow={1} width="100%">
@@ -60,7 +60,7 @@ export function SyncCenterView({ store, width }: { store: Store; width: number }
         >{`[t] stash: ${state.stash ? "on" : "off"}`}</text>
         <text fg={theme.normal()}>{`[d] divergence: ${state.divergence}`}</text>
       </box>
-      <box flexDirection="row" gap={1}>
+      <box flexDirection="row" flexWrap="wrap" gap={1}>
         <text
           fg={theme.normal()}
           onMouseDown={(event) => {
@@ -88,18 +88,18 @@ export function SyncCenterView({ store, width }: { store: Store; width: number }
             store.updateSyncCenter(editing === "include" ? { include: value } : { exclude: value })
           }
           onSubmit={() => setEditing(null)}
-          width={Math.min(50, inner - 20)}
+          width={Math.max(14, Math.min(50, inner - 10))}
         />
       ) : null}
       {state.divergence === "reset" ? (
-        <text fg={theme.error()}>
+        <text fg={theme.error()} wrapMode="none">
           {" divergence=reset discards local commits — double-check before running"}
         </text>
       ) : null}
-      <box border borderColor={theme.border()}>
-        <text fg={theme.accent()}>{` $ ${syncCenterCliLine(state)}`}</text>
+      <box border borderColor={theme.border()} overflow="hidden">
+        <text fg={theme.accent()} wrapMode="none">{` $ ${syncCenterCliLine(state)}`}</text>
       </box>
-      <box flexDirection="row" gap={2}>
+      <box flexDirection="row" flexWrap="wrap" gap={2}>
         <text
           fg={running ? theme.dim() : theme.accent()}
           onMouseDown={(event) => {
@@ -131,7 +131,7 @@ export function SyncCenterView({ store, width }: { store: Store; width: number }
           {"[preview via cockpit Enter]"}
         </text>
       </box>
-      <text fg={theme.dim()}>
+      <text fg={theme.dim()} wrapMode="none">
         {
           "progress streams to the Activity panel · failures surface in Conflicts (v x) · Esc cockpit"
         }

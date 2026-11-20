@@ -1,8 +1,9 @@
-import { useKeyboard } from "@opentui/react";
-import { useEffect, useSyncExternalStore } from "react";
+import { useKeyboard, useTerminalDimensions } from "@opentui/react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import type { Store } from "../store.ts";
 import { theme } from "../theme.ts";
 import { copyText } from "../ui/JsonCopy.ts";
+import { visibleSlice } from "../windowing.ts";
 
 const SETTING_KEYS = [
   { key: "sync.concurrency", label: "sync concurrency", type: "int" },
@@ -20,9 +21,20 @@ const SETTING_KEYS = [
  * page: settings rows with inline editing (get/set/unset parity), auth
  * method badge, self-update handoff and shell completion helpers.
  */
-export function SettingsView({ store, width }: { store: Store; width: number }) {
+export function SettingsView({
+  store,
+  width,
+  height: heightProp,
+}: {
+  store: Store;
+  width: number;
+  height?: number;
+}) {
   const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot);
+  const { height: termHeight } = useTerminalDimensions();
+  const height = heightProp ?? Math.max(12, termHeight - 4);
   const page = snapshot.settingsPage;
+  const [scrollIdx, setScrollIdx] = useState(0);
 
   useEffect(() => {
     if (page === null) void store.refreshSettingsPage();
@@ -30,29 +42,66 @@ export function SettingsView({ store, width }: { store: Store; width: number }) 
 
   useKeyboard((key) => {
     if (key.name === "r") void store.refreshSettingsPage();
+    else if (key.name === "up" || key.sequence === "k") {
+      setScrollIdx((s) => Math.max(0, s - 1));
+    } else if (key.name === "down" || key.sequence === "j") {
+      setScrollIdx((s) => Math.min(SETTING_KEYS.length - 1, s + 1));
+    }
   });
 
   const settings = page?.settings ?? null;
-  const inner = Math.max(30, width - 4);
+  const inner = Math.max(24, width - 4);
+  const stacked = width < 82;
+  const settingCap = stacked ? Math.max(3, height - 14) : Math.max(3, height - 7);
+  const win = visibleSlice(
+    Math.min(scrollIdx, SETTING_KEYS.length - 1),
+    SETTING_KEYS.length,
+    settingCap,
+  );
+  const visibleSettings = SETTING_KEYS.slice(win.start, win.end);
 
   return (
-    <box flexDirection="column" flexGrow={1} width="100%">
-      <box flexDirection="row" gap={2}>
-        <box border borderColor={theme.border()} flexDirection="column" flexGrow={1} padding={0}>
-          <text fg={theme.dim()}>{" Configuration (config list)"}</text>
-          {SETTING_KEYS.map((entry) => {
+    <box
+      flexDirection="column"
+      flexGrow={1}
+      width="100%"
+      onMouseScroll={(e) => {
+        const isUp = e.scroll?.direction === "up" || e.button === 4;
+        setScrollIdx((s) => Math.min(SETTING_KEYS.length - 1, Math.max(0, s + (isUp ? -1 : 1))));
+      }}
+    >
+      <box
+        flexDirection={stacked ? "column" : "row"}
+        gap={stacked ? 0 : 1}
+        flexGrow={1}
+        width="100%"
+      >
+        <box
+          border
+          borderColor={theme.border()}
+          flexDirection="column"
+          flexGrow={1}
+          width={stacked ? "100%" : undefined}
+          padding={0}
+          overflow="hidden"
+        >
+          <text fg={theme.dim()} wrapMode="none">
+            {" Configuration (config list)"}
+          </text>
+          {visibleSettings.map((entry) => {
             const raw = readSetting(settings, entry.key);
             const isDefault = raw.isDefault;
             return (
-              <box key={entry.key} flexDirection="row" gap={1}>
-                <text
-                  fg={theme.normal()}
-                >{` ${entry.label.padEnd(Math.min(18, inner - 26))}`}</text>
-                <text fg={isDefault ? theme.dim() : theme.accent()}>
+              <box key={entry.key} flexDirection="row" flexWrap="wrap" gap={1}>
+                <text fg={theme.normal()} wrapMode="none">
+                  {` ${entry.label.padEnd(Math.max(10, Math.min(18, inner - 24)))}`}
+                </text>
+                <text fg={isDefault ? theme.dim() : theme.accent()} wrapMode="none">
                   {String(raw.value || "(default)")}
                 </text>
                 <text
                   fg={theme.dim()}
+                  wrapMode="none"
                   onMouseDown={(event) => {
                     event.stopPropagation?.();
                     store.confirmDialog(
@@ -70,6 +119,7 @@ export function SettingsView({ store, width }: { store: Store; width: number }) 
                 {!isDefault ? (
                   <text
                     fg={theme.warning()}
+                    wrapMode="none"
                     onMouseDown={(event) => {
                       event.stopPropagation?.();
                       void store.unsetSetting(entry.key);
@@ -78,20 +128,25 @@ export function SettingsView({ store, width }: { store: Store; width: number }) 
                     {" [unset]"}
                   </text>
                 ) : null}
-                <text fg={theme.dim()}>{isDefault ? " default" : " settings"}</text>
+                <text fg={theme.dim()} wrapMode="none">
+                  {isDefault ? " default" : " settings"}
+                </text>
               </box>
             );
           })}
         </box>
-        <box flexDirection="column" width={Math.floor(inner / 3)}>
-          <box border borderColor={theme.border()} flexDirection="column">
-            <text fg={theme.dim()}>{" Auth & connection"}</text>
-            <text fg={page?.authMethod ? theme.success() : theme.error()}>
+        <box flexDirection="column" width={stacked ? "100%" : Math.max(26, Math.floor(inner / 3))}>
+          <box border borderColor={theme.border()} flexDirection="column" overflow="hidden">
+            <text fg={theme.dim()} wrapMode="none">
+              {" Auth & connection"}
+            </text>
+            <text fg={page?.authMethod ? theme.success() : theme.error()} wrapMode="none">
               {` method: ${page?.authMethod ?? "none"}`}
             </text>
-            <text fg={theme.normal()}>{` login: ${page?.userLogin ?? "—"}`}</text>
+            <text fg={theme.normal()} wrapMode="none">{` login: ${page?.userLogin ?? "—"}`}</text>
             <text
               fg={theme.accent()}
+              wrapMode="none"
               onMouseDown={(event) => {
                 event.stopPropagation?.();
                 void store.startDeviceFlow();
@@ -101,6 +156,7 @@ export function SettingsView({ store, width }: { store: Store; width: number }) 
             </text>
             <text
               fg={theme.error()}
+              wrapMode="none"
               onMouseDown={(event) => {
                 event.stopPropagation?.();
                 store.confirmDialog(
@@ -123,15 +179,18 @@ export function SettingsView({ store, width }: { store: Store; width: number }) 
               {" [logout]"}
             </text>
           </box>
-          <box border borderColor={theme.border()} flexDirection="column">
-            <text fg={theme.dim()}>{" Update"}</text>
-            <text fg={theme.normal()}>
+          <box border borderColor={theme.border()} flexDirection="column" overflow="hidden">
+            <text fg={theme.dim()} wrapMode="none">
+              {" Update"}
+            </text>
+            <text fg={theme.normal()} wrapMode="none">
               {snapshot.updateToast !== null
                 ? ` ${snapshot.updateToast.version} available`
                 : " up to date"}
             </text>
             <text
               fg={theme.accent()}
+              wrapMode="none"
               onMouseDown={(event) => {
                 event.stopPropagation?.();
                 copyText("update", "npm i -g repotruck@latest");
@@ -145,12 +204,21 @@ export function SettingsView({ store, width }: { store: Store; width: number }) 
               {" [self-update] copy command"}
             </text>
           </box>
-          <box border borderColor={theme.border()} flexDirection="column">
-            <text fg={theme.dim()}>{" Shell completions"}</text>
+          <box
+            border
+            borderColor={theme.border()}
+            flexDirection={stacked ? "row" : "column"}
+            flexWrap="wrap"
+            overflow="hidden"
+          >
+            <text fg={theme.dim()} wrapMode="none">
+              {" Shell completions"}
+            </text>
             {["bash", "zsh", "fish", "powershell"].map((shell) => (
               <text
                 key={shell}
                 fg={theme.normal()}
+                wrapMode="none"
                 onMouseDown={(event) => {
                   event.stopPropagation?.();
                   copyText(`completions ${shell}`, `repotruck completions ${shell}`);
@@ -167,7 +235,7 @@ export function SettingsView({ store, width }: { store: Store; width: number }) 
           </box>
         </box>
       </box>
-      <text fg={theme.dim()}>
+      <text fg={theme.dim()} wrapMode="none">
         {
           "edit dialog carries the config set parity · unset restores defaults · r refresh · Esc cockpit"
         }

@@ -30,7 +30,8 @@ export function PresetsView({ store, width }: { store: Store; width: number }) {
   });
 
   const custom = snapshot.customPresets;
-  const cardWidth = Math.max(24, Math.floor((width - 8) / 3));
+  const cols = width < 56 ? 1 : width < 84 ? 2 : 3;
+  const cardWidth = Math.max(18, Math.floor((width - cols * 2 - 2) / cols));
   const preview = (segmentsList: readonly string[]): string =>
     `${segmentsList.map((segment) => `${segment}/`).join("")}repo/`;
 
@@ -44,13 +45,17 @@ export function PresetsView({ store, width }: { store: Store; width: number }) {
             borderColor={preset === snapshot.preset ? theme.accent() : theme.border()}
             flexDirection="column"
             width={cardWidth}
+            overflow="hidden"
           >
-            <text fg={preset === snapshot.preset ? theme.accent() : theme.normal()}>
+            <text fg={preset === snapshot.preset ? theme.accent() : theme.normal()} wrapMode="none">
               {` ${preset}${preset === snapshot.preset ? " (current)" : ""}`}
             </text>
-            <text fg={theme.dim()}>{"  built-in"}</text>
+            <text fg={theme.dim()} wrapMode="none">
+              {"  built-in"}
+            </text>
             <text
               fg={theme.dim()}
+              wrapMode="none"
               onMouseDown={(event) => {
                 event.stopPropagation?.();
                 store.confirmDialog(
@@ -77,12 +82,14 @@ export function PresetsView({ store, width }: { store: Store; width: number }) {
             borderColor={theme.muted()}
             flexDirection="column"
             width={cardWidth}
+            overflow="hidden"
           >
-            <text fg={theme.muted()}>{` ${preset.id}`}</text>
-            <text fg={theme.dim()}>{`  ${preview(preset.segments)}`}</text>
+            <text fg={theme.muted()} wrapMode="none">{` ${preset.id}`}</text>
+            <text fg={theme.dim()} wrapMode="none">{`  ${preview(preset.segments)}`}</text>
             <box flexDirection="row" gap={2}>
               <text
                 fg={theme.dim()}
+                wrapMode="none"
                 onMouseDown={(event) => {
                   event.stopPropagation?.();
                   store.confirmDialog(
@@ -102,6 +109,7 @@ export function PresetsView({ store, width }: { store: Store; width: number }) {
               </text>
               <text
                 fg={theme.error()}
+                wrapMode="none"
                 onMouseDown={(event) => {
                   event.stopPropagation?.();
                   store.confirmDialog(
@@ -125,8 +133,10 @@ export function PresetsView({ store, width }: { store: Store; width: number }) {
       </box>
       {builderOpen ? (
         <box border borderColor={theme.accent()} flexDirection="column" padding={0}>
-          <text fg={theme.accent()}>{" Add custom preset (preset add)"}</text>
-          <box flexDirection="row" gap={1}>
+          <text fg={theme.accent()} wrapMode="none">
+            {" Add custom preset (preset add)"}
+          </text>
+          <box flexDirection="row" flexWrap="wrap" gap={1}>
             <text fg={theme.dim()}>id:</text>
             {inputMode === "id" ? (
               <input
@@ -134,7 +144,7 @@ export function PresetsView({ store, width }: { store: Store; width: number }) {
                 value={idValue}
                 onInput={setIdValue}
                 onSubmit={() => setInputMode("none")}
-                width={20}
+                width={Math.min(20, Math.max(10, width - 16))}
               />
             ) : (
               <text
@@ -163,9 +173,9 @@ export function PresetsView({ store, width }: { store: Store; width: number }) {
                 {`[${token}]`}
               </text>
             ))}
-            <text
-              fg={theme.dim()}
-            >{` ${segments.length > 0 ? preview(segments) : "(click tokens in order; name last)"}`}</text>
+            <text fg={theme.dim()} wrapMode="none">
+              {` ${segments.length > 0 ? preview(segments) : "(click tokens in order; name last)"}`}
+            </text>
             <text
               fg={theme.accent()}
               onMouseDown={(event) => {
@@ -184,6 +194,7 @@ export function PresetsView({ store, width }: { store: Store; width: number }) {
       ) : (
         <text
           fg={theme.accent()}
+          wrapMode="none"
           onMouseDown={(event) => {
             event.stopPropagation?.();
             setBuilderOpen(true);
@@ -193,7 +204,7 @@ export function PresetsView({ store, width }: { store: Store; width: number }) {
           {"[a] add custom preset"}
         </text>
       )}
-      <text fg={theme.dim()}>
+      <text fg={theme.dim()} wrapMode="none">
         {
           "tokens: owner/category/language/name · 1–4 distinct · name last · apply opens reorganize preview"
         }

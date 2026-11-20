@@ -1,6 +1,9 @@
 import { describe, expect, test } from "bun:test";
 import { buildFooterLines, buildHeaderLine } from "../src/components/Dashboard.tsx";
+import { sidebarRowIndexForY, sidebarTotalLines } from "../src/components/store/filters.ts";
 import {
+  cockpitLayoutMode,
+  computeCockpitPanes,
   MIN_CENTER_COLUMNS,
   repoRowLabel,
   repoViewportRows,
@@ -135,6 +138,44 @@ describe("panel widths", () => {
     expect(sidebarWidth(40) + statusWidth(40)).toBeLessThanOrEqual(40 - MIN_CENTER_COLUMNS);
     expect(sidebarWidth(40)).toBeGreaterThanOrEqual(8);
     expect(statusWidth(40)).toBeGreaterThanOrEqual(8);
+  });
+
+  test("adaptive cockpit layout switches between three-pane, two-pane, and single-pane modes", () => {
+    expect(cockpitLayoutMode(120)).toBe("three-pane");
+    expect(cockpitLayoutMode(90)).toBe("three-pane");
+    expect(cockpitLayoutMode(80)).toBe("two-pane");
+    expect(cockpitLayoutMode(64)).toBe("two-pane");
+    expect(cockpitLayoutMode(63)).toBe("single-pane");
+    expect(cockpitLayoutMode(45)).toBe("single-pane");
+
+    // In two-pane mode, focusing sidebar shows sidebar + list; focusing list/status shows list + status
+    const twoSidebar = computeCockpitPanes(76, "sidebar");
+    expect(twoSidebar.showSidebar).toBe(true);
+    expect(twoSidebar.showList).toBe(true);
+    expect(twoSidebar.showStatus).toBe(false);
+    expect(twoSidebar.listOffsetX).toBe(twoSidebar.sidebarCols);
+
+    const twoList = computeCockpitPanes(76, "list");
+    expect(twoList.showSidebar).toBe(false);
+    expect(twoList.showList).toBe(true);
+    expect(twoList.showStatus).toBe(true);
+    expect(twoList.listOffsetX).toBe(0);
+
+    // In single-pane mode, only the active focus pane is visible
+    expect(computeCockpitPanes(50, "sidebar").showSidebar).toBe(true);
+    expect(computeCockpitPanes(50, "sidebar").showList).toBe(false);
+    expect(computeCockpitPanes(50, "list").showList).toBe(true);
+    expect(computeCockpitPanes(50, "list").showStatus).toBe(false);
+    expect(computeCockpitPanes(50, "status").showStatus).toBe(true);
+    expect(computeCockpitPanes(50, "status").showList).toBe(false);
+  });
+
+  test("windowed sidebarRowIndexForY maps localY accurately on short terminals", () => {
+    expect(sidebarTotalLines(2)).toBe(13);
+    // Unwindowed: row 0 is at localY=1
+    expect(sidebarRowIndexForY(1, 2)).toBe(0);
+    // Windowed to 5 rows when cursor is at the bottom filter (index 6 -> line 9)
+    expect(sidebarRowIndexForY(1, 2, 6, 5)).not.toBe(0);
   });
 });
 

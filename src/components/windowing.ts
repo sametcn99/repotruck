@@ -49,6 +49,23 @@ export function contentWidth(terminalWidth: number): number {
   return navRailVisible(terminalWidth) ? terminalWidth - NAV_RAIL_WIDTH : terminalWidth;
 }
 
+/**
+ * Adaptive cockpit layout breakpoints based on available content width:
+ * - "three-pane" (>= 90 cols): Sidebar + RepoList + StatusPanel side-by-side
+ * - "two-pane" (64..89 cols): RepoList + active side pane (Sidebar when focused, else StatusPanel)
+ * - "single-pane" (< 64 cols): Only the focused pane (Sidebar, RepoList, or StatusPanel) at full width
+ */
+export type CockpitLayoutMode = "three-pane" | "two-pane" | "single-pane";
+
+export const TWO_PANE_MIN_WIDTH = 64;
+export const THREE_PANE_MIN_WIDTH = 90;
+
+export function cockpitLayoutMode(pageWidth: number): CockpitLayoutMode {
+  if (pageWidth >= THREE_PANE_MIN_WIDTH) return "three-pane";
+  if (pageWidth >= TWO_PANE_MIN_WIDTH) return "two-pane";
+  return "single-pane";
+}
+
 function panelBudget(terminalWidth: number): number {
   return Math.max(MIN_CENTER_COLUMNS, terminalWidth - MIN_CENTER_COLUMNS);
 }
@@ -73,6 +90,106 @@ export function statusWidth(terminalWidth: number): number {
   const budget = panelBudget(terminalWidth);
   const raw = rawStatusWidth(terminalWidth);
   return Math.max(PANEL_FLOOR, Math.min(raw, budget - sidebarWidth(terminalWidth)));
+}
+
+export interface CockpitPaneMetrics {
+  mode: CockpitLayoutMode;
+  showSidebar: boolean;
+  showList: boolean;
+  showStatus: boolean;
+  sidebarCols: number;
+  listCols: number;
+  statusCols: number;
+  listOffsetX: number;
+}
+
+export function computeCockpitPanes(
+  pageWidth: number,
+  focus: "sidebar" | "list" | "status",
+  hasContextMenu = false,
+): CockpitPaneMetrics {
+  const mode = cockpitLayoutMode(pageWidth);
+  const safeWidth = Math.max(20, pageWidth);
+  if (mode === "three-pane") {
+    const sb = sidebarWidth(safeWidth);
+    const st = hasContextMenu ? Math.min(34, statusWidth(safeWidth)) : statusWidth(safeWidth);
+    const list = Math.max(MIN_CENTER_COLUMNS, safeWidth - sb - st);
+    return {
+      mode,
+      showSidebar: true,
+      showList: true,
+      showStatus: true,
+      sidebarCols: sb,
+      listCols: list,
+      statusCols: st,
+      listOffsetX: sb,
+    };
+  }
+  if (mode === "two-pane") {
+    if (focus === "sidebar" && !hasContextMenu) {
+      const sb = Math.min(30, Math.max(20, Math.floor(safeWidth * 0.36)));
+      const list = Math.max(MIN_CENTER_COLUMNS, safeWidth - sb);
+      return {
+        mode,
+        showSidebar: true,
+        showList: true,
+        showStatus: false,
+        sidebarCols: sb,
+        listCols: list,
+        statusCols: 0,
+        listOffsetX: sb,
+      };
+    }
+    const st = hasContextMenu
+      ? Math.min(34, Math.max(22, Math.floor(safeWidth * 0.44)))
+      : Math.min(36, Math.max(24, Math.floor(safeWidth * 0.42)));
+    const list = Math.max(MIN_CENTER_COLUMNS, safeWidth - st);
+    return {
+      mode,
+      showSidebar: false,
+      showList: true,
+      showStatus: true,
+      sidebarCols: 0,
+      listCols: list,
+      statusCols: st,
+      listOffsetX: 0,
+    };
+  }
+  // single-pane mode
+  if (hasContextMenu || focus === "status") {
+    return {
+      mode,
+      showSidebar: false,
+      showList: false,
+      showStatus: true,
+      sidebarCols: 0,
+      listCols: 0,
+      statusCols: safeWidth,
+      listOffsetX: 0,
+    };
+  }
+  if (focus === "sidebar") {
+    return {
+      mode,
+      showSidebar: true,
+      showList: false,
+      showStatus: false,
+      sidebarCols: safeWidth,
+      listCols: 0,
+      statusCols: 0,
+      listOffsetX: 0,
+    };
+  }
+  return {
+    mode,
+    showSidebar: false,
+    showList: true,
+    showStatus: false,
+    sidebarCols: 0,
+    listCols: safeWidth,
+    statusCols: 0,
+    listOffsetX: 0,
+  };
 }
 
 export interface PreviewTreeEntry {

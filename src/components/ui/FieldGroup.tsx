@@ -2,6 +2,7 @@ import { useKeyboard } from "@opentui/react";
 import { useState } from "react";
 import type { FlagSpec } from "../../commands/registry.ts";
 import { theme } from "../theme.ts";
+import { visibleSlice } from "../windowing.ts";
 
 /**
  * Values map for a FlagSpec set: bools as booleans, everything else as
@@ -28,20 +29,26 @@ export function FieldGroup({
   values,
   onChange,
   width,
+  maxRows,
   showFlags = true,
 }: {
   flags: readonly FlagSpec[];
   values: FieldValues;
   onChange: (flag: string, value: boolean | string) => void;
   width: number;
+  maxRows?: number;
   showFlags?: boolean;
 }) {
   const [focusIndex, setFocusIndex] = useState(0);
   const [editing, setEditing] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
-  const inner = Math.max(24, width - 4);
+  const inner = Math.max(20, width - 4);
+  const boundedFocus = Math.min(Math.max(0, focusIndex), Math.max(0, flags.length - 1));
+  const viewport = maxRows !== undefined ? Math.max(1, maxRows) : flags.length;
+  const win = visibleSlice(boundedFocus, flags.length, viewport);
+  const visibleFlags = flags.slice(win.start, win.end);
 
-  const current = flags[focusIndex];
+  const current = flags[boundedFocus];
 
   const beginEdit = (flag: FlagSpec): void => {
     if (flag.type === "string" || flag.type === "path" || flag.type === "url") {
@@ -118,13 +125,28 @@ export function FieldGroup({
 
   return (
     <box flexDirection="column" width="100%">
-      {flags.map((flag, index) => {
-        const focused = index === focusIndex;
+      {visibleFlags.map((flag, idx) => {
+        const index = win.start + idx;
+        const focused = index === boundedFocus;
         const value: boolean | string = values[flag.flag] ?? "";
         const label = showFlags ? flagLabel(flag) : flag.summary;
         return (
           <box key={flag.flag} flexDirection="column">
-            <text fg={focused ? theme.accent() : theme.normal()}>
+            <text
+              fg={focused ? theme.accent() : theme.normal()}
+              wrapMode="none"
+              onMouseDown={(e) => {
+                e.stopPropagation();
+                setFocusIndex(index);
+                if (flag.type === "bool") {
+                  onChange(flag.flag, !(values[flag.flag] ?? false));
+                } else if (flag.type === "enum") {
+                  cycleEnum(flag, 1);
+                } else {
+                  beginEdit(flag);
+                }
+              }}
+            >
               {formatFieldLine(label, flag, value, focused, inner)}
             </text>
             {editing === flag.flag ? (
@@ -139,8 +161,10 @@ export function FieldGroup({
           </box>
         );
       })}
-      <text fg={theme.dim()}>
-        {"↑↓ field · Space toggle/edit · ←→ cycle · Enter edit · Esc close input"}
+      <text fg={theme.dim()} wrapMode="none">
+        {flags.length > viewport
+          ? `↑↓ field (${win.start + 1}-${win.end}/${flags.length}) · Space toggle/edit · ←→ cycle`
+          : "↑↓ field · Space toggle/edit · ←→ cycle · Enter edit · Esc close input"}
       </text>
     </box>
   );

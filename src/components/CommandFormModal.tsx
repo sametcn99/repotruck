@@ -1,3 +1,4 @@
+import { useTerminalDimensions } from "@opentui/react";
 import { useSyncExternalStore } from "react";
 import { type CommandSpec, REGISTRY_BY_ID } from "../commands/registry.ts";
 import { ModalShell } from "./ModalShell.tsx";
@@ -46,6 +47,7 @@ const EXECUTORS: Record<string, Executor> = {
  */
 export function CommandFormModal({ store }: { store: Store }) {
   const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot);
+  const { width, height } = useTerminalDimensions();
   const modal = snapshot.modal;
   if (modal === null || modal.type !== "commandForm") return null;
   const spec = REGISTRY_BY_ID.get(modal.specId);
@@ -56,6 +58,9 @@ export function CommandFormModal({ store }: { store: Store }) {
   const positional = specPositionalValues(store, spec);
 
   const cli = buildCliArguments(`repotruck ${spec.path}`, spec.flags, values, positional);
+  const formWidth = Math.max(24, width - 6);
+  const argRows = spec.args.length > 0 ? spec.args.length + 1 : 0;
+  const maxFlagRows = Math.max(2, height - 18 - argRows);
 
   return (
     <ModalShell
@@ -63,15 +68,19 @@ export function CommandFormModal({ store }: { store: Store }) {
       title={`${spec.path} — ${spec.title}`}
       hint="Ctrl-free: buttons below · Esc closes"
     >
-      <text fg={theme.dim()}>{spec.summary}</text>
+      <text fg={theme.dim()} wrapMode="none">
+        {spec.summary}
+      </text>
       {spec.args.length > 0 ? (
         <box flexDirection="column">
           {spec.args.map((arg: CommandSpec["args"][number]) => (
-            <text key={arg.name} fg={theme.normal()}>
+            <text key={arg.name} fg={theme.normal()} wrapMode="none">
               {formatArgLine(arg, positional)}
             </text>
           ))}
-          <text fg={theme.dim()}>{"arg editing arrives with the arg inputs (page tickets)"}</text>
+          <text fg={theme.dim()} wrapMode="none">
+            {"arg editing arrives with the arg inputs (page tickets)"}
+          </text>
         </box>
       ) : null}
       {spec.flags.length > 0 ? (
@@ -79,15 +88,16 @@ export function CommandFormModal({ store }: { store: Store }) {
           flags={spec.flags}
           values={values}
           onChange={(flag, value) => setFormValue(store, spec, flag, value)}
-          width={72}
+          width={formWidth}
+          maxRows={maxFlagRows}
         />
       ) : (
         <text fg={theme.dim()}>{"no flags"}</text>
       )}
       <box border borderColor={theme.border()} padding={0}>
-        <text fg={theme.accent()}>{` $ ${cli}`}</text>
+        <text fg={theme.accent()} wrapMode="none">{` $ ${cli}`}</text>
       </box>
-      <box flexDirection="row" gap={2}>
+      <box flexDirection="row" flexWrap="wrap" gap={2}>
         <text
           fg={theme.accent()}
           onMouseDown={(event) => {
@@ -128,7 +138,10 @@ export function CommandFormModal({ store }: { store: Store }) {
           {"[ Cancel ]"}
         </text>
       </box>
-      <text fg={theme.dim()}>{`requires: ${spec.requires.join(", ") || "nothing"}`}</text>
+      <text
+        fg={theme.dim()}
+        wrapMode="none"
+      >{`requires: ${spec.requires.join(", ") || "nothing"}`}</text>
     </ModalShell>
   );
 }

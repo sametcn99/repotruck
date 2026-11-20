@@ -16,6 +16,11 @@ export interface TableRow<R> {
   detail?: readonly string[];
 }
 
+function clampLine(text: string, maxCols: number): string {
+  if (text.length <= maxCols) return text;
+  return `${text.slice(0, Math.max(1, maxCols - 1))}…`;
+}
+
 /**
  * Windowed, cursor-driven table. Purely presentational: the owning view
  * supplies rows, cursor and expanded id plus their setters, exactly like
@@ -43,27 +48,35 @@ export function TableView<R>({
   emptyLabel?: string;
 }) {
   if (rows.length === 0) {
-    return <text fg={theme.dim()}>{` ${emptyLabel}`}</text>;
+    return (
+      <text fg={theme.dim()} wrapMode="none">
+        {` ${emptyLabel}`}
+      </text>
+    );
   }
 
+  const maxCols = Math.max(12, width);
   const slice = visibleSlice(cursor, rows.length, viewportRows);
   // Column widths are computed once from the full row set so every row
   // (and the header) shares the same grid.
   const widths = columnWidths(columns, rows, width);
-  const header = formatHeader(columns, widths);
+  const header = clampLine(formatHeader(columns, widths), maxCols);
 
   return (
     <box flexDirection="column" width="100%">
-      <text fg={theme.dim()}>{header}</text>
+      <text fg={theme.dim()} wrapMode="none">
+        {header}
+      </text>
       {rows.slice(slice.start, slice.end).map((entry, offset) => {
         const index = slice.start + offset;
         const active = index === cursor;
-        const line = formatRow(entry, active, widths);
+        const line = clampLine(formatRow(entry, active, widths), maxCols);
         const rowId = entry.cells[0] ?? String(index);
         return (
           <box key={rowId} flexDirection="column">
             <text
               fg={active ? theme.accent() : theme.normal()}
+              wrapMode="none"
               onMouseDown={(event) => {
                 event.stopPropagation?.();
                 if (active) onToggleExpand(rowId);
@@ -74,8 +87,8 @@ export function TableView<R>({
             </text>
             {expandedId === rowId && entry.detail !== undefined
               ? entry.detail.map((detailLine) => (
-                  <text key={detailLine} fg={theme.dim()}>
-                    {`  ${detailLine}`}
+                  <text key={detailLine} fg={theme.dim()} wrapMode="none">
+                    {clampLine(`  ${detailLine}`, maxCols)}
                   </text>
                 ))
               : null}
@@ -92,7 +105,8 @@ function columnWidths<R>(
   width: number,
 ): number[] {
   const sample = rows.slice(0, 100);
-  const usable = Math.max(columns.length * 4, width - 2);
+  const gaps = Math.max(0, columns.length);
+  const usable = Math.max(columns.length * 3, width - gaps - 2);
   const wanted = columns.map((col, i) => {
     const contentMax = sample.reduce(
       (max, entry) => Math.max(max, String(entry.cells[i] ?? "").length),
@@ -102,7 +116,7 @@ function columnWidths<R>(
   });
   const wantedTotal = wanted.reduce((a, b) => a + b, 0);
   if (wantedTotal <= usable) return wanted;
-  return wanted.map((w) => Math.max(3, Math.floor((w * usable) / wantedTotal)));
+  return wanted.map((w) => Math.max(2, Math.floor((w * usable) / wantedTotal)));
 }
 
 function formatHeader<R>(columns: readonly TableColumn<R>[], widths: readonly number[]): string {

@@ -3,6 +3,9 @@ import { useState, useSyncExternalStore } from "react";
 import type { Store } from "./store.ts";
 import { theme } from "./theme.ts";
 import {
+  contentWidth,
+  NAV_RAIL_WIDTH,
+  navRailVisible,
   repoKeyOf,
   repoRowLabel,
   repoViewportRows,
@@ -16,7 +19,17 @@ function clampRepoLine(raw: string, maxCols: number): string {
   return `${raw.slice(0, Math.max(1, maxCols - 1))}\u2026`;
 }
 
-export function RepoList({ store }: { store: Store }) {
+export function RepoList({
+  store,
+  width: listWidthProp,
+  offsetX: offsetXProp,
+  extraReservedRows = 0,
+}: {
+  store: Store;
+  width?: number;
+  offsetX?: number;
+  extraReservedRows?: number;
+}) {
   const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot);
   const { width, height } = useTerminalDimensions();
   const isSearchOpen = snapshot.modal !== null && snapshot.modal.type === "search";
@@ -30,9 +43,14 @@ export function RepoList({ store }: { store: Store }) {
   const cursorBg = theme.cursorBg();
   const normalFg = theme.muted();
   const dimFg = theme.dim();
-  const maxCols = Math.max(12, width - sidebarWidth(width) - statusWidth(width) - 2);
+  const pageWidth = contentWidth(width);
+  const computedListWidth =
+    listWidthProp ?? Math.max(14, pageWidth - sidebarWidth(pageWidth) - statusWidth(pageWidth));
+  const maxCols = Math.max(10, computedListWidth - 2);
+  const effectiveOffsetX =
+    offsetXProp ?? (navRailVisible(width) ? NAV_RAIL_WIDTH : 0) + sidebarWidth(pageWidth);
 
-  const extraTopRows = isSearchOpen ? 2 : 0;
+  const extraTopRows = (isSearchOpen ? 2 : 0) + extraReservedRows;
   const viewportRows = Math.max(
     1,
     repoViewportRows(height, snapshot.updateToast !== null) - extraTopRows,
@@ -109,7 +127,7 @@ export function RepoList({ store }: { store: Store }) {
                 return;
               }
               if (e.button === 0) {
-                const relX = e.x > 6 ? e.x - sidebarWidth(width) : e.x;
+                const relX = e.x >= effectiveOffsetX ? e.x - effectiveOffsetX : e.x;
                 store.handleRepoRowClick(absoluteIndex, key, relX);
               }
             }}
