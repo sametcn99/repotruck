@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Keyboard access to command forms, worktree controls, search filters and repository setup.
 - Background startup update checks and visible `repotruck update` instructions on compact terminals.
 - Offline symbol search with the current Web Tree-sitter runtime. The npm package includes the six compatible WebAssembly grammars.
+- Workspace registry reads during concurrent updates.
 
 ### Changed
 

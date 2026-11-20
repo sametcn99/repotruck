@@ -134,20 +134,21 @@ export interface ReadWorkspaceEntriesDeps {
 /**
  * In-process read cache for the central store. Parsing the whole multi-
  * workspace JSON is the dominant cost of every command, so completed reads
- * are cached keyed on the file's mtime and invalidated by writes (our own or
+ * are cached by file identity and invalidated by writes (our own or
  * another process's). Skipped entirely when a test injects readFile.
  */
-let storeReadCache: { file: string; mtimeMs: number; entries: WorkspaceEntry[] } | null = null;
+let storeReadCache: { file: string; stamp: string; entries: WorkspaceEntry[] } | null = null;
 
 export function _clearStoreReadCache(): void {
   storeReadCache = null;
 }
 
-async function storeMtimeMs(file: string): Promise<number> {
+async function storeFileStamp(file: string): Promise<string | null> {
   try {
-    return (await stat(file)).mtimeMs;
+    const { dev, ino, mtimeMs, ctimeMs, size } = await stat(file);
+    return `${dev}:${ino}:${mtimeMs}:${ctimeMs}:${size}`;
   } catch {
-    return -1;
+    return null;
   }
 }
 
@@ -156,12 +157,15 @@ export async function readWorkspaceEntries(
   deps?: ReadWorkspaceEntriesDeps,
 ): Promise<WorkspaceEntry[]> {
   const file = centralStorePath(env);
-  if (deps?.readFile === undefined && storeReadCache?.file === file) {
-    const mtimeMs = await storeMtimeMs(file);
-    if (mtimeMs >= 0 && mtimeMs === storeReadCache.mtimeMs) {
-      return [...storeReadCache.entries];
-    }
-    storeReadCache = null;
+  const cached = storeReadCache;
+  const stamp = deps?.readFile === undefined ? await storeFileStamp(file) : null;
+  if (
+    stamp !== null &&
+    cached === storeReadCache &&
+    cached?.file === file &&
+    cached.stamp === stamp
+  ) {
+    return [...cached.entries];
   }
   const readFileImpl = deps?.readFile ?? readFile;
   let raw: string | undefined;
@@ -200,8 +204,10 @@ export async function readWorkspaceEntries(
       entries.push(legacy);
     }
   }
-  if (deps?.readFile === undefined) {
-    storeReadCache = { file, mtimeMs: await storeMtimeMs(file), entries: [...entries] };
+  // Use the stamp captured before reading so a concurrent replacement cannot
+  // make old content look current on the next read.
+  if (stamp !== null && cached === storeReadCache) {
+    storeReadCache = { file, stamp, entries: [...entries] };
   }
   return entries;
 }
@@ -214,7 +220,7 @@ async function writeWorkspaceEntries(
   await mkdir(path.dirname(file), { recursive: true });
   const store: CentralStore = { version: LATEST_STORE_VERSION, workspaces: [...entries] };
   await writeFileAtomic(file, `${JSON.stringify(store, null, 2)}\n`);
-  storeReadCache = { file, mtimeMs: await storeMtimeMs(file), entries: [...entries] };
+  if (storeReadCache?.file === file) _clearStoreReadCache();
 }
 
 export async function readWorkspaceConfig(

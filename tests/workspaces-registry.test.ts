@@ -79,6 +79,18 @@ describe("workspace registry", () => {
     expect(matches[0]!.missing).toBe(false);
   });
 
+  test("reads the workspace when the cache is cleared during a lookup", async () => {
+    const root = tempDir("repotruck-ws-cache-root-");
+    const cacheEnv = { REPOTRUCK_CONFIG_DIR: tempDir("repotruck-ws-cache-config-") };
+    await writeWorkspaceConfig(root, defaultConfig(root, "categorized"), cacheEnv);
+    await readWorkspaceEntries(cacheEnv);
+
+    const pending = readWorkspaceEntries(cacheEnv);
+    _clearStoreReadCache();
+
+    expect(await pending).toMatchObject([{ root, preset: "categorized" }]);
+  });
+
   test("upsert dedupes by resolved path and updates fields", async () => {
     const root = tempDir("repotruck-ws-upsert-");
     mkdirSync(path.join(root, "sub"), { recursive: true });
