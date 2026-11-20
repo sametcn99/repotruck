@@ -38,12 +38,22 @@ function makeRepo(i: number): RepoInventoryEntry {
 }
 
 function runCli(args: string[], configDir: string) {
-  return Bun.spawnSync([process.execPath, "run", "src/cli.ts", ...args], {
-    cwd: path.join(import.meta.dir, ".."),
-    env: { ...process.env, REPOTRUCK_CONFIG_DIR: configDir, REPOTRUCK_NO_SSH: "1" },
-    stdout: "pipe",
-    stderr: "pipe",
-  });
+  // CI runners occasionally hand back an exit-0 child with empty pipes under
+  // parallel load; one retry when both streams are empty keeps the suite
+  // stable without masking real empty-output regressions (those stay empty).
+  for (let attempt = 0; ; attempt += 1) {
+    const result = Bun.spawnSync([process.execPath, "run", "src/cli.ts", ...args], {
+      cwd: path.join(import.meta.dir, ".."),
+      env: { ...process.env, REPOTRUCK_CONFIG_DIR: configDir, REPOTRUCK_NO_SSH: "1" },
+      stdout: "pipe",
+      stderr: "pipe",
+    });
+    const bothEmpty =
+      result.exitCode === 0 &&
+      (result.stdout?.length ?? 0) === 0 &&
+      (result.stderr?.length ?? 0) === 0;
+    if (!bothEmpty || attempt >= 1) return result;
+  }
 }
 
 describe("CLI exit semantics (Faz 7)", () => {

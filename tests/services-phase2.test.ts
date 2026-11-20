@@ -547,27 +547,32 @@ describe("auth & doctor extra branches", () => {
     expect(completed.method).toBe("device");
   });
 
-  test("gh CLI fallback is detected by probeAuth and getAuthInfo", async () => {
-    const binDir = tempDir("rt-gh-bin-");
-    const cfgDir = tempDir("rt-gh-cfg-");
-    const ghScript = path.join(binDir, "gh");
-    writeFileSync(
-      ghScript,
-      '#!/bin/sh\nif [ "$1" = "auth" ]; then echo "gho_from_cli"; fi\n',
-      "utf8",
-    );
-    chmodSync(ghScript, 0o755);
+  // The stub gh below is a POSIX shell script with ":" PATH separators —
+  // Windows cannot execute it, so the fallback path is Unix-only here.
+  (process.platform === "win32" ? test.skip : test)(
+    "gh CLI fallback is detected by probeAuth and getAuthInfo",
+    async () => {
+      const binDir = tempDir("rt-gh-bin-");
+      const cfgDir = tempDir("rt-gh-cfg-");
+      const ghScript = path.join(binDir, "gh");
+      writeFileSync(
+        ghScript,
+        '#!/bin/sh\nif [ "$1" = "auth" ]; then echo "gho_from_cli"; fi\n',
+        "utf8",
+      );
+      chmodSync(ghScript, 0o755);
 
-    const env = {
-      REPOTRUCK_CONFIG_DIR: cfgDir,
-      PATH: `${binDir}:${process.env.PATH ?? ""}`,
-    };
-    const probe = await probeAuth(env);
-    expect(probe.method).toBe("gh-cli");
-    const info = await getAuthInfo(env, { interactive: false });
-    expect(info.method).toBe("gh-cli");
-    expect(info.token).toBe("gho_from_cli");
-  });
+      const env = {
+        REPOTRUCK_CONFIG_DIR: cfgDir,
+        PATH: `${binDir}:${process.env.PATH ?? ""}`,
+      };
+      const probe = await probeAuth(env);
+      expect(probe.method).toBe("gh-cli");
+      const info = await getAuthInfo(env, { interactive: false });
+      expect(info.method).toBe("gh-cli");
+      expect(info.token).toBe("gho_from_cli");
+    },
+  );
 
   test("runDoctor and fixDoctor cover missing tools, corrupt config, signing, and reorganize journal", async () => {
     const wsMissing = path.join(tempDir("rt-doc-"), "missing-ws");

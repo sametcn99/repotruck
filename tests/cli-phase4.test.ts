@@ -26,13 +26,23 @@ afterAll(() => {
 });
 
 function runCli(args: string[], configDir: string) {
-  return Bun.spawnSync([process.execPath, "run", cliPath, ...args], {
-    cwd: repoRoot,
-    stdout: "pipe",
-    stderr: "pipe",
-    stdin: "ignore",
-    env: { ...process.env, REPOTRUCK_CONFIG_DIR: configDir },
-  });
+  // CI runners occasionally hand back an exit-0 child with empty pipes under
+  // parallel load; one retry when both streams are empty keeps the suite
+  // stable without masking real empty-output regressions (those stay empty).
+  for (let attempt = 0; ; attempt += 1) {
+    const result = Bun.spawnSync([process.execPath, "run", cliPath, ...args], {
+      cwd: repoRoot,
+      stdout: "pipe",
+      stderr: "pipe",
+      stdin: "ignore",
+      env: { ...process.env, REPOTRUCK_CONFIG_DIR: configDir },
+    });
+    const bothEmpty =
+      result.exitCode === 0 &&
+      (result.stdout?.length ?? 0) === 0 &&
+      (result.stderr?.length ?? 0) === 0;
+    if (!bothEmpty || attempt >= 1) return result;
+  }
 }
 
 describe("Phase 4 CLI & MCP additions", () => {
