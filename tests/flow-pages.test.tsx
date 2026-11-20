@@ -316,6 +316,10 @@ describe("t17 changelog + scan + prune guard", () => {
     }
 
     const store = makeStore(root);
+    // Warm the changelog before rendering: 32 git commits make the first
+    // generateChangelog slow, which can exceed the render wait budget on
+    // slower Windows runners.
+    await store.generateChangelog({});
     const setup = await testRender(
       <Dashboard store={store} onQuit={() => {}} onSuspendAndRun={async () => {}} />,
       { width: 130, height: 42, exitOnCtrlC: false },
