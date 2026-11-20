@@ -35,6 +35,12 @@ function runCli(args: string[], env?: Record<string, string>) {
     stdio: ["ignore", "pipe", "pipe"],
     maxBuffer: 32 * 1024 * 1024,
   });
+  // TEMP-DEBUG: surface why stdout is empty on some CI runners.
+  if ((result.stdout?.length ?? 0) === 0) {
+    console.error(
+      `TEMP-DEBUG runCli ${JSON.stringify(args)} exit=${result.status} signal=${result.signal} stderr=${JSON.stringify((result.stderr ?? "").toString().slice(0, 500))} error=${JSON.stringify(result.error?.message ?? null)}`,
+    );
+  }
   return { exitCode: result.status, stdout: result.stdout, stderr: result.stderr };
 }
 
