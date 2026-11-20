@@ -71,6 +71,19 @@ suite("command builder", () => {
     expect(items[0]?.textContent).toContain("changelog");
   });
 
+  test("places the built command and examples before the settings", () => {
+    render(<TerminalHero />);
+    const dialog = openBuilder();
+    const details = within(dialog);
+
+    const examples = details.getByRole("region", { name: "Examples" });
+    const form = details.getByRole("group", { name: "Form" });
+    expect(examples.compareDocumentPosition(form) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(
+      details.getAllByRole("heading", { level: 4 }).map((heading) => heading.textContent),
+    ).toEqual(["Built command", "Examples", "Options", "Global options"]);
+  });
+
   test("boolean flag and choices flag build into the preview", () => {
     render(<TerminalHero />);
     openBuilder();

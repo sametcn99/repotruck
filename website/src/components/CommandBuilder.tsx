@@ -209,6 +209,7 @@ function FlagRow({
 export function CommandBuilder({ open, onClose }: { open: boolean; onClose: () => void }) {
   const dialogRef = useRef<HTMLDialogElement | null>(null);
   const searchRef = useRef<HTMLInputElement | null>(null);
+  const detailsRef = useRef<HTMLDivElement | null>(null);
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState(() => ({
     group: COMMAND_GROUPS[0]?.id ?? "",
@@ -258,6 +259,7 @@ export function CommandBuilder({ open, onClose }: { open: boolean; onClose: () =
     setFormIdx(0);
     setFlags({});
     setArgs([]);
+    if (detailsRef.current) detailsRef.current.scrollTop = 0;
   };
 
   const built = useMemo(
@@ -343,7 +345,7 @@ export function CommandBuilder({ open, onClose }: { open: boolean; onClose: () =
               ))}
               {filteredGroups.length === 0 && <p className="builder-empty">No command matches.</p>}
             </aside>
-            <div className="builder-main">
+            <div ref={detailsRef} className="builder-main">
               {command ? (
                 <>
                   <header className="builder-intro">
@@ -353,6 +355,29 @@ export function CommandBuilder({ open, onClose }: { open: boolean; onClose: () =
                     <p>{command.summary}</p>
                     <code className="builder-usage">{command.usage}</code>
                   </header>
+
+                  <section className="builder-section builder-preview" aria-label="Built command">
+                    <h4>Built command</h4>
+                    <div className="preview-row">
+                      <code className="preview-line">{built}</code>
+                      <CopyButton command={built} />
+                    </div>
+                  </section>
+
+                  {command.examples.length > 0 && (
+                    <section className="builder-section" aria-label="Examples">
+                      <h4>Examples</h4>
+                      {command.examples.map((example) => (
+                        <div key={example} className="copy-row">
+                          <span className="copy-command">
+                            <span className="prompt">$ </span>
+                            {example}
+                          </span>
+                          <CopyButton command={example} />
+                        </div>
+                      ))}
+                    </section>
+                  )}
 
                   {forms.length > 1 && (
                     <fieldset className="builder-forms">
@@ -439,29 +464,6 @@ export function CommandBuilder({ open, onClose }: { open: boolean; onClose: () =
                       />
                     ))}
                   </section>
-
-                  <section className="builder-section builder-preview" aria-label="Built command">
-                    <h4>Built command</h4>
-                    <div className="preview-row">
-                      <code className="preview-line">{built}</code>
-                      <CopyButton command={built} />
-                    </div>
-                  </section>
-
-                  {command.examples.length > 0 && (
-                    <section className="builder-section" aria-label="Examples">
-                      <h4>Examples</h4>
-                      {command.examples.map((example) => (
-                        <div key={example} className="copy-row">
-                          <span className="copy-command">
-                            <span className="prompt">$ </span>
-                            {example}
-                          </span>
-                          <CopyButton command={example} />
-                        </div>
-                      ))}
-                    </section>
-                  )}
                 </>
               ) : (
                 <p className="builder-empty">Pick a command from the list.</p>

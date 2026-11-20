@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Updated CLI and website dependencies and aligned the CI and release runtimes.
 - Simplified the website header.
+- Moved the built command and examples above the Command Builder settings.
 
 ## [1.0.0] - 2026-11-20
 
