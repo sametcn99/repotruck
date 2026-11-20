@@ -15,11 +15,13 @@ import { SearchModal } from "../src/components/SearchModal.tsx";
 import { StatusPanel } from "../src/components/StatusPanel.tsx";
 import {
   buildCommandPaletteItems,
+  buildViewPaletteItems,
   cycleOmnibarMode,
   Store,
   type StoreDeps,
 } from "../src/components/store.ts";
 import { activateTheme } from "../src/components/theme.ts";
+import { VIEW_SPECS } from "../src/components/views/viewRegistry.ts";
 import { WorktreeModal } from "../src/components/WorktreeModal.tsx";
 import type { RepoInfo } from "../src/services/github.ts";
 
@@ -174,6 +176,37 @@ describe("TUI Modals Edge Cases & Omni-actions", () => {
     expect(noMatch.length).toBe(0);
   });
 
+  test("Command palette exposes every view and navigates to it", () => {
+    const ws = tempDir("rt-tui-edge-views-");
+    const store = makeStore(ws);
+    const snap = store.getSnapshot();
+
+    // Completeness: one Go entry per registry view, current view marked active.
+    const viewItems = buildViewPaletteItems(snap);
+    expect(viewItems.map((item) => item.id)).toEqual(VIEW_SPECS.map((spec) => `view:${spec.id}`));
+    expect(viewItems.every((item) => item.category === "Go")).toBe(true);
+    expect(viewItems.find((item) => item.id === "view:cockpit")?.detail).toBe("active");
+    expect(viewItems.find((item) => item.id === "view:stats")?.detail).toBeUndefined();
+
+    // The merged palette carries them and fuzzy search finds them.
+    const allItems = buildCommandPaletteItems("", snap);
+    for (const spec of VIEW_SPECS) {
+      expect(allItems.some((item) => item.id === `view:${spec.id}`)).toBe(true);
+    }
+    expect(buildCommandPaletteItems("go to stats", snap).some((i) => i.id === "view:stats")).toBe(
+      true,
+    );
+
+    // Executing a view entry closes the omnibar and switches the page.
+    store.openOmnibar("commands");
+    store.executeOmnibarCommand("view:stats");
+    const after = store.getSnapshot();
+    expect(after.modal).toBeNull();
+    expect(after.view).toBe("stats");
+    store.executeOmnibarCommand("view:cockpit");
+    expect(store.getSnapshot().view).toBe("cockpit");
+  });
+
   test("Omnibar execution shifts tabs, sorts, filters, and handles missing repos safely", async () => {
     const ws = tempDir("rt-tui-edge-ws-");
     const store = makeStore(ws);
@@ -317,7 +350,14 @@ describe("TUI Modals Edge Cases & Omni-actions", () => {
 
     let frame = norm(setup.captureCharFrame());
     expect(frame).toContain("[:] Commands");
+    // View navigation (Go) leads the palette; other commands surface via filter.
+    expect(frame).toContain("[Go] Go to Cockpit");
+    await store.updateOmnibarQuery("sync");
+    await settle(setup);
+    frame = norm(setup.captureCharFrame());
     expect(frame).toContain("Sync selected repositories");
+    await store.updateOmnibarQuery("");
+    await settle(setup);
 
     // Navigate commands list with down, up, pagedown, pageup, end, home
     setup.mockInput.pressArrow("down");

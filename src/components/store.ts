@@ -14,6 +14,7 @@ export {
 } from "./store/filters.ts";
 export {
   buildCommandPaletteItems,
+  buildViewPaletteItems,
   cycleOmnibarMode,
   OMNIBAR_MODES,
   runOmnibarGithubSearch,

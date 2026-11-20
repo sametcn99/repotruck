@@ -499,6 +499,9 @@ describe("modalWorkflows pure helpers", () => {
       "mode-symbols",
       "mode-github",
       "mode-runner",
+      "view:stats",
+      "view:cockpit",
+      "view:not-a-real-view",
       "cmd:sync",
       "nonexistent-id",
     ];

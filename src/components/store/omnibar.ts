@@ -6,6 +6,7 @@ import type {
 } from "../../services/codeSearch.ts";
 import type { RepotruckConfig } from "../../services/config.ts";
 import type { RepoInfo } from "../../services/github.ts";
+import { VIEW_SPECS } from "../views/viewRegistry.ts";
 import type { GithubClient, OmnibarCommandItem, OmnibarMode, StoreSnapshot } from "./types.ts";
 
 export const OMNIBAR_MODES: readonly OmnibarMode[] = ["commands", "symbols", "github", "runner"];
@@ -86,6 +87,21 @@ export function buildRegistryPaletteItems(uiIds: ReadonlySet<string>): OmnibarCo
   return items;
 }
 
+/**
+ * Navigation entries for every dashboard view, derived from the same
+ * registry the nav rail renders from — the palette can never miss a page.
+ */
+export function buildViewPaletteItems(snapshot: StoreSnapshot): OmnibarCommandItem[] {
+  return VIEW_SPECS.map((spec) => ({
+    id: `view:${spec.id}`,
+    category: "Go",
+    label: `Go to ${spec.title} — ${spec.summary}`,
+    shortcut: spec.id === "cockpit" ? "Esc" : `v ${spec.go}`,
+    detail: snapshot.view === spec.id ? "active" : undefined,
+    keywords: `go open navigate view page ${spec.group} ${spec.summary}`,
+  }));
+}
+
 export function buildCommandPaletteItems(
   query: string,
   snapshot: StoreSnapshot,
@@ -96,6 +112,9 @@ export function buildCommandPaletteItems(
   const sortDirLabel = snapshot.sortDescending ? "descending" : "ascending";
 
   const all: OmnibarCommandItem[] = [
+    // View Navigation (every page is reachable from the palette)
+    ...buildViewPaletteItems(snapshot),
+
     // Sync, Clone & Omnibar Modes
     {
       id: "sync",

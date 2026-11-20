@@ -25,11 +25,12 @@ import {
   type RepoWorktreeDetail,
   removeRepoWorktree,
 } from "../../services/worktree.ts";
+import { VIEW_BY_ID } from "../views/viewRegistry.ts";
 import type { PreviewTreeEntry } from "../windowing.ts";
 import type { ResolvedStoreDeps } from "./defaults.ts";
 import { repoKey, validateCreateDraft } from "./filters.ts";
 import type { Store } from "./Store.ts";
-import type { CreateDraft, GithubClient, StatusPhase, UndoAction } from "./types.ts";
+import type { CreateDraft, GithubClient, StatusPhase, UndoAction, ViewId } from "./types.ts";
 
 export async function findTrackedEntryInRoot(
   root: string,
@@ -438,6 +439,16 @@ function currentHighlightedKey(store: Store): string | null {
 export function executeOmnibarCommandById(store: Store, id: string): void {
   if (id.startsWith("cmd:")) {
     executeRegistryCommand(store, id.slice("cmd:".length));
+    return;
+  }
+  if (id.startsWith("view:")) {
+    const target = id.slice("view:".length) as ViewId;
+    store.closeModal();
+    if (VIEW_BY_ID.has(target)) {
+      store.setView(target);
+    } else {
+      store.pushStatus("FAILED", "[omnibar]", `unknown view: ${target}`);
+    }
     return;
   }
   if (id === "mode-symbols") {
