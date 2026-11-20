@@ -20,7 +20,7 @@ export function Screenshots() {
             {SCREENSHOTS.filter((shot) => shot.group === group).map((shot) => (
               <figure className="screenshot-card" key={shot.slug} id={`shot-${shot.slug}`}>
                 <img
-                  src={`/screenshots/${shot.slug}.svg`}
+                  src={`${import.meta.env.BASE_URL}screenshots/${shot.slug}.svg`}
                   alt={`${shot.title} — ${shot.caption}`}
                   loading="lazy"
                 />

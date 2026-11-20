@@ -34,9 +34,9 @@
 <text x="163.2" y="128" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="171.6" y="128" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
 <text x="180.0" y="128" fill="rgb(110,118,129)" textLength="50.4" lengthAdjust="spacingAndGlyphs">query:</text>
-<text x="230.4" y="128" fill="rgb(255,255,255)" textLength="672.0" lengthAdjust="spacingAndGlyphs"> mcp mirror-svc                                                                 </text>
-<text x="902.4" y="128" fill="rgb(88,166,255)" textLength="84.0" lengthAdjust="spacingAndGlyphs">[s] search</text>
-<text x="986.4" y="128" fill="rgb(255,255,255)" textLength="361.2" lengthAdjust="spacingAndGlyphs">                                           </text>
+<text x="230.4" y="128" fill="rgb(255,255,255)" textLength="420.0" lengthAdjust="spacingAndGlyphs"> mcp mirror-svc                                   </text>
+<text x="650.4" y="128" fill="rgb(88,166,255)" textLength="84.0" lengthAdjust="spacingAndGlyphs">[s] search</text>
+<text x="734.4" y="128" fill="rgb(255,255,255)" textLength="613.2" lengthAdjust="spacingAndGlyphs">                                                                         </text>
 <text x="1347.6" y="128" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="145" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="145" fill="rgb(201,209,217)" textLength="134.4" lengthAdjust="spacingAndGlyphs">  Sync Center  s</text>
@@ -242,8 +242,7 @@
 <text x="1339.2" y="451" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
 <text x="1347.6" y="451" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="468" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="468" fill="rgb(110,118,129)" textLength="117.6" lengthAdjust="spacingAndGlyphs"> [v]+key opens</text>
-<text x="138.0" y="468" fill="rgb(255,255,255)" textLength="16.8" lengthAdjust="spacingAndGlyphs">  </text>
+<text x="20.4" y="468" fill="rgb(201,209,217)" textLength="134.4" lengthAdjust="spacingAndGlyphs">  Log          l</text>
 <text x="154.8" y="468" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="163.2" y="468" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="171.6" y="468" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
@@ -253,8 +252,8 @@
 <text x="1339.2" y="468" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
 <text x="1347.6" y="468" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="485" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="485" fill="rgb(110,118,129)" textLength="92.4" lengthAdjust="spacingAndGlyphs"> [ ] cycles</text>
-<text x="112.8" y="485" fill="rgb(255,255,255)" textLength="42.0" lengthAdjust="spacingAndGlyphs">     </text>
+<text x="20.4" y="485" fill="rgb(110,118,129)" textLength="117.6" lengthAdjust="spacingAndGlyphs"> [v]+key opens</text>
+<text x="138.0" y="485" fill="rgb(255,255,255)" textLength="16.8" lengthAdjust="spacingAndGlyphs">  </text>
 <text x="154.8" y="485" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="163.2" y="485" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="171.6" y="485" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
@@ -264,7 +263,8 @@
 <text x="1339.2" y="485" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
 <text x="1347.6" y="485" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="502" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="502" fill="rgb(255,255,255)" textLength="134.4" lengthAdjust="spacingAndGlyphs">                </text>
+<text x="20.4" y="502" fill="rgb(110,118,129)" textLength="92.4" lengthAdjust="spacingAndGlyphs"> [ ] cycles</text>
+<text x="112.8" y="502" fill="rgb(255,255,255)" textLength="42.0" lengthAdjust="spacingAndGlyphs">     </text>
 <text x="154.8" y="502" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="163.2" y="502" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="171.6" y="502" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
@@ -446,8 +446,8 @@
 <text x="154.8" y="808" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="163.2" y="808" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="171.6" y="808" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="180.0" y="808" fill="rgb(110,118,129)" textLength="571.2" lengthAdjust="spacingAndGlyphs">click rows to select · clone summary lands in Activity · Esc cockpit</text>
-<text x="751.2" y="808" fill="rgb(255,255,255)" textLength="596.4" lengthAdjust="spacingAndGlyphs">                                                                       </text>
+<text x="180.0" y="808" fill="rgb(110,118,129)" textLength="680.4" lengthAdjust="spacingAndGlyphs">Enter edit · ↑↓/jk move · Space select · a all · c clone · s search · Esc cockpit</text>
+<text x="860.4" y="808" fill="rgb(255,255,255)" textLength="487.2" lengthAdjust="spacingAndGlyphs">                                                          </text>
 <text x="1347.6" y="808" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="825" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="825" fill="rgb(255,255,255)" textLength="134.4" lengthAdjust="spacingAndGlyphs">                </text>

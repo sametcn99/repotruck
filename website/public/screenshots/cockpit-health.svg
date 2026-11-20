@@ -303,8 +303,7 @@
 <text x="1011.6" y="451" fill="rgb(255,255,255)" textLength="336.0" lengthAdjust="spacingAndGlyphs">                                        </text>
 <text x="1347.6" y="451" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="468" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="468" fill="rgb(110,118,129)" textLength="117.6" lengthAdjust="spacingAndGlyphs"> [v]+key opens</text>
-<text x="138.0" y="468" fill="rgb(255,255,255)" textLength="16.8" lengthAdjust="spacingAndGlyphs">  </text>
+<text x="20.4" y="468" fill="rgb(201,209,217)" textLength="134.4" lengthAdjust="spacingAndGlyphs">  Log          l</text>
 <text x="154.8" y="468" fill="rgb(48,54,61)" textLength="16.8" lengthAdjust="spacingAndGlyphs">││</text>
 <text x="171.6" y="468" fill="rgb(255,255,255)" textLength="243.6" lengthAdjust="spacingAndGlyphs">                             </text>
 <text x="415.2" y="468" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
@@ -315,8 +314,8 @@
 <text x="1011.6" y="468" fill="rgb(255,255,255)" textLength="336.0" lengthAdjust="spacingAndGlyphs">                                        </text>
 <text x="1347.6" y="468" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="485" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="485" fill="rgb(110,118,129)" textLength="92.4" lengthAdjust="spacingAndGlyphs"> [ ] cycles</text>
-<text x="112.8" y="485" fill="rgb(255,255,255)" textLength="42.0" lengthAdjust="spacingAndGlyphs">     </text>
+<text x="20.4" y="485" fill="rgb(110,118,129)" textLength="117.6" lengthAdjust="spacingAndGlyphs"> [v]+key opens</text>
+<text x="138.0" y="485" fill="rgb(255,255,255)" textLength="16.8" lengthAdjust="spacingAndGlyphs">  </text>
 <text x="154.8" y="485" fill="rgb(48,54,61)" textLength="16.8" lengthAdjust="spacingAndGlyphs">││</text>
 <text x="171.6" y="485" fill="rgb(255,255,255)" textLength="243.6" lengthAdjust="spacingAndGlyphs">                             </text>
 <text x="415.2" y="485" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
@@ -327,7 +326,8 @@
 <text x="1011.6" y="485" fill="rgb(255,255,255)" textLength="336.0" lengthAdjust="spacingAndGlyphs">                                        </text>
 <text x="1347.6" y="485" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="502" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="502" fill="rgb(255,255,255)" textLength="134.4" lengthAdjust="spacingAndGlyphs">                </text>
+<text x="20.4" y="502" fill="rgb(110,118,129)" textLength="92.4" lengthAdjust="spacingAndGlyphs"> [ ] cycles</text>
+<text x="112.8" y="502" fill="rgb(255,255,255)" textLength="42.0" lengthAdjust="spacingAndGlyphs">     </text>
 <text x="154.8" y="502" fill="rgb(48,54,61)" textLength="16.8" lengthAdjust="spacingAndGlyphs">││</text>
 <text x="171.6" y="502" fill="rgb(255,255,255)" textLength="243.6" lengthAdjust="spacingAndGlyphs">                             </text>
 <text x="415.2" y="502" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>

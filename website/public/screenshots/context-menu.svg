@@ -36,9 +36,9 @@
 <text x="432.0" y="111" fill="rgb(139,148,158)" textLength="176.4" lengthAdjust="spacingAndGlyphs">  [ ] worker [★] [Go]</text>
 <text x="608.4" y="111" fill="rgb(255,255,255)" textLength="453.6" lengthAdjust="spacingAndGlyphs">                                                      </text>
 <text x="1062.0" y="111" fill="rgb(210,168,255)" textLength="16.8" lengthAdjust="spacingAndGlyphs">││</text>
-<rect x="1078.8" y="97.0" width="201.6" height="17" fill="rgb(33,38,45)"/>
-<text x="1078.8" y="111" fill="rgb(255,255,255)" textLength="201.6" lengthAdjust="spacingAndGlyphs">&gt; Details              i</text>
-<text x="1280.4" y="111" fill="rgb(255,255,255)" textLength="67.2" lengthAdjust="spacingAndGlyphs">        </text>
+<rect x="1078.8" y="97.0" width="210.0" height="17" fill="rgb(33,38,45)"/>
+<text x="1078.8" y="111" fill="rgb(255,255,255)" textLength="210.0" lengthAdjust="spacingAndGlyphs">&gt; Details               i</text>
+<text x="1288.8" y="111" fill="rgb(255,255,255)" textLength="58.8" lengthAdjust="spacingAndGlyphs">       </text>
 <text x="1347.6" y="111" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="128" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <rect x="20.4" y="114.0" width="134.4" height="17" fill="rgb(33,38,45)"/>
@@ -51,8 +51,8 @@
 <text x="432.0" y="128" fill="rgb(139,148,158)" textLength="176.4" lengthAdjust="spacingAndGlyphs">  [ ] tui-tool [Rust]</text>
 <text x="608.4" y="128" fill="rgb(255,255,255)" textLength="453.6" lengthAdjust="spacingAndGlyphs">                                                      </text>
 <text x="1062.0" y="128" fill="rgb(210,168,255)" textLength="16.8" lengthAdjust="spacingAndGlyphs">││</text>
-<text x="1078.8" y="128" fill="rgb(201,209,217)" textLength="201.6" lengthAdjust="spacingAndGlyphs">  Open in app…         o</text>
-<text x="1280.4" y="128" fill="rgb(255,255,255)" textLength="67.2" lengthAdjust="spacingAndGlyphs">        </text>
+<text x="1078.8" y="128" fill="rgb(201,209,217)" textLength="210.0" lengthAdjust="spacingAndGlyphs">  Open in app…          o</text>
+<text x="1288.8" y="128" fill="rgb(255,255,255)" textLength="58.8" lengthAdjust="spacingAndGlyphs">       </text>
 <text x="1347.6" y="128" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="145" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="145" fill="rgb(201,209,217)" textLength="134.4" lengthAdjust="spacingAndGlyphs">  Sync Center  s</text>
@@ -64,8 +64,8 @@
 <text x="432.0" y="145" fill="rgb(139,148,158)" textLength="218.4" lengthAdjust="spacingAndGlyphs">  [ ] widgets [TypeScript]</text>
 <text x="650.4" y="145" fill="rgb(255,255,255)" textLength="411.6" lengthAdjust="spacingAndGlyphs">                                                 </text>
 <text x="1062.0" y="145" fill="rgb(210,168,255)" textLength="16.8" lengthAdjust="spacingAndGlyphs">││</text>
-<text x="1078.8" y="145" fill="rgb(201,209,217)" textLength="235.2" lengthAdjust="spacingAndGlyphs">  Sync this repo       Enter</text>
-<text x="1314.0" y="145" fill="rgb(255,255,255)" textLength="33.6" lengthAdjust="spacingAndGlyphs">    </text>
+<text x="1078.8" y="145" fill="rgb(201,209,217)" textLength="243.6" lengthAdjust="spacingAndGlyphs">  Sync this repo        Enter</text>
+<text x="1322.4" y="145" fill="rgb(255,255,255)" textLength="25.2" lengthAdjust="spacingAndGlyphs">   </text>
 <text x="1347.6" y="145" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="162" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="162" fill="rgb(201,209,217)" textLength="134.4" lengthAdjust="spacingAndGlyphs">  Discover     d</text>
@@ -77,8 +77,8 @@
 <text x="432.0" y="162" fill="rgb(139,148,158)" textLength="134.4" lengthAdjust="spacingAndGlyphs">  [ ] site [MDX]</text>
 <text x="566.4" y="162" fill="rgb(255,255,255)" textLength="495.6" lengthAdjust="spacingAndGlyphs">                                                           </text>
 <text x="1062.0" y="162" fill="rgb(210,168,255)" textLength="16.8" lengthAdjust="spacingAndGlyphs">││</text>
-<text x="1078.8" y="162" fill="rgb(201,209,217)" textLength="201.6" lengthAdjust="spacingAndGlyphs">  Move to path…        m</text>
-<text x="1280.4" y="162" fill="rgb(255,255,255)" textLength="67.2" lengthAdjust="spacingAndGlyphs">        </text>
+<text x="1078.8" y="162" fill="rgb(201,209,217)" textLength="210.0" lengthAdjust="spacingAndGlyphs">  Move to path…         m</text>
+<text x="1288.8" y="162" fill="rgb(255,255,255)" textLength="58.8" lengthAdjust="spacingAndGlyphs">       </text>
 <text x="1347.6" y="162" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="179" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="179" fill="rgb(201,209,217)" textLength="134.4" lengthAdjust="spacingAndGlyphs">  Scan         n</text>
@@ -90,8 +90,8 @@
 <text x="432.0" y="179" fill="rgb(139,148,158)" textLength="210.0" lengthAdjust="spacingAndGlyphs">  [ ] scripts-py [Python]</text>
 <text x="642.0" y="179" fill="rgb(255,255,255)" textLength="420.0" lengthAdjust="spacingAndGlyphs">                                                  </text>
 <text x="1062.0" y="179" fill="rgb(210,168,255)" textLength="16.8" lengthAdjust="spacingAndGlyphs">││</text>
-<text x="1078.8" y="179" fill="rgb(201,209,217)" textLength="201.6" lengthAdjust="spacingAndGlyphs">  Set alias…           r</text>
-<text x="1280.4" y="179" fill="rgb(255,255,255)" textLength="67.2" lengthAdjust="spacingAndGlyphs">        </text>
+<text x="1078.8" y="179" fill="rgb(201,209,217)" textLength="210.0" lengthAdjust="spacingAndGlyphs">  Set alias…            r</text>
+<text x="1288.8" y="179" fill="rgb(255,255,255)" textLength="58.8" lengthAdjust="spacingAndGlyphs">       </text>
 <text x="1347.6" y="179" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="196" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="196" fill="rgb(201,209,217)" textLength="134.4" lengthAdjust="spacingAndGlyphs">  Conflicts    x</text>
@@ -103,8 +103,8 @@
 <text x="432.0" y="196" fill="rgb(139,148,158)" textLength="302.4" lengthAdjust="spacingAndGlyphs">  [ ] forked-lib [Fork] [TypeScript]</text>
 <text x="734.4" y="196" fill="rgb(255,255,255)" textLength="327.6" lengthAdjust="spacingAndGlyphs">                                       </text>
 <text x="1062.0" y="196" fill="rgb(210,168,255)" textLength="16.8" lengthAdjust="spacingAndGlyphs">││</text>
-<text x="1078.8" y="196" fill="rgb(201,209,217)" textLength="201.6" lengthAdjust="spacingAndGlyphs">  Pin / unpin          P</text>
-<text x="1280.4" y="196" fill="rgb(255,255,255)" textLength="67.2" lengthAdjust="spacingAndGlyphs">        </text>
+<text x="1078.8" y="196" fill="rgb(201,209,217)" textLength="210.0" lengthAdjust="spacingAndGlyphs">  Pin / unpin           P</text>
+<text x="1288.8" y="196" fill="rgb(255,255,255)" textLength="58.8" lengthAdjust="spacingAndGlyphs">       </text>
 <text x="1347.6" y="196" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="213" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="213" fill="rgb(110,118,129)" textLength="67.2" lengthAdjust="spacingAndGlyphs"> inspect</text>
@@ -117,8 +117,8 @@
 <text x="432.0" y="213" fill="rgb(139,148,158)" textLength="235.2" lengthAdjust="spacingAndGlyphs">  [ ] mirror-svc [Fork] [Go]</text>
 <text x="667.2" y="213" fill="rgb(255,255,255)" textLength="394.8" lengthAdjust="spacingAndGlyphs">                                               </text>
 <text x="1062.0" y="213" fill="rgb(210,168,255)" textLength="16.8" lengthAdjust="spacingAndGlyphs">││</text>
-<text x="1078.8" y="213" fill="rgb(201,209,217)" textLength="201.6" lengthAdjust="spacingAndGlyphs">  Worktrees…           W</text>
-<text x="1280.4" y="213" fill="rgb(255,255,255)" textLength="67.2" lengthAdjust="spacingAndGlyphs">        </text>
+<text x="1078.8" y="213" fill="rgb(201,209,217)" textLength="210.0" lengthAdjust="spacingAndGlyphs">  Worktrees…            W</text>
+<text x="1288.8" y="213" fill="rgb(255,255,255)" textLength="58.8" lengthAdjust="spacingAndGlyphs">       </text>
 <text x="1347.6" y="213" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="230" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="230" fill="rgb(201,209,217)" textLength="134.4" lengthAdjust="spacingAndGlyphs">  Status       t</text>
@@ -130,8 +130,8 @@
 <text x="432.0" y="230" fill="rgb(139,148,158)" textLength="319.2" lengthAdjust="spacingAndGlyphs">  [ ] dashboard [Private] [TypeScript]</text>
 <text x="751.2" y="230" fill="rgb(255,255,255)" textLength="310.8" lengthAdjust="spacingAndGlyphs">                                     </text>
 <text x="1062.0" y="230" fill="rgb(210,168,255)" textLength="16.8" lengthAdjust="spacingAndGlyphs">││</text>
-<text x="1078.8" y="230" fill="rgb(201,209,217)" textLength="218.4" lengthAdjust="spacingAndGlyphs">  Resolve conflicts…   v x</text>
-<text x="1297.2" y="230" fill="rgb(255,255,255)" textLength="50.4" lengthAdjust="spacingAndGlyphs">      </text>
+<text x="1078.8" y="230" fill="rgb(201,209,217)" textLength="226.8" lengthAdjust="spacingAndGlyphs">  Resolve conflicts…    v x</text>
+<text x="1305.6" y="230" fill="rgb(255,255,255)" textLength="42.0" lengthAdjust="spacingAndGlyphs">     </text>
 <text x="1347.6" y="230" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="247" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="247" fill="rgb(201,209,217)" textLength="134.4" lengthAdjust="spacingAndGlyphs">  Code Search  e</text>
@@ -143,8 +143,8 @@
 <text x="432.0" y="247" fill="rgb(139,148,158)" textLength="369.6" lengthAdjust="spacingAndGlyphs">  [ ] core-api [@api] [Private] [TypeScript]</text>
 <text x="801.6" y="247" fill="rgb(255,255,255)" textLength="260.4" lengthAdjust="spacingAndGlyphs">                               </text>
 <text x="1062.0" y="247" fill="rgb(210,168,255)" textLength="16.8" lengthAdjust="spacingAndGlyphs">││</text>
-<text x="1078.8" y="247" fill="rgb(201,209,217)" textLength="201.6" lengthAdjust="spacingAndGlyphs">  Archive on GitHub    A</text>
-<text x="1280.4" y="247" fill="rgb(255,255,255)" textLength="67.2" lengthAdjust="spacingAndGlyphs">        </text>
+<text x="1078.8" y="247" fill="rgb(201,209,217)" textLength="210.0" lengthAdjust="spacingAndGlyphs">  Archive on GitHub     A</text>
+<text x="1288.8" y="247" fill="rgb(255,255,255)" textLength="58.8" lengthAdjust="spacingAndGlyphs">       </text>
 <text x="1347.6" y="247" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="264" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="264" fill="rgb(201,209,217)" textLength="134.4" lengthAdjust="spacingAndGlyphs">  Stats        i</text>
@@ -156,8 +156,8 @@
 <text x="432.0" y="264" fill="rgb(139,148,158)" textLength="361.2" lengthAdjust="spacingAndGlyphs">  [ ] legacy-php [Private] [Archived] [CSS]</text>
 <text x="793.2" y="264" fill="rgb(255,255,255)" textLength="268.8" lengthAdjust="spacingAndGlyphs">                                </text>
 <text x="1062.0" y="264" fill="rgb(210,168,255)" textLength="16.8" lengthAdjust="spacingAndGlyphs">││</text>
-<text x="1078.8" y="264" fill="rgb(201,209,217)" textLength="201.6" lengthAdjust="spacingAndGlyphs">  Untrack (keep files) u</text>
-<text x="1280.4" y="264" fill="rgb(255,255,255)" textLength="67.2" lengthAdjust="spacingAndGlyphs">        </text>
+<text x="1078.8" y="264" fill="rgb(201,209,217)" textLength="210.0" lengthAdjust="spacingAndGlyphs">  Untrack (keep files)  u</text>
+<text x="1288.8" y="264" fill="rgb(255,255,255)" textLength="58.8" lengthAdjust="spacingAndGlyphs">       </text>
 <text x="1347.6" y="264" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="281" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="281" fill="rgb(201,209,217)" textLength="134.4" lengthAdjust="spacingAndGlyphs">  Changelog    c</text>
@@ -169,8 +169,8 @@
 <text x="432.0" y="281" fill="rgb(139,148,158)" textLength="319.2" lengthAdjust="spacingAndGlyphs">  [ ] docs-site [Private] [TypeScript]</text>
 <text x="751.2" y="281" fill="rgb(255,255,255)" textLength="310.8" lengthAdjust="spacingAndGlyphs">                                     </text>
 <text x="1062.0" y="281" fill="rgb(210,168,255)" textLength="16.8" lengthAdjust="spacingAndGlyphs">││</text>
-<text x="1078.8" y="281" fill="rgb(248,81,73)" textLength="201.6" lengthAdjust="spacingAndGlyphs">  Delete → trash       D</text>
-<text x="1280.4" y="281" fill="rgb(255,255,255)" textLength="67.2" lengthAdjust="spacingAndGlyphs">        </text>
+<text x="1078.8" y="281" fill="rgb(248,81,73)" textLength="210.0" lengthAdjust="spacingAndGlyphs">  Delete → trash        D</text>
+<text x="1288.8" y="281" fill="rgb(255,255,255)" textLength="58.8" lengthAdjust="spacingAndGlyphs">       </text>
 <text x="1347.6" y="281" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="298" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="298" fill="rgb(110,118,129)" textLength="75.6" lengthAdjust="spacingAndGlyphs"> automate</text>
@@ -183,7 +183,7 @@
 <text x="432.0" y="298" fill="rgb(248,81,73)" textLength="369.6" lengthAdjust="spacingAndGlyphs">  [ ] retired-docs [MISSING] [Archived] [MD]</text>
 <text x="801.6" y="298" fill="rgb(255,255,255)" textLength="260.4" lengthAdjust="spacingAndGlyphs">                               </text>
 <text x="1062.0" y="298" fill="rgb(210,168,255)" textLength="16.8" lengthAdjust="spacingAndGlyphs">││</text>
-<text x="1078.8" y="298" fill="rgb(248,81,73)" textLength="268.8" lengthAdjust="spacingAndGlyphs">  Delete permanently   del --yes</text>
+<text x="1078.8" y="298" fill="rgb(248,81,73)" textLength="268.8" lengthAdjust="spacingAndGlyphs">  Delete permanently    del --y…</text>
 <text x="1347.6" y="298" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="315" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="315" fill="rgb(201,209,217)" textLength="134.4" lengthAdjust="spacingAndGlyphs">  Run Console  r</text>
@@ -280,8 +280,7 @@
 <text x="1078.8" y="451" fill="rgb(255,255,255)" textLength="268.8" lengthAdjust="spacingAndGlyphs">                                </text>
 <text x="1347.6" y="451" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="468" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="468" fill="rgb(110,118,129)" textLength="117.6" lengthAdjust="spacingAndGlyphs"> [v]+key opens</text>
-<text x="138.0" y="468" fill="rgb(255,255,255)" textLength="16.8" lengthAdjust="spacingAndGlyphs">  </text>
+<text x="20.4" y="468" fill="rgb(201,209,217)" textLength="134.4" lengthAdjust="spacingAndGlyphs">  Log          l</text>
 <text x="154.8" y="468" fill="rgb(48,54,61)" textLength="16.8" lengthAdjust="spacingAndGlyphs">││</text>
 <text x="171.6" y="468" fill="rgb(255,255,255)" textLength="243.6" lengthAdjust="spacingAndGlyphs">                             </text>
 <text x="415.2" y="468" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
@@ -291,8 +290,8 @@
 <text x="1078.8" y="468" fill="rgb(255,255,255)" textLength="268.8" lengthAdjust="spacingAndGlyphs">                                </text>
 <text x="1347.6" y="468" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="485" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="485" fill="rgb(110,118,129)" textLength="92.4" lengthAdjust="spacingAndGlyphs"> [ ] cycles</text>
-<text x="112.8" y="485" fill="rgb(255,255,255)" textLength="42.0" lengthAdjust="spacingAndGlyphs">     </text>
+<text x="20.4" y="485" fill="rgb(110,118,129)" textLength="117.6" lengthAdjust="spacingAndGlyphs"> [v]+key opens</text>
+<text x="138.0" y="485" fill="rgb(255,255,255)" textLength="16.8" lengthAdjust="spacingAndGlyphs">  </text>
 <text x="154.8" y="485" fill="rgb(48,54,61)" textLength="16.8" lengthAdjust="spacingAndGlyphs">││</text>
 <text x="171.6" y="485" fill="rgb(255,255,255)" textLength="243.6" lengthAdjust="spacingAndGlyphs">                             </text>
 <text x="415.2" y="485" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
@@ -302,7 +301,8 @@
 <text x="1078.8" y="485" fill="rgb(255,255,255)" textLength="268.8" lengthAdjust="spacingAndGlyphs">                                </text>
 <text x="1347.6" y="485" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="502" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="502" fill="rgb(255,255,255)" textLength="134.4" lengthAdjust="spacingAndGlyphs">                </text>
+<text x="20.4" y="502" fill="rgb(110,118,129)" textLength="92.4" lengthAdjust="spacingAndGlyphs"> [ ] cycles</text>
+<text x="112.8" y="502" fill="rgb(255,255,255)" textLength="42.0" lengthAdjust="spacingAndGlyphs">     </text>
 <text x="154.8" y="502" fill="rgb(48,54,61)" textLength="16.8" lengthAdjust="spacingAndGlyphs">││</text>
 <text x="171.6" y="502" fill="rgb(255,255,255)" textLength="243.6" lengthAdjust="spacingAndGlyphs">                             </text>
 <text x="415.2" y="502" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>

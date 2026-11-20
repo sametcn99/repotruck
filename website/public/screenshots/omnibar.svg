@@ -36,7 +36,7 @@
 <text x="1347.6" y="145" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="162" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="162" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="162" fill="rgb(110,118,129)" textLength="235.2" lengthAdjust="spacingAndGlyphs">1/13 commands (showing 1–13)</text>
+<text x="28.8" y="162" fill="rgb(110,118,129)" textLength="235.2" lengthAdjust="spacingAndGlyphs">1/19 commands (showing 1–19)</text>
 <text x="264.0" y="162" fill="rgb(255,255,255)" textLength="1083.6" lengthAdjust="spacingAndGlyphs">                                                                                                                                 </text>
 <text x="1347.6" y="162" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="179" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
@@ -77,56 +77,68 @@
 <text x="1347.6" y="281" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="298" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="298" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="298" fill="rgb(201,209,217)" textLength="546.0" lengthAdjust="spacingAndGlyphs">  [Workspace] Regenerate workspace AGENTS.md map  —  instructions</text>
-<text x="574.8" y="298" fill="rgb(255,255,255)" textLength="772.8" lengthAdjust="spacingAndGlyphs">                                                                                            </text>
+<text x="28.8" y="298" fill="rgb(201,209,217)" textLength="655.2" lengthAdjust="spacingAndGlyphs">  [Go] Go to Sync Center — bulk sync with every flag plus watch mode  —  [v s]</text>
+<text x="684.0" y="298" fill="rgb(255,255,255)" textLength="663.6" lengthAdjust="spacingAndGlyphs">                                                                               </text>
 <text x="1347.6" y="298" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="315" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="315" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="315" fill="rgb(201,209,217)" textLength="268.8" lengthAdjust="spacingAndGlyphs">  [Search] changelog — Changelog</text>
-<text x="297.6" y="315" fill="rgb(255,255,255)" textLength="1050.0" lengthAdjust="spacingAndGlyphs">                                                                                                                             </text>
+<text x="28.8" y="315" fill="rgb(201,209,217)" textLength="546.0" lengthAdjust="spacingAndGlyphs">  [Workspace] Regenerate workspace AGENTS.md map  —  instructions</text>
+<text x="574.8" y="315" fill="rgb(255,255,255)" textLength="772.8" lengthAdjust="spacingAndGlyphs">                                                                                            </text>
 <text x="1347.6" y="315" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="332" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="332" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="332" fill="rgb(201,209,217)" textLength="504.0" lengthAdjust="spacingAndGlyphs">  [Mode] Workspace Code Search (AST symbols &amp; text:)  —  [@]</text>
-<text x="532.8" y="332" fill="rgb(255,255,255)" textLength="814.8" lengthAdjust="spacingAndGlyphs">                                                                                                 </text>
+<text x="28.8" y="332" fill="rgb(201,209,217)" textLength="268.8" lengthAdjust="spacingAndGlyphs">  [Search] changelog — Changelog</text>
+<text x="297.6" y="332" fill="rgb(255,255,255)" textLength="1050.0" lengthAdjust="spacingAndGlyphs">                                                                                                                             </text>
 <text x="1347.6" y="332" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="349" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="349" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="349" fill="rgb(201,209,217)" textLength="302.4" lengthAdjust="spacingAndGlyphs">  [Lifecycle] status — Status Matrix</text>
-<text x="331.2" y="349" fill="rgb(255,255,255)" textLength="1016.4" lengthAdjust="spacingAndGlyphs">                                                                                                                         </text>
+<text x="28.8" y="349" fill="rgb(201,209,217)" textLength="646.8" lengthAdjust="spacingAndGlyphs">  [Go] Go to Settings — configuration, auth, update and completions  —  [v a]</text>
+<text x="675.6" y="349" fill="rgb(255,255,255)" textLength="672.0" lengthAdjust="spacingAndGlyphs">                                                                                </text>
 <text x="1347.6" y="349" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="366" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="366" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="366" fill="rgb(201,209,217)" textLength="546.0" lengthAdjust="spacingAndGlyphs">  [Repo] Archive repository on GitHub + move to archived/  —  [A]</text>
-<text x="574.8" y="366" fill="rgb(255,255,255)" textLength="772.8" lengthAdjust="spacingAndGlyphs">                                                                                            </text>
+<text x="28.8" y="366" fill="rgb(201,209,217)" textLength="630.0" lengthAdjust="spacingAndGlyphs">  [Go] Go to Agents — AGENTS.md templates, exports and MCP server  —  [v g]</text>
+<text x="658.8" y="366" fill="rgb(255,255,255)" textLength="688.8" lengthAdjust="spacingAndGlyphs">                                                                                  </text>
 <text x="1347.6" y="366" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="383" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="383" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="383" fill="rgb(201,209,217)" textLength="453.6" lengthAdjust="spacingAndGlyphs">  [Search] instructions template — AGENTS.md templates</text>
-<text x="482.4" y="383" fill="rgb(255,255,255)" textLength="865.2" lengthAdjust="spacingAndGlyphs">                                                                                                       </text>
+<text x="28.8" y="383" fill="rgb(201,209,217)" textLength="655.2" lengthAdjust="spacingAndGlyphs">  [Go] Go to Log — captured errors, warnings and runtime diagnostics  —  [v l]</text>
+<text x="684.0" y="383" fill="rgb(255,255,255)" textLength="663.6" lengthAdjust="spacingAndGlyphs">                                                                               </text>
 <text x="1347.6" y="383" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="400" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="400" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="400" fill="rgb(110,118,129)" textLength="697.2" lengthAdjust="spacingAndGlyphs">Tab switches mode · Up/Down/PgUp/PgDn/Wheel browse · Enter executes · Escape closes</text>
-<text x="726.0" y="400" fill="rgb(255,255,255)" textLength="621.6" lengthAdjust="spacingAndGlyphs">                                                                          </text>
+<text x="28.8" y="400" fill="rgb(201,209,217)" textLength="504.0" lengthAdjust="spacingAndGlyphs">  [Mode] Workspace Code Search (AST symbols &amp; text:)  —  [@]</text>
+<text x="532.8" y="400" fill="rgb(255,255,255)" textLength="814.8" lengthAdjust="spacingAndGlyphs">                                                                                                 </text>
 <text x="1347.6" y="400" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="417" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="417" fill="rgb(255,255,255)" textLength="1327.2" lengthAdjust="spacingAndGlyphs">                                                                                                                                                              </text>
+<text x="20.4" y="417" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="28.8" y="417" fill="rgb(201,209,217)" textLength="646.8" lengthAdjust="spacingAndGlyphs">  [Go] Go to Cockpit — scope, repository list and activity  —  active · [Esc]</text>
+<text x="675.6" y="417" fill="rgb(255,255,255)" textLength="672.0" lengthAdjust="spacingAndGlyphs">                                                                                </text>
 <text x="1347.6" y="417" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="434" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="434" fill="rgb(255,255,255)" textLength="1327.2" lengthAdjust="spacingAndGlyphs">                                                                                                                                                              </text>
+<text x="20.4" y="434" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="28.8" y="434" fill="rgb(201,209,217)" textLength="655.2" lengthAdjust="spacingAndGlyphs">  [Go] Go to Code Search — tree-sitter symbol, text and regex search  —  [v e]</text>
+<text x="684.0" y="434" fill="rgb(255,255,255)" textLength="663.6" lengthAdjust="spacingAndGlyphs">                                                                               </text>
 <text x="1347.6" y="434" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="451" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="451" fill="rgb(255,255,255)" textLength="1327.2" lengthAdjust="spacingAndGlyphs">                                                                                                                                                              </text>
+<text x="20.4" y="451" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="28.8" y="451" fill="rgb(201,209,217)" textLength="302.4" lengthAdjust="spacingAndGlyphs">  [Lifecycle] status — Status Matrix</text>
+<text x="331.2" y="451" fill="rgb(255,255,255)" textLength="1016.4" lengthAdjust="spacingAndGlyphs">                                                                                                                         </text>
 <text x="1347.6" y="451" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="468" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="468" fill="rgb(255,255,255)" textLength="1327.2" lengthAdjust="spacingAndGlyphs">                                                                                                                                                              </text>
+<text x="20.4" y="468" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="28.8" y="468" fill="rgb(201,209,217)" textLength="546.0" lengthAdjust="spacingAndGlyphs">  [Repo] Archive repository on GitHub + move to archived/  —  [A]</text>
+<text x="574.8" y="468" fill="rgb(255,255,255)" textLength="772.8" lengthAdjust="spacingAndGlyphs">                                                                                            </text>
 <text x="1347.6" y="468" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="485" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="485" fill="rgb(255,255,255)" textLength="1327.2" lengthAdjust="spacingAndGlyphs">                                                                                                                                                              </text>
+<text x="20.4" y="485" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="28.8" y="485" fill="rgb(201,209,217)" textLength="453.6" lengthAdjust="spacingAndGlyphs">  [Search] instructions template — AGENTS.md templates</text>
+<text x="482.4" y="485" fill="rgb(255,255,255)" textLength="865.2" lengthAdjust="spacingAndGlyphs">                                                                                                       </text>
 <text x="1347.6" y="485" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="502" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="502" fill="rgb(255,255,255)" textLength="1327.2" lengthAdjust="spacingAndGlyphs">                                                                                                                                                              </text>
+<text x="20.4" y="502" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="28.8" y="502" fill="rgb(110,118,129)" textLength="697.2" lengthAdjust="spacingAndGlyphs">Tab switches mode · Up/Down/PgUp/PgDn/Wheel browse · Enter executes · Escape closes</text>
+<text x="726.0" y="502" fill="rgb(255,255,255)" textLength="621.6" lengthAdjust="spacingAndGlyphs">                                                                          </text>
 <text x="1347.6" y="502" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="519" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="519" fill="rgb(255,255,255)" textLength="1327.2" lengthAdjust="spacingAndGlyphs">                                                                                                                                                              </text>
