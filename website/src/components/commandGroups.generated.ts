@@ -58,7 +58,7 @@ export const COMMAND_GROUPS: readonly CommandGroup[] = [
             description: "first N repos of the scope in API order",
           },
           {
-            flag: "-c, --concurrency <number>",
+            flag: "-c, --concurrency <n>",
             description: "parallel repositories (default: 3)",
           },
           {
@@ -74,7 +74,7 @@ export const COMMAND_GROUPS: readonly CommandGroup[] = [
             description: "stash uncommitted changes before update",
           },
           {
-            flag: "--divergence <divergence>",
+            flag: "--divergence <strategy>",
             description:
               "ahead-of-origin strategy (choices: fail, rebase, reset, skip) (default: fail)",
           },
@@ -609,7 +609,7 @@ export const COMMAND_GROUPS: readonly CommandGroup[] = [
             description: "language filter (choices: ts, tsx, js, py, go, rs)",
           },
           {
-            flag: "-l, --limit <n>",
+            flag: "-l, --limit <number>",
             description: "max matches (default 50)",
           },
           {

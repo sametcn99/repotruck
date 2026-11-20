@@ -1,8 +1,7 @@
 import path from "node:path";
 import { PRESET_IDS, type PresetRef, targetSegmentsForPreset } from "../../presets/index.ts";
 import { firstErrorLine } from "../../services/cloner.ts";
-import { refreshCodeIndexIfPresent } from "../../services/codeSearch.ts";
-import { effectiveRoot, readSettings, resolveSyncSettings } from "../../services/settings.ts";
+import { effectiveRoot } from "../../services/settings.ts";
 import { parseGitUrl } from "../../services/singleCloner.ts";
 import { loadWorkspace } from "../../services/workspace.ts";
 import { centralStorePath } from "../../services/workspaceRegistry.ts";
@@ -14,7 +13,6 @@ import {
   performUntrackRepos,
 } from "./lifecycleActions.ts";
 import {
-  buildPreviewEntries,
   computeReorganizePreview,
   executeOmnibarCommandById,
   findTrackedEntryInRoot,
@@ -30,10 +28,10 @@ import {
   resolveCurrentAliasFor,
 } from "./modalWorkflows.ts";
 import { routeMouseEvent } from "./mouse.ts";
-import { StoreCore } from "./StoreCore.ts";
+import { StorePages } from "./StorePages.ts";
 import type { CreateDraft, MouseCallbacks, MouseEventPayload } from "./types.ts";
 
-export class Store extends StoreCore {
+export class Store extends StorePages {
   handleMouse = (
     event: MouseEventPayload,
     width: number,
@@ -57,68 +55,6 @@ export class Store extends StoreCore {
     const nextPreset = this.nextPresetId();
     this.set({ preset: nextPreset });
     if (this.state.modal?.type === "preview") await this.refreshStartPreviewModal(nextPreset);
-  };
-
-  private refreshStartPreviewModal = async (preset: PresetRef): Promise<void> => {
-    if (this.state.modal?.type !== "preview") return;
-    const chosen = this.state.repos.filter((repo) => this.state.selected.has(repoKey(repo)));
-    const entries = await buildPreviewEntries({
-      root: this.rootValue,
-      chosen,
-      preset,
-      orgs: [...this.state.selectedOrgs],
-      userLogin: this.userLoginValue ?? "",
-      customPresets: this.state.customPresets,
-    });
-    if (this.state.modal?.type === "preview") this.set({ modal: { type: "preview", entries } });
-  };
-
-  start = async (): Promise<void> => {
-    if (this.state.running) return;
-    const chosen = this.state.repos.filter((repo) => this.state.selected.has(repoKey(repo)));
-    if (chosen.length === 0) return this.pushStatus("FAILED", "sync", "nothing selected");
-    if (this.github === null && !this.state.offline) {
-      return this.pushStatus("FAILED", "sync", "not initialized");
-    }
-    this.set({ running: true });
-    try {
-      const syncCfg = resolveSyncSettings(await readSettings(process.env));
-      const config = await loadWorkspace(this.rootValue, this.state.preset);
-      await this.deps.sync({
-        root: this.rootValue,
-        config,
-        repos: chosen,
-        userLogin: this.userLoginValue ?? "",
-        orgs: [...this.state.selectedOrgs],
-        token: this.token,
-        emit: this.progressToStatus,
-        customPresets: this.state.customPresets,
-        ...syncCfg,
-      });
-      await refreshCodeIndexIfPresent(this.rootValue, await loadWorkspace(this.rootValue));
-      await this.refreshLocalState();
-    } catch (error) {
-      this.pushStatus("FAILED", "sync", firstErrorLine(error));
-    } finally {
-      this.set({ running: false });
-    }
-  };
-
-  openStartPreview = async (): Promise<void> => {
-    if (this.state.running) return;
-    const chosen = this.state.repos.filter((repo) => this.state.selected.has(repoKey(repo)));
-    if (chosen.length === 0) return this.pushStatus("FAILED", "sync", "nothing selected");
-    if (this.github === null && !this.state.offline) {
-      return this.pushStatus("FAILED", "sync", "not initialized");
-    }
-    this.openModal({ type: "preview", entries: [] });
-    await this.refreshStartPreviewModal(this.state.preset);
-  };
-
-  confirmStartPreview = async (): Promise<void> => {
-    if (this.state.modal?.type !== "preview") return;
-    this.closeModal();
-    await this.start();
   };
 
   togglePinSelection = async (): Promise<void> => {
@@ -178,11 +114,6 @@ export class Store extends StoreCore {
   openSelectionDeleteConfirm = async (): Promise<void> => {
     const keys = this.activeTargetKeys(true);
     if (keys.length > 0) await this.openDeleteConfirm(keys[0]!, keys.length > 1 ? keys : undefined);
-  };
-
-  /** Permanent delete: guarded by the typed-name confirm modal (t13/t19 follow-up). */
-  openPermanentDeleteConfirm = (key: string): void => {
-    this.openModal({ type: "confirmPermanentDelete", key });
   };
 
   confirmPermanentDelete = async (key: string): Promise<void> => {

@@ -5,7 +5,7 @@ import path from "node:path";
 import { testRender } from "@opentui/react/test-utils";
 import { simpleGit } from "simple-git";
 import { Dashboard } from "../src/components/Dashboard.tsx";
-import { syncCenterCliLine } from "../src/components/store/StoreCore.ts";
+import { syncCenterCliLine } from "../src/components/store/StoreWorkspacePages.ts";
 import { Store, type StoreDeps } from "../src/components/store.ts";
 import { activateTheme } from "../src/components/theme.ts";
 import { PlaceholderView } from "../src/components/views/PlaceholderView.tsx";

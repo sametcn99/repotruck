@@ -74,15 +74,23 @@ const GROUP_ORDER: readonly {
   },
 ];
 
-/** Argument placeholder overrides where the flag name reads poorly alone. */
+/**
+ * Argument placeholder overrides where the flag name reads poorly alone.
+ * Keys are either the bare flag (applies everywhere) or `command:--flag` for
+ * commands whose CLI help spells a different placeholder (sync says
+ * `-c, --concurrency <n>` while the global/run flag is `<number>`).
+ */
 const ARG_OVERRIDES: Record<string, string> = {
   "--watch": "[seconds]",
   "--dir": "root",
   "--limit": "n",
+  "search-code:--limit": "number",
   "--concurrency": "number",
+  "sync:--concurrency": "n",
   "--depth": "n",
   "--include": "glob",
   "--exclude": "glob",
+  "--divergence": "strategy",
   "--sparse": "dirs...",
   "--topic": "topic",
   "--min-stars": "n",
@@ -270,10 +278,13 @@ interface GenGroup {
   commands: readonly GenCommand[];
 }
 
-function formatFlagDoc(flag: FlagSpec): string {
+function formatFlagDoc(flag: FlagSpec, command?: string): string {
   const name = flag.short !== undefined ? `${flag.short}, ${flag.flag}` : flag.flag;
   if (flag.type === "bool") return name;
-  const placeholder = ARG_OVERRIDES[flag.flag] ?? flag.flag.replace(/^--/, "");
+  const placeholder =
+    (command !== undefined ? ARG_OVERRIDES[`${command}:${flag.flag}`] : undefined) ??
+    ARG_OVERRIDES[flag.flag] ??
+    flag.flag.replace(/^--/, "");
   if (placeholder.startsWith("[")) return `${name} ${placeholder}`;
   return `${name} <${placeholder}>`;
 }
@@ -332,7 +343,7 @@ export function buildCommandGroupsData(): {
         for (const flag of spec.flags) {
           if (seen.has(flag.flag)) continue;
           seen.add(flag.flag);
-          flags.push({ flag: formatFlagDoc(flag), description: flagDescription(flag) });
+          flags.push({ flag: formatFlagDoc(flag, top), description: flagDescription(flag) });
         }
       }
       const usageParts = [

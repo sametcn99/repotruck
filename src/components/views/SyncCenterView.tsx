@@ -1,6 +1,6 @@
 import { useKeyboard } from "@opentui/react";
 import { useEffect, useState, useSyncExternalStore } from "react";
-import { syncCenterCliLine } from "../store/StoreCore.ts";
+import { syncCenterCliLine } from "../store/StoreWorkspacePages.ts";
 import type { Store } from "../store.ts";
 import { theme } from "../theme.ts";
 import { clampBoxLine } from "../windowing.ts";

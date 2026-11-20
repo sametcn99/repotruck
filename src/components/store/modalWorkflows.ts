@@ -12,19 +12,13 @@ import type { EmitProgress } from "../../services/cloner.ts";
 import { firstErrorLine } from "../../services/cloner.ts";
 import type { RepoInventoryEntry } from "../../services/config.ts";
 import type { RepoInfo } from "../../services/github.ts";
-import { resolveRepoRef, runAppInRepo, type SpawnImpl } from "../../services/launcher.ts";
+import { resolveRepoRef } from "../../services/launcher.ts";
 import { validateMoveDestination } from "../../services/mover.ts";
 import type { ReorganizeResult } from "../../services/reorganizer.ts";
 import { readSettings, validateRootInput, writeSettings } from "../../services/settings.ts";
 import { parseGitUrl } from "../../services/singleCloner.ts";
 import { loadWorkspace } from "../../services/workspace.ts";
 import { resolveWorkspaceRoot } from "../../services/workspaceRegistry.ts";
-import {
-  createRepoWorktree,
-  listRepoWorktrees,
-  type RepoWorktreeDetail,
-  removeRepoWorktree,
-} from "../../services/worktree.ts";
 import { VIEW_BY_ID } from "../views/viewRegistry.ts";
 import type { PreviewTreeEntry } from "../windowing.ts";
 import type { ResolvedStoreDeps } from "./defaults.ts";
@@ -75,29 +69,6 @@ export async function performSubmitAlias(
   } catch (error) {
     return { ok: false, error: error instanceof Error ? error.message : String(error) };
   }
-}
-
-export async function performRunOpenApp(
-  root: string,
-  key: string,
-  appName: string,
-  deps: ResolvedStoreDeps,
-): Promise<{ code: number; error?: string }> {
-  const resolved = await deps.resolveAppFn(appName);
-  if (resolved === null) {
-    return { code: 1, error: `unknown app: ${appName}` };
-  }
-  const config = await loadWorkspace(root);
-  const options: { spawnImpl?: SpawnImpl } =
-    deps.spawnImpl !== undefined ? { spawnImpl: deps.spawnImpl } : {};
-  const result = await runAppInRepo(
-    { root, config, ref: key, app: resolved, mode: "attached-resume" },
-    options,
-  );
-  return {
-    code: result.code ?? 1,
-    ...(result.message !== undefined && !result.ok ? { error: result.message } : {}),
-  };
 }
 
 export async function performSubmitRoot(
@@ -279,53 +250,6 @@ export async function performSubmitCreate(params: {
       stars: 0,
     },
   };
-}
-
-export async function performOpenWorktreeModal(
-  root: string,
-  key: string,
-): Promise<RepoWorktreeDetail[]> {
-  const config = await loadWorkspace(root);
-  const match = resolveRepoRef(config, key);
-  if (match === null) {
-    throw new Error(`repository not found: ${key}`);
-  }
-  const repoDir = path.join(root, ...match.entry.relativePath.split("/"));
-  return await listRepoWorktrees(repoDir);
-}
-
-export async function performCreateWorktree(
-  root: string,
-  key: string,
-  branch: string,
-  targetPath?: string,
-  newBranch = false,
-): Promise<{ ok: boolean; message: string }> {
-  const config = await loadWorkspace(root);
-  const match = resolveRepoRef(config, key);
-  if (match === null) {
-    return { ok: false, message: `repository not found: ${key}` };
-  }
-  const repoDir = path.join(root, ...match.entry.relativePath.split("/"));
-  const safeBranch = branch.replace(/[^a-zA-Z0-9._-]/g, "-");
-  const destPath =
-    targetPath ?? path.join(path.dirname(repoDir), `${match.entry.name}+${safeBranch}`);
-  return await createRepoWorktree(repoDir, branch, destPath, { newBranch });
-}
-
-export async function performRemoveWorktree(
-  root: string,
-  key: string,
-  targetPath: string,
-  force = false,
-): Promise<{ ok: boolean; message: string }> {
-  const config = await loadWorkspace(root);
-  const match = resolveRepoRef(config, key);
-  if (match === null) {
-    return { ok: false, message: `repository not found: ${key}` };
-  }
-  const repoDir = path.join(root, ...match.entry.relativePath.split("/"));
-  return await removeRepoWorktree(repoDir, targetPath, force);
 }
 
 /**
@@ -653,3 +577,11 @@ export function executeOmnibarCommandById(store: Store, id: string): void {
       return;
   }
 }
+
+// Re-exported for existing import sites; implementations moved for the size budget.
+export {
+  performCreateWorktree,
+  performOpenWorktreeModal,
+  performRemoveWorktree,
+  performRunOpenApp,
+} from "./worktreeWorkflows.ts";

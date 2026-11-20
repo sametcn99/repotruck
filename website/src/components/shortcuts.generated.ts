@@ -243,4 +243,8 @@ export const SHORTCUT_ROWS: readonly ShortcutRow[] = [
     key: "v a",
     action: "Settings — configuration, auth, update and completions",
   },
+  {
+    key: "v l",
+    action: "Log — captured errors, warnings and runtime diagnostics",
+  },
 ];
