@@ -12,6 +12,7 @@ import {
   type FieldValues,
 } from "./ui/FieldGroup.tsx";
 import { copyText } from "./ui/JsonCopy.ts";
+import { clampBoxLine } from "./windowing.ts";
 
 type Executor = (
   store: Store,
@@ -59,6 +60,7 @@ export function CommandFormModal({ store }: { store: Store }) {
 
   const cli = buildCliArguments(`repotruck ${spec.path}`, spec.flags, values, positional);
   const formWidth = Math.max(24, width - 6);
+  const cliBoxInnerCols = Math.max(12, formWidth - 3);
   const argRows = spec.args.length > 0 ? spec.args.length + 1 : 0;
   const maxFlagRows = Math.max(2, height - 18 - argRows);
 
@@ -68,17 +70,17 @@ export function CommandFormModal({ store }: { store: Store }) {
       title={`${spec.path} — ${spec.title}`}
       hint="Ctrl-free: buttons below · Esc closes"
     >
-      <text fg={theme.dim()} wrapMode="none">
-        {spec.summary}
+      <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
+        {clampBoxLine(spec.summary, formWidth)}
       </text>
       {spec.args.length > 0 ? (
-        <box flexDirection="column">
+        <box flexDirection="column" flexShrink={0}>
           {spec.args.map((arg: CommandSpec["args"][number]) => (
-            <text key={arg.name} fg={theme.normal()} wrapMode="none">
-              {formatArgLine(arg, positional)}
+            <text key={arg.name} fg={theme.normal()} wrapMode="none" flexShrink={0}>
+              {clampBoxLine(formatArgLine(arg, positional), formWidth)}
             </text>
           ))}
-          <text fg={theme.dim()} wrapMode="none">
+          <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
             {"arg editing arrives with the arg inputs (page tickets)"}
           </text>
         </box>
@@ -92,14 +94,26 @@ export function CommandFormModal({ store }: { store: Store }) {
           maxRows={maxFlagRows}
         />
       ) : (
-        <text fg={theme.dim()}>{"no flags"}</text>
+        <text fg={theme.dim()} flexShrink={0}>
+          {"no flags"}
+        </text>
       )}
-      <box border borderColor={theme.border()} padding={0}>
-        <text fg={theme.accent()} wrapMode="none">{` $ ${cli}`}</text>
+      <box
+        border
+        borderColor={theme.border()}
+        padding={0}
+        overflow="hidden"
+        flexShrink={0}
+        width="100%"
+      >
+        <text fg={theme.accent()} wrapMode="none" flexShrink={0}>
+          {clampBoxLine(` $ ${cli}`, cliBoxInnerCols)}
+        </text>
       </box>
-      <box flexDirection="row" flexWrap="wrap" gap={2}>
+      <box flexDirection="row" flexWrap="wrap" gap={2} flexShrink={0}>
         <text
           fg={theme.accent()}
+          flexShrink={0}
           onMouseDown={(event) => {
             event.stopPropagation?.();
             void runCommand(store, spec, values, positional);
@@ -109,6 +123,7 @@ export function CommandFormModal({ store }: { store: Store }) {
         </text>
         <text
           fg={theme.normal()}
+          flexShrink={0}
           onMouseDown={(event) => {
             event.stopPropagation?.();
             const result = copyText("command", cli);
@@ -120,6 +135,7 @@ export function CommandFormModal({ store }: { store: Store }) {
         {spec.surface.kind === "view" || spec.surface.kind === "modal" ? (
           <text
             fg={theme.normal()}
+            flexShrink={0}
             onMouseDown={(event) => {
               event.stopPropagation?.();
               executeRegistryCommand(store, spec.id, false);
@@ -130,6 +146,7 @@ export function CommandFormModal({ store }: { store: Store }) {
         ) : null}
         <text
           fg={theme.dim()}
+          flexShrink={0}
           onMouseDown={(event) => {
             event.stopPropagation?.();
             store.closeModal();
@@ -141,6 +158,7 @@ export function CommandFormModal({ store }: { store: Store }) {
       <text
         fg={theme.dim()}
         wrapMode="none"
+        flexShrink={0}
       >{`requires: ${spec.requires.join(", ") || "nothing"}`}</text>
     </ModalShell>
   );

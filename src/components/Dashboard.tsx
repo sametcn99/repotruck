@@ -52,6 +52,7 @@ import {
   navRailVisible,
   repoKeyOf,
   repoViewportRows,
+  TOAST_RESERVED_ROWS,
 } from "./windowing.ts";
 
 // A second q inside this window while a sync runs actually quits.
@@ -145,10 +146,20 @@ function assertUnreachable(value: never): null {
 // Page body for a non-cockpit view. Implementing tickets replace the
 // placeholder with a real component; the registry drives rail, help and
 // palette entries so the shell stays consistent meanwhile.
-function renderPage(view: ViewId, store: Store, width: number, height: number) {
+function renderPage(
+  view: ViewId,
+  store: Store,
+  width: number,
+  height: number,
+  toastVisible = false,
+) {
   const compact = height < 22 || width < 68;
   const innerWidth = Math.max(24, width - (compact ? 2 : 4));
-  const innerHeight = Math.max(8, height - HEADER_ROWS - FOOTER_ROWS - (compact ? 3 : 5));
+  const toastRows = toastVisible ? TOAST_RESERVED_ROWS : 0;
+  const innerHeight = Math.max(
+    6,
+    height - HEADER_ROWS - FOOTER_ROWS - toastRows - (compact ? 3 : 5),
+  );
   const wrap = (body: React.ReactNode) => (
     <PageShell view={view} store={store}>
       {body}
@@ -166,7 +177,7 @@ function renderPage(view: ViewId, store: Store, width: number, height: number) {
     case "trash":
       return wrap(<TrashBackupsView store={store} width={innerWidth} height={innerHeight} />);
     case "presets":
-      return wrap(<PresetsView store={store} width={innerWidth} />);
+      return wrap(<PresetsView store={store} width={innerWidth} height={innerHeight} />);
     case "profiles":
       return wrap(<ProfilesView store={store} width={innerWidth} height={innerHeight} />);
     case "agents":
@@ -769,7 +780,7 @@ export function Dashboard({
       ) : (
         <box flexDirection="row" flexGrow={1}>
           {railVisible ? <NavRail store={store} width={NAV_RAIL_WIDTH} /> : null}
-          {renderPage(snapshot.view, store, pageWidth, height)}
+          {renderPage(snapshot.view, store, pageWidth, height, snapshot.updateToast !== null)}
         </box>
       )}
       {snapshot.updateToast !== null && shellVisible ? (

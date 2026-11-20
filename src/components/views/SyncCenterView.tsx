@@ -3,6 +3,7 @@ import { useEffect, useState, useSyncExternalStore } from "react";
 import { syncCenterCliLine } from "../store/StoreCore.ts";
 import type { Store } from "../store.ts";
 import { theme } from "../theme.ts";
+import { clampBoxLine } from "../windowing.ts";
 
 /**
  * `repotruck sync` with every flag: scope, limit, concurrency, depth,
@@ -44,25 +45,35 @@ export function SyncCenterView({ store, width }: { store: Store; width: number }
   if (state === null) return null;
   const running = state.running || snapshot.running;
   const inner = Math.max(20, width - 4);
+  const boxInnerCols = Math.max(12, width - 3);
 
   return (
     <box flexDirection="column" flexGrow={1} width="100%">
-      <box flexDirection="row" gap={1} flexWrap="wrap">
-        <text fg={theme.accent()}>{`[s] scope: ${state.scope}`}</text>
-        <text fg={theme.normal()}>{`[l] limit: ${state.limit === 0 ? "off" : state.limit}`}</text>
-        <text fg={theme.normal()}>{`[c] -c ${state.concurrency}`}</text>
-        <text fg={theme.normal()}>{`[p] depth: ${state.depth === 0 ? "off" : state.depth}`}</text>
+      <box flexDirection="row" gap={1} flexWrap="wrap" flexShrink={0}>
+        <text fg={theme.accent()} flexShrink={0}>{`[s] scope: ${state.scope}`}</text>
+        <text
+          fg={theme.normal()}
+          flexShrink={0}
+        >{`[l] limit: ${state.limit === 0 ? "off" : state.limit}`}</text>
+        <text fg={theme.normal()} flexShrink={0}>{`[c] -c ${state.concurrency}`}</text>
+        <text
+          fg={theme.normal()}
+          flexShrink={0}
+        >{`[p] depth: ${state.depth === 0 ? "off" : state.depth}`}</text>
         <text
           fg={state.blobless ? theme.accent() : theme.normal()}
+          flexShrink={0}
         >{`[b] blobless: ${state.blobless ? "on" : "off"}`}</text>
         <text
           fg={state.stash ? theme.accent() : theme.normal()}
+          flexShrink={0}
         >{`[t] stash: ${state.stash ? "on" : "off"}`}</text>
-        <text fg={theme.normal()}>{`[d] divergence: ${state.divergence}`}</text>
+        <text fg={theme.normal()} flexShrink={0}>{`[d] divergence: ${state.divergence}`}</text>
       </box>
-      <box flexDirection="row" flexWrap="wrap" gap={1}>
+      <box flexDirection="row" flexWrap="wrap" gap={1} flexShrink={0}>
         <text
           fg={theme.normal()}
+          flexShrink={0}
           onMouseDown={(event) => {
             event.stopPropagation();
             setEditing("include");
@@ -72,6 +83,7 @@ export function SyncCenterView({ store, width }: { store: Store; width: number }
         </text>
         <text
           fg={theme.normal()}
+          flexShrink={0}
           onMouseDown={(event) => {
             event.stopPropagation();
             setEditing("exclude");
@@ -92,16 +104,22 @@ export function SyncCenterView({ store, width }: { store: Store; width: number }
         />
       ) : null}
       {state.divergence === "reset" ? (
-        <text fg={theme.error()} wrapMode="none">
-          {" divergence=reset discards local commits — double-check before running"}
+        <text fg={theme.error()} wrapMode="none" flexShrink={0}>
+          {clampBoxLine(
+            " divergence=reset discards local commits — double-check before running",
+            width,
+          )}
         </text>
       ) : null}
-      <box border borderColor={theme.border()} overflow="hidden">
-        <text fg={theme.accent()} wrapMode="none">{` $ ${syncCenterCliLine(state)}`}</text>
+      <box border borderColor={theme.border()} overflow="hidden" flexShrink={0} width="100%">
+        <text fg={theme.accent()} wrapMode="none" flexShrink={0}>
+          {clampBoxLine(` $ ${syncCenterCliLine(state)}`, boxInnerCols)}
+        </text>
       </box>
-      <box flexDirection="row" flexWrap="wrap" gap={2}>
+      <box flexDirection="row" flexWrap="wrap" gap={2} flexShrink={0}>
         <text
           fg={running ? theme.dim() : theme.accent()}
+          flexShrink={0}
           onMouseDown={(event) => {
             event.stopPropagation();
             if (!running) void store.startSyncCenter();
@@ -112,6 +130,7 @@ export function SyncCenterView({ store, width }: { store: Store; width: number }
         {running ? (
           <text
             fg={theme.error()}
+            flexShrink={0}
             onMouseDown={(event) => {
               event.stopPropagation();
               store.stopSyncCenter();
@@ -122,6 +141,7 @@ export function SyncCenterView({ store, width }: { store: Store; width: number }
         ) : null}
         <text
           fg={theme.dim()}
+          flexShrink={0}
           onMouseDown={(event) => {
             event.stopPropagation();
             store.setView("cockpit");
@@ -131,10 +151,11 @@ export function SyncCenterView({ store, width }: { store: Store; width: number }
           {"[preview via cockpit Enter]"}
         </text>
       </box>
-      <text fg={theme.dim()} wrapMode="none">
-        {
-          "progress streams to the Activity panel · failures surface in Conflicts (v x) · Esc cockpit"
-        }
+      <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
+        {clampBoxLine(
+          "progress streams to the Activity panel · failures surface in Conflicts (v x) · Esc cockpit",
+          width,
+        )}
       </text>
     </box>
   );

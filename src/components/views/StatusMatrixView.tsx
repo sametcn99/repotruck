@@ -5,6 +5,7 @@ import type { Store } from "../store.ts";
 import { theme } from "../theme.ts";
 import { copyJson } from "../ui/JsonCopy.ts";
 import { type TableRow, TableView } from "../ui/TableView.tsx";
+import { clampBoxLine } from "../windowing.ts";
 
 type StatusFilter = "all" | "dirty" | "unpushed" | "unpulled" | "pinned";
 
@@ -90,13 +91,20 @@ export function StatusMatrixView({
     detail: statusDetail(line),
   }));
 
+  const expandedEntry =
+    expandedKey !== null ? tableRows.find((r) => (r.cells[0] ?? "") === expandedKey) : undefined;
+  const expandedDetailRows = expandedEntry?.detail?.length ?? 0;
+  // Chrome inside StatusMatrixView: filter row (1) + summary line (1) + table header (1) + footer (1) = 4 rows.
+  const viewportRows = Math.max(2, height - 4 - expandedDetailRows);
+
   return (
     <box flexDirection="column" flexGrow={1} width="100%" padding={0}>
-      <box flexDirection="row" gap={1} flexWrap="wrap">
+      <box flexDirection="row" gap={1} flexWrap="wrap" flexShrink={0}>
         {FILTERS.map((f) => (
           <text
             key={f}
             fg={f === filter ? theme.accent() : theme.dim()}
+            flexShrink={0}
             onMouseDown={(event) => {
               event.stopPropagation?.();
               setFilter(f);
@@ -106,9 +114,12 @@ export function StatusMatrixView({
             {`[${f === filter ? "x" : " "}] ${f}`}
           </text>
         ))}
-        <text fg={theme.dim()}>{"·"}</text>
+        <text fg={theme.dim()} flexShrink={0}>
+          {"·"}
+        </text>
         <text
           fg={remote ? theme.accent() : theme.dim()}
+          flexShrink={0}
           onMouseDown={(event) => {
             event.stopPropagation?.();
             void store.refreshStatusMatrix(!remote);
@@ -118,6 +129,7 @@ export function StatusMatrixView({
         </text>
         <text
           fg={theme.dim()}
+          flexShrink={0}
           onMouseDown={(event) => {
             event.stopPropagation?.();
             void store.refreshStatusMatrix();
@@ -127,6 +139,7 @@ export function StatusMatrixView({
         </text>
         <text
           fg={theme.dim()}
+          flexShrink={0}
           onMouseDown={(event) => {
             event.stopPropagation?.();
             const result = copyJson("status", {
@@ -141,12 +154,15 @@ export function StatusMatrixView({
           {"[J] copy JSON"}
         </text>
       </box>
-      <text fg={attention > 0 ? theme.warning() : theme.success()}>
-        {data?.loading
-          ? "loading repository status…"
-          : `${rows.length} repos · ${attention} need attention · last sync: ${data?.lastSync ?? "never"}`}
+      <text fg={attention > 0 ? theme.warning() : theme.success()} wrapMode="none" flexShrink={0}>
+        {clampBoxLine(
+          data?.loading
+            ? "loading repository status…"
+            : `${rows.length} repos · ${attention} need attention · last sync: ${data?.lastSync ?? "never"}`,
+          width,
+        )}
       </text>
-      <box flexGrow={1}>
+      <box flexGrow={1} overflow="hidden">
         <TableView
           columns={columns}
           rows={tableRows}
@@ -154,15 +170,16 @@ export function StatusMatrixView({
           onCursor={setCursor}
           expandedId={expandedKey}
           onToggleExpand={setExpandedKey}
-          viewportRows={Math.max(4, height - 12)}
+          viewportRows={viewportRows}
           width={width}
           emptyLabel={data?.loading ? "loading…" : "no repositories match the filter"}
         />
       </box>
-      <text fg={theme.dim()}>
-        {
-          "↑↓ move · Enter expand (-D detail) · f filter · u remote PR+CI · r refresh · J JSON · Esc cockpit"
-        }
+      <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
+        {clampBoxLine(
+          "↑↓ move · Enter expand (-D detail) · f filter · u remote PR+CI · r refresh · J JSON · Esc cockpit",
+          width,
+        )}
       </text>
     </box>
   );

@@ -49,7 +49,7 @@ export function TableView<R>({
 }) {
   if (rows.length === 0) {
     return (
-      <text fg={theme.dim()} wrapMode="none">
+      <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
         {` ${emptyLabel}`}
       </text>
     );
@@ -64,7 +64,7 @@ export function TableView<R>({
 
   return (
     <box flexDirection="column" width="100%">
-      <text fg={theme.dim()} wrapMode="none">
+      <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
         {header}
       </text>
       {rows.slice(slice.start, slice.end).map((entry, offset) => {
@@ -73,10 +73,11 @@ export function TableView<R>({
         const line = clampLine(formatRow(entry, active, widths), maxCols);
         const rowId = entry.cells[0] ?? String(index);
         return (
-          <box key={rowId} flexDirection="column">
+          <box key={rowId} flexDirection="column" flexShrink={0}>
             <text
               fg={active ? theme.accent() : theme.normal()}
               wrapMode="none"
+              flexShrink={0}
               onMouseDown={(event) => {
                 event.stopPropagation?.();
                 if (active) onToggleExpand(rowId);
@@ -87,7 +88,7 @@ export function TableView<R>({
             </text>
             {expandedId === rowId && entry.detail !== undefined
               ? entry.detail.map((detailLine) => (
-                  <text key={detailLine} fg={theme.dim()} wrapMode="none">
+                  <text key={detailLine} fg={theme.dim()} wrapMode="none" flexShrink={0}>
                     {clampLine(`  ${detailLine}`, maxCols)}
                   </text>
                 ))

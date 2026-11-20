@@ -11,9 +11,11 @@ export interface MarkdownLine {
  * spans dim markers, quoted/fenced lines render dim.
  */
 export function renderMarkdownLines(markdown: string, width: number): MarkdownLine[] {
-  const inner = Math.max(20, width - 4);
-  const trim = (line: string): string =>
-    line.length <= inner ? line : `${line.slice(0, Math.max(1, inner - 1))}…`;
+  const inner = Math.max(10, width - 4);
+  const trim = (line: string): string => {
+    const clean = line.replace(/[\r\t]+/g, " ");
+    return clean.length <= inner ? clean : `${clean.slice(0, Math.max(1, inner - 1))}…`;
+  };
   let fenced = false;
   return markdown.split("\n").map((raw) => {
     const line = raw.trimEnd();

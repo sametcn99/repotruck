@@ -3,7 +3,7 @@ import type { ViewId } from "./store/types.ts";
 import type { Store } from "./store.ts";
 import { theme } from "./theme.ts";
 import { NAV_GROUPS, VIEW_BY_ID, VIEW_SPECS } from "./views/viewRegistry.ts";
-import { FOOTER_ROWS, HEADER_ROWS, visibleSlice } from "./windowing.ts";
+import { FOOTER_ROWS, HEADER_ROWS, TOAST_RESERVED_ROWS, visibleSlice } from "./windowing.ts";
 
 /**
  * Persistent left navigation rail listing every dashboard view, grouped
@@ -35,8 +35,9 @@ export function NavRail({ store, width }: { store: Store; width: number }) {
   }
 
   // Available interior rows inside the bordered NavRail box
-  const availRows = Math.max(3, height - HEADER_ROWS - FOOTER_ROWS - 2);
-  // Full grouped rail takes 1 (" views") + 5 group headers + 18 view rows + 2 footer hints = 26 lines
+  const toastRows = snapshot.updateToast !== null ? TOAST_RESERVED_ROWS : 0;
+  const availRows = Math.max(3, height - HEADER_ROWS - FOOTER_ROWS - toastRows - 2);
+  // Full grouped rail takes 1 (" views") + 5 group headers + 16 view rows + 2 footer hints = 24 lines
   const fullGroupedLines = 1 + NAV_GROUPS.length + rows.length + 2;
 
   if (availRows >= fullGroupedLines) {
@@ -49,17 +50,21 @@ export function NavRail({ store, width }: { store: Store; width: number }) {
         padding={0}
         overflow="hidden"
       >
-        <text fg={theme.dim()}> views</text>
+        <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
+          {" views"}
+        </text>
         {NAV_GROUPS.flatMap((group) => {
           const groupRows = rows.filter((row) => VIEW_BY_ID.get(row.view)?.group === group);
           if (groupRows.length === 0) return [];
           return [
-            <text key={`g-${group}`} fg={theme.dim()}>
+            <text key={`g-${group}`} fg={theme.dim()} wrapMode="none" flexShrink={0}>
               {` ${group.toLowerCase()}`}
             </text>,
             ...groupRows.map((row) => (
               <text
                 key={row.view}
+                wrapMode="none"
+                flexShrink={0}
                 fg={row.active ? theme.cursorFg() : theme.normal()}
                 bg={row.active ? theme.cursorBg() : undefined}
                 onMouseDown={(event) => {
@@ -72,8 +77,12 @@ export function NavRail({ store, width }: { store: Store; width: number }) {
             )),
           ];
         })}
-        <text fg={theme.dim()}>{" [v]+key opens"}</text>
-        <text fg={theme.dim()}>{" [ ] cycles"}</text>
+        <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
+          {" [v]+key opens"}
+        </text>
+        <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
+          {" [ ] cycles"}
+        </text>
       </box>
     );
   }
@@ -97,13 +106,14 @@ export function NavRail({ store, width }: { store: Store; width: number }) {
       padding={0}
       overflow="hidden"
     >
-      <text fg={theme.dim()} wrapMode="none">
+      <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
         {rows.length > viewBudget ? ` views ${start + 1}-${end}/${rows.length}` : " views"}
       </text>
       {visibleRows.map((row) => (
         <text
           key={row.view}
           wrapMode="none"
+          flexShrink={0}
           fg={row.active ? theme.cursorFg() : theme.normal()}
           bg={row.active ? theme.cursorBg() : undefined}
           onMouseDown={(event) => {
@@ -115,7 +125,7 @@ export function NavRail({ store, width }: { store: Store; width: number }) {
         </text>
       ))}
       {showFooterHint ? (
-        <text fg={theme.dim()} wrapMode="none">
+        <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
           {" [v]+key / [ ]"}
         </text>
       ) : null}

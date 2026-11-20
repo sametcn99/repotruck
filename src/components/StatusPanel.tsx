@@ -2,7 +2,7 @@ import { useTerminalDimensions } from "@opentui/react";
 import { useSyncExternalStore } from "react";
 import { formatDiffBar } from "../services/gitState.ts";
 import { formatDiskSize } from "../services/stats.ts";
-import { type RightPaneTab, STATUS_VIEW_ROWS, type Store, type StoreSnapshot } from "./store.ts";
+import type { RightPaneTab, Store, StoreSnapshot } from "./store.ts";
 import { theme } from "./theme.ts";
 import { repoViewportRows } from "./windowing.ts";
 
@@ -44,7 +44,7 @@ function renderActivityBody(snapshot: StoreSnapshot, maxCols: number, bodyRows: 
     counts[status.phase] += 1;
   }
   const headerRows = snapshot.running ? 3 : 2;
-  const viewCap = Math.max(1, Math.min(STATUS_VIEW_ROWS, bodyRows - headerRows));
+  const viewCap = Math.max(1, bodyRows - headerRows);
   const total = snapshot.statuses.length;
   const maxScroll = Math.max(0, total - viewCap);
   const scroll = Math.min(snapshot.statusScroll, maxScroll);

@@ -4,7 +4,7 @@ import { formatDiskSize } from "../../services/stats.ts";
 import type { Store } from "../store.ts";
 import { theme } from "../theme.ts";
 import { copyJson } from "../ui/JsonCopy.ts";
-import { visibleSlice } from "../windowing.ts";
+import { clampBoxLine, scrollSlice } from "../windowing.ts";
 
 /**
  * `repotruck stats --health` as a page: health scorecard with grades and
@@ -54,18 +54,20 @@ export function StatsView({
 
   const inner = Math.max(20, width - 2);
   const stacked = width < 76;
+  const colMaxCols = stacked ? width : Math.max(16, Math.floor((width - 1) / 2));
   const barLen = inner < 50 ? 6 : 12;
   const bar = (ratio: number): string => {
     const filled = Math.round(Math.max(0, Math.min(1, ratio)) * barLen);
     return `${"█".repeat(filled)}${"░".repeat(barLen - filled)}`;
   };
-  const langCap = Math.max(2, Math.min(8, Math.floor((height - 10) / 2)));
-  const checkCap = Math.max(2, Math.min(10, height - 10));
-  const checkWin = visibleSlice(
-    Math.min(scrollIdx, Math.max(0, checks.length - 1)),
-    checks.length,
-    checkCap,
-  );
+  // Top scorecards (4 rows) + grade line (1 row) + footer line (1 row) = 6 rows.
+  const bodyRows = Math.max(4, height - 6);
+  const langCap = Math.max(2, Math.min(10, bodyRows - 4));
+  const recCount = health?.recommendations.length ?? 0;
+  const recReserved =
+    recCount > 0 ? Math.min(recCount + 1, Math.max(2, Math.floor(bodyRows / 2))) : 0;
+  const checkCap = Math.max(2, bodyRows - 1 - recReserved);
+  const checkWin = scrollSlice(scrollIdx, checks.length, checkCap);
   const visibleChecks = checks.slice(checkWin.start, checkWin.end);
 
   return (
@@ -78,7 +80,7 @@ export function StatsView({
         setScrollIdx((s) => Math.min(Math.max(0, maxItems - 1), Math.max(0, s + (isUp ? -1 : 1))));
       }}
     >
-      <box flexDirection="row" gap={1} flexWrap="wrap">
+      <box flexDirection="row" gap={1} flexWrap="wrap" flexShrink={0}>
         {health !== null
           ? Object.entries(health.breakdown).map(([dimension, entry]) => (
               <box
@@ -87,10 +89,12 @@ export function StatsView({
                 borderColor={theme.border()}
                 flexDirection="column"
                 padding={0}
+                flexShrink={0}
               >
-                <text fg={theme.accent()} wrapMode="none">{` ${dimension}`}</text>
+                <text fg={theme.accent()} wrapMode="none" flexShrink={0}>{` ${dimension} `}</text>
                 <text
                   wrapMode="none"
+                  flexShrink={0}
                   fg={
                     entry.score / entry.max >= 0.8
                       ? theme.success()
@@ -99,7 +103,7 @@ export function StatsView({
                         : theme.error()
                   }
                 >
-                  {` ${entry.score}/${entry.max} ${bar(entry.score / entry.max)}`}
+                  {` ${entry.score}/${entry.max} ${bar(entry.score / entry.max)} `}
                 </text>
               </box>
             ))
@@ -107,6 +111,7 @@ export function StatsView({
       </box>
       <text
         wrapMode="none"
+        flexShrink={0}
         fg={
           health !== null
             ? health.grade.startsWith("A")
@@ -115,11 +120,14 @@ export function StatsView({
             : theme.dim()
         }
       >
-        {page?.loading
-          ? "computing workspace stats…"
-          : health !== null
-            ? `grade: ${health.grade} · ${health.summary}`
-            : "no stats"}
+        {clampBoxLine(
+          page?.loading
+            ? "computing workspace stats…"
+            : health !== null
+              ? `grade: ${health.grade} · ${health.summary}`
+              : "no stats",
+          width,
+        )}
       </text>
       {stats !== null ? (
         <box
@@ -127,38 +135,66 @@ export function StatsView({
           flexGrow={1}
           gap={stacked ? 0 : 1}
           width="100%"
+          overflow="hidden"
         >
-          <box flexDirection="column" width={stacked ? "100%" : Math.floor(inner / 2)}>
-            <text fg={theme.dim()} wrapMode="none">
+          <box
+            flexDirection="column"
+            width={stacked ? "100%" : undefined}
+            flexGrow={stacked ? 0 : 1}
+            flexBasis={stacked ? undefined : 0}
+            overflow="hidden"
+          >
+            <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
               {"languages"}
             </text>
             {stats.languages.slice(0, langCap).map((lang) => (
-              <text key={lang.language} fg={theme.normal()} wrapMode="none">
-                {` ${lang.language.slice(0, 12).padEnd(12)} ${bar(lang.count / (stats.languages[0]?.count ?? 1))} ${lang.count}`}
+              <text key={lang.language} fg={theme.normal()} wrapMode="none" flexShrink={0}>
+                {clampBoxLine(
+                  ` ${lang.language.slice(0, 12).padEnd(12)} ${bar(lang.count / (stats.languages[0]?.count ?? 1))} ${lang.count}`,
+                  colMaxCols,
+                )}
               </text>
             ))}
-            <text
-              fg={theme.dim()}
-              wrapMode="none"
-            >{`categories: source ${stats.categories.source} · forks ${stats.categories.forks} · archived ${stats.categories.archived} · custom ${stats.categories.custom}`}</text>
-            <text fg={theme.dim()} wrapMode="none">
-              {`disk: ${stats.disk.repoCount} repos · ${formatDiskSize(stats.disk.totalSizeBytes)}`}
+            <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
+              {clampBoxLine(
+                `categories: source ${stats.categories.source} · forks ${stats.categories.forks} · archived ${stats.categories.archived} · custom ${stats.categories.custom}`,
+                colMaxCols,
+              )}
             </text>
-            <text fg={theme.dim()} wrapMode="none">{`stale ≥180d: ${stats.stale.totalStale}`}</text>
-            {stats.stale.topStalest.slice(0, Math.max(1, Math.min(5, langCap - 1))).map((stale) => (
-              <text key={stale.key} fg={theme.normal()} wrapMode="none">
-                {` ${stale.key} · ${stale.days}d`}
-              </text>
-            ))}
+            <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
+              {clampBoxLine(
+                `disk: ${stats.disk.repoCount} repos · ${formatDiskSize(stats.disk.totalSizeBytes)}`,
+                colMaxCols,
+              )}
+            </text>
+            <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
+              {clampBoxLine(`stale ≥180d: ${stats.stale.totalStale}`, colMaxCols)}
+            </text>
+            {stats.stale.topStalest
+              .slice(
+                0,
+                Math.max(1, Math.min(5, bodyRows - 4 - Math.min(stats.languages.length, langCap))),
+              )
+              .map((stale) => (
+                <text key={stale.key} fg={theme.normal()} wrapMode="none" flexShrink={0}>
+                  {clampBoxLine(` ${stale.key} · ${stale.days}d`, colMaxCols)}
+                </text>
+              ))}
           </box>
-          <box flexDirection="column" flexGrow={1}>
-            <text fg={theme.dim()} wrapMode="none">
+          <box
+            flexDirection="column"
+            flexGrow={1}
+            flexBasis={stacked ? undefined : 0}
+            overflow="hidden"
+          >
+            <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
               {"doctor checks"}
             </text>
             {visibleChecks.map((check) => (
               <text
                 key={check.check}
                 wrapMode="none"
+                flexShrink={0}
                 fg={
                   check.status === "ok"
                     ? theme.success()
@@ -167,19 +203,22 @@ export function StatsView({
                       : theme.error()
                 }
               >
-                {` ${check.status === "ok" ? "✓" : check.status === "warn" ? "!" : "✗"} ${check.check}`}
+                {clampBoxLine(
+                  ` ${check.status === "ok" ? "✓" : check.status === "warn" ? "!" : "✗"} ${check.check}`,
+                  colMaxCols,
+                )}
               </text>
             ))}
             {health !== null && health.recommendations.length > 0 ? (
-              <box flexDirection="column">
-                <text fg={theme.dim()} wrapMode="none">
+              <box flexDirection="column" flexShrink={0}>
+                <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
                   {"recommendations"}
                 </text>
                 {health.recommendations
-                  .slice(0, Math.max(1, Math.min(6, checkCap - 1)))
+                  .slice(0, Math.max(1, recReserved - 1))
                   .map((recommendation) => (
-                    <text key={recommendation} fg={theme.normal()} wrapMode="none">
-                      {` - ${recommendation}`}
+                    <text key={recommendation} fg={theme.normal()} wrapMode="none" flexShrink={0}>
+                      {clampBoxLine(` - ${recommendation}`, colMaxCols)}
                     </text>
                   ))}
               </box>
@@ -187,7 +226,7 @@ export function StatsView({
           </box>
         </box>
       ) : null}
-      <text fg={theme.dim()} wrapMode="none">
+      <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
         {"r refresh · J copy JSON · Esc cockpit"}
       </text>
     </box>

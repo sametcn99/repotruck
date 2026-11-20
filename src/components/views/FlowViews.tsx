@@ -3,7 +3,7 @@ import { useEffect, useState, useSyncExternalStore } from "react";
 import type { Store } from "../store.ts";
 import { theme } from "../theme.ts";
 import { renderMarkdownLines } from "../ui/MarkdownPane.tsx";
-import { visibleSlice } from "../windowing.ts";
+import { clampBoxLine, scrollSlice } from "../windowing.ts";
 
 /**
  * `repotruck changelog` as a page: since/until/author/repo filter form,
@@ -20,7 +20,7 @@ export function ChangelogView({
 }) {
   const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot);
   const { height: termHeight } = useTerminalDimensions();
-  const height = heightProp ?? Math.max(12, termHeight - 4);
+  const height = heightProp ?? Math.max(8, termHeight - 11);
   const page = snapshot.changelogPage;
   const [scrollIdx, setScrollIdx] = useState(0);
 
@@ -29,18 +29,22 @@ export function ChangelogView({
   }, [page, store]);
 
   const styledLines = page !== null ? renderMarkdownLines(page.markdown, width) : [];
-  const viewportRows = Math.max(3, Math.min(28, height - 9));
-  const boundedScroll = Math.min(Math.max(0, scrollIdx), Math.max(0, styledLines.length - 1));
-  const win = visibleSlice(boundedScroll, styledLines.length, viewportRows);
+  // Fixed rows outside the inner box's text rows: range row (1) + box borders (2) + footer hint (1) = 4.
+  // When styledLines overflows, the "… N more lines" row takes 1 additional row (= 5).
+  const fullBoxRows = Math.max(1, height - 4);
+  const hasOverflow = styledLines.length > fullBoxRows;
+  const viewportRows = hasOverflow ? Math.max(1, height - 5) : fullBoxRows;
+  const maxScroll = Math.max(0, styledLines.length - viewportRows);
+  const win = scrollSlice(scrollIdx, styledLines.length, viewportRows);
   const preview = styledLines.slice(win.start, win.end);
 
   useKeyboard((key) => {
     if (key.name === "g") void store.generateChangelog({ since: "14 days ago" });
     else if (key.name === "m") void store.generateChangelog({ since: "30 days ago" });
     else if (key.name === "up" || key.sequence === "k") {
-      setScrollIdx((s) => Math.max(0, s - 1));
+      setScrollIdx((s) => Math.max(0, Math.min(s, maxScroll) - 1));
     } else if (key.name === "down" || key.sequence === "j") {
-      setScrollIdx((s) => Math.min(Math.max(0, styledLines.length - 1), s + 1));
+      setScrollIdx((s) => Math.min(maxScroll, s + 1));
     }
   });
 
@@ -49,18 +53,21 @@ export function ChangelogView({
       flexDirection="column"
       flexGrow={1}
       width="100%"
-      gap={height < 20 ? 0 : 1}
       onMouseScroll={(e) => {
         const isUp = e.scroll?.direction === "up" || e.button === 4;
         setScrollIdx((s) =>
-          Math.min(Math.max(0, styledLines.length - 1), Math.max(0, s + (isUp ? -2 : 2))),
+          Math.min(maxScroll, Math.max(0, Math.min(s, maxScroll) + (isUp ? -2 : 2))),
         );
       }}
     >
-      <box flexDirection="row" flexWrap="wrap" gap={2}>
-        <text fg={theme.dim()}>{"range:"}</text>
+      <box flexDirection="row" flexWrap="wrap" gap={2} flexShrink={0}>
+        <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
+          {"range:"}
+        </text>
         <text
           fg={theme.accent()}
+          wrapMode="none"
+          flexShrink={0}
           onMouseDown={(event) => {
             event.stopPropagation();
             void store.generateChangelog({ since: "7 days ago" });
@@ -70,6 +77,8 @@ export function ChangelogView({
         </text>
         <text
           fg={theme.accent()}
+          wrapMode="none"
+          flexShrink={0}
           onMouseDown={(event) => {
             event.stopPropagation();
             void store.generateChangelog({ since: "14 days ago" });
@@ -79,6 +88,8 @@ export function ChangelogView({
         </text>
         <text
           fg={theme.accent()}
+          wrapMode="none"
+          flexShrink={0}
           onMouseDown={(event) => {
             event.stopPropagation();
             void store.generateChangelog({ since: "30 days ago" });
@@ -92,11 +103,12 @@ export function ChangelogView({
         borderColor={theme.border()}
         flexDirection="column"
         flexGrow={1}
+        width="100%"
         padding={0}
         overflow="hidden"
       >
         {preview.length === 0 ? (
-          <text fg={theme.dim()} wrapMode="none">
+          <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
             {" no commits in range (or not a git workspace yet)"}
           </text>
         ) : (
@@ -106,7 +118,12 @@ export function ChangelogView({
               const count = (seen.get(line.text) ?? 0) + 1;
               seen.set(line.text, count);
               return (
-                <text key={`${line.text}#${count}`} fg={line.fg ?? theme.normal()} wrapMode="none">
+                <text
+                  key={`${line.text}#${count}`}
+                  fg={line.fg ?? theme.normal()}
+                  wrapMode="none"
+                  flexShrink={0}
+                >
                   {` ${line.text}`}
                 </text>
               );
@@ -114,12 +131,12 @@ export function ChangelogView({
           })()
         )}
       </box>
-      {styledLines.length > viewportRows ? (
-        <text fg={theme.dim()} wrapMode="none">
-          {`… ${styledLines.length - viewportRows} more lines (full markdown via copy)`}
+      {hasOverflow ? (
+        <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
+          {`… ${styledLines.length - preview.length} more lines (full markdown via copy)`}
         </text>
       ) : null}
-      <text fg={theme.dim()} wrapMode="none">
+      <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
         {"g 14d · m 30d · Esc cockpit"}
       </text>
     </box>
@@ -131,6 +148,7 @@ export function ChangelogView({
  */
 export function ScanAdoptView({
   store,
+  width,
   height: heightProp,
 }: {
   store: Store;
@@ -138,15 +156,18 @@ export function ScanAdoptView({
   height?: number;
 }) {
   const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot);
-  const { height: termHeight } = useTerminalDimensions();
-  const height = heightProp ?? Math.max(12, termHeight - 4);
+  const { width: termWidth, height: termHeight } = useTerminalDimensions();
+  const height = heightProp ?? Math.max(8, termHeight - 11);
+  const effectiveWidth = width ?? Math.max(24, termWidth - 4);
+  const boxInnerCols = Math.max(10, effectiveWidth - 3);
   const page = snapshot.scanPage;
   const unregistered = page?.unregistered ?? [];
   const [scrollIdx, setScrollIdx] = useState(0);
 
-  const viewportRows = Math.max(2, height - 9);
-  const boundedScroll = Math.min(Math.max(0, scrollIdx), Math.max(0, unregistered.length - 1));
-  const win = visibleSlice(boundedScroll, unregistered.length, viewportRows);
+  // Action row (1) + box borders (2) + box header line (1) + footer hint (1) = 5 non-data rows.
+  const viewportRows = Math.max(1, height - 5);
+  const maxScroll = Math.max(0, unregistered.length - viewportRows);
+  const win = scrollSlice(scrollIdx, unregistered.length, viewportRows);
   const visibleUnregistered = unregistered.slice(win.start, win.end);
 
   useKeyboard((key) => {
@@ -154,9 +175,9 @@ export function ScanAdoptView({
     else if (key.name === "a") void store.scanAndAdopt(true);
     else if (key.name === "p") store.pruneWorkspaceConfirm();
     else if (key.name === "up" || key.sequence === "k") {
-      setScrollIdx((s) => Math.max(0, s - 1));
+      setScrollIdx((s) => Math.max(0, Math.min(s, maxScroll) - 1));
     } else if (key.name === "down" || key.sequence === "j") {
-      setScrollIdx((s) => Math.min(Math.max(0, unregistered.length - 1), s + 1));
+      setScrollIdx((s) => Math.min(maxScroll, s + 1));
     }
   });
 
@@ -165,17 +186,18 @@ export function ScanAdoptView({
       flexDirection="column"
       flexGrow={1}
       width="100%"
-      gap={height < 20 ? 0 : 1}
       onMouseScroll={(e) => {
         const isUp = e.scroll?.direction === "up" || e.button === 4;
         setScrollIdx((s) =>
-          Math.min(Math.max(0, unregistered.length - 1), Math.max(0, s + (isUp ? -2 : 2))),
+          Math.min(maxScroll, Math.max(0, Math.min(s, maxScroll) + (isUp ? -2 : 2))),
         );
       }}
     >
-      <box flexDirection="row" flexWrap="wrap" gap={2}>
+      <box flexDirection="row" flexWrap="wrap" gap={2} flexShrink={0}>
         <text
           fg={theme.accent()}
+          wrapMode="none"
+          flexShrink={0}
           onMouseDown={(event) => {
             event.stopPropagation();
             void store.scanAndAdopt(false);
@@ -185,6 +207,8 @@ export function ScanAdoptView({
         </text>
         <text
           fg={theme.accent()}
+          wrapMode="none"
+          flexShrink={0}
           onMouseDown={(event) => {
             event.stopPropagation();
             store.confirmDialog(
@@ -203,6 +227,8 @@ export function ScanAdoptView({
         </text>
         <text
           fg={theme.error()}
+          wrapMode="none"
+          flexShrink={0}
           onMouseDown={(event) => {
             event.stopPropagation();
             store.pruneWorkspaceConfirm();
@@ -216,26 +242,33 @@ export function ScanAdoptView({
         borderColor={theme.border()}
         flexDirection="column"
         flexGrow={1}
+        width="100%"
         padding={0}
         overflow="hidden"
       >
-        <text fg={theme.dim()} wrapMode="none">
-          {` unregistered repositories (${unregistered.length} discovered):`}
+        <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
+          {clampBoxLine(
+            ` unregistered repositories (${unregistered.length} discovered):`,
+            boxInnerCols,
+          )}
         </text>
         {unregistered.length === 0 ? (
-          <text fg={theme.dim()} wrapMode="none">
+          <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
             {"  (none discovered yet — run a scan)"}
           </text>
         ) : (
           visibleUnregistered.map((line) => (
-            <text key={line} fg={theme.normal()} wrapMode="none">
-              {` • ${line}`}
+            <text key={line} fg={theme.normal()} wrapMode="none" flexShrink={0}>
+              {clampBoxLine(` • ${line}`, boxInnerCols)}
             </text>
           ))
         )}
       </box>
-      <text fg={theme.dim()} wrapMode="none">
-        {"adopt is confirm-guarded · prune keeps unclear answers · Esc cockpit"}
+      <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
+        {clampBoxLine(
+          "adopt is confirm-guarded · prune keeps unclear answers · Esc cockpit",
+          effectiveWidth,
+        )}
       </text>
     </box>
   );
@@ -247,6 +280,7 @@ export function ScanAdoptView({
  */
 export function WorktreesView({
   store,
+  width,
   height: heightProp,
 }: {
   store: Store;
@@ -254,8 +288,10 @@ export function WorktreesView({
   height?: number;
 }) {
   const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot);
-  const { height: termHeight } = useTerminalDimensions();
-  const height = heightProp ?? Math.max(12, termHeight - 4);
+  const { width: termWidth, height: termHeight } = useTerminalDimensions();
+  const height = heightProp ?? Math.max(8, termHeight - 11);
+  const effectiveWidth = width ?? Math.max(24, termWidth - 4);
+  const boxInnerCols = Math.max(10, effectiveWidth - 3);
   const page = snapshot.worktreePage;
   const rows = page?.rows ?? [];
   const [scrollIdx, setScrollIdx] = useState(0);
@@ -264,17 +300,18 @@ export function WorktreesView({
     if (page === null) void store.scanWorkspaceWorktrees();
   }, [page, store]);
 
-  const viewportRows = Math.max(2, height - 9);
-  const boundedScroll = Math.min(Math.max(0, scrollIdx), Math.max(0, rows.length - 1));
-  const win = visibleSlice(boundedScroll, rows.length, viewportRows);
+  // Action row (1) + box borders (2) + box header line (1) + footer hint (1) = 5 non-data rows.
+  const viewportRows = Math.max(1, height - 5);
+  const maxScroll = Math.max(0, rows.length - viewportRows);
+  const win = scrollSlice(scrollIdx, rows.length, viewportRows);
   const visibleRows = rows.slice(win.start, win.end);
 
   useKeyboard((key) => {
     if (key.name === "s") void store.scanWorkspaceWorktrees();
     else if (key.name === "up" || key.sequence === "k") {
-      setScrollIdx((s) => Math.max(0, s - 1));
+      setScrollIdx((s) => Math.max(0, Math.min(s, maxScroll) - 1));
     } else if (key.name === "down" || key.sequence === "j") {
-      setScrollIdx((s) => Math.min(Math.max(0, rows.length - 1), s + 1));
+      setScrollIdx((s) => Math.min(maxScroll, s + 1));
     }
   });
 
@@ -283,17 +320,18 @@ export function WorktreesView({
       flexDirection="column"
       flexGrow={1}
       width="100%"
-      gap={height < 20 ? 0 : 1}
       onMouseScroll={(e) => {
         const isUp = e.scroll?.direction === "up" || e.button === 4;
         setScrollIdx((s) =>
-          Math.min(Math.max(0, rows.length - 1), Math.max(0, s + (isUp ? -2 : 2))),
+          Math.min(maxScroll, Math.max(0, Math.min(s, maxScroll) + (isUp ? -2 : 2))),
         );
       }}
     >
-      <box flexDirection="row" flexWrap="wrap" gap={2}>
+      <box flexDirection="row" flexWrap="wrap" gap={2} flexShrink={0}>
         <text
           fg={theme.accent()}
+          wrapMode="none"
+          flexShrink={0}
           onMouseDown={(event) => {
             event.stopPropagation();
             void store.scanWorkspaceWorktrees();
@@ -301,33 +339,39 @@ export function WorktreesView({
         >
           {"[s] scan workspace worktrees"}
         </text>
-        <text fg={theme.dim()}>{`${rows.length} linked worktree(s)`}</text>
+        <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
+          {`${rows.length} linked worktree(s)`}
+        </text>
       </box>
       <box
         border
         borderColor={theme.border()}
         flexDirection="column"
         flexGrow={1}
+        width="100%"
         padding={0}
         overflow="hidden"
       >
-        <text fg={theme.dim()} wrapMode="none">
-          {" parent repo · branch · linked checkout path"}
+        <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
+          {clampBoxLine(" parent repo · branch · linked checkout path", boxInnerCols)}
         </text>
         {rows.length === 0 ? (
-          <text fg={theme.dim()} wrapMode="none">
+          <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
             {"  no scan yet — run [s] (worktree scan)"}
           </text>
         ) : (
           visibleRows.map((row) => (
-            <text key={row} fg={theme.normal()} wrapMode="none">
-              {` ⑂ ${row}`}
+            <text key={row} fg={theme.normal()} wrapMode="none" flexShrink={0}>
+              {clampBoxLine(` ⑂ ${row}`, boxInnerCols)}
             </text>
           ))
         )}
       </box>
-      <text fg={theme.dim()} wrapMode="none">
-        {"per-repo create/remove lives in the W modal (force option in its confirm) · Esc cockpit"}
+      <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
+        {clampBoxLine(
+          "per-repo create/remove lives in the W modal (force option in its confirm) · Esc cockpit",
+          effectiveWidth,
+        )}
       </text>
     </box>
   );

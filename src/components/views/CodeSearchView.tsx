@@ -3,7 +3,7 @@ import { useEffect, useState, useSyncExternalStore } from "react";
 import type { Store } from "../store.ts";
 import { theme } from "../theme.ts";
 import { copyJson } from "../ui/JsonCopy.ts";
-import { visibleSlice } from "../windowing.ts";
+import { clampBoxLine, scrollSlice } from "../windowing.ts";
 
 /**
  * `repotruck search-code` as a page: symbol / text / regex modes with kind,
@@ -21,11 +21,12 @@ export function CodeSearchView({
 }) {
   const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot);
   const { height: termHeight } = useTerminalDimensions();
-  const height = heightProp ?? Math.max(12, termHeight - 4);
+  const height = heightProp ?? Math.max(8, termHeight - 11);
   const page = snapshot.codeSearchPage;
   const [editing, setEditing] = useState(true);
   const [scrollIdx, setScrollIdx] = useState(0);
   const inner = Math.max(20, width - 4);
+  const boxInnerCols = Math.max(10, width - 3);
 
   useEffect(() => {
     if (page === null) store.updateCodeSearchForm({});
@@ -67,9 +68,10 @@ export function CodeSearchView({
     }
   }
 
-  const viewportRows = Math.max(2, height - 10);
-  const boundedScroll = Math.min(Math.max(0, scrollIdx), Math.max(0, flatRows.length - 1));
-  const win = visibleSlice(boundedScroll, flatRows.length, viewportRows);
+  // 2 top control rows (or 3 if narrow wrap) + 2 box borders + 1 box header + 1 footer hint = 6 non-data rows.
+  const viewportRows = Math.max(1, height - (width < 72 ? 7 : 6));
+  const maxScroll = Math.max(0, flatRows.length - viewportRows);
+  const win = scrollSlice(scrollIdx, flatRows.length, viewportRows);
   const visibleRows = flatRows.slice(win.start, win.end);
 
   useKeyboard((key) => {
@@ -79,9 +81,9 @@ export function CodeSearchView({
     }
     if (key.name === "return") setEditing(true);
     else if (key.name === "up" || key.sequence === "k") {
-      setScrollIdx((s) => Math.max(0, s - 1));
+      setScrollIdx((s) => Math.max(0, Math.min(s, maxScroll) - 1));
     } else if (key.name === "down" || key.sequence === "j") {
-      setScrollIdx((s) => Math.min(Math.max(0, flatRows.length - 1), s + 1));
+      setScrollIdx((s) => Math.min(maxScroll, s + 1));
     } else if (key.name === "m")
       store.updateCodeSearchForm({
         mode: page?.mode === "sym" ? "text" : page?.mode === "text" ? "re" : "sym",
@@ -105,12 +107,14 @@ export function CodeSearchView({
       onMouseScroll={(e) => {
         const isUp = e.scroll?.direction === "up" || e.button === 4;
         setScrollIdx((s) =>
-          Math.min(Math.max(0, flatRows.length - 1), Math.max(0, s + (isUp ? -2 : 2))),
+          Math.min(maxScroll, Math.max(0, Math.min(s, maxScroll) + (isUp ? -2 : 2))),
         );
       }}
     >
-      <box flexDirection="row" gap={1} flexWrap="wrap">
-        <text fg={theme.dim()}>pattern:</text>
+      <box flexDirection="row" gap={1} flexWrap="wrap" flexShrink={0}>
+        <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
+          pattern:
+        </text>
         {editing ? (
           <input
             focused
@@ -120,11 +124,13 @@ export function CodeSearchView({
               setEditing(false);
               void store.runCodeSearchPage();
             }}
-            width={Math.max(12, Math.min(40, inner - 14))}
+            width={Math.max(12, Math.min(36, inner - 14))}
           />
         ) : (
           <text
             fg={theme.accent()}
+            wrapMode="none"
+            flexShrink={0}
             onMouseDown={(event) => {
               event.stopPropagation?.();
               setEditing(true);
@@ -135,6 +141,8 @@ export function CodeSearchView({
         )}
         <text
           fg={theme.accent()}
+          wrapMode="none"
+          flexShrink={0}
           onMouseDown={(event) => {
             event.stopPropagation?.();
             store.updateCodeSearchForm({
@@ -146,6 +154,8 @@ export function CodeSearchView({
         </text>
         <text
           fg={theme.normal()}
+          wrapMode="none"
+          flexShrink={0}
           onMouseDown={(event) => {
             event.stopPropagation?.();
             store.updateCodeSearchForm({ offline: !(page?.offline ?? true) });
@@ -155,8 +165,10 @@ export function CodeSearchView({
         </text>
         <text
           fg={theme.normal()}
+          wrapMode="none"
+          flexShrink={0}
           onMouseDown={(event) => {
-            event.stopPropagation();
+            event.stopPropagation?.();
             void store.runCodeSearchPage();
           }}
         >
@@ -164,19 +176,23 @@ export function CodeSearchView({
         </text>
         <text
           fg={theme.dim()}
+          wrapMode="none"
+          flexShrink={0}
           onMouseDown={(event) => {
-            event.stopPropagation();
+            event.stopPropagation?.();
             void store.rebuildCodeIndex();
           }}
         >
           {"[r] rebuild index"}
         </text>
       </box>
-      <box flexDirection="row" gap={1} flexWrap="wrap">
+      <box flexDirection="row" gap={1} flexWrap="wrap" flexShrink={0}>
         <text
           fg={theme.normal()}
+          wrapMode="none"
+          flexShrink={0}
           onMouseDown={(event) => {
-            event.stopPropagation();
+            event.stopPropagation?.();
             store.updateCodeSearchForm({ kind: nextKind(page?.kind ?? "") });
           }}
         >
@@ -184,8 +200,10 @@ export function CodeSearchView({
         </text>
         <text
           fg={theme.normal()}
+          wrapMode="none"
+          flexShrink={0}
           onMouseDown={(event) => {
-            event.stopPropagation();
+            event.stopPropagation?.();
             store.updateCodeSearchForm({ lang: nextLang(page?.lang ?? "") });
           }}
         >
@@ -193,8 +211,10 @@ export function CodeSearchView({
         </text>
         <text
           fg={theme.normal()}
+          wrapMode="none"
+          flexShrink={0}
           onMouseDown={(event) => {
-            event.stopPropagation();
+            event.stopPropagation?.();
             store.updateCodeSearchForm({ limit: nextLimit(page?.limit ?? 50) });
           }}
         >
@@ -202,8 +222,10 @@ export function CodeSearchView({
         </text>
         <text
           fg={theme.dim()}
+          wrapMode="none"
+          flexShrink={0}
           onMouseDown={(event) => {
-            event.stopPropagation();
+            event.stopPropagation?.();
             const result = copyJson("search-code", {
               command: "search-code",
               ok: true,
@@ -220,23 +242,28 @@ export function CodeSearchView({
         borderColor={theme.border()}
         flexDirection="column"
         flexGrow={1}
+        width="100%"
         padding={0}
         overflow="hidden"
       >
-        <text fg={theme.dim()} wrapMode="none">
-          {page?.loading
-            ? " searching…"
-            : ` ${matches.length} matches · ${byRepo.size} repos${
-                flatRows.length > viewportRows
-                  ? ` (showing ${win.start + 1}-${win.end}/${flatRows.length})`
-                  : ""
-              }`}
+        <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
+          {clampBoxLine(
+            page?.loading
+              ? " searching…"
+              : ` ${matches.length} matches · ${byRepo.size} repos${
+                  flatRows.length > viewportRows
+                    ? ` (showing ${win.start + 1}-${win.end}/${flatRows.length})`
+                    : ""
+                }`,
+            boxInnerCols,
+          )}
         </text>
         {visibleRows.map((row) => (
           <text
             key={row.key}
             fg={row.fg}
             wrapMode="none"
+            flexShrink={0}
             onMouseDown={
               row.repo !== undefined
                 ? (event) => {
@@ -246,14 +273,15 @@ export function CodeSearchView({
                 : undefined
             }
           >
-            {row.text}
+            {clampBoxLine(row.text, boxInnerCols)}
           </text>
         ))}
       </box>
-      <text fg={theme.dim()} wrapMode="none">
-        {
-          "Enter edit pattern · m mode · J JSON · r rebuild · click a match for repo details · Esc cockpit"
-        }
+      <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
+        {clampBoxLine(
+          "Enter edit pattern · m mode · J JSON · r rebuild · click a match for repo details · Esc cockpit",
+          width,
+        )}
       </text>
     </box>
   );

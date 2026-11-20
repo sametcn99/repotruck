@@ -2,7 +2,7 @@ import { useKeyboard, useTerminalDimensions } from "@opentui/react";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import type { Store } from "../store.ts";
 import { theme } from "../theme.ts";
-import { visibleSlice } from "../windowing.ts";
+import { clampBoxLine, scrollSlice } from "../windowing.ts";
 
 /**
  * `repotruck profile list/pin/unpin/save/delete` as a page: pinned repos
@@ -21,7 +21,7 @@ export function ProfilesView({
 }) {
   const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot);
   const { height: termHeight } = useTerminalDimensions();
-  const height = heightProp ?? Math.max(12, termHeight - 4);
+  const height = heightProp ?? Math.max(8, termHeight - 11);
   const [nameValue, setNameValue] = useState("");
   const [editing, setEditing] = useState(false);
   const [profiles, setProfiles] = useState<Record<string, string[]>>({});
@@ -44,7 +44,21 @@ export function ProfilesView({
     .filter(([, health]) => health.pinned)
     .map(([key]) => key);
   const profileEntries = Object.entries(profiles);
-  const maxItems = Math.max(pinned.length, profileEntries.length);
+
+  const stacked = width < 78;
+  const boxInnerCols = stacked
+    ? Math.max(10, width - 3)
+    : Math.max(10, Math.floor((width - 1) / 2) - 3);
+  const pinnedBudget = stacked
+    ? Math.max(1, Math.floor((height - 1) / 2) - 4)
+    : Math.max(1, height - 5);
+  const profileBudget = stacked
+    ? Math.max(1, Math.floor((Math.floor((height - 1) / 2) - 4) / 3))
+    : Math.max(1, Math.floor((height - 5) / 3));
+  const maxScroll = Math.max(
+    0,
+    Math.max(pinned.length - pinnedBudget, profileEntries.length - profileBudget),
+  );
 
   useKeyboard((key) => {
     if (editing) {
@@ -54,31 +68,15 @@ export function ProfilesView({
     if (key.name === "n") setEditing(true);
     else if (key.name === "p") void store.togglePinSelection();
     else if (key.name === "up" || key.sequence === "k") {
-      setScrollIdx((s) => Math.max(0, s - 1));
+      setScrollIdx((s) => Math.max(0, Math.min(s, maxScroll) - 1));
     } else if (key.name === "down" || key.sequence === "j") {
-      setScrollIdx((s) => Math.min(Math.max(0, maxItems - 1), s + 1));
+      setScrollIdx((s) => Math.min(maxScroll, s + 1));
     }
   });
 
-  const stacked = width < 78;
-  const half = stacked ? width : Math.max(20, Math.floor((width - 2) / 2));
-  const pinnedBudget = stacked
-    ? Math.max(1, Math.floor((height - 10) / 3))
-    : Math.max(2, height - 8);
-  const profileBudget = stacked
-    ? Math.max(1, Math.floor((height - 12) / 4))
-    : Math.max(1, Math.floor((height - 9) / 3));
-  const pinnedWin = visibleSlice(
-    Math.min(scrollIdx, Math.max(0, pinned.length - 1)),
-    pinned.length,
-    pinnedBudget,
-  );
+  const pinnedWin = scrollSlice(scrollIdx, pinned.length, pinnedBudget);
   const visiblePinned = pinned.slice(pinnedWin.start, pinnedWin.end);
-  const profileWin = visibleSlice(
-    Math.min(scrollIdx, Math.max(0, profileEntries.length - 1)),
-    profileEntries.length,
-    profileBudget,
-  );
+  const profileWin = scrollSlice(scrollIdx, profileEntries.length, profileBudget);
   const visibleProfiles = profileEntries.slice(profileWin.start, profileWin.end);
 
   return (
@@ -88,7 +86,9 @@ export function ProfilesView({
       width="100%"
       onMouseScroll={(e) => {
         const isUp = e.scroll?.direction === "up" || e.button === 4;
-        setScrollIdx((s) => Math.min(Math.max(0, maxItems - 1), Math.max(0, s + (isUp ? -1 : 1))));
+        setScrollIdx((s) =>
+          Math.min(maxScroll, Math.max(0, Math.min(s, maxScroll) + (isUp ? -1 : 1))),
+        );
       }}
     >
       <box
@@ -101,59 +101,83 @@ export function ProfilesView({
           border
           borderColor={theme.border()}
           flexDirection="column"
-          width={stacked ? "100%" : half}
+          flexGrow={1}
+          flexBasis={stacked ? undefined : 0}
+          width={stacked ? "100%" : undefined}
           overflow="hidden"
         >
-          <text fg={theme.dim()} wrapMode="none">
-            {" Pinned (Active Focus)"}
+          <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
+            {clampBoxLine(
+              pinned.length > pinnedBudget
+                ? ` Pinned (Active Focus · ${pinnedWin.start + 1}-${pinnedWin.end}/${pinned.length})`
+                : " Pinned (Active Focus)",
+              boxInnerCols,
+            )}
           </text>
           {pinned.length === 0 ? (
-            <text fg={theme.dim()} wrapMode="none">
-              {"  nothing pinned — P in the cockpit or [p] here"}
+            <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
+              {clampBoxLine("  nothing pinned — P in the cockpit or [p] here", boxInnerCols)}
             </text>
           ) : (
             visiblePinned.map((key) => (
-              <text key={key} fg={theme.normal()} wrapMode="none">
-                {` ★ ${key}`}
+              <text key={key} fg={theme.normal()} wrapMode="none" flexShrink={0}>
+                {clampBoxLine(` ★ ${key}`, boxInnerCols)}
               </text>
             ))
           )}
           <text
             fg={theme.accent()}
             wrapMode="none"
+            flexShrink={0}
             onMouseDown={(event) => {
               event.stopPropagation?.();
               void store.togglePinSelection();
             }}
           >
-            {` [p] pin/unpin cockpit selection (${snapshot.selected.size})`}
+            {clampBoxLine(
+              ` [p] pin/unpin cockpit selection (${snapshot.selected.size})`,
+              boxInnerCols,
+            )}
           </text>
         </box>
         <box
           border
           borderColor={theme.border()}
           flexDirection="column"
-          width={stacked ? "100%" : half}
+          flexGrow={1}
+          flexBasis={stacked ? undefined : 0}
+          width={stacked ? "100%" : undefined}
           overflow="hidden"
         >
-          <text fg={theme.dim()} wrapMode="none">
-            {" Named profiles"}
+          <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
+            {clampBoxLine(
+              profileEntries.length > profileBudget
+                ? ` Named profiles (${profileWin.start + 1}-${profileWin.end}/${profileEntries.length})`
+                : " Named profiles",
+              boxInnerCols,
+            )}
           </text>
           {profileEntries.length === 0 ? (
-            <text fg={theme.dim()} wrapMode="none">
+            <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
               {"  no named profiles yet"}
             </text>
           ) : (
             visibleProfiles.map(([name, refs]) => (
-              <box key={name} flexDirection="column">
-                <text fg={theme.normal()} wrapMode="none">{` ${name} · ${refs.length} repos`}</text>
-                <text
-                  fg={theme.dim()}
-                  wrapMode="none"
-                >{`   ${refs.slice(0, 3).join(", ")}${refs.length > 3 ? " …" : ""}`}</text>
-                <box flexDirection="row" flexWrap="wrap" gap={2}>
+              <box key={name} flexDirection="column" flexShrink={0}>
+                <text fg={theme.normal()} wrapMode="none" flexShrink={0}>
+                  {clampBoxLine(` ${name} · ${refs.length} repos`, boxInnerCols)}
+                </text>
+                <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
+                  {clampBoxLine(
+                    `   ${refs.slice(0, 3).join(", ")}${refs.length > 3 ? " …" : ""}`,
+                    boxInnerCols,
+                  )}
+                </text>
+                <box flexDirection="row" gap={2} flexShrink={0}>
                   <text
                     fg={theme.accent()}
+                    wrapMode="none"
+                    flexShrink={0}
                     onMouseDown={(event) => {
                       event.stopPropagation?.();
                       store.setView("sync");
@@ -163,6 +187,8 @@ export function ProfilesView({
                   </text>
                   <text
                     fg={theme.accent()}
+                    wrapMode="none"
+                    flexShrink={0}
                     onMouseDown={(event) => {
                       event.stopPropagation?.();
                       store.updateRunConsole({ scope: "profile", profile: name });
@@ -173,6 +199,8 @@ export function ProfilesView({
                   </text>
                   <text
                     fg={theme.error()}
+                    wrapMode="none"
+                    flexShrink={0}
                     onMouseDown={(event) => {
                       event.stopPropagation?.();
                       store.confirmDialog(
@@ -199,8 +227,10 @@ export function ProfilesView({
               </box>
             ))
           )}
-          <box flexDirection="row" flexWrap="wrap" gap={1}>
-            <text fg={theme.dim()}>{"name:"}</text>
+          <box flexDirection="row" gap={1} flexShrink={0}>
+            <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
+              {" name:"}
+            </text>
             {editing ? (
               <input
                 focused
@@ -215,6 +245,8 @@ export function ProfilesView({
             ) : (
               <text
                 fg={theme.accent()}
+                wrapMode="none"
+                flexShrink={0}
                 onMouseDown={(event) => {
                   event.stopPropagation?.();
                   setEditing(true);
@@ -226,6 +258,7 @@ export function ProfilesView({
             <text
               fg={theme.dim()}
               wrapMode="none"
+              flexShrink={0}
               onMouseDown={(event) => {
                 event.stopPropagation?.();
                 if (nameValue.length > 0) {
@@ -234,13 +267,19 @@ export function ProfilesView({
                 }
               }}
             >
-              {` from: selection (${snapshot.selected.size}) or pinned (${pinned.length})`}
+              {clampBoxLine(
+                `from: selection (${snapshot.selected.size}) or pinned (${pinned.length})`,
+                Math.max(10, boxInnerCols - 24),
+              )}
             </text>
           </box>
         </box>
       </box>
-      <text fg={theme.dim()} wrapMode="none">
-        {"profile save <name> · profiles feed the Sync and Run scope pickers · Esc cockpit"}
+      <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
+        {clampBoxLine(
+          "profile save <name> · profiles feed the Sync and Run scope pickers · Esc cockpit",
+          width,
+        )}
       </text>
     </box>
   );

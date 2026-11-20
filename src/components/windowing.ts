@@ -30,6 +30,33 @@ export function visibleSlice(cursor: number, total: number, viewportRows: number
   return { start, end: start + view };
 }
 
+/**
+ * Top-offset windowing for scrollable boxes without a cursor highlight row.
+ * Scrolls immediately from offset 0 and clamps so the viewport stays full at the end.
+ */
+export function scrollSlice(
+  scrollOffset: number,
+  total: number,
+  viewportRows: number,
+): VisibleWindow {
+  if (total <= 0 || viewportRows <= 0) return { start: 0, end: 0 };
+  const view = Math.min(viewportRows, total);
+  const maxStart = Math.max(0, total - view);
+  const start = Math.min(Math.max(0, scrollOffset), maxStart);
+  return { start, end: start + view };
+}
+
+/**
+ * Clamps a single line of text so it fits cleanly inside a bordered box of
+ * interior width `maxCols` without touching or overflowing the right border.
+ */
+export function clampBoxLine(raw: string, maxCols: number): string {
+  const clean = raw.replace(/[\r\n\t]+/g, " ");
+  if (maxCols <= 1) return clean.slice(0, Math.max(0, maxCols));
+  if (clean.length <= maxCols) return clean;
+  return `${clean.slice(0, maxCols - 1)}\u2026`;
+}
+
 // Side panels together must leave at least 20 columns for the repository list.
 export const MIN_CENTER_COLUMNS = 20;
 const PANEL_FLOOR = 8;
@@ -45,7 +72,7 @@ export function navRailVisible(terminalWidth: number): boolean {
 }
 
 /** Columns remaining for the cockpit/page area after the nav rail. */
-export function contentWidth(terminalWidth: number): number {
+export function contentWidth(terminalWidth: number): boolean extends never ? never : number {
   return navRailVisible(terminalWidth) ? terminalWidth - NAV_RAIL_WIDTH : terminalWidth;
 }
 

@@ -2,7 +2,7 @@ import { useKeyboard, useTerminalDimensions } from "@opentui/react";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import type { Store } from "../store.ts";
 import { theme } from "../theme.ts";
-import { visibleSlice } from "../windowing.ts";
+import { clampBoxLine, scrollSlice } from "../windowing.ts";
 
 /**
  * `repotruck trash …` and `repotruck backup …` as one recovery page: trashed
@@ -20,7 +20,7 @@ export function TrashBackupsView({
 }) {
   const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot);
   const { height: termHeight } = useTerminalDimensions();
-  const height = heightProp ?? Math.max(12, termHeight - 4);
+  const height = heightProp ?? Math.max(8, termHeight - 11);
   const page = snapshot.trashPage;
   const [scrollIdx, setScrollIdx] = useState(0);
 
@@ -32,33 +32,30 @@ export function TrashBackupsView({
   const backups = page?.backups ?? [];
   const maxItems = Math.max(trash.length, backups.length);
 
+  const stacked = width < 78;
+  const boxInnerCols = stacked
+    ? Math.max(10, width - 3)
+    : Math.max(10, Math.floor((width - 1) / 2) - 3);
+  // Side-by-side: each box has outer height (height - 1), inner height (height - 3),
+  // minus 1 header line and 1 bottom action line = (height - 5) rows for 2-row items.
+  const boxBudgetRows = stacked
+    ? Math.max(1, Math.floor((Math.floor((height - 1) / 2) - 4) / 2))
+    : Math.max(1, Math.floor((height - 5) / 2));
+  const maxScroll = Math.max(0, maxItems - boxBudgetRows);
+
   useKeyboard((key) => {
     if (key.name === "r") void store.refreshTrashPage();
     else if (key.name === "b") void store.backupSnapshotNow();
     else if (key.name === "up" || key.sequence === "k") {
-      setScrollIdx((s) => Math.max(0, s - 1));
+      setScrollIdx((s) => Math.max(0, Math.min(s, maxScroll) - 1));
     } else if (key.name === "down" || key.sequence === "j") {
-      setScrollIdx((s) => Math.min(Math.max(0, maxItems - 1), s + 1));
+      setScrollIdx((s) => Math.min(maxScroll, s + 1));
     }
   });
 
-  const stacked = width < 78;
-  const half = stacked ? width : Math.max(20, Math.floor((width - 2) / 2));
-  // Each item takes 2 rows inside its bordered box
-  const boxBudgetRows = stacked
-    ? Math.max(1, Math.floor((height - 10) / 4))
-    : Math.max(1, Math.floor((height - 8) / 2));
-  const trashWin = visibleSlice(
-    Math.min(scrollIdx, Math.max(0, trash.length - 1)),
-    trash.length,
-    boxBudgetRows,
-  );
+  const trashWin = scrollSlice(scrollIdx, trash.length, boxBudgetRows);
   const visibleTrash = trash.slice(trashWin.start, trashWin.end);
-  const backupWin = visibleSlice(
-    Math.min(scrollIdx, Math.max(0, backups.length - 1)),
-    backups.length,
-    boxBudgetRows,
-  );
+  const backupWin = scrollSlice(scrollIdx, backups.length, boxBudgetRows);
   const visibleBackups = backups.slice(backupWin.start, backupWin.end);
 
   return (
@@ -66,10 +63,11 @@ export function TrashBackupsView({
       flexDirection="column"
       flexGrow={1}
       width="100%"
-      gap={height < 20 ? 0 : 1}
       onMouseScroll={(e) => {
         const isUp = e.scroll?.direction === "up" || e.button === 4;
-        setScrollIdx((s) => Math.min(Math.max(0, maxItems - 1), Math.max(0, s + (isUp ? -1 : 1))));
+        setScrollIdx((s) =>
+          Math.min(maxScroll, Math.max(0, Math.min(s, maxScroll) + (isUp ? -1 : 1))),
+        );
       }}
     >
       <box
@@ -82,15 +80,19 @@ export function TrashBackupsView({
           border
           borderColor={theme.border()}
           flexDirection="column"
-          width={stacked ? "100%" : half}
+          flexGrow={1}
+          flexBasis={stacked ? undefined : 0}
+          width={stacked ? "100%" : undefined}
           padding={0}
           overflow="hidden"
-          flexShrink={0}
         >
           <text fg={theme.accent()} wrapMode="none" flexShrink={0}>
-            {trash.length > boxBudgetRows
-              ? ` Trash · .repotruck/trash (${trashWin.start + 1}-${trashWin.end}/${trash.length})`
-              : " Trash · .repotruck/trash"}
+            {clampBoxLine(
+              trash.length > boxBudgetRows
+                ? ` Trash · .repotruck/trash (${trashWin.start + 1}-${trashWin.end}/${trash.length})`
+                : " Trash · .repotruck/trash",
+              boxInnerCols,
+            )}
           </text>
           {trash.length === 0 ? (
             <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
@@ -100,7 +102,10 @@ export function TrashBackupsView({
             visibleTrash.map((entry) => (
               <box key={entry.id} flexDirection="column" flexShrink={0}>
                 <text fg={theme.normal()} wrapMode="none" flexShrink={0}>
-                  {` ${entry.owner}/${entry.name} · ${formatSize(entry.sizeBytes)} · ${entry.trashedAt.slice(0, 10)}`}
+                  {clampBoxLine(
+                    ` ${entry.owner}/${entry.name} · ${formatSize(entry.sizeBytes)} · ${entry.trashedAt.slice(0, 10)}`,
+                    boxInnerCols,
+                  )}
                 </text>
                 <box flexDirection="row" gap={2} flexShrink={0}>
                   <text
@@ -124,7 +129,7 @@ export function TrashBackupsView({
                     {"  [restore]"}
                   </text>
                   <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
-                    {entry.id}
+                    {clampBoxLine(entry.id, Math.max(6, boxInnerCols - 13))}
                   </text>
                 </box>
               </box>
@@ -146,25 +151,32 @@ export function TrashBackupsView({
           border
           borderColor={theme.border()}
           flexDirection="column"
-          width={stacked ? "100%" : half}
+          flexGrow={1}
+          flexBasis={stacked ? undefined : 0}
+          width={stacked ? "100%" : undefined}
           padding={0}
           overflow="hidden"
-          flexShrink={0}
         >
           <text fg={theme.accent()} wrapMode="none" flexShrink={0}>
-            {backups.length > boxBudgetRows
-              ? ` Backups · 5 generations (${backupWin.start + 1}-${backupWin.end}/${backups.length})`
-              : " Backups · 5 generations"}
+            {clampBoxLine(
+              backups.length > boxBudgetRows
+                ? ` Backups · 5 generations (${backupWin.start + 1}-${backupWin.end}/${backups.length})`
+                : " Backups · 5 generations",
+              boxInnerCols,
+            )}
           </text>
           {backups.length === 0 ? (
             <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
-              {"  no snapshots yet (written on every workspace change)"}
+              {clampBoxLine("  no snapshots yet (written on every workspace change)", boxInnerCols)}
             </text>
           ) : (
             visibleBackups.map((entry) => (
               <box key={entry.file} flexDirection="column" flexShrink={0}>
                 <text fg={theme.normal()} wrapMode="none" flexShrink={0}>
-                  {` ${entry.createdAt.slice(0, 19).replace("T", " ")} · ${entry.repoCount} repos`}
+                  {clampBoxLine(
+                    ` ${entry.createdAt.slice(0, 19).replace("T", " ")} · ${entry.repoCount} repos`,
+                    boxInnerCols,
+                  )}
                 </text>
                 <box flexDirection="row" gap={2} flexShrink={0}>
                   <text
@@ -179,7 +191,7 @@ export function TrashBackupsView({
                     {"  [restore --yes]"}
                   </text>
                   <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
-                    {entry.file}
+                    {clampBoxLine(entry.file, Math.max(6, boxInnerCols - 19))}
                   </text>
                 </box>
               </box>
@@ -199,7 +211,10 @@ export function TrashBackupsView({
         </box>
       </box>
       <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
-        {"r refresh · b snapshot · restore/empty guarded by confirm · Esc cockpit"}
+        {clampBoxLine(
+          "r refresh · b snapshot · restore/empty guarded by confirm · Esc cockpit",
+          width,
+        )}
       </text>
     </box>
   );

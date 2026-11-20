@@ -124,17 +124,18 @@ export function FieldGroup({
   });
 
   return (
-    <box flexDirection="column" width="100%">
+    <box flexDirection="column" width="100%" flexShrink={0}>
       {visibleFlags.map((flag, idx) => {
         const index = win.start + idx;
         const focused = index === boundedFocus;
         const value: boolean | string = values[flag.flag] ?? "";
         const label = showFlags ? flagLabel(flag) : flag.summary;
         return (
-          <box key={flag.flag} flexDirection="column">
+          <box key={flag.flag} flexDirection="column" flexShrink={0}>
             <text
               fg={focused ? theme.accent() : theme.normal()}
               wrapMode="none"
+              flexShrink={0}
               onMouseDown={(e) => {
                 e.stopPropagation();
                 setFocusIndex(index);
@@ -161,7 +162,7 @@ export function FieldGroup({
           </box>
         );
       })}
-      <text fg={theme.dim()} wrapMode="none">
+      <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
         {flags.length > viewport
           ? `↑↓ field (${win.start + 1}-${win.end}/${flags.length}) · Space toggle/edit · ←→ cycle`
           : "↑↓ field · Space toggle/edit · ←→ cycle · Enter edit · Esc close input"}

@@ -2,11 +2,13 @@ import { describe, expect, test } from "bun:test";
 import { buildFooterLines, buildHeaderLine } from "../src/components/Dashboard.tsx";
 import { sidebarRowIndexForY, sidebarTotalLines } from "../src/components/store/filters.ts";
 import {
+  clampBoxLine,
   cockpitLayoutMode,
   computeCockpitPanes,
   MIN_CENTER_COLUMNS,
   repoRowLabel,
   repoViewportRows,
+  scrollSlice,
   sidebarWidth,
   statusWidth,
   visibleSlice,
@@ -77,6 +79,23 @@ describe("visibleSlice", () => {
       expect(end).toBeGreaterThanOrEqual(cursor + 1);
       expect(end - start).toBeLessThanOrEqual(7);
     }
+  });
+});
+
+describe("scrollSlice and clampBoxLine", () => {
+  test("scrollSlice scrolls immediately from offset 1 and keeps a full window at the bottom", () => {
+    expect(scrollSlice(0, 20, 8)).toEqual({ start: 0, end: 8 });
+    expect(scrollSlice(1, 20, 8)).toEqual({ start: 1, end: 9 });
+    expect(scrollSlice(12, 20, 8)).toEqual({ start: 12, end: 20 });
+    expect(scrollSlice(19, 20, 8)).toEqual({ start: 12, end: 20 });
+    expect(scrollSlice(0, 5, 8)).toEqual({ start: 0, end: 5 });
+    expect(scrollSlice(0, 0, 8)).toEqual({ start: 0, end: 0 });
+  });
+
+  test("clampBoxLine sanitizes tabs/newlines and truncates with ellipsis to fit box interior", () => {
+    expect(clampBoxLine("  hello\tworld\n", 20)).toBe("  hello world ");
+    expect(clampBoxLine("1234567890", 6)).toBe("12345…");
+    expect(clampBoxLine("abc", 1)).toBe("a");
   });
 });
 

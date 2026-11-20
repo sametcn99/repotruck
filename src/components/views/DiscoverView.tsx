@@ -3,12 +3,7 @@ import { useEffect, useState, useSyncExternalStore } from "react";
 import type { Store } from "../store.ts";
 import { theme } from "../theme.ts";
 import { copyText } from "../ui/JsonCopy.ts";
-import { visibleSlice } from "../windowing.ts";
-
-function clampDiscoverLine(raw: string, maxCols: number): string {
-  if (raw.length <= maxCols) return raw;
-  return `${raw.slice(0, Math.max(1, maxCols - 1))}…`;
-}
+import { clampBoxLine, scrollSlice } from "../windowing.ts";
 
 /**
  * `repotruck discover` as a page: query with a qualifier strip, results
@@ -25,7 +20,7 @@ export function DiscoverView({
 }) {
   const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot);
   const { height: termHeight } = useTerminalDimensions();
-  const height = heightProp ?? Math.max(12, termHeight - 4);
+  const height = heightProp ?? Math.max(8, termHeight - 11);
   const state = snapshot.discoverPage;
   const [editing, setEditing] = useState(true);
   const [scrollIdx, setScrollIdx] = useState(0);
@@ -35,6 +30,9 @@ export function DiscoverView({
   }, [state, store]);
 
   const totalResults = state?.results.length ?? 0;
+  // 2 top control rows + 2 box borders + 1 box header + 1 footer hint = 6 non-data rows.
+  const viewportRows = Math.max(1, height - 6);
+  const maxScroll = Math.max(0, totalResults - viewportRows);
 
   useKeyboard((key) => {
     if (editing) {
@@ -43,9 +41,9 @@ export function DiscoverView({
     }
     if (key.name === "return") setEditing(true);
     else if (key.name === "up" || key.sequence === "k") {
-      setScrollIdx((s) => Math.max(0, s - 1));
+      setScrollIdx((s) => Math.max(0, Math.min(s, maxScroll) - 1));
     } else if (key.name === "down" || key.sequence === "j") {
-      setScrollIdx((s) => Math.min(Math.max(0, totalResults - 1), s + 1));
+      setScrollIdx((s) => Math.min(maxScroll, s + 1));
     } else if (key.name === "s") void store.discoverSearch();
     else if (key.name === "a") {
       const page = store.getSnapshot().discoverPage;
@@ -69,9 +67,8 @@ export function DiscoverView({
   if (state === null) return null;
   const tracked = new Set(snapshot.repos.map((repo) => `${repo.owner}/${repo.name}`.toLowerCase()));
   const inner = Math.max(20, width - 4);
-  const viewportRows = Math.max(2, height - 10);
-  const boundedScroll = Math.min(Math.max(0, scrollIdx), Math.max(0, state.results.length - 1));
-  const win = visibleSlice(boundedScroll, state.results.length, viewportRows);
+  const boxInnerCols = Math.max(10, width - 3);
+  const win = scrollSlice(scrollIdx, state.results.length, viewportRows);
   const visibleResults = state.results.slice(win.start, win.end);
 
   return (
@@ -82,12 +79,14 @@ export function DiscoverView({
       onMouseScroll={(e) => {
         const isUp = e.scroll?.direction === "up" || e.button === 4;
         setScrollIdx((s) =>
-          Math.min(Math.max(0, state.results.length - 1), Math.max(0, s + (isUp ? -2 : 2))),
+          Math.min(maxScroll, Math.max(0, Math.min(s, maxScroll) + (isUp ? -2 : 2))),
         );
       }}
     >
-      <box flexDirection="row" flexWrap="wrap" gap={1}>
-        <text fg={theme.dim()}>{"query:"}</text>
+      <box flexDirection="row" flexWrap="wrap" gap={1} flexShrink={0}>
+        <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
+          {"query:"}
+        </text>
         {editing ? (
           <input
             focused
@@ -102,6 +101,8 @@ export function DiscoverView({
         ) : (
           <text
             fg={theme.accent()}
+            wrapMode="none"
+            flexShrink={0}
             onMouseDown={(event) => {
               event.stopPropagation();
               setEditing(true);
@@ -112,6 +113,8 @@ export function DiscoverView({
         )}
         <text
           fg={theme.accent()}
+          wrapMode="none"
+          flexShrink={0}
           onMouseDown={(event) => {
             event.stopPropagation();
             void store.discoverSearch();
@@ -120,13 +123,17 @@ export function DiscoverView({
           {"[s] search"}
         </text>
       </box>
-      <box flexDirection="row" flexWrap="wrap" gap={1}>
-        <text fg={theme.normal()}>{`[l] limit: ${state.limit}`}</text>
-        <text
-          fg={state.blobless ? theme.accent() : theme.normal()}
-        >{`[b] blobless: ${state.blobless ? "on" : "off"}`}</text>
+      <box flexDirection="row" flexWrap="wrap" gap={1} flexShrink={0}>
+        <text fg={theme.normal()} wrapMode="none" flexShrink={0}>
+          {`[l] limit: ${state.limit}`}
+        </text>
+        <text fg={state.blobless ? theme.accent() : theme.normal()} wrapMode="none" flexShrink={0}>
+          {`[b] blobless: ${state.blobless ? "on" : "off"}`}
+        </text>
         <text
           fg={theme.accent()}
+          wrapMode="none"
+          flexShrink={0}
           onMouseDown={(event) => {
             event.stopPropagation();
             const page = store.getSnapshot().discoverPage;
@@ -144,6 +151,8 @@ export function DiscoverView({
         </text>
         <text
           fg={theme.accent()}
+          wrapMode="none"
+          flexShrink={0}
           onMouseDown={(event) => {
             event.stopPropagation();
             void store.discoverCloneSelected();
@@ -157,26 +166,35 @@ export function DiscoverView({
         borderColor={theme.border()}
         flexDirection="column"
         flexGrow={1}
+        width="100%"
         padding={0}
         overflow="hidden"
       >
-        <text fg={theme.dim()} wrapMode="none">
-          {state.loading
-            ? " searching…"
-            : ` ${state.results.length} results · ${state.selected.size} selected`}
+        <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
+          {clampBoxLine(
+            state.loading
+              ? " searching…"
+              : ` ${state.results.length} results · ${state.selected.size} selected${
+                  state.results.length > viewportRows
+                    ? ` (showing ${win.start + 1}-${win.end}/${state.results.length})`
+                    : ""
+                }`,
+            boxInnerCols,
+          )}
         </text>
         {visibleResults.map((repo) => {
           const key = `${repo.owner}/${repo.name}`;
           const isSelected = state.selected.has(key);
           const isTracked = tracked.has(key.toLowerCase());
-          const keyPad = inner < 56 ? 18 : 28;
-          const langPad = inner < 56 ? 6 : 10;
-          const rawLine = ` ${isSelected ? "[x]" : "[ ]"} ${key.padEnd(keyPad)}${isTracked ? " · tracked" : ""} · ${(repo.language ?? "—").padEnd(langPad)} · ★${String(repo.stars ?? 0).padStart(5)}${repo.description !== null ? ` · ${String(repo.description).slice(0, 44)}` : ""}`;
+          const keyPad = boxInnerCols < 56 ? 18 : 28;
+          const langPad = boxInnerCols < 56 ? 6 : 10;
+          const rawLine = ` ${isSelected ? "[x]" : "[ ]"} ${key.padEnd(keyPad)}${isTracked ? " · tracked" : ""} · ${(repo.language ?? "—").padEnd(langPad)} · ★${String(repo.stars ?? 0).padStart(5)}${repo.description !== null ? ` · ${String(repo.description)}` : ""}`;
           return (
             <text
               key={key}
               fg={isSelected ? theme.accent() : theme.normal()}
               wrapMode="none"
+              flexShrink={0}
               onMouseDown={(event) => {
                 event.stopPropagation();
                 const next = new Set(state.selected);
@@ -185,7 +203,7 @@ export function DiscoverView({
                 store.updateDiscoverPage({ selected: next });
               }}
             >
-              {clampDiscoverLine(rawLine, inner)}
+              {clampBoxLine(rawLine, boxInnerCols)}
             </text>
           );
         })}
@@ -193,12 +211,16 @@ export function DiscoverView({
       <text
         fg={theme.dim()}
         wrapMode="none"
+        flexShrink={0}
         onMouseDown={(event) => {
           event.stopPropagation();
           copyText("discover CLI", `repotruck discover ${state.query} --clone`);
         }}
       >
-        {"click rows to select · clone summary lands in Activity · Esc cockpit"}
+        {clampBoxLine(
+          "click rows to select · clone summary lands in Activity · Esc cockpit",
+          width,
+        )}
       </text>
     </box>
   );

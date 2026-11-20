@@ -3,7 +3,7 @@ import { useEffect, useState, useSyncExternalStore } from "react";
 import type { Store } from "../store.ts";
 import { theme } from "../theme.ts";
 import { copyText } from "../ui/JsonCopy.ts";
-import { visibleSlice } from "../windowing.ts";
+import { clampBoxLine, scrollSlice } from "../windowing.ts";
 
 const SETTING_KEYS = [
   { key: "sync.concurrency", label: "sync concurrency", type: "int" },
@@ -32,7 +32,7 @@ export function SettingsView({
 }) {
   const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot);
   const { height: termHeight } = useTerminalDimensions();
-  const height = heightProp ?? Math.max(12, termHeight - 4);
+  const height = heightProp ?? Math.max(8, termHeight - 11);
   const page = snapshot.settingsPage;
   const [scrollIdx, setScrollIdx] = useState(0);
 
@@ -40,24 +40,26 @@ export function SettingsView({
     if (page === null) void store.refreshSettingsPage();
   }, [page, store]);
 
-  useKeyboard((key) => {
-    if (key.name === "r") void store.refreshSettingsPage();
-    else if (key.name === "up" || key.sequence === "k") {
-      setScrollIdx((s) => Math.max(0, s - 1));
-    } else if (key.name === "down" || key.sequence === "j") {
-      setScrollIdx((s) => Math.min(SETTING_KEYS.length - 1, s + 1));
-    }
-  });
-
   const settings = page?.settings ?? null;
   const inner = Math.max(24, width - 4);
   const stacked = width < 82;
-  const settingCap = stacked ? Math.max(3, height - 14) : Math.max(3, height - 7);
-  const win = visibleSlice(
-    Math.min(scrollIdx, SETTING_KEYS.length - 1),
-    SETTING_KEYS.length,
-    settingCap,
-  );
+  const rightColWidth = stacked ? width : Math.max(30, Math.floor(width * 0.36));
+  const leftColWidth = stacked ? width : Math.max(24, width - rightColWidth - 1);
+  const leftInnerCols = Math.max(10, leftColWidth - 3);
+  // Left box has 2 borders + 1 header line inside (height - 1) outer rows = height - 4 setting rows.
+  const settingCap = stacked ? Math.max(2, height - 10) : Math.max(2, height - 4);
+  const maxScroll = Math.max(0, SETTING_KEYS.length - settingCap);
+
+  useKeyboard((key) => {
+    if (key.name === "r") void store.refreshSettingsPage();
+    else if (key.name === "up" || key.sequence === "k") {
+      setScrollIdx((s) => Math.max(0, Math.min(s, maxScroll) - 1));
+    } else if (key.name === "down" || key.sequence === "j") {
+      setScrollIdx((s) => Math.min(maxScroll, s + 1));
+    }
+  });
+
+  const win = scrollSlice(scrollIdx, SETTING_KEYS.length, settingCap);
   const visibleSettings = SETTING_KEYS.slice(win.start, win.end);
 
   return (
@@ -67,7 +69,9 @@ export function SettingsView({
       width="100%"
       onMouseScroll={(e) => {
         const isUp = e.scroll?.direction === "up" || e.button === 4;
-        setScrollIdx((s) => Math.min(SETTING_KEYS.length - 1, Math.max(0, s + (isUp ? -1 : 1))));
+        setScrollIdx((s) =>
+          Math.min(maxScroll, Math.max(0, Math.min(s, maxScroll) + (isUp ? -1 : 1))),
+        );
       }}
     >
       <box
@@ -81,27 +85,32 @@ export function SettingsView({
           borderColor={theme.border()}
           flexDirection="column"
           flexGrow={1}
-          width={stacked ? "100%" : undefined}
+          width={stacked ? "100%" : leftColWidth}
           padding={0}
           overflow="hidden"
         >
-          <text fg={theme.dim()} wrapMode="none">
-            {" Configuration (config list)"}
+          <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
+            {clampBoxLine(" Configuration (config list)", leftInnerCols)}
           </text>
           {visibleSettings.map((entry) => {
             const raw = readSetting(settings, entry.key);
             const isDefault = raw.isDefault;
+            const padCols = Math.max(10, Math.min(18, leftInnerCols - 22));
             return (
-              <box key={entry.key} flexDirection="row" flexWrap="wrap" gap={1}>
-                <text fg={theme.normal()} wrapMode="none">
-                  {` ${entry.label.padEnd(Math.max(10, Math.min(18, inner - 24)))}`}
+              <box key={entry.key} flexDirection="row" gap={1} flexShrink={0}>
+                <text fg={theme.normal()} wrapMode="none" flexShrink={0}>
+                  {` ${entry.label.padEnd(padCols)}`}
                 </text>
-                <text fg={isDefault ? theme.dim() : theme.accent()} wrapMode="none">
-                  {String(raw.value || "(default)")}
+                <text fg={isDefault ? theme.dim() : theme.accent()} wrapMode="none" flexShrink={0}>
+                  {clampBoxLine(
+                    String(raw.value || "(default)"),
+                    Math.max(8, leftInnerCols - padCols - 18),
+                  )}
                 </text>
                 <text
                   fg={theme.dim()}
                   wrapMode="none"
+                  flexShrink={0}
                   onMouseDown={(event) => {
                     event.stopPropagation?.();
                     store.confirmDialog(
@@ -120,6 +129,7 @@ export function SettingsView({
                   <text
                     fg={theme.warning()}
                     wrapMode="none"
+                    flexShrink={0}
                     onMouseDown={(event) => {
                       event.stopPropagation?.();
                       void store.unsetSetting(entry.key);
@@ -128,117 +138,149 @@ export function SettingsView({
                     {" [unset]"}
                   </text>
                 ) : null}
-                <text fg={theme.dim()} wrapMode="none">
+                <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
                   {isDefault ? " default" : " settings"}
                 </text>
               </box>
             );
           })}
         </box>
-        <box flexDirection="column" width={stacked ? "100%" : Math.max(26, Math.floor(inner / 3))}>
-          <box border borderColor={theme.border()} flexDirection="column" overflow="hidden">
-            <text fg={theme.dim()} wrapMode="none">
+        <box flexDirection="column" width={stacked ? "100%" : rightColWidth} flexShrink={0}>
+          <box
+            border
+            borderColor={theme.border()}
+            flexDirection="column"
+            overflow="hidden"
+            flexShrink={0}
+          >
+            <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
               {" Auth & connection"}
             </text>
-            <text fg={page?.authMethod ? theme.success() : theme.error()} wrapMode="none">
-              {` method: ${page?.authMethod ?? "none"}`}
-            </text>
-            <text fg={theme.normal()} wrapMode="none">{` login: ${page?.userLogin ?? "—"}`}</text>
-            <text
-              fg={theme.accent()}
-              wrapMode="none"
-              onMouseDown={(event) => {
-                event.stopPropagation?.();
-                void store.startDeviceFlow();
-              }}
-            >
-              {" [login] device flow (non-blocking)"}
-            </text>
-            <text
-              fg={theme.error()}
-              wrapMode="none"
-              onMouseDown={(event) => {
-                event.stopPropagation?.();
-                store.confirmDialog(
-                  {
-                    title: "Logout",
-                    message: "Log out of cached GitHub credentials?",
-                    confirmLabel: "Logout",
-                    danger: true,
-                  },
-                  () => {
-                    store.pushStatus(
-                      "DONE",
-                      "[auth]",
-                      "repotruck auth logout — run it in a terminal (token files are shared)",
-                    );
-                  },
-                );
-              }}
-            >
-              {" [logout]"}
-            </text>
-          </box>
-          <box border borderColor={theme.border()} flexDirection="column" overflow="hidden">
-            <text fg={theme.dim()} wrapMode="none">
-              {" Update"}
-            </text>
-            <text fg={theme.normal()} wrapMode="none">
-              {snapshot.updateToast !== null
-                ? ` ${snapshot.updateToast.version} available`
-                : " up to date"}
-            </text>
-            <text
-              fg={theme.accent()}
-              wrapMode="none"
-              onMouseDown={(event) => {
-                event.stopPropagation?.();
-                copyText("update", "npm i -g repotruck@latest");
-                store.pushStatus(
-                  "DONE",
-                  "[update]",
-                  "self-update command copied — the dashboard suspends during updates",
-                );
-              }}
-            >
-              {" [self-update] copy command"}
-            </text>
+            <box flexDirection="row" gap={1} flexShrink={0}>
+              <text
+                fg={page?.authMethod ? theme.success() : theme.error()}
+                wrapMode="none"
+                flexShrink={0}
+              >
+                {` method: ${page?.authMethod ?? "none"}`}
+              </text>
+              <text fg={theme.normal()} wrapMode="none" flexShrink={0}>
+                {`· login: ${page?.userLogin ?? "—"}`}
+              </text>
+            </box>
+            <box flexDirection="row" gap={1} flexShrink={0}>
+              <text
+                fg={theme.accent()}
+                wrapMode="none"
+                flexShrink={0}
+                onMouseDown={(event) => {
+                  event.stopPropagation?.();
+                  void store.startDeviceFlow();
+                }}
+              >
+                {" [login] device flow"}
+              </text>
+              <text
+                fg={theme.error()}
+                wrapMode="none"
+                flexShrink={0}
+                onMouseDown={(event) => {
+                  event.stopPropagation?.();
+                  store.confirmDialog(
+                    {
+                      title: "Logout",
+                      message: "Log out of cached GitHub credentials?",
+                      confirmLabel: "Logout",
+                      danger: true,
+                    },
+                    () => {
+                      store.pushStatus(
+                        "DONE",
+                        "[auth]",
+                        "repotruck auth logout — run it in a terminal (token files are shared)",
+                      );
+                    },
+                  );
+                }}
+              >
+                {"[logout]"}
+              </text>
+            </box>
           </box>
           <box
             border
             borderColor={theme.border()}
-            flexDirection={stacked ? "row" : "column"}
-            flexWrap="wrap"
+            flexDirection="column"
             overflow="hidden"
+            flexShrink={0}
           >
-            <text fg={theme.dim()} wrapMode="none">
-              {" Shell completions"}
+            <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
+              {" Update"}
             </text>
-            {["bash", "zsh", "fish", "powershell"].map((shell) => (
+            <box flexDirection="row" gap={1} flexShrink={0}>
+              <text fg={theme.normal()} wrapMode="none" flexShrink={0}>
+                {snapshot.updateToast !== null
+                  ? ` ${snapshot.updateToast.version} available`
+                  : " up to date"}
+              </text>
               <text
-                key={shell}
-                fg={theme.normal()}
+                fg={theme.accent()}
                 wrapMode="none"
+                flexShrink={0}
                 onMouseDown={(event) => {
                   event.stopPropagation?.();
-                  copyText(`completions ${shell}`, `repotruck completions ${shell}`);
+                  copyText("update", "npm i -g repotruck@latest");
                   store.pushStatus(
                     "DONE",
-                    "[completions]",
-                    `completions ${shell} script command copied`,
+                    "[update]",
+                    "self-update command copied — the dashboard suspends during updates",
                   );
                 }}
               >
-                {` [${shell}]`}
+                {"[self-update] copy command"}
               </text>
-            ))}
+            </box>
+          </box>
+          <box
+            border
+            borderColor={theme.border()}
+            flexDirection="column"
+            flexGrow={stacked ? 0 : 1}
+            overflow="hidden"
+            flexShrink={0}
+          >
+            <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
+              {" Shell completions"}
+            </text>
+            <box flexDirection="row" flexWrap="wrap" gap={0} flexShrink={0}>
+              {["bash", "zsh", "fish", "powershell"].map((shell) => (
+                <text
+                  key={shell}
+                  fg={theme.normal()}
+                  wrapMode="none"
+                  flexShrink={0}
+                  onMouseDown={(event) => {
+                    event.stopPropagation?.();
+                    copyText(`completions ${shell}`, `repotruck completions ${shell}`);
+                    store.pushStatus(
+                      "DONE",
+                      "[completions]",
+                      `completions ${shell} script command copied`,
+                    );
+                  }}
+                >
+                  {` [${shell}]`}
+                </text>
+              ))}
+            </box>
           </box>
         </box>
       </box>
-      <text fg={theme.dim()} wrapMode="none">
-        {
-          "edit dialog carries the config set parity · unset restores defaults · r refresh · Esc cockpit"
-        }
+      <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
+        {clampBoxLine(
+          "edit dialog carries the config set parity · unset restores defaults · r refresh · Esc cockpit",
+          inner,
+        )}
       </text>
     </box>
   );

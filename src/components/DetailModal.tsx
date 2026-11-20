@@ -1,6 +1,6 @@
 import { existsSync } from "node:fs";
 import path from "node:path";
-import { useKeyboard } from "@opentui/react";
+import { useKeyboard, useTerminalDimensions } from "@opentui/react";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { simpleGit } from "simple-git";
 import { loadWorkspace } from "../services/workspace.ts";
@@ -9,6 +9,7 @@ import { ModalShell } from "./ModalShell.tsx";
 import type { RepoLocalHealth } from "./store/types.ts";
 import type { Store } from "./store.ts";
 import { theme } from "./theme.ts";
+import { clampBoxLine } from "./windowing.ts";
 
 interface DetailLocal {
   tracked: boolean;
@@ -102,6 +103,7 @@ export async function detailLocalFor(root: string, key: string): Promise<DetailL
 
 export function DetailModal({ store }: { store: Store }) {
   const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot);
+  const { width, height } = useTerminalDimensions();
   const modal = snapshot.modal;
   const key = modal !== null && modal.type === "detail" ? modal.key : "";
   const repo = snapshot.repos.find(
@@ -110,6 +112,8 @@ export function DetailModal({ store }: { store: Store }) {
   const seeded = seedDetailFromHealth(snapshot.localHealth?.get(key.toLowerCase()));
   const [local, setLocal] = useState<DetailLocal | null>(seeded);
   const dimFg = theme.dim();
+  const compact = height < 22 || width < 68;
+  const maxCols = Math.max(16, width - (compact ? 2 : 4));
 
   useEffect(() => {
     let active = true;
@@ -131,7 +135,9 @@ export function DetailModal({ store }: { store: Store }) {
   if (repo === undefined) {
     return (
       <ModalShell store={store} title="Repository details" hint="Escape closes">
-        <text fg={theme.error()}>{`repository not in the current list: ${key}`}</text>
+        <text fg={theme.error()} wrapMode="none" flexShrink={0}>
+          {clampBoxLine(`repository not in the current list: ${key}`, maxCols)}
+        </text>
       </ModalShell>
     );
   }
@@ -143,22 +149,40 @@ export function DetailModal({ store }: { store: Store }) {
 
   return (
     <ModalShell store={store} title="Repository details" hint="Escape closes" gap={0}>
-      <text>{`${key}${flags.length > 0 ? ` ${flags.join(" ")}` : ""}`}</text>
-      <text fg={dimFg}>{`description: ${repo.description ?? "no description"}`}</text>
-      <text fg={dimFg}>{`language: ${repo.language ?? "null"}`}</text>
-      {typeof repo.stars === "number" ? <text fg={dimFg}>{`stars: ${repo.stars}`}</text> : null}
-      <text fg={dimFg}>{`updated: ${repo.updatedAt ?? "unknown"}`}</text>
-      <text fg={dimFg}>{`url: ${repo.httpsUrl}`}</text>
-      <text fg={dimFg}>
-        {local === null
-          ? "local: checking\u2026"
-          : local.tracked
-            ? `tracked at ${local.relativePath}${local.alias !== null ? ` \u00b7 alias: ${local.alias}` : ""} \u00b7 ${local.disk}`
-            : "not tracked by repotruck"}
+      <text wrapMode="none" flexShrink={0}>
+        {clampBoxLine(`${key}${flags.length > 0 ? ` ${flags.join(" ")}` : ""}`, maxCols)}
       </text>
-      <box flexDirection="row" gap={2} marginTop={1}>
+      <text fg={dimFg} wrapMode="none" flexShrink={0}>
+        {clampBoxLine(`description: ${repo.description ?? "no description"}`, maxCols)}
+      </text>
+      <text fg={dimFg} wrapMode="none" flexShrink={0}>
+        {clampBoxLine(`language: ${repo.language ?? "null"}`, maxCols)}
+      </text>
+      {typeof repo.stars === "number" ? (
+        <text fg={dimFg} wrapMode="none" flexShrink={0}>
+          {`stars: ${repo.stars}`}
+        </text>
+      ) : null}
+      <text fg={dimFg} wrapMode="none" flexShrink={0}>
+        {clampBoxLine(`updated: ${repo.updatedAt ?? "unknown"}`, maxCols)}
+      </text>
+      <text fg={dimFg} wrapMode="none" flexShrink={0}>
+        {clampBoxLine(`url: ${repo.httpsUrl}`, maxCols)}
+      </text>
+      <text fg={dimFg} wrapMode="none" flexShrink={0}>
+        {clampBoxLine(
+          local === null
+            ? "local: checking\u2026"
+            : local.tracked
+              ? `tracked at ${local.relativePath}${local.alias !== null ? ` \u00b7 alias: ${local.alias}` : ""} \u00b7 ${local.disk}`
+              : "not tracked by repotruck",
+          maxCols,
+        )}
+      </text>
+      <box flexDirection="row" gap={2} marginTop={1} flexShrink={0}>
         <text
           fg={dimFg}
+          flexShrink={0}
           onMouseDown={(e) => {
             e.stopPropagation();
             store.closeModal();
