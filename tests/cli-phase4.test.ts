@@ -1,4 +1,5 @@
 import { afterAll, describe, expect, test } from "bun:test";
+import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -26,23 +27,15 @@ afterAll(() => {
 });
 
 function runCli(args: string[], configDir: string) {
-  // CI runners occasionally hand back an exit-0 child with empty pipes under
-  // parallel load; one retry when both streams are empty keeps the suite
-  // stable without masking real empty-output regressions (those stay empty).
-  for (let attempt = 0; ; attempt += 1) {
-    const result = Bun.spawnSync([process.execPath, "run", cliPath, ...args], {
-      cwd: repoRoot,
-      stdout: "pipe",
-      stderr: "pipe",
-      stdin: "ignore",
-      env: { ...process.env, REPOTRUCK_CONFIG_DIR: configDir },
-    });
-    const bothEmpty =
-      result.exitCode === 0 &&
-      (result.stdout?.length ?? 0) === 0 &&
-      (result.stderr?.length ?? 0) === 0;
-    if (!bothEmpty || attempt >= 1) return result;
-  }
+  // Node's spawnSync, not Bun.spawnSync: Bun's piped spawnSync empties or
+  // truncates child output under concurrent load on CI runners.
+  const result = spawnSync(process.execPath, ["run", cliPath, ...args], {
+    cwd: repoRoot,
+    env: { ...process.env, REPOTRUCK_CONFIG_DIR: configDir },
+    stdio: ["ignore", "pipe", "pipe"],
+    maxBuffer: 32 * 1024 * 1024,
+  });
+  return { exitCode: result.status, stdout: result.stdout, stderr: result.stderr };
 }
 
 describe("Phase 4 CLI & MCP additions", () => {
