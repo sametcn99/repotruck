@@ -2,7 +2,7 @@ name: Pages
 
 # Deploys the landing page to GitHub Pages. The repository owner must enable
 # Pages first (Settings > Pages > Source: GitHub Actions). Dormant until a
-# push touches website/** on main/master or runs manually.
+# push updates the website or this workflow on main/master, or runs manually.
 
 on:
   push:
@@ -11,6 +11,7 @@ on:
       - master
     paths:
       - "website/**"
+      - ".github/workflows/pages.yml"
   workflow_dispatch:
 
 concurrency:
@@ -18,14 +19,12 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
     permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      contents: read
+    outputs:
+      artifact-name: ${{ steps.artifact-name.outputs.name }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a # v4.2.0
@@ -36,8 +35,24 @@ jobs:
         working-directory: website
       - run: bun run build
         working-directory: website
+      - id: artifact-name
+        run: echo "name=github-pages-${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_OUTPUT"
       - uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3.0.1
         with:
+          name: ${{ steps.artifact-name.outputs.name }}
           path: website/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
       - id: deployment
         uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4.0.5
+        with:
+          artifact_name: ${{ needs.build.outputs.artifact-name }}
