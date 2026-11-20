@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-11-21
+
+### Added
+
+- A keyboard-accessible Views menu and page-specific shortcuts in the terminal dashboard.
+- CLI and MCP usage guides in generated `AGENTS.md` files.
+- A web command builder with copy controls and an expanded screenshot viewer.
+
+### Fixed
+
+- Keyboard access to command forms, worktree controls, search filters and repository setup.
+- Background startup update checks and visible `repotruck update` instructions on compact terminals.
+- Offline symbol search with the current Web Tree-sitter runtime. The npm package includes the six compatible WebAssembly grammars.
+
+### Changed
+
+- Updated CLI and website dependencies and aligned the CI and release runtimes.
+- Simplified the website header.
+
 ## [1.0.0] - 2026-11-20
 
 ### Added
