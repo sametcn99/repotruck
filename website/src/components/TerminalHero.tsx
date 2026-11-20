@@ -1,6 +1,7 @@
 import type { ReactElement } from "react";
 import { useEffect, useState } from "react";
-import { useReducedMotion, useTypewriter } from "../hooks.ts";
+import { useCopy, useReducedMotion, useTypewriter } from "../hooks.ts";
+import { CommandBuilder } from "./CommandBuilder.tsx";
 
 interface StatusLine {
   phase: "CLONING" | "PULLING" | "DONE";
@@ -98,6 +99,8 @@ function StatusFeed(): ReactElement {
 export function TerminalHero() {
   const reduced = useReducedMotion();
   const { typed, done } = useTypewriter("npx repotruck", 40);
+  const { state: copyState, copy } = useCopy("npx repotruck");
+  const [builderOpen, setBuilderOpen] = useState(false);
 
   return (
     <section className="section hero" aria-label="Introduction">
@@ -124,7 +127,21 @@ export function TerminalHero() {
         repotruck mirrors your repositories into predictable directory layouts, keeps them up to
         date, and writes an AGENTS.md map so coding agents can navigate the workspace.
       </p>
-      <span className="install-chip">$ npx repotruck</span>
+      <span className="hero-chips">
+        <button
+          type="button"
+          className={`install-chip${copyState === "copied" ? " copied" : ""}`}
+          aria-label="Copy command: npx repotruck"
+          onClick={copy}
+        >
+          <span className="chip-command">$ npx repotruck</span>
+          <span className="chip-action">{copyState === "copied" ? "copied!" : "copy"}</span>
+        </button>
+        <button type="button" className="builder-open" onClick={() => setBuilderOpen(true)}>
+          ⚙ Command builder
+        </button>
+      </span>
+      <CommandBuilder open={builderOpen} onClose={() => setBuilderOpen(false)} />
       <p className="hero-meta">
         {reduced
           ? "Reduced motion: showing the final terminal frame."

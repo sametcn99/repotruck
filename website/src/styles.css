@@ -1080,13 +1080,397 @@ p.lightbox-caption strong {
   max-width: 70ch;
 }
 
+.hero-chips {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+
 .install-chip {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
   border: 1px solid var(--border);
   background: #010409;
   color: var(--green);
   padding: 6px 12px;
   font-size: 13px;
+  font-family: inherit;
+  cursor: copy;
+}
+
+.install-chip:hover {
+  border-color: var(--muted);
+}
+
+.install-chip.copied {
+  color: var(--text);
+  border-color: var(--green);
+}
+
+.install-chip .chip-action {
+  color: var(--muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.install-chip.copied .chip-action {
+  color: var(--green);
+}
+
+.builder-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--blue2);
+  padding: 6px 12px;
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.builder-open:hover {
+  border-color: var(--blue);
+  text-decoration: none;
+}
+
+/* --- command builder dialog ---------------------------------------------- */
+
+dialog.builder:not([open]) {
+  display: none;
+}
+
+dialog.builder {
+  flex-direction: column;
+  border: 1px solid var(--border);
+  margin: auto;
+  padding: 0;
+  width: min(1040px, 100%);
+  height: min(700px, 100%);
+  /* biome-ignore lint/suspicious/noDuplicateProperties: dvh override keeps mobile browser toolbars from clipping the dialog */
+  height: min(700px, 100dvh);
+  max-width: none;
+  max-height: none;
+  background: var(--bg);
+  color: var(--text);
+  overflow: hidden;
+}
+
+@media (max-width: 720px) {
+  dialog.builder {
+    width: 100%;
+    height: 100dvh;
+    border: 0;
+  }
+}
+
+dialog.builder[open] {
+  display: flex;
+}
+
+dialog.builder::backdrop {
+  background: rgba(1, 4, 9, 0.82);
+}
+
+.builder-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+.builder-head h2 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.builder-sub {
+  margin: 2px 0 0;
+  color: var(--dim);
+  font-size: 12.5px;
+}
+
+.builder-close {
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.builder-close:hover {
+  border-color: var(--muted);
+}
+
+.builder-body {
+  display: grid;
+  grid-template-columns: 290px 1fr;
+  flex: 1;
+  min-height: 0;
+}
+
+@media (max-width: 720px) {
+  .builder-body {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+  }
+}
+
+.builder-list {
+  border-right: 1px solid var(--border);
+  padding: 12px;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+@media (max-width: 720px) {
+  .builder-list {
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+    max-height: 34dvh;
+  }
+}
+
+.builder-search {
+  width: 100%;
+  margin-bottom: 10px;
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  background: #010409;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 13px;
+}
+
+.builder-search:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 0;
+}
+
+.builder-group-title {
+  display: block;
+  margin: 12px 0 6px;
+  color: var(--dim);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.builder-group:first-child .builder-group-title {
+  margin-top: 2px;
+}
+
+.builder-command {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: 1px solid transparent;
+  background: none;
+  color: var(--text);
+  padding: 6px 8px;
+  font-family: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+.builder-command:hover {
+  border-color: var(--border);
+}
+
+.builder-command.is-selected {
+  border-color: var(--blue);
+  background: rgba(31, 111, 235, 0.12);
+}
+
+.builder-command .bc-name {
+  display: block;
+  color: var(--blue2);
+}
+
+.builder-command .bc-summary {
+  display: block;
+  color: var(--dim);
+  font-size: 11.5px;
+  line-height: 1.4;
+}
+
+.builder-empty {
+  color: var(--dim);
+  font-size: 12.5px;
+}
+
+.builder-main {
+  padding: 16px 18px;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.builder-intro h3 {
+  margin: 0 0 4px;
+  font-size: 15px;
+}
+
+.bc-cmd {
+  color: var(--blue2);
+}
+
+.builder-intro p {
+  margin: 0 0 8px;
+  color: var(--dim);
+  font-size: 13px;
+}
+
+.builder-usage {
+  display: inline-block;
+  border: 1px solid var(--border);
+  background: #010409;
+  color: var(--text);
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+.builder-forms {
+  margin: 14px 0 0;
+  border: 1px solid var(--border);
+  padding: 8px 12px;
+}
+
+.builder-forms legend {
+  color: var(--dim);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  padding: 0 4px;
+}
+
+.form-choice {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 14px;
+  font-size: 12.5px;
+}
+
+.builder-section {
+  margin-top: 18px;
+}
+
+.builder-section h4 {
+  margin: 0 0 8px;
+  color: var(--dim);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.builder-arg {
+  margin-bottom: 10px;
+}
+
+.builder-arg label,
+.flag-head label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.builder-arg input[type="text"],
+.flag-input input[type="text"],
+.flag-input select {
+  width: 100%;
+  max-width: 420px;
+  margin-top: 4px;
+  padding: 6px 9px;
+  border: 1px solid var(--border);
+  background: #010409;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 12.5px;
+}
+
+.flag-input select {
+  margin-top: 0;
+}
+
+.builder-flag {
+  border: 1px solid var(--border);
+  padding: 8px 10px;
+  margin-bottom: 8px;
+}
+
+.builder-flag.is-on {
+  border-color: var(--muted);
+}
+
+.flag-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.flag-head input[type="checkbox"],
+.builder-arg input[type="checkbox"],
+.form-choice input[type="radio"] {
+  accent-color: var(--accent);
+}
+
+.flag-head code,
+.builder-arg code,
+.form-choice code {
+  color: var(--blue2);
+  font-size: 12.5px;
+}
+
+.flag-desc {
+  margin: 4px 0 0;
+  color: var(--dim);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.flag-input {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.flag-note {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.builder-preview {
+  border: 1px solid var(--border);
+  background: #010409;
+  padding: 10px 12px;
+}
+
+.preview-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.preview-line {
+  color: var(--green);
+  font-size: 13px;
+  word-break: break-all;
 }
 
 .hero-meta {
