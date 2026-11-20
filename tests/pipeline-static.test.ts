@@ -158,7 +158,7 @@ describe("Pipeline & Infrastructure Static Verifications (Sprint 3)", () => {
     expect(dependabotRaw).toContain('dependency-name: "web-tree-sitter"');
     expect(dependabotRaw).toContain('"version-update:semver-major"');
     expect(dependabotRaw).toContain('"version-update:semver-minor"');
-    expect(dependabotRaw).toContain("WebAssembly ABI 0.25.10");
+    expect(dependabotRaw).toContain("WebAssembly grammar compatibility");
 
     // Groups check
     expect(dependabotRaw).toContain("dev-dependencies:");
@@ -235,13 +235,13 @@ describe("Pipeline & Infrastructure Static Verifications (Sprint 3)", () => {
   });
 
   // C15: release-grammars.yml structure, trigger, permissions, and manifest verification
-  test("C15: release-grammars.yml defines workflow_dispatch, contents: write, manifest drift check, and grammars-v1 tag", () => {
+  test("C15: release-grammars.yml defines workflow_dispatch, contents: write, manifest drift check, and grammars-v2 tag", () => {
     const raw = readFileSync(path.join(rootDir, ".github/workflows/release-grammars.yml"), "utf8");
     expect(raw).toContain("name: Release Grammars");
     expect(raw).toMatch(/on:\s*\n\s*workflow_dispatch:/);
     expect(raw).toMatch(/permissions:\s*\n\s*contents:\s*write/);
     expect(raw).toContain("bun scripts/generate-grammar-manifest.ts --check");
-    expect(raw).toContain("grammars-v1");
+    expect(raw).toContain("grammars-v2");
     expect(raw).toContain("vendor/grammars/*.wasm");
   });
 });

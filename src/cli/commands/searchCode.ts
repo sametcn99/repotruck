@@ -128,7 +128,7 @@ export function register(program: Command, _ctx: CliContext): void {
               if (error instanceof GrammarDownloadError) {
                 if (error.status === 404) {
                   exitFail(
-                    `failed to download grammar for '${error.lang}' (release assets 'grammars-v1' not yet published; set REPOTRUCK_GRAMMARS_DIR or place grammar in cache directory)`,
+                    `failed to download grammar for '${error.lang}' (release grammar not found; set REPOTRUCK_GRAMMARS_DIR or place grammar in cache directory)`,
                     options.json,
                     "search-code",
                   );

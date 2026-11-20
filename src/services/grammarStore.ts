@@ -4,6 +4,10 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { appConfigDir } from "./config.ts";
 
+export const GRAMMAR_CACHE_DIRECTORY = "grammars-v2";
+export const GRAMMAR_ASSET_BASE_URL =
+  "https://raw.githubusercontent.com/sametcn99/repotruck/v1.0.1/vendor/grammars";
+
 export type GrammarLang = "ts" | "tsx" | "js" | "python" | "go" | "rust";
 
 export const GRAMMAR_FILES: Record<GrammarLang, string> = {
@@ -25,39 +29,38 @@ export type GrammarManifest = Record<GrammarLang, GrammarManifestEntry>;
 
 /**
  * Default production grammar manifest.
- * Release asset download URLs point to the official repotruck grammars-v1 release.
- * Hashes and sizes are computed deterministically from the canonical vendor wasm binaries.
+ * Download URLs use the tagged release source. Hashes and sizes match the vendored binaries.
  */
 export const DEFAULT_GRAMMAR_MANIFEST: GrammarManifest = {
   ts: {
-    url: "https://github.com/sametcn99/repotruck/releases/download/grammars-v1/tree-sitter-typescript.wasm",
-    sha256: "8515404dceed38e1ed86aa34b09fcf3379fff1b4ff9dd3967bcd6d1eb5ac3d8f",
-    size: 2342690,
+    url: `${GRAMMAR_ASSET_BASE_URL}/tree-sitter-typescript.wasm`,
+    sha256: "778025db5a8be0e70f8ccc3671e486dfeddd048c25d9e8a70c26de2e1bf6f97d",
+    size: 1413849,
   },
   tsx: {
-    url: "https://github.com/sametcn99/repotruck/releases/download/grammars-v1/tree-sitter-tsx.wasm",
-    sha256: "6aa3b2c70e76f5d48eafef1093e9c4de383e13f2fdde2f4e9b98a378f6a8f1b6",
-    size: 2411272,
+    url: `${GRAMMAR_ASSET_BASE_URL}/tree-sitter-tsx.wasm`,
+    sha256: "79e5da75ea62855a0cd67177685f0164eac87d5f630b3cbe1e0a099751ad30f8",
+    size: 1445638,
   },
   js: {
-    url: "https://github.com/sametcn99/repotruck/releases/download/grammars-v1/tree-sitter-javascript.wasm",
-    sha256: "63812b9e275d26851264734868d27a1656bd44a2ef6eb3e85e6b03728c595ab5",
-    size: 647334,
+    url: `${GRAMMAR_ASSET_BASE_URL}/tree-sitter-javascript.wasm`,
+    sha256: "5fb488d0cabb4775a594bab85682de5ad6ce83c0d6ac997a9f82dd084d571240",
+    size: 411770,
   },
   python: {
-    url: "https://github.com/sametcn99/repotruck/releases/download/grammars-v1/tree-sitter-python.wasm",
-    sha256: "9056d0fb0c337810d019fae350e8167786119da98f0f282aceae7ab89ee8253b",
-    size: 476105,
+    url: `${GRAMMAR_ASSET_BASE_URL}/tree-sitter-python.wasm`,
+    sha256: "16108b50df4ee9a30168794252ab55e7c93bfc5765d7fa0aa3e335752c515f47",
+    size: 457883,
   },
   go: {
-    url: "https://github.com/sametcn99/repotruck/releases/download/grammars-v1/tree-sitter-go.wasm",
-    sha256: "9963ca89b616eaf04b08a43bc1fb0f07b85395bec313330851f1f1ead2f755b6",
-    size: 235957,
+    url: `${GRAMMAR_ASSET_BASE_URL}/tree-sitter-go.wasm`,
+    sha256: "9504573f352b20be7f2f1911754d710622aedc15afff16d5ed8fb5645681aee7",
+    size: 217182,
   },
   rust: {
-    url: "https://github.com/sametcn99/repotruck/releases/download/grammars-v1/tree-sitter-rust.wasm",
-    sha256: "4409921a70d0aa5bec7d1d7ce809a557a8ee1cf6ace901e3ac6a76e62cfea903",
-    size: 818756,
+    url: `${GRAMMAR_ASSET_BASE_URL}/tree-sitter-rust.wasm`,
+    sha256: "f65f354215611fd94ad34134b3427eb3d58cbb745df7b6509ba722184db73d57",
+    size: 1102547,
   },
 };
 
@@ -159,13 +162,15 @@ const MODULE_DIR = path.dirname(fileURLToPath(import.meta.url));
 export const DEFAULT_BUNDLED_GRAMMAR_DIRS: readonly string[] = [
   path.join(MODULE_DIR, "grammars"),
   path.join(MODULE_DIR, "..", "grammars"),
+  path.join(MODULE_DIR, "..", "vendor", "grammars"),
   path.join(MODULE_DIR, "..", "..", "vendor", "grammars"),
 ];
 
 export function defaultGrammarCacheDir(
   env: Record<string, string | undefined> = process.env,
 ): string {
-  return path.join(appConfigDir(env), "grammars");
+  // Older web-tree-sitter releases use a different WebAssembly linking format.
+  return path.join(appConfigDir(env), GRAMMAR_CACHE_DIRECTORY);
 }
 
 export interface GrammarStore {

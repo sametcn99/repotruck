@@ -2,7 +2,11 @@ import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { DEFAULT_GRAMMAR_MANIFEST, type GrammarLang } from "../src/services/grammarStore.ts";
+import {
+  DEFAULT_GRAMMAR_MANIFEST,
+  GRAMMAR_ASSET_BASE_URL,
+  type GrammarLang,
+} from "../src/services/grammarStore.ts";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const vendorDir = path.join(repoRoot, "vendor", "grammars");
@@ -33,7 +37,7 @@ export async function computeVendorGrammarManifest(): Promise<
     const hash = createHash("sha256").update(content).digest("hex").toLowerCase();
     result[lang] = {
       file,
-      url: `https://github.com/sametcn99/repotruck/releases/download/grammars-v1/${file}`,
+      url: `${GRAMMAR_ASSET_BASE_URL}/${file}`,
       sha256: hash,
       size: content.byteLength,
     };

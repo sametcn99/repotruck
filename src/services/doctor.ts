@@ -6,7 +6,11 @@ import { detectTuiRuntimeError } from "../cliSupport.ts";
 import { type AuthProbe, probeAuth } from "./auth.ts";
 import { firstErrorLine } from "./cloner.ts";
 import type { EnvLike } from "./config.ts";
-import { defaultGrammarCacheDir, GRAMMAR_FILES } from "./grammarStore.ts";
+import {
+  DEFAULT_BUNDLED_GRAMMAR_DIRS,
+  defaultGrammarCacheDir,
+  GRAMMAR_FILES,
+} from "./grammarStore.ts";
 import { workspaceTrashDir } from "./lifecycle.ts";
 import {
   type ReorganizeJournal,
@@ -269,20 +273,28 @@ export async function runDoctor(deps: DoctorDeps = {}): Promise<DoctorResult> {
 
     const totalGrammars = Object.keys(GRAMMAR_FILES).length;
     let cachedCount = 0;
+    let localCount = 0;
     for (const file of Object.values(GRAMMAR_FILES)) {
       if (existsFn(path.join(cacheDir, file))) {
         cachedCount += 1;
+        localCount += 1;
+      } else if (DEFAULT_BUNDLED_GRAMMAR_DIRS.some((dir) => existsFn(path.join(dir, file)))) {
+        localCount += 1;
       }
     }
 
-    if (cachedCount === totalGrammars) {
-      checks.push(makeCheck("ok", "grammars", `${cachedCount}/${totalGrammars} grammars cached`));
-    } else if (cachedCount > 0) {
+    const detail =
+      localCount > cachedCount
+        ? `${localCount}/${totalGrammars} grammars available locally`
+        : `${cachedCount}/${totalGrammars} grammars cached`;
+    if (localCount === totalGrammars) {
+      checks.push(makeCheck("ok", "grammars", detail));
+    } else if (localCount > 0) {
       checks.push(
         makeCheck(
           "warn",
           "grammars",
-          `${cachedCount}/${totalGrammars} grammars cached`,
+          detail,
           "run 'repotruck search-code' without --offline to download missing grammars or set REPOTRUCK_GRAMMARS_DIR",
         ),
       );

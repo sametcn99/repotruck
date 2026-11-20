@@ -141,9 +141,9 @@ describe("CLI search-code --offline and Error Propagation (Sprint 05b)", () => {
 
     // 2a. GrammarDownloadError 404 message format (Evaluator 2 Binding Comment 1)
     const dl404 = new GrammarDownloadError("python", 404);
-    const dl404Msg = `failed to download grammar for '${dl404.lang}' (release assets 'grammars-v1' not yet published; set REPOTRUCK_GRAMMARS_DIR or place grammar in cache directory)`;
+    const dl404Msg = `failed to download grammar for '${dl404.lang}' (release grammar not found; set REPOTRUCK_GRAMMARS_DIR or place grammar in cache directory)`;
     expect(dl404Msg).toContain("failed to download grammar for 'python'");
-    expect(dl404Msg).toContain("release assets 'grammars-v1' not yet published");
+    expect(dl404Msg).toContain("release grammar not found");
     expect(dl404Msg).toContain("set REPOTRUCK_GRAMMARS_DIR or place grammar in cache directory");
 
     // 2b. GrammarDownloadError network error format (Evaluator 2 Binding Comment 1)

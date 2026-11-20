@@ -3,6 +3,7 @@ import { mkdirSync, mkdtempSync, rmSync, utimesSync, writeFileSync } from "node:
 import { readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { Language, Parser } from "web-tree-sitter";
 import {
   codeIndexPath,
   defaultGrammarResolver,
@@ -12,6 +13,7 @@ import {
   walkSourceFiles,
 } from "../src/services/codeSearch.ts";
 import type { RepotruckConfig } from "../src/services/config.ts";
+import { GRAMMAR_FILES, type GrammarLang } from "../src/services/grammarStore.ts";
 
 const pendingDirs: string[] = [];
 
@@ -346,11 +348,26 @@ describe("walkSourceFiles", () => {
 });
 
 describe("defaultGrammarResolver", () => {
-  test("reads the vendored grammars relative to the module", async () => {
-    const resolver = defaultGrammarResolver();
-    const python = await resolver("python");
-    expect(python).not.toBeNull();
-    expect(python!.length).toBeGreaterThan(100_000);
+  test("loads all six vendored grammars with the current WebAssembly runtime", async () => {
+    const resolver = defaultGrammarResolver(undefined, {
+      offline: true,
+      cacheDir: makeTempDir("rt-grammar-"),
+    });
+    await Parser.init();
+    const parser = new Parser();
+    try {
+      for (const lang of Object.keys(GRAMMAR_FILES) as GrammarLang[]) {
+        const grammar = await resolver(lang);
+        expect(grammar, lang).not.toBeNull();
+        parser.setLanguage(await Language.load(grammar!));
+        const tree = parser.parse("");
+        expect(tree, lang).not.toBeNull();
+        expect(tree?.rootNode.hasError, lang).toBe(false);
+        tree?.delete();
+      }
+    } finally {
+      parser.delete();
+    }
   });
 });
 

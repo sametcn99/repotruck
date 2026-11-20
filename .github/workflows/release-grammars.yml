@@ -19,4 +19,4 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release upload grammars-v1 vendor/grammars/*.wasm --clobber || gh release create grammars-v1 vendor/grammars/*.wasm --title "grammars-v1" --notes "Tree-sitter WebAssembly grammar assets for repotruck"
+          gh release upload grammars-v2 vendor/grammars/*.wasm --clobber || gh release create grammars-v2 vendor/grammars/*.wasm --title "grammars-v2" --latest=false --notes "Tree-sitter WebAssembly grammar assets for repotruck"

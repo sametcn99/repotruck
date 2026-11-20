@@ -10,7 +10,7 @@ updates:
     open-pull-requests-limit: 5
     commit-message:
       prefix: "chore(deps)"
-    # Freeze web-tree-sitter to avoid breaking WebAssembly ABI 0.25.10 grammar compatibility
+    # Review WebAssembly grammar compatibility before minor or major web-tree-sitter upgrades
     ignore:
       - dependency-name: "web-tree-sitter"
         update-types: ["version-update:semver-major", "version-update:semver-minor"]

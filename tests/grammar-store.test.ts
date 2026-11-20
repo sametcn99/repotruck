@@ -461,7 +461,7 @@ describe("grammarStore", () => {
     test("defaultGrammarCacheDir respects REPOTRUCK_CONFIG_DIR override", () => {
       const customConfig = path.join(tempBase, "custom-config");
       const cacheDir = defaultGrammarCacheDir({ REPOTRUCK_CONFIG_DIR: customConfig });
-      expect(cacheDir).toBe(path.join(customConfig, "grammars"));
+      expect(cacheDir).toBe(path.join(customConfig, "grammars-v2"));
     });
 
     test("createGrammarStore exposes getCacheDir and resolveGrammar", async () => {
