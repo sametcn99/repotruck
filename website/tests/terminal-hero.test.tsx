@@ -1,87 +1,37 @@
-import { act, render, screen } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import { render, screen } from "@testing-library/react";
+import { describe, expect, test } from "vitest";
 import { TerminalHero } from "../src/components/TerminalHero.tsx";
 
 const hasDom = typeof document !== "undefined";
 const suite = hasDom ? describe : describe.skip;
 
 suite("TerminalHero", () => {
-  function stubMatchMedia(matches: boolean): void {
-    Object.defineProperty(window, "matchMedia", {
-      writable: true,
-      value: vi.fn().mockImplementation((query: string) => ({
-        matches,
-        media: query,
-        onchange: null,
-        addListener: vi.fn(),
-        removeListener: vi.fn(),
-        addEventListener: vi.fn(),
-        removeEventListener: vi.fn(),
-        dispatchEvent: vi.fn(),
-      })),
-    });
-  }
-
-  beforeEach(() => {
-    vi.useFakeTimers();
-  });
-
-  afterEach(() => {
-    vi.useRealTimers();
-  });
-
-  test("renders the single h1 copy", () => {
-    stubMatchMedia(false);
-    render(<TerminalHero />);
+  test("renders the single h1 copy at the top of the hero", () => {
+    const { container } = render(<TerminalHero />);
     expect(
       screen.getByRole("heading", { level: 1, name: /bulk-clone and organize/i }),
     ).toBeInTheDocument();
+    const hero = container.querySelector("section.hero");
+    expect(hero?.firstElementChild?.tagName).toBe("H1");
   });
 
-  test("animates: dashboard frame is absent while typing is in progress", () => {
-    stubMatchMedia(false);
+  test("ships no animated TUI mock", () => {
     render(<TerminalHero />);
-    const typedLine = document.querySelector(".typed-line");
-    expect(typedLine?.textContent).toContain("$ ");
-    expect(typedLine?.textContent).not.toContain("npx repotruck");
-    expect(document.querySelector(".caret")).not.toBeNull();
+    expect(document.querySelector(".terminal")).toBeNull();
+    expect(document.querySelector(".typed-line")).toBeNull();
     expect(document.querySelector(".dash-frame")).toBeNull();
+    expect(document.querySelector(".status-line")).toBeNull();
   });
 
-  test("typing completes and the final dashboard frame appears", () => {
-    stubMatchMedia(false);
+  test("keeps the copy chip, command builder button and meta line", () => {
     render(<TerminalHero />);
-    act(() => {
-      vi.advanceTimersByTime(40 * 20);
-    });
-    const typedLine = document.querySelector(".typed-line");
-    expect(typedLine?.textContent).toContain("npx repotruck");
-    expect(document.querySelector(".dash-frame")).not.toBeNull();
-    expect(screen.getAllByText(/monalisa \(auth: gh-cli\)/).length).toBeGreaterThan(0);
-    expect(screen.getByText(/3 repositories · 1 selected/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Copy command: npx repotruck" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /command builder/i })).toBeInTheDocument();
+    expect(screen.getByText(/no install required/i)).toBeInTheDocument();
   });
 
-  test("reduced motion renders the final frame immediately with no caret", () => {
-    stubMatchMedia(true);
+  test("describes the workspace map pitch in the sub line", () => {
     render(<TerminalHero />);
-    const typedLine = document.querySelector(".typed-line");
-    expect(typedLine?.textContent).toContain("npx repotruck");
-    expect(document.querySelector(".dash-frame")).not.toBeNull();
-    expect(screen.getAllByText(/monalisa \(auth: gh-cli\)/).length).toBeGreaterThan(0);
-    expect(screen.getByText("[DONE] octo/lib — cloned")).toBeInTheDocument();
-    expect(document.querySelector(".caret")).toBeNull();
-  });
-
-  test("reduced-motion loop stays on the final DONE lines", () => {
-    stubMatchMedia(true);
-    render(<TerminalHero />);
-    vi.advanceTimersByTime(10_000);
-    const statuses = Array.from(
-      document.querySelectorAll<HTMLElement>(".dash-status .status-line"),
-    );
-    expect(statuses.length).toBeGreaterThan(0);
-    for (const line of statuses) {
-      expect(line.textContent).toContain("[DONE]");
-    }
+    expect(screen.getByText(/AGENTS\.md map/i)).toBeInTheDocument();
   });
 });
