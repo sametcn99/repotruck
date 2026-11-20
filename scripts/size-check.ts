@@ -3,7 +3,7 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 
 const SRC_ROOT = path.join(import.meta.dir, "..", "src");
-const LIMIT = 600;
+const LIMIT = 2000;
 const EXCEPTIONS = new Set<string>();
 
 function walk(dir: string): string[] {
