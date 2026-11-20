@@ -56,11 +56,15 @@ describe("Pipeline & Infrastructure Static Verifications (Sprint 3)", () => {
       `test "\${GITHUB_REF_NAME}" = "v$(node -p "require('./package.json').version")"`,
     );
 
-    // Execute real node -p evaluation directly
-    const extractedVersion = execSync("node -p \"require('./package.json').version\"", {
-      cwd: rootDir,
-      encoding: "utf8",
-    }).trim();
+    // Execute real -p evaluation directly via node when available, otherwise process.execPath (bun)
+    const runtime = Bun.which("node") ?? process.execPath;
+    const extractedVersion = execSync(
+      `${JSON.stringify(runtime)} -p "require('./package.json').version"`,
+      {
+        cwd: rootDir,
+        encoding: "utf8",
+      },
+    ).trim();
     expect(extractedVersion).toBe(currentVersion);
 
     // Semantic simulation in TypeScript (no ambient bash needed)

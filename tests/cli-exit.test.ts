@@ -1,4 +1,5 @@
 import { afterAll, describe, expect, test } from "bun:test";
+import { spawnSync } from "node:child_process";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -38,12 +39,15 @@ function makeRepo(i: number): RepoInventoryEntry {
 }
 
 function runCli(args: string[], configDir: string) {
-  return Bun.spawnSync([process.execPath, "run", "src/cli.ts", ...args], {
+  // Node's spawnSync, not Bun.spawnSync: Bun's piped spawnSync empties or
+  // truncates child output under concurrent load on CI runners.
+  const result = spawnSync(process.execPath, ["run", "src/cli.ts", ...args], {
     cwd: path.join(import.meta.dir, ".."),
     env: { ...process.env, REPOTRUCK_CONFIG_DIR: configDir, REPOTRUCK_NO_SSH: "1" },
-    stdout: "pipe",
-    stderr: "pipe",
+    stdio: ["ignore", "pipe", "pipe"],
+    maxBuffer: 32 * 1024 * 1024,
   });
+  return { exitCode: result.status, stdout: result.stdout, stderr: result.stderr };
 }
 
 describe("CLI exit semantics (Faz 7)", () => {

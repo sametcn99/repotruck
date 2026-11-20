@@ -4,13 +4,9 @@ import { warnQuiet } from "../../services/diagnostics.ts";
 import { readSettings, writeSettings } from "../../services/settings.ts";
 import { loadWorkspace } from "../../services/workspace.ts";
 import { activateTheme, activeThemeName, cycleThemeName } from "../theme.ts";
+import { nextViewId, VIEW_ORDER } from "../views/viewRegistry.ts";
 import { buildSidebarRows, repoKey } from "./filters.ts";
-import {
-  performBulkCommandRun,
-  performDoctorFixAction,
-  performUndoAction,
-  performWorkspaceMaintenanceAction,
-} from "./lifecycleActions.ts";
+import { performBulkCommandRun, performUndoAction } from "./lifecycleActions.ts";
 import { cycleOmnibarMode, runOmnibarGithubSearch, runOmnibarSymbolSearch } from "./omnibar.ts";
 import { StoreBase } from "./StoreBase.ts";
 import {
@@ -22,7 +18,7 @@ import {
   SORT_CYCLE,
   type SortKey,
   STATUS_VIEW_ROWS,
-  type WorkspaceMaintenanceKind,
+  type ViewId,
 } from "./types.ts";
 
 export class StoreCore extends StoreBase {
@@ -99,15 +95,26 @@ export class StoreCore extends StoreBase {
     if (tab === "health") void this.refreshHealthTab();
   };
 
-  runHealthDoctorFix = async (): Promise<void> => {
-    await performDoctorFixAction(this.pushStatus);
-    await this.refreshLocalState();
-    await this.refreshHealthTab();
+  setView = (view: ViewId): void => {
+    const navCursor = Math.max(0, VIEW_ORDER.indexOf(view));
+    if (this.state.view === view && !this.state.navFocused && this.state.navCursor === navCursor) {
+      return;
+    }
+    this.set({ view, statusScroll: 0, navFocused: false, navCursor });
   };
 
-  runWorkspaceMaintenance = async (kind: WorkspaceMaintenanceKind): Promise<void> => {
-    await performWorkspaceMaintenanceAction(this.rootValue, kind, this.pushStatus);
-    await this.refreshLocalState();
+  activateNavRow = (index?: number): void => {
+    if (index !== undefined) this.setNavCursor(index);
+    const target = VIEW_ORDER[this.state.navCursor] ?? "cockpit";
+    this.setView(target);
+  };
+
+  cycleView = (direction: 1 | -1): void => {
+    this.setView(nextViewId(this.state.view, direction));
+  };
+
+  openCommandForm = (specId: string): void => {
+    this.openModal({ type: "commandForm", specId });
   };
 
   openSearchModal = (): void =>
@@ -313,4 +320,9 @@ export class StoreCore extends StoreBase {
     const repo = this.state.filteredRepos[this.state.cursor];
     return repo !== undefined ? [repoKey(repo)] : [];
   }
+
+  /** Permanent delete: guarded by the typed-name confirm modal (t13/t19 follow-up). */
+  openPermanentDeleteConfirm = (key: string): void => {
+    this.openModal({ type: "confirmPermanentDelete", key });
+  };
 }

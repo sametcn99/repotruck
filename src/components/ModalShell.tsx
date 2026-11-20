@@ -29,7 +29,9 @@ export function ModalShell({
   onMouseScroll?: (event: MouseEvent) => void;
 }) {
   const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot);
+  const { width, height } = useTerminalDimensions();
   const handleClose = onClose ?? (() => store.closeModal());
+  const compact = height < 22 || width < 64;
   return (
     <box
       title={title}
@@ -38,7 +40,7 @@ export function ModalShell({
       flexDirection="column"
       flexGrow={1}
       overflow="hidden"
-      padding={1}
+      padding={compact ? 0 : 1}
       gap={gap}
       onMouseDown={(e) => {
         if (e.button === 2) {

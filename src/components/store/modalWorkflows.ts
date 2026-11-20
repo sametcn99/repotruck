@@ -1,5 +1,6 @@
 import { existsSync } from "node:fs";
 import path from "node:path";
+import { REGISTRY_BY_ID } from "../../commands/registry.ts";
 import { setWorkspaceAlias } from "../../core/aliases.ts";
 import {
   type CustomPreset,
@@ -11,24 +12,19 @@ import type { EmitProgress } from "../../services/cloner.ts";
 import { firstErrorLine } from "../../services/cloner.ts";
 import type { RepoInventoryEntry } from "../../services/config.ts";
 import type { RepoInfo } from "../../services/github.ts";
-import { resolveRepoRef, runAppInRepo, type SpawnImpl } from "../../services/launcher.ts";
+import { resolveRepoRef } from "../../services/launcher.ts";
 import { validateMoveDestination } from "../../services/mover.ts";
 import type { ReorganizeResult } from "../../services/reorganizer.ts";
 import { readSettings, validateRootInput, writeSettings } from "../../services/settings.ts";
 import { parseGitUrl } from "../../services/singleCloner.ts";
 import { loadWorkspace } from "../../services/workspace.ts";
 import { resolveWorkspaceRoot } from "../../services/workspaceRegistry.ts";
-import {
-  createRepoWorktree,
-  listRepoWorktrees,
-  type RepoWorktreeDetail,
-  removeRepoWorktree,
-} from "../../services/worktree.ts";
+import { VIEW_BY_ID } from "../views/viewRegistry.ts";
 import type { PreviewTreeEntry } from "../windowing.ts";
 import type { ResolvedStoreDeps } from "./defaults.ts";
 import { repoKey, validateCreateDraft } from "./filters.ts";
 import type { Store } from "./Store.ts";
-import type { CreateDraft, GithubClient, StatusPhase, UndoAction } from "./types.ts";
+import type { CreateDraft, GithubClient, StatusPhase, UndoAction, ViewId } from "./types.ts";
 
 export async function findTrackedEntryInRoot(
   root: string,
@@ -73,29 +69,6 @@ export async function performSubmitAlias(
   } catch (error) {
     return { ok: false, error: error instanceof Error ? error.message : String(error) };
   }
-}
-
-export async function performRunOpenApp(
-  root: string,
-  key: string,
-  appName: string,
-  deps: ResolvedStoreDeps,
-): Promise<{ code: number; error?: string }> {
-  const resolved = await deps.resolveAppFn(appName);
-  if (resolved === null) {
-    return { code: 1, error: `unknown app: ${appName}` };
-  }
-  const config = await loadWorkspace(root);
-  const options: { spawnImpl?: SpawnImpl } =
-    deps.spawnImpl !== undefined ? { spawnImpl: deps.spawnImpl } : {};
-  const result = await runAppInRepo(
-    { root, config, ref: key, app: resolved, mode: "attached-resume" },
-    options,
-  );
-  return {
-    code: result.code ?? 1,
-    ...(result.message !== undefined && !result.ok ? { error: result.message } : {}),
-  };
 }
 
 export async function performSubmitRoot(
@@ -279,51 +252,106 @@ export async function performSubmitCreate(params: {
   };
 }
 
-export async function performOpenWorktreeModal(
-  root: string,
-  key: string,
-): Promise<RepoWorktreeDetail[]> {
-  const config = await loadWorkspace(root);
-  const match = resolveRepoRef(config, key);
-  if (match === null) {
-    throw new Error(`repository not found: ${key}`);
+/**
+ * Dispatch a registry command selected from the palette. Surfaces already
+ * implemented navigate/open; planned tickets log their arrival notice so
+ * every CLI command is at least reachable and honest about its state.
+ */
+export function executeRegistryCommand(store: Store, registryId: string, preferForm = true): void {
+  const spec = REGISTRY_BY_ID.get(registryId);
+  if (spec === undefined) {
+    store.pushStatus("FAILED", "[palette]", `unknown command: ${registryId}`);
+    return;
   }
-  const repoDir = path.join(root, ...match.entry.relativePath.split("/"));
-  return await listRepoWorktrees(repoDir);
-}
+  // Flag-bearing commands open the auto-generated command form first so
+  // every flag is reachable; the form keeps the direct surface one button
+  // away. Action surfaces (confirm flows) and no-flag commands dispatch
+  // directly.
+  if (
+    preferForm &&
+    spec.flags.length > 0 &&
+    spec.surface.kind !== "action" &&
+    spec.id !== "__globals__"
+  ) {
+    store.openCommandForm(spec.id);
+    return;
+  }
+  store.closeModal();
 
-export async function performCreateWorktree(
-  root: string,
-  key: string,
-  branch: string,
-  targetPath?: string,
-  newBranch = false,
-): Promise<{ ok: boolean; message: string }> {
-  const config = await loadWorkspace(root);
-  const match = resolveRepoRef(config, key);
-  if (match === null) {
-    return { ok: false, message: `repository not found: ${key}` };
+  if (spec.surface.kind === "view") {
+    store.setView(spec.surface.view);
+    return;
   }
-  const repoDir = path.join(root, ...match.entry.relativePath.split("/"));
-  const safeBranch = branch.replace(/[^a-zA-Z0-9._-]/g, "-");
-  const destPath =
-    targetPath ?? path.join(path.dirname(repoDir), `${match.entry.name}+${safeBranch}`);
-  return await createRepoWorktree(repoDir, branch, destPath, { newBranch });
-}
-
-export async function performRemoveWorktree(
-  root: string,
-  key: string,
-  targetPath: string,
-  force = false,
-): Promise<{ ok: boolean; message: string }> {
-  const config = await loadWorkspace(root);
-  const match = resolveRepoRef(config, key);
-  if (match === null) {
-    return { ok: false, message: `repository not found: ${key}` };
+  if (spec.surface.kind === "planned") {
+    store.pushStatus("DONE", `[${spec.path}]`, `arriving with ${spec.surface.ticket}`);
+    return;
   }
-  const repoDir = path.join(root, ...match.entry.relativePath.split("/"));
-  return await removeRepoWorktree(repoDir, targetPath, force);
+  if (spec.surface.kind === "action") {
+    switch (spec.surface.action) {
+      case "openSelectionUntrackConfirm":
+        store.openSelectionUntrackConfirm();
+        return;
+      case "openSelectionDeleteConfirm":
+        void store.openSelectionDeleteConfirm();
+        return;
+      case "openSelectionArchiveConfirm":
+        store.openSelectionArchiveConfirm();
+        return;
+      case "togglePinSelection":
+        void store.togglePinSelection();
+        return;
+      case "runHealthDoctorFix":
+        void store.runHealthDoctorFix();
+        return;
+      case "trash-empty":
+        void store.runWorkspaceMaintenance("trash-empty");
+        return;
+      default:
+        store.pushStatus("FAILED", `[${spec.path}]`, "action surface not wired yet");
+        return;
+    }
+  }
+  // modal surfaces
+  const key = currentHighlightedKey(store);
+  const needsRepo = (name: string): boolean => ["move", "alias", "open", "worktree"].includes(name);
+  if (needsRepo(spec.surface.modal) && key === null) {
+    store.pushStatus("FAILED", `[${spec.path}]`, "no repository highlighted");
+    return;
+  }
+  switch (spec.surface.modal) {
+    case "clone":
+      store.openCloneModal();
+      return;
+    case "deviceFlow":
+      void store.startDeviceFlow();
+      return;
+    case "create":
+      store.openCreateModal();
+      return;
+    case "workspaces":
+      void store.openWorkspacePicker();
+      return;
+    case "root":
+      void store.openRootModal();
+      return;
+    case "reorganize":
+      void store.openReorganizeModal();
+      return;
+    case "move":
+      if (key !== null) void store.openMoveModal(key);
+      return;
+    case "alias":
+      if (key !== null) void store.openAliasModal(key);
+      return;
+    case "open":
+      if (key !== null) void store.openOpenModal(key);
+      return;
+    case "worktree":
+      if (key !== null) void store.openWorktreeModal(key);
+      return;
+    default:
+      store.pushStatus("DONE", `[${spec.path}]`, "modal surface not wired yet");
+  }
 }
 
 function currentHighlightedKey(store: Store): string | null {
@@ -333,6 +361,20 @@ function currentHighlightedKey(store: Store): string | null {
 }
 
 export function executeOmnibarCommandById(store: Store, id: string): void {
+  if (id.startsWith("cmd:")) {
+    executeRegistryCommand(store, id.slice("cmd:".length));
+    return;
+  }
+  if (id.startsWith("view:")) {
+    const target = id.slice("view:".length) as ViewId;
+    store.closeModal();
+    if (VIEW_BY_ID.has(target)) {
+      store.setView(target);
+    } else {
+      store.pushStatus("FAILED", "[omnibar]", `unknown view: ${target}`);
+    }
+    return;
+  }
   if (id === "mode-symbols") {
     store.openOmnibar("symbols", "");
     return;
@@ -535,3 +577,11 @@ export function executeOmnibarCommandById(store: Store, id: string): void {
       return;
   }
 }
+
+// Re-exported for existing import sites; implementations moved for the size budget.
+export {
+  performCreateWorktree,
+  performOpenWorktreeModal,
+  performRemoveWorktree,
+  performRunOpenApp,
+} from "./worktreeWorkflows.ts";

@@ -12,6 +12,7 @@
  *
  * Run with `bun run docs:check`; CI fails when documentation drifts.
  */
+import { readFileSync } from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { program } from "commander";
@@ -131,6 +132,46 @@ async function main(): Promise<void> {
   for (const name of documented.keys()) {
     if (!cliNames.has(name)) {
       problems.push(`website: CommandReference.ts documents unknown command "repotruck ${name}"`);
+    }
+  }
+
+  // Generated-modules drift: regenerate in memory and compare with the
+  // checked-in copies so the CLI → registry → website chain is enforced
+  // end to end (the parity test guards CLI → registry).
+  const { generateWebsiteFiles } = await import("./docs-generate.ts");
+  for (const file of await generateWebsiteFiles()) {
+    const disk = readFileSync(path.join(import.meta.dir, "..", file.path), "utf8");
+    if (disk !== file.content) {
+      problems.push(`website: ${file.path} is out of date — run: bun run docs:gen`);
+    }
+  }
+
+  // Screenshot manifest + README gallery drift (metadata only — SVGs are
+  // regenerated on demand by `bun run shots:gen`).
+  const { buildReadmeGallery, buildScreenshotsManifestModule } = await import(
+    "./screenshots-scenes.ts"
+  );
+  const manifestPath = "website/src/components/screenshotsManifest.generated.ts";
+  const manifest = await (await import("./docs-generate.ts")).formattedContent(
+    manifestPath,
+    buildScreenshotsManifestModule(),
+  );
+  const manifestDisk = readFileSync(path.join(import.meta.dir, "..", manifestPath), "utf8");
+  if (manifestDisk !== manifest) {
+    problems.push(`website: ${manifestPath} is out of date — run: bun run shots:gen`);
+  }
+  const readme = readFileSync(path.join(import.meta.dir, "..", "README.md"), "utf8");
+  const startMarker = "<!-- screenshots:start -->";
+  const endMarker = "<!-- screenshots:end -->";
+  const startIdx = readme.indexOf(startMarker);
+  const endIdx = readme.indexOf(endMarker);
+  if (startIdx < 0 || endIdx < startIdx) {
+    problems.push("README.md is missing the screenshots markers");
+  } else {
+    const expected = `${startMarker}\n${buildReadmeGallery()}\n${endMarker}`;
+    const actual = readme.slice(startIdx, endIdx + endMarker.length);
+    if (actual !== expected) {
+      problems.push("README.md screenshot gallery is out of date — run: bun run shots:gen");
     }
   }
 

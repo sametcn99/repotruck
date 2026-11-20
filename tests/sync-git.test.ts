@@ -32,6 +32,21 @@ interface RemoteFixture {
   commitOnRemote(message: string, file: string, content: string): Promise<void>;
 }
 
+async function commitLocalChange(
+  dir: string,
+  file: string,
+  content: string,
+  message: string,
+): Promise<ReturnType<typeof simpleGit>> {
+  const git = simpleGit(dir);
+  await git.addConfig("user.email", "repotruck-test@example.com");
+  await git.addConfig("user.name", "repotruck test");
+  writeFileSync(path.join(dir, file), content, "utf8");
+  await git.add(".");
+  await git.commit(message);
+  return git;
+}
+
 async function makeRemote(prefix: string): Promise<RemoteFixture> {
   const remoteDir = tempDir(`${prefix}-remote-`);
   const sourceDir = tempDir(`${prefix}-source-`);
@@ -123,10 +138,7 @@ describe("cloneOrUpdate against file:// remotes", () => {
     const remote = await makeRemote("rt-git-ahead");
     const dest = path.join(tempDir("rt-git-dest4-"), "acme", "source", "api");
     await cloneOrUpdate(targetFor(remote.fileUrl, dest));
-    const git = simpleGit(dest);
-    writeFileSync(path.join(dest, "local.txt"), "local work\n", "utf8");
-    await git.add(".");
-    await git.commit("local commit");
+    await commitLocalChange(dest, "local.txt", "local work\n", "local commit");
     const progress = await cloneOrUpdate(targetFor(remote.fileUrl, dest));
     expect(progress.phase).toBe("failed");
     expect(progress.message).toContain("ahead 1");
@@ -138,10 +150,7 @@ describe("cloneOrUpdate against file:// remotes", () => {
     const dest = path.join(tempDir("rt-git-dest5-"), "acme", "source", "api");
     await cloneOrUpdate(targetFor(remote.fileUrl, dest));
     await remote.commitOnRemote("remote change", "remote.txt", "remote\n");
-    const git = simpleGit(dest);
-    writeFileSync(path.join(dest, "local.txt"), "local work\n", "utf8");
-    await git.add(".");
-    await git.commit("local commit");
+    const git = await commitLocalChange(dest, "local.txt", "local work\n", "local commit");
     const progress = await cloneOrUpdate(targetFor(remote.fileUrl, dest), {
       divergence: "rebase",
     });
@@ -158,10 +167,7 @@ describe("cloneOrUpdate against file:// remotes", () => {
     const dest = path.join(tempDir("rt-git-dest6-"), "acme", "source", "api");
     await cloneOrUpdate(targetFor(remote.fileUrl, dest));
     await remote.commitOnRemote("remote change", "hello.txt", "v2\n");
-    const git = simpleGit(dest);
-    writeFileSync(path.join(dest, "local.txt"), "doomed local work\n", "utf8");
-    await git.add(".");
-    await git.commit("doomed local commit");
+    await commitLocalChange(dest, "local.txt", "doomed local work\n", "doomed local commit");
     const progress = await cloneOrUpdate(targetFor(remote.fileUrl, dest), {
       divergence: "reset",
     });
@@ -176,10 +182,7 @@ describe("cloneOrUpdate against file:// remotes", () => {
     const dest = path.join(tempDir("rt-git-dest7-"), "acme", "source", "api");
     await cloneOrUpdate(targetFor(remote.fileUrl, dest));
     await remote.commitOnRemote("remote change", "remote.txt", "remote\n");
-    const git = simpleGit(dest);
-    writeFileSync(path.join(dest, "local.txt"), "kept local work\n", "utf8");
-    await git.add(".");
-    await git.commit("kept local commit");
+    await commitLocalChange(dest, "local.txt", "kept local work\n", "kept local commit");
     const progress = await cloneOrUpdate(targetFor(remote.fileUrl, dest), {
       divergence: "skip",
     });
@@ -262,10 +265,7 @@ describe("syncRepos with real git", () => {
       destDir: destB,
     });
     await divergedRemote.commitOnRemote("remote change", "remote.txt", "remote\n");
-    const gitB = simpleGit(destB);
-    writeFileSync(path.join(destB, "local.txt"), "local\n", "utf8");
-    await gitB.add(".");
-    await gitB.commit("local commit");
+    await commitLocalChange(destB, "local.txt", "local\n", "local commit");
 
     const repoOf = (owner: string, name: string, url: string): RepoInfo => ({
       owner,

@@ -1,12 +1,14 @@
-import { useKeyboard } from "@opentui/react";
+import { useKeyboard, useTerminalDimensions } from "@opentui/react";
 import { useSyncExternalStore } from "react";
 import { PRESET_IDS } from "../presets/index.ts";
 import { ModalShell, SelectList } from "./ModalShell.tsx";
 import type { Store } from "./store.ts";
 import { theme } from "./theme.ts";
+import { visibleSlice } from "./windowing.ts";
 
 export function ReorganizeModal({ store }: { store: Store }) {
   const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot);
+  const { height } = useTerminalDimensions();
   const modal = snapshot.modal;
   const target = modal !== null && modal.type === "reorganize" ? modal.target : null;
   const keepCustom = modal !== null && modal.type === "reorganize" ? modal.keepCustom : true;
@@ -30,6 +32,45 @@ export function ReorganizeModal({ store }: { store: Store }) {
   });
 
   const ids = [...PRESET_IDS, ...snapshot.customPresets.map((preset) => preset.id)];
+  const cursorIdx = target === null ? 0 : Math.max(0, ids.indexOf(target));
+  // Budget rows between preset selector and preview list so [ Apply ] [ Cancel ] never overflow
+  const totalBudget = Math.max(3, height - 15);
+  const presetViewport = Math.max(2, Math.min(ids.length, Math.ceil(totalBudget * 0.45)));
+  const presetWin = visibleSlice(cursorIdx, ids.length, presetViewport);
+  const visibleIds = ids.slice(presetWin.start, presetWin.end);
+  const previewBudget = Math.max(1, totalBudget - visibleIds.length - 1);
+
+  const previewLines: Array<{ key: string; text: string; fg: string | undefined }> = [];
+  if (preview !== null) {
+    for (const move of preview.moved.slice(0, 12)) {
+      previewLines.push({
+        key: `m:${move.key}:${move.from}`,
+        text: `${move.key}: ${move.from} -> ${move.to}`,
+        fg: theme.muted(),
+      });
+    }
+    for (const skip of preview.skipped.slice(0, 6)) {
+      previewLines.push({
+        key: `s:${skip.key}:${skip.reason}`,
+        text: `skip ${skip.key} [${skip.reason}]`,
+        fg: dimFg,
+      });
+    }
+    for (const collision of preview.collisions.slice(0, 6)) {
+      previewLines.push({
+        key: `c:${collision.key}:${collision.target}`,
+        text: `collision ${collision.key} -> ${collision.target} (occupied by ${collision.occupiedBy})`,
+        fg: warningFg,
+      });
+    }
+    for (const failure of preview.failed) {
+      previewLines.push({
+        key: `f:${failure.key}:${failure.message}`,
+        text: `failed ${failure.key}: ${failure.message}`,
+        fg: theme.error(),
+      });
+    }
+  }
 
   return (
     <ModalShell
@@ -42,16 +83,20 @@ export function ReorganizeModal({ store }: { store: Store }) {
         void store.cycleReorganizeTarget(isUp ? -1 : 1);
       }}
     >
-      <text fg={dimFg}>Target preset (Up/Down choose):</text>
+      <text fg={dimFg} wrapMode="none" flexShrink={0}>
+        Target preset (Up/Down choose):
+      </text>
       <SelectList
-        items={ids}
-        cursor={target === null ? -1 : ids.indexOf(target)}
+        items={visibleIds}
+        cursor={target === null ? -1 : cursorIdx - presetWin.start}
         keyOf={(preset) => preset}
         labelOf={(preset) => `${preset}${preset === snapshot.preset ? " (current)" : ""}`}
         onSelect={(preset) => void store.setReorganizeTarget(preset)}
       />
       <text
         fg={keepCustom ? selectedFg : dimFg}
+        wrapMode="none"
+        flexShrink={0}
         onMouseDown={(e) => {
           e.stopPropagation();
           void store.toggleReorganizeKeepCustom();
@@ -60,35 +105,28 @@ export function ReorganizeModal({ store }: { store: Store }) {
         {`[${keepCustom ? "x" : " "}] keep custom placements (k toggles; on by default here, unlike the CLI)`}
       </text>
       {preview === null ? (
-        <text fg={dimFg}>previewing…</text>
+        <text fg={dimFg} wrapMode="none" flexShrink={0}>
+          previewing…
+        </text>
       ) : (
         <>
-          {preview.moved.slice(0, 12).map((move) => (
-            <text key={`${move.key}:${move.from}`} fg={theme.muted()}>
-              {`${move.key}: ${move.from} -> ${move.to}`}
+          {previewLines.slice(0, previewBudget).map((line) => (
+            <text key={line.key} fg={line.fg} wrapMode="none" flexShrink={0}>
+              {line.text}
             </text>
           ))}
-          {preview.skipped.slice(0, 6).map((skip) => (
-            <text key={`${skip.key}:${skip.reason}`} fg={dimFg}>
-              {`skip ${skip.key} [${skip.reason}]`}
-            </text>
-          ))}
-          {preview.collisions.slice(0, 6).map((collision) => (
-            <text key={`${collision.key}:${collision.target}`} fg={warningFg}>
-              {`collision ${collision.key} -> ${collision.target} (occupied by ${collision.occupiedBy})`}
-            </text>
-          ))}
-          {preview.failed.map((failure) => (
-            <text key={`${failure.key}:${failure.message}`} fg={theme.error()}>
-              {`failed ${failure.key}: ${failure.message}`}
-            </text>
-          ))}
-          <text fg={dimFg}>
+          <text fg={dimFg} wrapMode="none" flexShrink={0}>
             {`${preview.moved.length} moves · ${preview.skipped.length} skipped · ${preview.collisions.length} collisions`}
           </text>
         </>
       )}
-      <box flexDirection="row" gap={2} marginTop={1}>
+      <box
+        flexDirection="row"
+        flexWrap="wrap"
+        gap={2}
+        marginTop={height < 20 ? 0 : 1}
+        flexShrink={0}
+      >
         <text
           fg={selectedFg}
           onMouseDown={(e) => {

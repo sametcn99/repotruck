@@ -56,6 +56,17 @@ export interface StatusEntry {
   message?: string;
 }
 
+/**
+ * Transient feedback line above the footer. Full-page views have no Status
+ * Panel, so `pushStatus` mirrors user-facing results here while the cockpit
+ * is not on screen; the toast auto-dismisses after a short delay.
+ */
+export interface ToastEntry {
+  id: number;
+  phase: StatusPhase;
+  message: string;
+}
+
 export interface FiltersState {
   active: boolean;
   forks: boolean;
@@ -76,7 +87,52 @@ export const HEALTH_FILTERS: readonly HealthFilter[] = [
 
 export type RightPaneTab = "activity" | "inspector" | "health";
 
+/**
+ * Full-screen views of the dashboard shell. The cockpit is the classic
+ * three-pane layout; every other id is a dedicated page reachable from the
+ * nav rail, the `v`-prefix keys, `[`/`]` cycling, or the command palette.
+ */
+export type ViewId =
+  | "cockpit"
+  | "sync"
+  | "resolve"
+  | "discover"
+  | "scan"
+  | "status"
+  | "search"
+  | "stats"
+  | "changelog"
+  | "run"
+  | "presets"
+  | "profiles"
+  | "trash"
+  | "worktree"
+  | "agents"
+  | "settings"
+  | "log";
+
 export type OmnibarMode = "commands" | "symbols" | "github" | "runner";
+
+export interface ContextMenuState {
+  key: string;
+}
+
+/** Non-blocking GitHub device-flow login state (`repotruck auth login`). */
+export interface DeviceFlowState {
+  loading: boolean;
+  verificationUri: string | null;
+  userCode: string | null;
+  waiting: boolean;
+  error: string | null;
+}
+
+/** Thin confirmation rendered above views and modals (y/n). */
+export interface DialogState {
+  title: string;
+  message: string;
+  confirmLabel: string;
+  danger: boolean;
+}
 
 export interface OmnibarCommandItem {
   id: string;
@@ -176,6 +232,17 @@ export type ModalState =
       type: "omnibar";
       mode: OmnibarMode;
       query: string;
+    }
+  | {
+      type: "commandForm";
+      specId: string;
+    }
+  | {
+      type: "deviceFlow";
+    }
+  | {
+      type: "confirmPermanentDelete";
+      key: string;
     };
 
 export interface StoreSnapshot {
@@ -203,24 +270,52 @@ export interface StoreSnapshot {
   rightPaneTab: RightPaneTab;
   inspector: InspectorState | null;
   healthData: HealthPanelData | null;
+  statusMatrix: StatusMatrixData | null;
+  codeSearchPage: CodeSearchPageState | null;
+  runConsole: RunConsoleState | null;
+  statsPage: StatsPageState | null;
+  trashPage: TrashPageState | null;
+  settingsPage: SettingsPageState | null;
+  syncCenter: SyncCenterState | null;
+  discoverPage: DiscoverPageState | null;
+  changelogPage: ChangelogPageState | null;
+  scanPage: ScanPageState | null;
+  worktreePage: WorktreePageState | null;
   omnibarLoading: boolean;
   omnibarSymbols: readonly CodeSearchMatch[];
   omnibarGithubRepos: readonly RepoInfo[];
   preset: PresetRef;
   customPresets: readonly CustomPreset[];
   focus: FocusRegion;
+  navFocused: boolean;
+  navCursor: number;
+  view: ViewId;
   modal: ModalState;
+  dialog: DialogState | null;
+  contextMenu: ContextMenuState | null;
+  deviceFlow: DeviceFlowState | null;
   modalError: string | null;
   cursor: number;
   sidebarCursor: number;
   workspaces: readonly WorkspaceListing[];
   movePrefill: string | null;
   updateToast: { version: string } | null;
+  /** Transient action feedback (copies, restores, scans…) — see ToastEntry. */
+  toast: ToastEntry | null;
   running: boolean;
+  /** Background tasks tracked by the task model (MCP server, run console…). */
+  activeTaskCount: number;
   root: string;
   lastSync: string | null;
   canUndo: boolean;
 }
+
+import type { WorkspaceBackupEntry } from "../../services/backups.ts";
+import type { RemoteRepoHealth } from "../../services/github.ts";
+import type { HealthScoreResult } from "../../services/healthScore.ts";
+import type { RepoStatusLine } from "../../services/lifecycle.ts";
+import type { RunRepoResult } from "../../services/runner.ts";
+import type { TrashEntry } from "../../services/trash.ts";
 
 export interface GithubClient extends GitHubRepoReader {
   getUserLogin(): Promise<string>;
@@ -230,6 +325,90 @@ export interface GithubClient extends GitHubRepoReader {
   createRepo(name: string, options: CreateRepoOptions): Promise<RepoInfo>;
   archiveRepo?(owner: string, name: string): Promise<RepoInfo>;
   searchRepos?(query: string, limit: number): Promise<RepoInfo[]>;
+  getRepoRemoteHealth?(owner: string, name: string): Promise<RemoteRepoHealth>;
+}
+
+export interface CodeSearchPageState {
+  loading: boolean;
+  pattern: string;
+  mode: "sym" | "text" | "re";
+  kind: string;
+  lang: string;
+  limit: number;
+  offline: boolean;
+  matches: readonly CodeSearchMatch[];
+}
+
+export interface RunConsoleState {
+  running: boolean;
+  command: string;
+  scope: "selection" | "pinned" | "all" | "profile";
+  profile: string;
+  concurrency: number;
+  results: readonly RunRepoResult[];
+  skipped: readonly { key: string; message: string }[];
+}
+
+export interface StatsPageState {
+  loading: boolean;
+  stats: WorkspaceStatsOutput | null;
+  health: HealthScoreResult | null;
+  checks: readonly DoctorCheck[];
+}
+
+export interface SyncCenterState {
+  scope: string;
+  limit: number;
+  concurrency: number;
+  depth: number;
+  blobless: boolean;
+  stash: boolean;
+  divergence: "fail" | "rebase" | "reset" | "skip";
+  include: string;
+  exclude: string;
+  watchSeconds: number;
+  running: boolean;
+}
+
+export interface DiscoverPageState {
+  query: string;
+  limit: number;
+  depth: number;
+  blobless: boolean;
+  loading: boolean;
+  results: readonly import("../../services/github.ts").RepoInfo[];
+  selected: ReadonlySet<string>;
+}
+
+export interface ChangelogPageState {
+  markdown: string;
+}
+
+export interface ScanPageState {
+  unregistered: readonly string[];
+}
+
+export interface WorktreePageState {
+  rows: readonly string[];
+}
+
+export interface SettingsPageState {
+  settings: import("../../services/settings.ts").RepotruckSettings | null;
+  authMethod: string | null;
+  userLogin: string | null;
+}
+
+export interface TrashPageState {
+  trash: readonly TrashEntry[];
+  backups: readonly WorkspaceBackupEntry[];
+}
+
+/** Status Matrix page slice (`status` / `status -D --remote`). */
+export interface StatusMatrixData {
+  loading: boolean;
+  remote: boolean;
+  lastSync: string | null;
+  repos: readonly RepoStatusLine[];
 }
 
 export interface StoreDeps {
@@ -245,6 +424,8 @@ export interface StoreDeps {
   reorganize?: typeof reorganizeWorkspace;
   searchCodeFn?: (options: SearchCodeOptions) => Promise<CodeSearchResult>;
   runInReposFn?: (options: RunInReposOptions) => Promise<RunInReposResult>;
+  workspaceStatusFn?: typeof import("../../services/lifecycle.ts").workspaceStatus;
+  beginDeviceLoginFn?: typeof import("../../services/auth.ts").beginDeviceLogin;
   listWorkspacesFn?: typeof listWorkspaces;
   removeWorkspaceFn?: typeof removeWorkspace;
   detectAppsFn?: (options: { env?: EnvLike }) => Promise<AppEntry[]>;
@@ -279,6 +460,10 @@ export type UndoAction =
 export const UNDO_STACK_CAP = 10;
 
 export const STATUSES_CAP = 300;
+
+/** How long a transient toast stays on screen before auto-dismissing. */
+export const TOAST_MS = 2500;
+export const TOAST_FAILED_MS = 5000;
 
 export const STATUS_VIEW_ROWS = 12;
 

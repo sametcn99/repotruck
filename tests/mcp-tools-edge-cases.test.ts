@@ -15,6 +15,7 @@ let savedConfigDir: string | undefined;
 let env: Record<string, string | undefined>;
 let wsRoot: string;
 let bareRemoteUrl: string;
+let syncRepoList: Array<Record<string, unknown>> = [];
 
 function tempDir(prefix: string): string {
   const dir = (realpathSync.native ?? realpathSync)(mkdtempSync(path.join(tmpdir(), prefix)));
@@ -32,14 +33,40 @@ function jsonOf<T>(result: CallToolResult): T {
   return JSON.parse(textOf(result)) as T;
 }
 
-async function call(client: Client, name: string, args: Record<string, unknown>) {
-  return (await client.callTool({ name, arguments: args })) as CallToolResult;
+async function call(
+  client: Client,
+  name: string,
+  args: Record<string, unknown>,
+  progressToken?: string,
+) {
+  return (await client.callTool({
+    name,
+    arguments: args,
+    ...(progressToken ? { _meta: { progressToken } } : {}),
+  })) as CallToolResult;
 }
 
 const fakeGithub = {
   getUserLogin: async () => "acme",
   getActiveOrgs: async () => ["acme-org"],
-  listUserRepos: async () => [],
+  listUserRepos: async () => syncRepoList,
+  listOrgRepos: async () => syncRepoList,
+  getRepo: async (owner: string, name: string) => ({
+    owner,
+    name,
+    description: "demo repo",
+    isPrivate: false,
+    isFork: false,
+    isArchived: false,
+    language: "TypeScript",
+    stars: 5,
+    httpsUrl: bareRemoteUrl,
+    sshUrl: bareRemoteUrl,
+    updatedAt: "2026-01-01T00:00:00Z",
+  }),
+  archiveRepo: async () => {
+    throw new Error("archive permission denied");
+  },
   searchRepos: async (q: string, l: number) => {
     fakeGithub.lastQuery = q;
     fakeGithub.lastLimit = l;
@@ -113,6 +140,10 @@ beforeAll(async () => {
     root: wsRoot,
     preset: "categorized",
     lastSync: null,
+    pinned: ["acme/api"],
+    profiles: {
+      backend: ["acme/api"],
+    },
     repos: [
       {
         owner: "acme",
@@ -174,13 +205,77 @@ describe("MCP tools edge cases", () => {
     expect(fakeGithub.lastQuery).toBe("simple term");
   });
 
-  test("repotruck_sync empty match returns 0 synced cleanly", async () => {
+  test("repotruck_sync empty match and local bare clone with include/exclude/limit + progress", async () => {
     const client = await connect();
     const emptyRes = jsonOf<{ summary: string; synced: unknown[] }>(
       await call(client, "repotruck_sync", { root: wsRoot, scope: "user" }),
     );
     expect(emptyRes.synced).toEqual([]);
     expect(emptyRes.summary).toContain("0 synced");
+
+    syncRepoList = [
+      {
+        owner: "acme",
+        name: "synced-one",
+        description: "one",
+        isPrivate: false,
+        isFork: false,
+        isArchived: false,
+        language: "TypeScript",
+        stars: 1,
+        httpsUrl: bareRemoteUrl,
+        sshUrl: bareRemoteUrl,
+        updatedAt: "2026-01-01T00:00:00Z",
+      },
+      {
+        owner: "acme",
+        name: "excluded-two",
+        description: "two",
+        isPrivate: false,
+        isFork: false,
+        isArchived: false,
+        language: "Go",
+        stars: 1,
+        httpsUrl: bareRemoteUrl,
+        sshUrl: bareRemoteUrl,
+        updatedAt: "2026-01-01T00:00:00Z",
+      },
+    ];
+
+    const syncRes = jsonOf<{ summary: string; synced: Array<{ key: string }> }>(
+      await call(
+        client,
+        "repotruck_sync",
+        {
+          root: wsRoot,
+          scope: "all",
+          include: ["acme/*"],
+          exclude: ["acme/excluded-*"],
+          limit: 5,
+        },
+        "sync-tok-1",
+      ),
+    );
+    syncRepoList = [];
+    expect(syncRes.synced.some((s) => s.key === "acme/synced-one")).toBe(true);
+    expect(syncRes.synced.some((s) => s.key === "acme/excluded-two")).toBe(false);
+  });
+
+  test("repotruck_clone clones local bare remote and reports progress", async () => {
+    const client = await connect();
+    const cloneRes = jsonOf<{ key: string; relativePath: string; preset: string }>(
+      await call(
+        client,
+        "repotruck_clone",
+        {
+          url: "https://github.com/acme/cloned-demo",
+          root: wsRoot,
+        },
+        "clone-tok-1",
+      ),
+    );
+    expect(cloneRes.key).toBe("acme/cloned-demo");
+    expect(cloneRes.relativePath).toContain("cloned-demo");
   });
 
   test("repotruck_create validation: invalid name and missing source directory", async () => {
@@ -261,7 +356,7 @@ describe("MCP tools edge cases", () => {
     expect(typeof reorgRes.summary).toBe("string");
   });
 
-  test("repotruck_alias_set and repotruck_open alias flow", async () => {
+  test("repotruck_alias_set, remove, resolve, list_repos filters, and status detail", async () => {
     const client = await connect();
     const setRes = jsonOf<{ ok: boolean; message: string }>(
       await call(client, "repotruck_alias_set", {
@@ -282,5 +377,130 @@ describe("MCP tools edge cases", () => {
     );
     expect(resolveRes.repo.key).toBe("acme/api");
     expect(resolveRes.repo.absolutePath).toContain("api");
+
+    const listFiltered = jsonOf<{
+      count: number;
+      totalCount: number;
+      repos: Array<{ key: string }>;
+    }>(
+      await call(client, "repotruck_list_repos", {
+        root: wsRoot,
+        internal: true,
+        category: "source",
+        custom: false,
+        pinned: true,
+        profile: "backend",
+        limit: 1,
+        offset: 0,
+      }),
+    );
+    expect(listFiltered.repos.some((r) => r.key === "acme/api")).toBe(true);
+
+    const badProfile = await call(client, "repotruck_list_repos", {
+      root: wsRoot,
+      profile: "no-such-profile",
+    });
+    expect(badProfile.isError).toBe(true);
+
+    const statusRes = jsonOf<{ repos: unknown[] }>(
+      await call(client, "repotruck_status", { root: wsRoot, detail: true, pinned: true }),
+    );
+    expect(statusRes.repos.length).toBeGreaterThanOrEqual(1);
+
+    const rmAlias = jsonOf<{ ok: boolean }>(
+      await call(client, "repotruck_alias_remove", { root: wsRoot, alias: "core-api" }),
+    );
+    expect(rmAlias.ok).toBe(true);
+
+    const rmMissing = await call(client, "repotruck_alias_remove", {
+      root: wsRoot,
+      alias: "nonexistent-alias",
+    });
+    expect(rmMissing.isError).toBe(true);
+  });
+
+  test("repotruck_stats, repotruck_doctor, prune, archive error, delete, and workspaces_remove", async () => {
+    const client = await connect();
+
+    const statsRes = jsonOf<{ root: string }>(
+      await call(client, "repotruck_stats", { root: wsRoot }),
+    );
+    expect(statsRes.root).toBe(wsRoot);
+
+    const docRes = await call(client, "repotruck_doctor", {});
+    expect(textOf(docRes)).toContain("checks");
+
+    const pruneRes = jsonOf<{ ok: boolean; message: string }>(
+      await call(client, "repotruck_prune", { root: wsRoot, dryRun: true }),
+    );
+    expect(pruneRes.ok).toBe(true);
+
+    const archErr = await call(client, "repotruck_archive", {
+      root: wsRoot,
+      repo: "acme/api",
+    });
+    expect(archErr.isError).toBe(true);
+
+    const delRes = jsonOf<{ ok: boolean }>(
+      await call(client, "repotruck_delete", {
+        root: wsRoot,
+        repo: "acme/cloned-demo",
+        confirm: "yes",
+      }),
+    );
+    expect(delRes.ok).toBe(true);
+
+    const tempWs = tempDir("rt-mcp-rm-ws-");
+    await updateWorkspace(
+      tempWs,
+      () => ({
+        config: { version: 1, root: tempWs, preset: "flat", lastSync: null, repos: [] },
+        result: undefined,
+      }),
+      env,
+    );
+    const rmWs = jsonOf<{ ok: boolean; removed: string }>(
+      await call(client, "repotruck_workspaces_remove", { path: tempWs }),
+    );
+    expect(rmWs.ok).toBe(true);
+    expect(rmWs.removed).toBe(tempWs);
+
+    const rmWsMissing = await call(client, "repotruck_workspaces_remove", {
+      path: path.join(wsRoot, "not-a-ws"),
+    });
+    expect(rmWsMissing.isError).toBe(true);
+
+    const missingAgents = await call(client, "repotruck_agents_md", {
+      root: path.join(wsRoot, "no-agents-here"),
+    });
+    expect(missingAgents.isError).toBe(true);
+  });
+
+  test("fixed resources and prompts work end to end", async () => {
+    const client = await connect();
+
+    const mdRes = await client.readResource({ uri: "repotruck://agents-md" });
+    expect((mdRes.contents[0] as { text?: string }).text).toContain("acme/api");
+
+    const invRes = await client.readResource({ uri: "repotruck://inventory" });
+    expect((invRes.contents[0] as { text?: string }).text).toContain("categorized");
+
+    const treeRes = await client.readResource({ uri: "repotruck://tree" });
+    expect((treeRes.contents[0] as { text?: string }).text).toContain(wsRoot);
+
+    const uninitClient = await connect({ cwd: tempDir("rt-uninit-cwd-") });
+    await expect(uninitClient.readResource({ uri: "repotruck://inventory" })).rejects.toThrow();
+
+    const prompt1 = await client.getPrompt({
+      name: "sync-and-summarize",
+      arguments: { root: wsRoot, scope: "org", org: "acme-org" },
+    });
+    expect((prompt1.messages[0]!.content as { text: string }).text).toContain("acme-org");
+
+    const prompt2 = await client.getPrompt({
+      name: "suggest-agent-rules",
+      arguments: { root: wsRoot },
+    });
+    expect((prompt2.messages[0]!.content as { text: string }).text).toContain("AGENTS.md");
   });
 });

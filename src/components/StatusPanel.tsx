@@ -2,7 +2,7 @@ import { useTerminalDimensions } from "@opentui/react";
 import { useSyncExternalStore } from "react";
 import { formatDiffBar } from "../services/gitState.ts";
 import { formatDiskSize } from "../services/stats.ts";
-import { type RightPaneTab, STATUS_VIEW_ROWS, type Store, type StoreSnapshot } from "./store.ts";
+import type { RightPaneTab, Store, StoreSnapshot } from "./store.ts";
 import { theme } from "./theme.ts";
 import { repoViewportRows } from "./windowing.ts";
 
@@ -43,8 +43,8 @@ function renderActivityBody(snapshot: StoreSnapshot, maxCols: number, bodyRows: 
   for (const status of snapshot.statuses) {
     counts[status.phase] += 1;
   }
-  const headerRows = snapshot.running ? 2 : 1;
-  const viewCap = Math.max(1, Math.min(STATUS_VIEW_ROWS, bodyRows - headerRows));
+  const headerRows = snapshot.running ? 3 : 2;
+  const viewCap = Math.max(1, bodyRows - headerRows);
   const total = snapshot.statuses.length;
   const maxScroll = Math.max(0, total - viewCap);
   const scroll = Math.min(snapshot.statusScroll, maxScroll);
@@ -59,17 +59,19 @@ function renderActivityBody(snapshot: StoreSnapshot, maxCols: number, bodyRows: 
   const pct = activeTotal > 0 ? Math.min(100, Math.round((finished / activeTotal) * 100)) : 0;
   const filled = Math.round((pct / 100) * 12);
   const progressBar = `${"\u2588".repeat(filled)}${"\u2591".repeat(12 - filled)} ${pct}%`;
+  const fullCountsText = `${counts.CLONING} cloning \u00b7 ${counts.PULLING} pulling \u00b7 ${counts.DONE} done \u00b7 ${counts.FAILED} failed`;
+  const compactCountsText = `${counts.CLONING} cloning \u00b7 ${counts.PULLING} pulling \u00b7 ${counts.DONE} ok/${counts.FAILED} err`;
+  const countsText = fullCountsText.length <= maxCols ? fullCountsText : compactCountsText;
 
   return (
     <>
       {snapshot.running && bodyRows >= 2 ? (
         <PanelLine text={`Progress: [${progressBar}]`} fg={theme.accent()} maxCols={maxCols} />
       ) : null}
-      <PanelLine
-        text={`${counts.CLONING} cloning \u00b7 ${counts.PULLING} pulling \u00b7 ${counts.DONE} done \u00b7 ${counts.FAILED} failed \u00b7 last sync: ${lastSync}${scrollHint}`}
-        fg={dimFg}
-        maxCols={maxCols}
-      />
+      <PanelLine text={countsText} fg={dimFg} maxCols={maxCols} />
+      {bodyRows >= 2 ? (
+        <PanelLine text={`last sync: ${lastSync}${scrollHint}`} fg={dimFg} maxCols={maxCols} />
+      ) : null}
       {bodyRows > headerRows
         ? visible.map((status) => (
             <PanelLine
@@ -248,19 +250,32 @@ function renderHealthBody(
   );
 }
 
-export function StatusPanel({ store, width }: { store: Store; width: number }) {
+export function StatusPanel({
+  store,
+  width,
+  extraReservedRows = 0,
+}: {
+  store: Store;
+  width: number;
+  extraReservedRows?: number;
+}) {
   const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot);
   const { height } = useTerminalDimensions();
   const dimFg = theme.dim();
   const maxCols = Math.max(8, width - 2);
-  const bodyRows = Math.max(1, repoViewportRows(height, snapshot.updateToast !== null));
+  const bodyRows = Math.max(
+    1,
+    repoViewportRows(height, snapshot.updateToast !== null) - extraReservedRows,
+  );
   const compactTabs = maxCols < 34;
+  const padActive = maxCols >= 36 || compactTabs;
+  const focused = snapshot.focus === "status" && !snapshot.navFocused;
 
   return (
     <box
       title="Status"
       border
-      borderColor={snapshot.focus === "status" ? theme.focusBorder() : theme.border()}
+      borderColor={focused ? theme.focusBorder() : theme.border()}
       width={width}
       overflow="hidden"
       flexDirection="column"
@@ -291,7 +306,7 @@ export function StatusPanel({ store, width }: { store: Store; width: number }) {
                 store.setRightPaneTab(tab.id);
               }}
             >
-              {active ? ` ${label} ` : label}
+              {active && padActive ? ` ${label} ` : label}
             </text>
           );
         })}

@@ -6,6 +6,7 @@ import {
   createRepotruckHttpHandler,
   MCP_HTTP_DEFAULT_HOST,
   MCP_HTTP_DEFAULT_PORT,
+  runRepotruckMcpHttpServer,
   validateHttpBindOptions,
 } from "../src/mcp/server.ts";
 import { defaultConfig } from "../src/services/config.ts";
@@ -105,6 +106,10 @@ describe("HTTP bind validation", () => {
     expect(validateHttpBindOptions("10.1.2.3", "sekret")).toBeNull();
     expect(validateHttpBindOptions("  ", undefined)).toContain("--host");
   });
+
+  test("runRepotruckMcpHttpServer throws when binding beyond localhost without token", async () => {
+    await expect(runRepotruckMcpHttpServer({ host: "0.0.0.0" })).rejects.toThrow(/--token/);
+  });
 });
 
 describe("tokenless HTTP handler (localhost guards)", () => {
@@ -141,12 +146,18 @@ describe("token-protected HTTP handler (non-localhost bind)", () => {
     expect(response.headers.get("www-authenticate")).toContain("Bearer");
   });
 
-  test("rejects a wrong bearer token with 401", async () => {
+  test("rejects a wrong bearer token (same and different length) with 401", async () => {
     const response = await post(tokenHandler, {
       host: "10.0.0.5:3100",
       authorization: "Bearer wrong",
     });
     expect(response.status).toBe(401);
+
+    const sameLen = await post(tokenHandler, {
+      host: "10.0.0.5:3100",
+      authorization: "Bearer xxxxxx",
+    });
+    expect(sameLen.status).toBe(401);
   });
 
   test("accepts the correct bearer token and skips the localhost-only guards", async () => {
@@ -162,11 +173,12 @@ describe("token-protected HTTP handler (non-localhost bind)", () => {
 });
 
 describe("HTTP handler serves tools over the stateless leg", () => {
-  test("tools/list returns the full surface", async () => {
+  test("tools/list returns the full surface and close() cleans up", async () => {
+    const disposable = createRepotruckHttpHandler({ env, version: "0.0.0-test", token: "t1" });
     const { status, json } = await rpc(
       await post(
-        tokenHandler,
-        { host: "10.0.0.5:3100", authorization: "Bearer sekret" },
+        disposable,
+        { host: "10.0.0.5:3100", authorization: "Bearer t1" },
         {
           jsonrpc: "2.0",
           id: 2,
@@ -181,6 +193,7 @@ describe("HTTP handler serves tools over the stateless leg", () => {
     expect(names).toContain("repotruck_forget");
     expect(names).toContain("repotruck_open");
     expect(names).toContain("repotruck_search_code");
+    await disposable.close();
   });
 });
 

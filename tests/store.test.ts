@@ -23,6 +23,7 @@ import {
   searchRepos,
   sidebarRowIndexForY,
   sortRepos,
+  TOAST_MS,
   validateCreateDraft,
 } from "../src/components/store.ts";
 import { PRESET_IDS } from "../src/presets/index.ts";
@@ -1100,6 +1101,77 @@ describe("update toast", () => {
   });
 });
 
+describe("transient toast", () => {
+  test("pushStatus in the cockpit stays toast-less (activity panel already shows it)", async () => {
+    const h = makeStore(tempWorkspace());
+    await h.store.init();
+    h.store.pushStatus("DONE", "[stats]", "stats JSON copied to clipboard");
+    expect(h.snapshot().toast).toBeNull();
+  });
+
+  test("pushStatus on a full-page view mirrors into a toast that auto-dismisses", async () => {
+    const h = makeStore(tempWorkspace());
+    await h.store.init();
+    h.store.setView("stats");
+    h.store.pushStatus("DONE", "[stats]", "stats JSON copied to clipboard");
+    const toast = h.snapshot().toast;
+    expect(toast?.phase).toBe("DONE");
+    expect(toast?.message).toBe("[stats] — stats JSON copied to clipboard");
+    await new Promise((resolve) => setTimeout(resolve, TOAST_MS + 150));
+    expect(h.snapshot().toast).toBeNull();
+  });
+
+  test("dismissToast clears it immediately and a newer push replaces the line", async () => {
+    const h = makeStore(tempWorkspace());
+    await h.store.init();
+    h.store.setView("stats");
+    h.store.pushStatus("DONE", "[stats]", "first");
+    const first = h.snapshot().toast;
+    h.store.pushStatus("FAILED", "[run]", "boom");
+    expect(h.snapshot().toast?.message).toBe("[run] — boom");
+    expect(h.snapshot().toast?.id).not.toBe(first?.id);
+    h.store.dismissToast();
+    expect(h.snapshot().toast).toBeNull();
+  });
+
+  test("pushStatus while a modal is open does not toast", async () => {
+    const h = makeStore(tempWorkspace());
+    await h.store.init();
+    h.store.setView("stats");
+    h.store.openHelpModal();
+    h.store.pushStatus("DONE", "[stats]", "hidden behind modal");
+    expect(h.snapshot().toast).toBeNull();
+    h.store.closeModal();
+    h.store.pushStatus("DONE", "[stats]", "visible again");
+    expect(h.snapshot().toast?.message).toBe("[stats] — visible again");
+    h.store.dismissToast();
+  });
+
+  test("pushStatus while a sync runs does not toast", async () => {
+    let release: () => void = () => {};
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const store = new Store(tempWorkspace(), {
+      auth: async () => ({ token: "t", method: "gh-cli" }),
+      github: fakeGithub([repo("acme", "api")], makeFakeGithubCalls()),
+      sync: (async () => {
+        await gate;
+        return { done: [], failed: [] };
+      }) as unknown as NonNullable<StoreDeps["sync"]>,
+    });
+    await store.init();
+    store.setView("stats");
+    store.toggleCurrent();
+    const running = store.start();
+    store.pushStatus("DONE", "[stats]", "hidden behind running sync");
+    expect(store.getSnapshot().toast).toBeNull();
+    release();
+    await running;
+    store.dismissToast();
+  });
+});
+
 describe("open and alias modals", () => {
   function makeLauncherStore(root: string, apps: AppEntry[]) {
     const spawnCalls: Array<{ command: string; args: string[]; cwd: string }> = [];
@@ -1705,7 +1777,7 @@ describe("mouse mapping", () => {
     expect(store.getSnapshot().modal?.type).toBe("detail");
   });
 
-  test("right-clicking a repo row opens DetailModal", async () => {
+  test("right-clicking a repo row opens the context menu (detail one action away)", async () => {
     const root = tempWorkspace();
     const items = [repo("monalisa", "alpha")];
     const h = makeStore(root, items);
@@ -1714,6 +1786,9 @@ describe("mouse mapping", () => {
 
     expect(store.getSnapshot().modal).toBeNull();
     store.handleMouse({ button: 2, x: 60, y: 4 }, 120, 40);
+    expect(store.getSnapshot().contextMenu?.key).toBe("monalisa/alpha");
+    // the first entry jumps straight to details
+    store.executeContextAction("detail");
     expect(store.getSnapshot().modal?.type).toBe("detail");
   });
 

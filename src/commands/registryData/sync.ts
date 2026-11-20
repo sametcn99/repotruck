@@ -1,0 +1,124 @@
+import type { CommandSpec } from "../registryTypes.ts";
+import { f, jsonFlag } from "../registryTypes.ts";
+
+/** Registry section: sync. Split out of registry.ts for the size budget. */
+export const SYNC_COMMANDS: readonly CommandSpec[] = [
+  // ---- sync & clone -------------------------------------------------------
+  {
+    id: "sync",
+    path: "sync",
+    title: "Sync Center",
+    group: "Sync",
+    summary: "Clone or update repositories in bulk",
+    args: [],
+    surface: { kind: "view", view: "sync" },
+    requires: ["workspace", "auth"],
+    flags: [
+      f(
+        "--scope",
+        "enum",
+        '"user" (default), "org:<name>", or "all"',
+        "scope picker (selection/personal/orgs/all/pinned/profile)",
+        { short: "-s", values: ["user", "org:<name>", "all"], default: "user", complete: "scopes" },
+      ),
+      f("--pinned", "bool", "sync only pinned repositories", "scope: pinned"),
+      f("--profile", "string", "sync only a named profile", "scope: profile picker"),
+      f("--limit", "int", "first N repos of the scope in API order", "number stepper"),
+      f("--concurrency", "int", "parallel repositories", "stepper (settings default)", {
+        short: "-c",
+        default: "3",
+      }),
+      f("--depth", "int", "shallow clone depth (new clones only)", "stepper (off default)"),
+      f("--blobless", "bool", "blobless partial clones", "toggle"),
+      f("--stash", "bool", "stash uncommitted changes before update", "toggle"),
+      f("--divergence", "enum", "ahead-of-origin strategy", "enum picker", {
+        values: ["fail", "rebase", "reset", "skip"],
+        default: "fail",
+        complete: "divergence",
+      }),
+      f("--include", "list", "only repos matching glob", "list editor"),
+      f("--exclude", "list", "skip repos matching glob", "list editor"),
+      f(
+        "--watch",
+        "optional-int",
+        "keep syncing every N seconds (default 300)",
+        "watch toggle + countdown",
+        { default: "300" },
+      ),
+      f("--base-url", "url", "GitHub Enterprise API URL", "Settings › connection"),
+      f("--preset", "string", "target layout preset", "preset picker (p)", {
+        short: "-p",
+        complete: "presets",
+      }),
+      jsonFlag("copy-as-JSON on summary"),
+    ],
+  },
+  {
+    id: "sync.resolve",
+    path: "sync resolve",
+    title: "Resolve conflicts",
+    group: "Sync",
+    summary: "Inspect and resolve git conflict / rebase state",
+    args: [{ name: "repo", required: false, summary: "repo ref; defaults to root" }],
+    surface: { kind: "view", view: "resolve" },
+    requires: ["workspace"],
+    flags: [
+      f("--action", "enum", "execute resolution", "continue/abort row actions", {
+        values: ["continue", "abort"],
+      }),
+      jsonFlag("guide as JSON"),
+    ],
+  },
+  {
+    id: "clone",
+    path: "clone",
+    title: "Clone repository",
+    group: "Sync",
+    summary: "Clone or update a single repository into the layout",
+    args: [{ name: "url", required: true, summary: "GitHub URL or owner/name" }],
+    surface: { kind: "modal", modal: "clone" },
+    requires: ["workspace", "auth"],
+    flags: [
+      f("--preset", "string", "layout preset", "current preset + picker", {
+        short: "-p",
+        complete: "presets",
+      }),
+      f("--depth", "int", "shallow clone depth", "advanced option"),
+      f("--blobless", "bool", "blobless partial clone", "advanced option"),
+      f("--sparse", "list", "sparse checkout paths", "list editor"),
+      f("--base-url", "url", "GitHub Enterprise API URL", "Settings › connection"),
+      jsonFlag("result as JSON copy"),
+    ],
+  },
+  {
+    id: "discover",
+    path: "discover",
+    title: "Discover",
+    group: "Sync",
+    summary: "Search GitHub with qualifiers and optionally clone matches",
+    args: [{ name: "query", required: true, summary: "repository search query" }],
+    surface: { kind: "view", view: "discover" },
+    requires: ["auth"],
+    flags: [
+      f("--org", "string", "restrict to an organization", "qualifier field"),
+      f("--lang", "string", "restrict primary language", "qualifier field"),
+      f("--min-stars", "int", "minimum stars", "number field"),
+      f("--topic", "list", "required topics (repeatable)", "list editor"),
+      f("--include-archived", "bool", "include archived repos", "toggle"),
+      f("--include-forks", "bool", "include forks", "toggle"),
+      f("--limit", "int", "max results (default 20, cap 200)", "stepper", {
+        short: "-l",
+        default: "20",
+      }),
+      f("--clone", "bool", "clone matches into the workspace", "select + bulk clone"),
+      f("--depth", "int", "shallow depth when cloning", "clone option"),
+      f("--blobless", "bool", "blobless when cloning", "clone option"),
+      f("--preset", "string", "layout preset", "preset picker", {
+        short: "-p",
+        complete: "presets",
+      }),
+      f("--base-url", "url", "GitHub Enterprise API URL", "Settings › connection"),
+      jsonFlag("copy results as JSON"),
+    ],
+  },
+];

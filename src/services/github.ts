@@ -1,5 +1,6 @@
 import { readFileSync, renameSync, writeFileSync } from "node:fs";
 import { Octokit } from "@octokit/rest";
+import { logDiag, verboseEnabled } from "./diagnostics.ts";
 import { writeFileAtomic } from "./fsUtils.ts";
 import { type RateLimitRetryOptions, withRateLimitRetry } from "./rateLimit.ts";
 
@@ -300,6 +301,28 @@ export interface GitHubServiceDeps {
   etagCache?: EtagCacheStore;
 }
 
+/**
+ * Octokit's built-in request-log plugin `console.warn`s every failed request
+ * ("GET /repos/…/pulls - 404 …"), which corrupts the TUI's alternate screen
+ * and pollutes CLI output. Failures are captured in the diagnostics log
+ * (visible in the Log view) and only reach stderr under REPOTRUCK_VERBOSE.
+ */
+function quietOctokitLog(level: "warn" | "error"): (...args: unknown[]) => void {
+  return (...args: unknown[]) => {
+    logDiag(level, "[octokit]", args.map(String).join(" "));
+    if (!verboseEnabled()) return;
+    process.stderr.write(`octokit ${level}: ${args.map(String).join(" ")}\n`);
+  };
+}
+
+/** Silent-unless-verbose logger handed to every default-constructed Octokit. */
+const OCTOKIT_QUIET_LOG = {
+  debug: () => {},
+  info: () => {},
+  warn: quietOctokitLog("warn"),
+  error: quietOctokitLog("error"),
+} as const;
+
 function etagOf(headers: unknown): string | null {
   if (headers === null || typeof headers !== "object") return null;
   const raw = (headers as Record<string, unknown>).etag;
@@ -318,6 +341,7 @@ export class GitHubService implements GitHubRepoReader, GitHubRepoCreator {
       deps.octokit ??
       new Octokit({
         auth: token,
+        log: OCTOKIT_QUIET_LOG,
         ...(deps.baseUrl !== undefined ? { baseUrl: deps.baseUrl } : {}),
       });
     this.retry = deps.retry;
@@ -413,15 +437,25 @@ export class GitHubService implements GitHubRepoReader, GitHubRepoCreator {
     const repoObj = (repoResp.data ?? {}) as Record<string, unknown>;
     const defaultBranch = firstString(repoObj.default_branch) ?? "main";
 
-    const pullsResp = await this.wrap(() =>
-      this.octokit.request("GET /repos/{owner}/{repo}/pulls", {
-        owner,
-        repo: name,
-        state: "open",
-        per_page: 100,
-      }),
-    );
-    const openPrs = Array.isArray(pullsResp.data) ? pullsResp.data.length : 0;
+    // Repos with issues/PRs disabled answer 404 for the pulls endpoint, so
+    // skip the guaranteed-to-fail request and fall back to zero open PRs.
+    let openPrs = 0;
+    if (repoObj.has_pull_requests !== false) {
+      try {
+        const pullsResp = await this.wrap(() =>
+          this.octokit.request("GET /repos/{owner}/{repo}/pulls", {
+            owner,
+            repo: name,
+            state: "open",
+            per_page: 100,
+          }),
+        );
+        openPrs = Array.isArray(pullsResp.data) ? pullsResp.data.length : 0;
+      } catch (error) {
+        // 404 = PRs disabled (or newly renamed repo); anything else is real.
+        if (!isHttpStatus(error, 404)) throw error;
+      }
+    }
 
     let checkRuns: Record<string, unknown>[] = [];
     try {

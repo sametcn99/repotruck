@@ -30,9 +30,68 @@ export function visibleSlice(cursor: number, total: number, viewportRows: number
   return { start, end: start + view };
 }
 
+/**
+ * Top-offset windowing for scrollable boxes without a cursor highlight row.
+ * Scrolls immediately from offset 0 and clamps so the viewport stays full at the end.
+ */
+export function scrollSlice(
+  scrollOffset: number,
+  total: number,
+  viewportRows: number,
+): VisibleWindow {
+  if (total <= 0 || viewportRows <= 0) return { start: 0, end: 0 };
+  const view = Math.min(viewportRows, total);
+  const maxStart = Math.max(0, total - view);
+  const start = Math.min(Math.max(0, scrollOffset), maxStart);
+  return { start, end: start + view };
+}
+
+/**
+ * Clamps a single line of text so it fits cleanly inside a bordered box of
+ * interior width `maxCols` without touching or overflowing the right border.
+ */
+export function clampBoxLine(raw: string, maxCols: number): string {
+  const clean = raw.replace(/[\r\n\t]+/g, " ");
+  if (maxCols <= 1) return clean.slice(0, Math.max(0, maxCols));
+  if (clean.length <= maxCols) return clean;
+  return `${clean.slice(0, maxCols - 1)}\u2026`;
+}
+
 // Side panels together must leave at least 20 columns for the repository list.
 export const MIN_CENTER_COLUMNS = 20;
 const PANEL_FLOOR = 8;
+
+/** Width of the persistent nav rail when it is visible. */
+export const NAV_RAIL_WIDTH = 18;
+/** Below this terminal width the rail is hidden; v-prefix keys still work.
+ *  Wide enough that the three-pane cockpit keeps its full budget. */
+export const NAV_RAIL_MIN_TERMINAL = 132;
+
+export function navRailVisible(terminalWidth: number): boolean {
+  return terminalWidth >= NAV_RAIL_MIN_TERMINAL;
+}
+
+/** Columns remaining for the cockpit/page area after the nav rail. */
+export function contentWidth(terminalWidth: number): boolean extends never ? never : number {
+  return navRailVisible(terminalWidth) ? terminalWidth - NAV_RAIL_WIDTH : terminalWidth;
+}
+
+/**
+ * Adaptive cockpit layout breakpoints based on available content width:
+ * - "three-pane" (>= 90 cols): Sidebar + RepoList + StatusPanel side-by-side
+ * - "two-pane" (64..89 cols): RepoList + active side pane (Sidebar when focused, else StatusPanel)
+ * - "single-pane" (< 64 cols): Only the focused pane (Sidebar, RepoList, or StatusPanel) at full width
+ */
+export type CockpitLayoutMode = "three-pane" | "two-pane" | "single-pane";
+
+export const TWO_PANE_MIN_WIDTH = 64;
+export const THREE_PANE_MIN_WIDTH = 90;
+
+export function cockpitLayoutMode(pageWidth: number): CockpitLayoutMode {
+  if (pageWidth >= THREE_PANE_MIN_WIDTH) return "three-pane";
+  if (pageWidth >= TWO_PANE_MIN_WIDTH) return "two-pane";
+  return "single-pane";
+}
 
 function panelBudget(terminalWidth: number): number {
   return Math.max(MIN_CENTER_COLUMNS, terminalWidth - MIN_CENTER_COLUMNS);
@@ -58,6 +117,106 @@ export function statusWidth(terminalWidth: number): number {
   const budget = panelBudget(terminalWidth);
   const raw = rawStatusWidth(terminalWidth);
   return Math.max(PANEL_FLOOR, Math.min(raw, budget - sidebarWidth(terminalWidth)));
+}
+
+export interface CockpitPaneMetrics {
+  mode: CockpitLayoutMode;
+  showSidebar: boolean;
+  showList: boolean;
+  showStatus: boolean;
+  sidebarCols: number;
+  listCols: number;
+  statusCols: number;
+  listOffsetX: number;
+}
+
+export function computeCockpitPanes(
+  pageWidth: number,
+  focus: "sidebar" | "list" | "status",
+  hasContextMenu = false,
+): CockpitPaneMetrics {
+  const mode = cockpitLayoutMode(pageWidth);
+  const safeWidth = Math.max(20, pageWidth);
+  if (mode === "three-pane") {
+    const sb = sidebarWidth(safeWidth);
+    const st = hasContextMenu ? Math.min(34, statusWidth(safeWidth)) : statusWidth(safeWidth);
+    const list = Math.max(MIN_CENTER_COLUMNS, safeWidth - sb - st);
+    return {
+      mode,
+      showSidebar: true,
+      showList: true,
+      showStatus: true,
+      sidebarCols: sb,
+      listCols: list,
+      statusCols: st,
+      listOffsetX: sb,
+    };
+  }
+  if (mode === "two-pane") {
+    if (focus === "sidebar" && !hasContextMenu) {
+      const sb = Math.min(30, Math.max(20, Math.floor(safeWidth * 0.36)));
+      const list = Math.max(MIN_CENTER_COLUMNS, safeWidth - sb);
+      return {
+        mode,
+        showSidebar: true,
+        showList: true,
+        showStatus: false,
+        sidebarCols: sb,
+        listCols: list,
+        statusCols: 0,
+        listOffsetX: sb,
+      };
+    }
+    const st = hasContextMenu
+      ? Math.min(34, Math.max(22, Math.floor(safeWidth * 0.44)))
+      : Math.min(36, Math.max(24, Math.floor(safeWidth * 0.42)));
+    const list = Math.max(MIN_CENTER_COLUMNS, safeWidth - st);
+    return {
+      mode,
+      showSidebar: false,
+      showList: true,
+      showStatus: true,
+      sidebarCols: 0,
+      listCols: list,
+      statusCols: st,
+      listOffsetX: 0,
+    };
+  }
+  // single-pane mode
+  if (hasContextMenu || focus === "status") {
+    return {
+      mode,
+      showSidebar: false,
+      showList: false,
+      showStatus: true,
+      sidebarCols: 0,
+      listCols: 0,
+      statusCols: safeWidth,
+      listOffsetX: 0,
+    };
+  }
+  if (focus === "sidebar") {
+    return {
+      mode,
+      showSidebar: true,
+      showList: false,
+      showStatus: false,
+      sidebarCols: safeWidth,
+      listCols: 0,
+      statusCols: 0,
+      listOffsetX: 0,
+    };
+  }
+  return {
+    mode,
+    showSidebar: false,
+    showList: true,
+    showStatus: false,
+    sidebarCols: 0,
+    listCols: safeWidth,
+    statusCols: 0,
+    listOffsetX: 0,
+  };
 }
 
 export interface PreviewTreeEntry {

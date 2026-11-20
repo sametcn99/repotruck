@@ -1,9 +1,10 @@
-import { useKeyboard } from "@opentui/react";
+import { useKeyboard, useTerminalDimensions } from "@opentui/react";
 import { useState, useSyncExternalStore } from "react";
 import { validateCreateName } from "../services/creator.ts";
 import { ModalShell, SelectList } from "./ModalShell.tsx";
 import { type CreateStep, nextCreateStep, prevCreateStep, type Store } from "./store.ts";
 import { theme } from "./theme.ts";
+import { visibleSlice } from "./windowing.ts";
 
 const STEP_LABELS: Record<string, string> = {
   name: "[1/6] name",
@@ -32,6 +33,7 @@ function createHint(step: CreateStep): string {
 
 export function CreateModal({ store }: { store: Store }) {
   const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot);
+  const { height } = useTerminalDimensions();
   const modal = snapshot.modal;
   const step = modal !== null && modal.type === "create" ? modal.step : "name";
   const draft =
@@ -53,6 +55,9 @@ export function CreateModal({ store }: { store: Store }) {
     ...snapshot.orgs.map((org) => ({ label: org, org })),
   ];
   const boundedOrgCursor = Math.min(orgCursor, Math.max(0, orgRows.length - 1));
+  const orgViewport = Math.max(2, height - 16);
+  const orgWin = visibleSlice(boundedOrgCursor, orgRows.length, orgViewport);
+  const visibleOrgRows = orgRows.slice(orgWin.start, orgWin.end);
   const selectedOrg = draft.org;
 
   const advance = (partial: Partial<typeof draft>): void => {
@@ -220,14 +225,14 @@ export function CreateModal({ store }: { store: Store }) {
         <>
           <text>Owner (a Git repository must be clean when importing):</text>
           <SelectList
-            items={orgRows}
-            cursor={boundedOrgCursor}
+            items={visibleOrgRows}
+            cursor={boundedOrgCursor - orgWin.start}
             keyOf={(row) => row.label}
             labelOf={(row) => row.label}
             fgOf={(row, isCursor) =>
               isCursor ? theme.cursorFg() : selectedOrg === row.org ? selectedFg : theme.normal()
             }
-            onSelect={(_row, index) => setOrgCursor(index)}
+            onSelect={(_row, index) => setOrgCursor(orgWin.start + index)}
             onActivate={() => advanceFromOrg()}
           />
         </>
@@ -291,7 +296,7 @@ export function CreateModal({ store }: { store: Store }) {
           </text>
         </>
       ) : null}
-      <box flexDirection="row" gap={2} marginTop={1}>
+      <box flexDirection="row" flexWrap="wrap" gap={2} marginTop={height < 20 ? 0 : 1}>
         {step !== "name" ? (
           <text
             fg={dimFg}

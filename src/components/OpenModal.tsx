@@ -1,8 +1,9 @@
-import { useKeyboard } from "@opentui/react";
+import { useKeyboard, useTerminalDimensions } from "@opentui/react";
 import { useState, useSyncExternalStore } from "react";
 import { ModalShell, SelectList } from "./ModalShell.tsx";
 import type { Store, StoreSnapshot } from "./store.ts";
 import { theme } from "./theme.ts";
+import { visibleSlice } from "./windowing.ts";
 
 export function OpenModal({
   store,
@@ -12,12 +13,16 @@ export function OpenModal({
   onSuspendAndRun: (run: () => Promise<number>) => Promise<void>;
 }) {
   const snapshot: StoreSnapshot = useSyncExternalStore(store.subscribe, store.getSnapshot);
+  const { height } = useTerminalDimensions();
   const [cursor, setCursor] = useState(0);
   const modal = snapshot.modal;
   const apps = modal !== null && modal.type === "open" ? modal.apps : null;
   const list = apps ?? [];
   const boundedCursor = Math.min(cursor, Math.max(0, list.length - 1));
   const current = list[boundedCursor];
+  const viewportRows = Math.max(2, height - 15);
+  const window = visibleSlice(boundedCursor, list.length, viewportRows);
+  const visibleApps = list.slice(window.start, window.end);
   const dimFg = theme.dim();
   const accentColor = theme.launcher();
 
@@ -48,20 +53,29 @@ export function OpenModal({
         setCursor((c) => Math.min(list.length - 1, Math.max(0, c + (isUp ? -1 : 1))));
       }}
     >
-      <text>{`Repository: ${modal !== null && modal.type === "open" ? modal.key : ""}`}</text>
+      <text
+        wrapMode="none"
+        flexShrink={0}
+      >{`Repository: ${modal !== null && modal.type === "open" ? modal.key : ""}`}</text>
       {apps === null ? <text fg={dimFg}>detecting apps…</text> : null}
       {apps !== null && apps.length === 0 ? (
         <text fg={dimFg}>no apps detected (builtin, apps.json, or PATH)</text>
       ) : null}
       <SelectList
-        items={list}
-        cursor={boundedCursor}
+        items={visibleApps}
+        cursor={boundedCursor - window.start}
         keyOf={(app) => app.name}
         labelOf={(app) => app.name}
-        onSelect={(_app, index) => setCursor(index)}
+        onSelect={(_app, index) => setCursor(window.start + index)}
         onActivate={(app) => launchApp(app.name)}
       />
-      <box flexDirection="row" gap={2} marginTop={1}>
+      <box
+        flexDirection="row"
+        flexWrap="wrap"
+        gap={2}
+        marginTop={height < 20 ? 0 : 1}
+        flexShrink={0}
+      >
         <text
           fg={current !== undefined ? theme.success() : dimFg}
           onMouseDown={(e) => {

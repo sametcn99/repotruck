@@ -7,6 +7,7 @@ import { McpSection } from "./components/McpSection.tsx";
 import { PresetTable } from "./components/PresetTable.tsx";
 import { PresetTrees } from "./components/PresetTrees.tsx";
 import { ReferenceSection } from "./components/ReferenceSection.tsx";
+import { Screenshots } from "./components/Screenshots.tsx";
 import { ShortcutsTable } from "./components/ShortcutsTable.tsx";
 import { SiteNav } from "./components/SiteNav.tsx";
 import { TerminalHero } from "./components/TerminalHero.tsx";
@@ -58,6 +59,7 @@ export default function App() {
       <main id="main">
         <TerminalHero />
         <FeatureGrid />
+        <Screenshots />
         <PresetTable />
         <PresetTrees />
         <McpSection />

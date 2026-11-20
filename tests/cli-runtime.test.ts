@@ -1,4 +1,5 @@
 import { afterAll, describe, expect, test } from "bun:test";
+import { spawnSync } from "node:child_process";
 import {
   existsSync,
   mkdirSync,
@@ -26,13 +27,15 @@ function runCli(args: string[], env?: Record<string, string>) {
       }
     }
   }
-  return Bun.spawnSync([process.execPath, "run", cliPath, ...args], {
+  // Node's spawnSync, not Bun.spawnSync: Bun's piped spawnSync empties or
+  // truncates child output under concurrent load on CI runners.
+  const result = spawnSync(process.execPath, ["run", cliPath, ...args], {
     cwd: repoRoot,
-    stdout: "pipe",
-    stderr: "pipe",
-    stdin: "ignore",
     env: mergedEnv as Record<string, string>,
+    stdio: ["ignore", "pipe", "pipe"],
+    maxBuffer: 32 * 1024 * 1024,
   });
+  return { exitCode: result.status, stdout: result.stdout, stderr: result.stderr };
 }
 
 const tempRoots: string[] = [];

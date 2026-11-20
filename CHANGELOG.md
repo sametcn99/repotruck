@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-11-20
+
+### Added
+
+- **TUI v2 — full CLI parity surface (tuiv2)**:
+  - Persistent nav rail + 17 full-screen pages reachable with `v`+letter, `[`/`]` cycling, the command palette and the repo context menu (`→` or right-click): Sync Center, Discover, Scan & Adopt, Conflicts, Status Matrix, Code Search, Stats, Changelog, Run Console, Presets, Profiles, Trash & Backups, Worktrees, Agents & MCP, Settings, Log — every page maps a CLI command's full flag set (scope/limit/depth/blobless/stash/divergence/globs/watch, search modes and filters, run scopes, remote PR/CI, scorecards, MCP HTTP controls, …).
+  - Command registry (`src/commands/registry.ts`) as the single source of truth: the palette (now fuzzy), the auto-generated Command Form modal with a live `repotruck …` CLI line, help sections and a strict CLI↔registry parity test that fails CI when a CLI flag lacks a TUI surface binding.
+  - Repo context menu covering every repo-targeted action including confirm-guarded permanent delete; thin confirmation dialogs layered above pages and modals; OSC 52 clipboard (`J` copy-as-JSON on data pages) with temp-file fallback; background task model beside the sync runner.
+  - Every view is reachable from the omnibar command palette: a `[Go]` section derived from the view registry leads the list with `v`-prefix shortcuts and an active-view marker.
+  - Transient result toasts: full-page views have no activity panel, so every action result (copies, restores, scans, MCP start/stop, …) surfaces as an auto-dismissing phase-colored toast above the footer; failures linger longer.
+  - Central diagnostics log with a Log page (`v l`): a process-wide ring buffer captures runtime unhandled rejections/exceptions, Octokit request failures, swallowed `warnQuiet` warnings and FAILED activity statuses; background errors raise an instant toast on every view.
+  - Website docs generated from the same sources: `bun run docs:gen` renders the command/flag and shortcut tables from the registry and the in-app help rows, and `docs:check` fails CI when the checked-in copies drift.
+  - Auto-captured TUI screenshots: `bun run shots:gen` renders every page, modal and dialog (38 scenes) against a deterministic mock workspace — real git fixtures, mocked services — and writes colored SVGs plus the website gallery manifest and the README's collapsible gallery; `docs:check` keeps them in sync.
+  - All existing keyboard shortcuts, modals and mouse behaviors preserved.
+
+### Fixed
+
+- Octokit's request-log plugin no longer `console.warn`s failed API requests straight onto the TUI's alternate screen (repos with issues/PRs disabled answer 404 for the pulls endpoint and flooded the render); remote health now skips the pulls request when `has_pull_requests` is false and degrades a 404 to zero open PRs instead of failing the check.
+
 ## [0.4.1] - 2026-10-28
 
 ### Added

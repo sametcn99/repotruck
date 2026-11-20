@@ -2,6 +2,7 @@ import { AuthError } from "../../services/auth.ts";
 import type { EmitProgress } from "../../services/cloner.ts";
 import { firstErrorLine } from "../../services/cloner.ts";
 import type { RepotruckConfig } from "../../services/config.ts";
+import { diagSnapshot, diagSubscribe, logDiag } from "../../services/diagnostics.ts";
 import type { RepoInfo } from "../../services/github.ts";
 import {
   DEFAULT_GITHUB_BASE_URL,
@@ -9,6 +10,7 @@ import {
   resolveGithubBaseUrl,
 } from "../../services/settings.ts";
 import { loadWorkspace } from "../../services/workspace.ts";
+import { VIEW_ORDER } from "../views/viewRegistry.ts";
 import { buildInitialSnapshot, buildStoreDeps, type ResolvedStoreDeps } from "./defaults.ts";
 import {
   filterByHealth,
@@ -38,6 +40,9 @@ import {
   type StatusPhase,
   type StoreDeps,
   type StoreSnapshot,
+  TOAST_FAILED_MS,
+  TOAST_MS,
+  type ToastEntry,
   UNDO_STACK_CAP,
   type UndoAction,
 } from "./types.ts";
@@ -61,10 +66,33 @@ export class StoreBase {
   protected initialized = false;
   private healthGen = 0;
 
+  private lastDiagId = 0;
+
   constructor(root: string, deps: StoreDeps = {}) {
     this.rootValue = root;
     this.deps = buildStoreDeps(deps);
     this.state = buildInitialSnapshot(root);
+    // Background diagnostics (runtime handlers, Octokit, warnQuiet) raise an
+    // instant FAILED toast on every view. Entries born from a FAILED status
+    // are skipped — the status mirror already toasted those.
+    const currentDiag = diagSnapshot();
+    this.lastDiagId = currentDiag.length > 0 ? (currentDiag[currentDiag.length - 1]?.id ?? 0) : 0;
+    diagSubscribe(() => this.surfaceDiagErrors());
+  }
+
+  private surfaceDiagErrors(): void {
+    const entries = diagSnapshot();
+    for (const entry of entries) {
+      if (entry.id <= this.lastDiagId) continue;
+      if (entry.level === "error" && entry.fromStatus !== true) {
+        this.showToast(
+          "FAILED",
+          `${entry.source}${entry.message.length > 0 ? ` — ${entry.message}` : ""}`,
+        );
+      }
+    }
+    const last = entries[entries.length - 1];
+    if (last !== undefined && last.id > this.lastDiagId) this.lastDiagId = last.id;
   }
 
   subscribe = (listener: () => void): (() => void) => {
@@ -89,17 +117,113 @@ export class StoreBase {
   openModal = (modal: ModalState): void => this.set({ modal, modalError: null });
   setModal = (modal: ModalState): void => this.set({ modal });
   closeModal = (): void => this.set({ modal: null, modalError: null, movePrefill: null });
+
+  private dialogConfirm: (() => void) | null = null;
+
+  confirmDialog = (
+    options: { title: string; message: string; confirmLabel?: string; danger?: boolean },
+    onConfirm: () => void,
+  ): void => {
+    this.dialogConfirm = onConfirm;
+    this.set({
+      dialog: {
+        title: options.title,
+        message: options.message,
+        confirmLabel: options.confirmLabel ?? "Confirm",
+        danger: options.danger === true,
+      },
+    });
+  };
+
+  resolveDialog = (confirmed: boolean): void => {
+    const callback = this.dialogConfirm;
+    this.dialogConfirm = null;
+    this.set({ dialog: null });
+    if (confirmed && callback !== null) callback();
+  };
+
+  // ---- background task model ---------------------------------------------
+  // Generic long-running work (MCP server, command runs) tracked beside
+  // the sync-specific `running` flag so the nav rail dot reflects both.
+
+  protected activeTasks = new Map<string, { label: string; cancel?: () => void }>();
+
+  beginTask = (id: string, label: string, cancel?: () => void): void => {
+    this.activeTasks.set(id, { label, ...(cancel !== undefined ? { cancel } : {}) });
+    this.set({ activeTaskCount: this.activeTasks.size });
+    this.pushStatus("DONE", `[${label}]`, "started");
+  };
+
+  endTask = (id: string, message?: string, failed = false): void => {
+    const task = this.activeTasks.get(id);
+    this.activeTasks.delete(id);
+    this.set({ activeTaskCount: this.activeTasks.size });
+    if (task !== undefined) {
+      this.pushStatus(
+        failed ? "FAILED" : "DONE",
+        `[${task.label}]`,
+        message ?? (failed ? "failed" : "done"),
+      );
+    }
+  };
+
+  cancelTask = (id: string): void => {
+    this.activeTasks.get(id)?.cancel?.();
+    this.endTask(id, "cancelled");
+  };
+
+  taskLabel = (id: string): string | null => this.activeTasks.get(id)?.label ?? null;
   openHelpModal = (): void => this.openModal({ type: "help" });
   openDetailModal = (key: string): void => this.openModal({ type: "detail", key });
   openCloneModal = (): void => this.openModal({ type: "clone" });
 
   setFocus = (focus: FocusRegion): void => {
-    if (this.state.focus !== focus) this.set({ focus });
+    if (this.state.focus !== focus || this.state.navFocused) {
+      this.set({ focus, navFocused: false });
+    }
   };
 
-  cycleFocus = (): void => {
+  setNavFocused = (navFocused: boolean): void => {
+    if (this.state.navFocused !== navFocused) {
+      const navCursor = navFocused
+        ? Math.max(0, VIEW_ORDER.indexOf(this.state.view))
+        : this.state.navCursor;
+      this.set({ navFocused, navCursor });
+    }
+  };
+
+  moveNavCursor = (delta: number): void => {
+    const total = VIEW_ORDER.length;
+    if (total === 0) return;
+    const next = (this.state.navCursor + delta + total) % total;
+    this.set({ navCursor: next });
+  };
+
+  setNavCursor = (index: number): void => {
+    const total = VIEW_ORDER.length;
+    if (total === 0) return;
+    this.set({ navCursor: Math.min(Math.max(0, index), total - 1) });
+  };
+
+  cycleFocus = (includeNav = false): void => {
+    if (this.state.view !== "cockpit") {
+      if (includeNav) {
+        this.setNavFocused(!this.state.navFocused);
+      }
+      return;
+    }
+    if (includeNav) {
+      if (this.state.navFocused) {
+        this.set({ navFocused: false, focus: "list" });
+        return;
+      }
+      if (this.state.focus === "sidebar") {
+        this.setNavFocused(true);
+        return;
+      }
+    }
     const index = FOCUS_ORDER.indexOf(this.state.focus);
-    this.set({ focus: FOCUS_ORDER[(index + 1) % FOCUS_ORDER.length]! });
+    this.set({ focus: FOCUS_ORDER[(index + 1) % FOCUS_ORDER.length]!, navFocused: false });
   };
 
   pushStatus = (phase: StatusPhase, key: string, message?: string): void => {
@@ -110,6 +234,42 @@ export class StoreBase {
       ...(message !== undefined ? { message } : {}),
     };
     this.set({ statuses: [...this.state.statuses, entry].slice(-STATUSES_CAP) });
+    // Failures are captured in the diagnostics log so the Log view keeps a
+    // complete error history; `fromStatus` stops the diag listener from
+    // toasting what the mirror below already surfaced.
+    if (phase === "FAILED") logDiag("error", key, message ?? "", { fromStatus: true });
+    // Full-page views have no Status Panel, so surface the result as a
+    // transient toast. The cockpit already shows the activity log inline and
+    // a running sync keeps its progress in the footer summary instead.
+    if (this.state.view !== "cockpit" && this.state.modal === null && !this.state.running) {
+      this.showToast(phase, `${key}${message !== undefined ? ` — ${message}` : ""}`);
+    }
+  };
+
+  // ---- transient toast -------------------------------------------------------
+
+  private toastTimer: ReturnType<typeof setTimeout> | null = null;
+
+  protected showToast = (phase: StatusPhase, message: string): void => {
+    const toast: ToastEntry = { id: this.nextStatusId++, phase, message };
+    if (this.toastTimer !== null) clearTimeout(this.toastTimer);
+    this.set({ toast });
+    // Failures carry a path/next step worth reading; successes can vanish fast.
+    const delay = phase === "FAILED" ? TOAST_FAILED_MS : TOAST_MS;
+    const timer = setTimeout(() => {
+      this.toastTimer = null;
+      if (this.state.toast?.id === toast.id) this.set({ toast: null });
+    }, delay);
+    timer.unref?.();
+    this.toastTimer = timer;
+  };
+
+  dismissToast = (): void => {
+    if (this.toastTimer !== null) {
+      clearTimeout(this.toastTimer);
+      this.toastTimer = null;
+    }
+    if (this.state.toast !== null) this.set({ toast: null });
   };
 
   protected progressToStatus: EmitProgress = (progress) => {
