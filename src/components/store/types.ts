@@ -108,7 +108,8 @@ export type ViewId =
   | "trash"
   | "worktree"
   | "agents"
-  | "settings";
+  | "settings"
+  | "log";
 
 export type OmnibarMode = "commands" | "symbols" | "github" | "runner";
 

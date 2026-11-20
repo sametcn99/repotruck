@@ -2,6 +2,7 @@ import { AuthError } from "../../services/auth.ts";
 import type { EmitProgress } from "../../services/cloner.ts";
 import { firstErrorLine } from "../../services/cloner.ts";
 import type { RepotruckConfig } from "../../services/config.ts";
+import { diagSnapshot, diagSubscribe, logDiag } from "../../services/diagnostics.ts";
 import type { RepoInfo } from "../../services/github.ts";
 import {
   DEFAULT_GITHUB_BASE_URL,
@@ -65,10 +66,33 @@ export class StoreBase {
   protected initialized = false;
   private healthGen = 0;
 
+  private lastDiagId = 0;
+
   constructor(root: string, deps: StoreDeps = {}) {
     this.rootValue = root;
     this.deps = buildStoreDeps(deps);
     this.state = buildInitialSnapshot(root);
+    // Background diagnostics (runtime handlers, Octokit, warnQuiet) raise an
+    // instant FAILED toast on every view. Entries born from a FAILED status
+    // are skipped — the status mirror already toasted those.
+    const currentDiag = diagSnapshot();
+    this.lastDiagId = currentDiag.length > 0 ? (currentDiag[currentDiag.length - 1]?.id ?? 0) : 0;
+    diagSubscribe(() => this.surfaceDiagErrors());
+  }
+
+  private surfaceDiagErrors(): void {
+    const entries = diagSnapshot();
+    for (const entry of entries) {
+      if (entry.id <= this.lastDiagId) continue;
+      if (entry.level === "error" && entry.fromStatus !== true) {
+        this.showToast(
+          "FAILED",
+          `${entry.source}${entry.message.length > 0 ? ` — ${entry.message}` : ""}`,
+        );
+      }
+    }
+    const last = entries[entries.length - 1];
+    if (last !== undefined && last.id > this.lastDiagId) this.lastDiagId = last.id;
   }
 
   subscribe = (listener: () => void): (() => void) => {
@@ -210,6 +234,10 @@ export class StoreBase {
       ...(message !== undefined ? { message } : {}),
     };
     this.set({ statuses: [...this.state.statuses, entry].slice(-STATUSES_CAP) });
+    // Failures are captured in the diagnostics log so the Log view keeps a
+    // complete error history; `fromStatus` stops the diag listener from
+    // toasting what the mirror below already surfaced.
+    if (phase === "FAILED") logDiag("error", key, message ?? "", { fromStatus: true });
     // Full-page views have no Status Panel, so surface the result as a
     // transient toast. The cockpit already shows the activity log inline and
     // a running sync keeps its progress in the footer summary instead.

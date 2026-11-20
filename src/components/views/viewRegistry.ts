@@ -148,6 +148,14 @@ export const VIEW_SPECS: readonly ViewSpec[] = [
     summary: "inspect and continue/abort stuck rebases",
     ticket: "t15",
   },
+  {
+    id: "log",
+    title: "Log",
+    group: "System",
+    go: "l",
+    summary: "captured errors, warnings and runtime diagnostics",
+    ticket: "—",
+  },
 ];
 
 export const VIEW_ORDER: readonly ViewId[] = VIEW_SPECS.map((spec) => spec.id);
