@@ -212,3 +212,76 @@ describe("GitHubService etag conditional requests", () => {
     }
   });
 });
+
+describe("GitHubService.getRepoRemoteHealth", () => {
+  const repoBodyBase = {
+    name: "api",
+    owner: { login: "acme" },
+    default_branch: "main",
+  };
+
+  function fakeRemoteOctokit(
+    repoBody: Record<string, unknown>,
+    pulls: () => unknown,
+    checkRuns?: { check_runs: Array<Record<string, unknown>> },
+    combinedStatus?: Record<string, unknown>,
+  ): { octokit: Octokit; urls: string[] } {
+    const urls: string[] = [];
+    const octokit = {
+      request: async (url: string) => {
+        urls.push(url);
+        if (url === "GET /repos/{owner}/{repo}") {
+          return { status: 200, data: repoBody, headers: {} };
+        }
+        if (url === "GET /repos/{owner}/{repo}/pulls") {
+          const result = pulls();
+          if (result instanceof Error) throw result;
+          return { status: 200, data: result, headers: {} };
+        }
+        if (url === "GET /repos/{owner}/{repo}/commits/{ref}/check-runs") {
+          return { status: 200, data: checkRuns ?? { check_runs: [] }, headers: {} };
+        }
+        if (url === "GET /repos/{owner}/{repo}/commits/{ref}/status") {
+          return { status: 200, data: combinedStatus ?? { total_count: 0 }, headers: {} };
+        }
+        throw new Error(`unexpected url: ${url}`);
+      },
+    } as unknown as Octokit;
+    return { octokit, urls };
+  }
+
+  test("skips the pulls request when PRs are disabled and still derives CI", async () => {
+    const { octokit, urls } = fakeRemoteOctokit(
+      { ...repoBodyBase, has_pull_requests: false },
+      () => {
+        throw new Error("pulls must not be requested for a PR-disabled repo");
+      },
+      { check_runs: [{ status: "completed", conclusion: "success" }] },
+    );
+    const service = new GitHubService("token", { octokit });
+    const health = await service.getRepoRemoteHealth("acme", "api");
+    expect(health).toEqual({ defaultBranch: "main", openPrs: 0, ciState: "success" });
+    expect(urls.some((u) => u.includes("/pulls"))).toBe(false);
+  });
+
+  test("a 404 from pulls (PRs disabled) degrades to zero open PRs instead of failing", async () => {
+    const notFound = Object.assign(new Error("Not Found"), { status: 404 });
+    const { octokit } = fakeRemoteOctokit(
+      { ...repoBodyBase, has_pull_requests: true },
+      () => notFound,
+      { check_runs: [] },
+      { total_count: 1, state: "success" },
+    );
+    const service = new GitHubService("token", { octokit });
+    const health = await service.getRepoRemoteHealth("acme", "api");
+    expect(health.openPrs).toBe(0);
+    expect(health.ciState).toBe("success");
+  });
+
+  test("non-404 pulls failures still propagate", async () => {
+    const serverError = Object.assign(new Error("boom"), { status: 500 });
+    const { octokit } = fakeRemoteOctokit({ ...repoBodyBase }, () => serverError);
+    const service = new GitHubService("token", { octokit });
+    await expect(service.getRepoRemoteHealth("acme", "api")).rejects.toThrow("boom");
+  });
+});
