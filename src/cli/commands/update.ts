@@ -62,6 +62,9 @@ export function register(program: Command, _ctx: CliContext): void {
             return;
           }
           process.stdout.write(`✓ ${outcome.message}\n`);
+          process.stdout.write(
+            "AGENTS.md guides in registered workspaces refresh automatically on the next dashboard start or sync\n",
+          );
         },
         { command: "update", json: options.json },
       );

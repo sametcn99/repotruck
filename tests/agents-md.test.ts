@@ -1,4 +1,6 @@
 import { describe, expect, test } from "bun:test";
+import { REGISTRY } from "../src/commands/registry.ts";
+import { MCP_TOOL_CATALOG } from "../src/mcp/toolCatalog.ts";
 import { PRESET_IDS, type PresetId } from "../src/presets/index.ts";
 import {
   AGENTS_MD_MARKER,
@@ -10,6 +12,13 @@ import {
   generateAgentsMd,
   parsePresetFromAgentsMd,
 } from "../src/services/agentsMd.ts";
+import {
+  GUIDE_BEGIN,
+  GUIDE_END,
+  GUIDE_VERSION,
+  parseGuideVersion,
+  renderAgentsMdGuide,
+} from "../src/services/agentsMdGuide.ts";
 
 const internalRepo: AgentsMdRepo = {
   owner: "monalisa",
@@ -253,5 +262,65 @@ describe("custom instructions block", () => {
   test("extract tolerates a missing end marker", () => {
     const partial = ["header", CUSTOM_INSTRUCTIONS_BEGIN, "keep this line"].join("\n");
     expect(extractCustomInstructions(partial)).toBe("keep this line");
+  });
+});
+
+describe("cli + mcp guide section", () => {
+  test("is embedded between versioned markers before Agent Rules", () => {
+    const content = generate("categorized", [], null);
+    expect(content).toContain(GUIDE_BEGIN);
+    expect(content).toContain(GUIDE_END);
+    expect(parseGuideVersion(content)).toBe(GUIDE_VERSION);
+    expect(content.indexOf(GUIDE_BEGIN)).toBeGreaterThan(0);
+    expect(content.indexOf("## Agent Rules")).toBeGreaterThan(content.indexOf(GUIDE_END));
+  });
+
+  test("covers every registry command and every MCP tool", () => {
+    const guide = renderAgentsMdGuide();
+    for (const spec of REGISTRY) {
+      if (spec.id === "__globals__") continue;
+      expect(guide).toContain(`repotruck ${spec.path}`);
+    }
+    for (const tool of MCP_TOOL_CATALOG) {
+      expect(guide).toContain(`\`${tool.name}\``);
+    }
+  });
+
+  test("renders flag docs and the MCP connection snippet", () => {
+    const guide = renderAgentsMdGuide();
+    expect(guide).toContain("- `-s, --scope <scope>` —");
+    expect(guide).toContain('"command": "repotruck"');
+    expect(guide).toContain('["mcp"]');
+  });
+
+  test("is deterministic", () => {
+    expect(renderAgentsMdGuide()).toBe(renderAgentsMdGuide());
+  });
+
+  test("regenerating from a pre-guide file restores the guide but keeps custom text", () => {
+    const custom = ["# House rules", "- keep commits small"].join("\n");
+    // Simulate an AGENTS.md written by an older repotruck (no guide section).
+    const legacy = [
+      AGENTS_MD_MARKER,
+      "",
+      "# Repository Workspace Map",
+      "",
+      "## Agent Rules",
+      "",
+      CUSTOM_INSTRUCTIONS_BEGIN,
+      custom,
+      CUSTOM_INSTRUCTIONS_END,
+      "",
+    ].join("\n");
+    expect(parseGuideVersion(legacy)).toBe(0);
+
+    const regenerated = generateAgentsMd({
+      preset: "categorized",
+      lastSync: null,
+      repos: [],
+      customInstructions: extractCustomInstructions(legacy),
+    });
+    expect(parseGuideVersion(regenerated)).toBe(GUIDE_VERSION);
+    expect(regenerated).toContain(custom);
   });
 });
