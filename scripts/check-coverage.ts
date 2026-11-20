@@ -28,8 +28,19 @@ try {
   // runs; a single retry separates that flakiness from real failures.
   let result: ReturnType<typeof Bun.spawnSync>;
   for (let attempt = 1; attempt <= 2; attempt++) {
+    // Serialized files: many CLI tests spawn bun subprocesses, and running
+    // them from parallel workers races the OS pipes on slower CI runners
+    // (macOS/Windows see exit-0 children with empty stdout).
     result = Bun.spawnSync(
-      ["bun", "test", "--coverage", "--coverage-reporter=lcov", "--coverage-dir", covDir],
+      [
+        "bun",
+        "test",
+        "--parallel=1",
+        "--coverage",
+        "--coverage-reporter=lcov",
+        "--coverage-dir",
+        covDir,
+      ],
       { stdout: "inherit", stderr: "inherit" },
     );
     if (result.exitCode === 0) break;
