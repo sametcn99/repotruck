@@ -114,3 +114,5 @@ Contributions are welcome! Please read [CONTRIBUTING.md](./CONTRIBUTING.md) for 
 ## License
 
 [MIT](./LICENSE)
+
+<!-- ci probe: trailing comment -->
