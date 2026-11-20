@@ -221,11 +221,18 @@ describe("t08 stats page", () => {
     store.setView("stats");
     await store.refreshStatsPage();
     await settle(setup);
-    const frame = norm(setup.captureCharFrame());
+    let frame = norm(setup.captureCharFrame());
     expect(frame).toContain("grade:");
     expect(frame).toContain("cleanliness");
     expect(frame).toContain("languages");
     expect(store.getSnapshot().statsPage?.stats).not.toBeNull();
+
+    // J copy mirrors into the transient toast line above the footer.
+    store.pushStatus("DONE", "[stats]", "stats JSON copied to clipboard");
+    await settle(setup);
+    frame = norm(setup.captureCharFrame());
+    expect(frame).toContain("[stats] — stats JSON copied to clipboard");
+    expect(store.getSnapshot().toast?.phase).toBe("DONE");
     await setup.dispose();
   });
 });

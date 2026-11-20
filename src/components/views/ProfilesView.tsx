@@ -2,7 +2,7 @@ import { useKeyboard, useTerminalDimensions } from "@opentui/react";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import type { Store } from "../store.ts";
 import { theme } from "../theme.ts";
-import { clampBoxLine, scrollSlice } from "../windowing.ts";
+import { clampBoxLine, visibleSlice } from "../windowing.ts";
 
 /**
  * `repotruck profile list/pin/unpin/save/delete` as a page: pinned repos
@@ -25,7 +25,9 @@ export function ProfilesView({
   const [nameValue, setNameValue] = useState("");
   const [editing, setEditing] = useState(false);
   const [profiles, setProfiles] = useState<Record<string, string[]>>({});
-  const [scrollIdx, setScrollIdx] = useState(0);
+  const [pane, setPane] = useState<"pinned" | "profiles">("pinned");
+  const [pinnedCursor, setPinnedCursor] = useState(0);
+  const [profileCursor, setProfileCursor] = useState(0);
 
   useEffect(() => {
     void (async () => {
@@ -55,28 +57,107 @@ export function ProfilesView({
   const profileBudget = stacked
     ? Math.max(1, Math.floor((Math.floor((height - 1) / 2) - 4) / 3))
     : Math.max(1, Math.floor((height - 5) / 3));
-  const maxScroll = Math.max(
-    0,
-    Math.max(pinned.length - pinnedBudget, profileEntries.length - profileBudget),
-  );
+
+  const maxPinned = Math.max(0, pinned.length - 1);
+  const clampedPinnedCursor = Math.min(pinnedCursor, maxPinned);
+  const maxProfile = Math.max(0, profileEntries.length - 1);
+  const clampedProfileCursor = Math.min(profileCursor, maxProfile);
+
+  const inputFocused =
+    editing &&
+    !snapshot.navFocused &&
+    snapshot.dialog === null &&
+    snapshot.modal === null &&
+    snapshot.contextMenu === null;
+  const viewFocused =
+    !editing &&
+    !snapshot.navFocused &&
+    snapshot.dialog === null &&
+    snapshot.modal === null &&
+    snapshot.contextMenu === null;
+
+  const confirmDeleteProfile = (name: string) => {
+    store.confirmDialog(
+      {
+        title: `Delete profile ${name}?`,
+        message: `repotruck profile delete ${name}`,
+        confirmLabel: "Delete",
+        danger: true,
+      },
+      () => {
+        void store.profileDelete(name);
+        setProfiles((current) => {
+          const next = { ...current };
+          delete next[name];
+          return next;
+        });
+      },
+    );
+  };
 
   useKeyboard((key) => {
+    const snap = store.getSnapshot();
+    if (
+      snap.navFocused ||
+      snap.dialog !== null ||
+      snap.modal !== null ||
+      snap.contextMenu !== null
+    ) {
+      return;
+    }
     if (editing) {
       if (key.name === "escape") setEditing(false);
       return;
     }
-    if (key.name === "n") setEditing(true);
-    else if (key.name === "p") void store.togglePinSelection();
-    else if (key.name === "up" || key.sequence === "k") {
-      setScrollIdx((s) => Math.max(0, Math.min(s, maxScroll) - 1));
+    if (key.name === "n") {
+      setEditing(true);
+    } else if (key.name === "p") {
+      void store.togglePinSelection();
+    } else if (key.name === "left" || key.sequence === "h") {
+      setPane("pinned");
+    } else if (key.name === "right" || key.sequence === "l") {
+      setPane("profiles");
+    } else if (key.name === "up" || key.sequence === "k") {
+      if (pane === "pinned") setPinnedCursor((c) => Math.max(0, Math.min(c, maxPinned) - 1));
+      else setProfileCursor((c) => Math.max(0, Math.min(c, maxProfile) - 1));
     } else if (key.name === "down" || key.sequence === "j") {
-      setScrollIdx((s) => Math.min(maxScroll, s + 1));
+      if (pane === "pinned")
+        setPinnedCursor((c) => Math.min(maxPinned, Math.min(c, maxPinned) + 1));
+      else setProfileCursor((c) => Math.min(maxProfile, Math.min(c, maxProfile) + 1));
+    } else if (key.name === "home" || key.sequence === "g") {
+      if (pane === "pinned") setPinnedCursor(0);
+      else setProfileCursor(0);
+    } else if (
+      key.name === "end" ||
+      key.sequence === "G" ||
+      (key.shift === true && key.name === "g")
+    ) {
+      if (pane === "pinned") setPinnedCursor(maxPinned);
+      else setProfileCursor(maxProfile);
+    } else if (
+      pane === "pinned" &&
+      (key.name === "return" || key.name === "space" || key.name === "o")
+    ) {
+      const target = pinned[clampedPinnedCursor];
+      if (target !== undefined) store.openDetailModal(target);
+    } else if (pane === "profiles") {
+      const entry = profileEntries[clampedProfileCursor];
+      if (entry === undefined) return;
+      const [profileName] = entry;
+      if (key.name === "s" || key.name === "return") {
+        store.setView("sync");
+      } else if (key.name === "r" || key.sequence === "R") {
+        store.updateRunConsole({ scope: "profile", profile: profileName });
+        store.setView("run");
+      } else if (key.name === "d" || key.name === "x") {
+        confirmDeleteProfile(profileName);
+      }
     }
   });
 
-  const pinnedWin = scrollSlice(scrollIdx, pinned.length, pinnedBudget);
+  const pinnedWin = visibleSlice(clampedPinnedCursor, pinned.length, pinnedBudget);
   const visiblePinned = pinned.slice(pinnedWin.start, pinnedWin.end);
-  const profileWin = scrollSlice(scrollIdx, profileEntries.length, profileBudget);
+  const profileWin = visibleSlice(clampedProfileCursor, profileEntries.length, profileBudget);
   const visibleProfiles = profileEntries.slice(profileWin.start, profileWin.end);
 
   return (
@@ -86,9 +167,15 @@ export function ProfilesView({
       width="100%"
       onMouseScroll={(e) => {
         const isUp = e.scroll?.direction === "up" || e.button === 4;
-        setScrollIdx((s) =>
-          Math.min(maxScroll, Math.max(0, Math.min(s, maxScroll) + (isUp ? -1 : 1))),
-        );
+        if (pane === "pinned") {
+          setPinnedCursor((c) =>
+            Math.min(maxPinned, Math.max(0, Math.min(c, maxPinned) + (isUp ? -1 : 1))),
+          );
+        } else {
+          setProfileCursor((c) =>
+            Math.min(maxProfile, Math.max(0, Math.min(c, maxProfile) + (isUp ? -1 : 1))),
+          );
+        }
       }}
     >
       <box
@@ -99,12 +186,13 @@ export function ProfilesView({
       >
         <box
           border
-          borderColor={theme.border()}
+          borderColor={viewFocused && pane === "pinned" ? theme.focusBorder() : theme.border()}
           flexDirection="column"
           flexGrow={1}
           flexBasis={stacked ? undefined : 0}
           width={stacked ? "100%" : undefined}
           overflow="hidden"
+          onMouseDown={() => setPane("pinned")}
         >
           <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
             {clampBoxLine(
@@ -119,11 +207,27 @@ export function ProfilesView({
               {clampBoxLine("  nothing pinned — P in the cockpit or [p] here", boxInnerCols)}
             </text>
           ) : (
-            visiblePinned.map((key) => (
-              <text key={key} fg={theme.normal()} wrapMode="none" flexShrink={0}>
-                {clampBoxLine(` ★ ${key}`, boxInnerCols)}
-              </text>
-            ))
+            visiblePinned.map((key, offset) => {
+              const idx = pinnedWin.start + offset;
+              const isCursor = viewFocused && pane === "pinned" && idx === clampedPinnedCursor;
+              return (
+                <text
+                  key={key}
+                  fg={isCursor ? theme.cursorFg() : theme.normal()}
+                  bg={isCursor ? theme.cursorBg() : undefined}
+                  wrapMode="none"
+                  flexShrink={0}
+                  onMouseDown={(event) => {
+                    event.stopPropagation?.();
+                    setPane("pinned");
+                    setPinnedCursor(idx);
+                    store.openDetailModal(key);
+                  }}
+                >
+                  {clampBoxLine(`${isCursor ? ">" : " "} ★ ${key}`, boxInnerCols)}
+                </text>
+              );
+            })
           )}
           <text
             fg={theme.accent()}
@@ -142,12 +246,13 @@ export function ProfilesView({
         </box>
         <box
           border
-          borderColor={theme.border()}
+          borderColor={viewFocused && pane === "profiles" ? theme.focusBorder() : theme.border()}
           flexDirection="column"
           flexGrow={1}
           flexBasis={stacked ? undefined : 0}
           width={stacked ? "100%" : undefined}
           overflow="hidden"
+          onMouseDown={() => setPane("profiles")}
         >
           <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
             {clampBoxLine(
@@ -162,70 +267,81 @@ export function ProfilesView({
               {"  no named profiles yet"}
             </text>
           ) : (
-            visibleProfiles.map(([name, refs]) => (
-              <box key={name} flexDirection="column" flexShrink={0}>
-                <text fg={theme.normal()} wrapMode="none" flexShrink={0}>
-                  {clampBoxLine(` ${name} · ${refs.length} repos`, boxInnerCols)}
-                </text>
-                <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
-                  {clampBoxLine(
-                    `   ${refs.slice(0, 3).join(", ")}${refs.length > 3 ? " …" : ""}`,
-                    boxInnerCols,
-                  )}
-                </text>
-                <box flexDirection="row" gap={2} flexShrink={0}>
+            visibleProfiles.map(([name, refs], offset) => {
+              const idx = profileWin.start + offset;
+              const isCursor = viewFocused && pane === "profiles" && idx === clampedProfileCursor;
+              return (
+                <box
+                  key={name}
+                  flexDirection="column"
+                  flexShrink={0}
+                  onMouseDown={() => {
+                    setPane("profiles");
+                    setProfileCursor(idx);
+                  }}
+                >
                   <text
-                    fg={theme.accent()}
+                    fg={isCursor ? theme.cursorFg() : theme.normal()}
+                    bg={isCursor ? theme.cursorBg() : undefined}
                     wrapMode="none"
                     flexShrink={0}
-                    onMouseDown={(event) => {
-                      event.stopPropagation?.();
-                      store.setView("sync");
-                    }}
                   >
-                    {"   [⇅ sync]"}
+                    {clampBoxLine(
+                      `${isCursor ? ">" : " "} ${name} · ${refs.length} repos`,
+                      boxInnerCols,
+                    )}
                   </text>
-                  <text
-                    fg={theme.accent()}
-                    wrapMode="none"
-                    flexShrink={0}
-                    onMouseDown={(event) => {
-                      event.stopPropagation?.();
-                      store.updateRunConsole({ scope: "profile", profile: name });
-                      store.setView("run");
-                    }}
-                  >
-                    {"[▶ run]"}
+                  <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
+                    {clampBoxLine(
+                      `   ${refs.slice(0, 3).join(", ")}${refs.length > 3 ? " …" : ""}`,
+                      boxInnerCols,
+                    )}
                   </text>
-                  <text
-                    fg={theme.error()}
-                    wrapMode="none"
-                    flexShrink={0}
-                    onMouseDown={(event) => {
-                      event.stopPropagation?.();
-                      store.confirmDialog(
-                        {
-                          title: `Delete profile ${name}?`,
-                          message: `repotruck profile delete ${name}`,
-                          confirmLabel: "Delete",
-                          danger: true,
-                        },
-                        () => {
-                          void store.profileDelete(name);
-                          setProfiles((current) => {
-                            const next = { ...current };
-                            delete next[name];
-                            return next;
-                          });
-                        },
-                      );
-                    }}
-                  >
-                    {"[delete]"}
-                  </text>
+                  <box flexDirection="row" gap={2} flexShrink={0}>
+                    <text
+                      fg={theme.accent()}
+                      wrapMode="none"
+                      flexShrink={0}
+                      onMouseDown={(event) => {
+                        event.stopPropagation?.();
+                        setPane("profiles");
+                        setProfileCursor(idx);
+                        store.setView("sync");
+                      }}
+                    >
+                      {"   [⇅ s:sync]"}
+                    </text>
+                    <text
+                      fg={theme.accent()}
+                      wrapMode="none"
+                      flexShrink={0}
+                      onMouseDown={(event) => {
+                        event.stopPropagation?.();
+                        setPane("profiles");
+                        setProfileCursor(idx);
+                        store.updateRunConsole({ scope: "profile", profile: name });
+                        store.setView("run");
+                      }}
+                    >
+                      {"[▶ r:run]"}
+                    </text>
+                    <text
+                      fg={theme.error()}
+                      wrapMode="none"
+                      flexShrink={0}
+                      onMouseDown={(event) => {
+                        event.stopPropagation?.();
+                        setPane("profiles");
+                        setProfileCursor(idx);
+                        confirmDeleteProfile(name);
+                      }}
+                    >
+                      {"[d:delete]"}
+                    </text>
+                  </box>
                 </box>
-              </box>
-            ))
+              );
+            })
           )}
           <box flexDirection="row" gap={1} flexShrink={0}>
             <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
@@ -233,7 +349,7 @@ export function ProfilesView({
             </text>
             {editing ? (
               <input
-                focused
+                focused={inputFocused}
                 value={nameValue}
                 onInput={setNameValue}
                 onSubmit={() => {
@@ -277,7 +393,7 @@ export function ProfilesView({
       </box>
       <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
         {clampBoxLine(
-          "profile save <name> · profiles feed the Sync and Run scope pickers · Esc cockpit",
+          "←→/hl pane · ↑↓/jk move · s/Enter sync · r run · d delete · n save · p pin · Esc cockpit",
           width,
         )}
       </text>

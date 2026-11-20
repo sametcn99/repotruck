@@ -75,7 +75,9 @@ export function ContextMenu({
   const labelWidth = Math.max(12, Math.min(21, innerCols - 11));
   const bodyRows = Math.max(
     3,
-    repoViewportRows(height, snapshot.updateToast !== null) + 1 - extraReservedRows,
+    repoViewportRows(height, snapshot.updateToast !== null || snapshot.toast !== null) +
+      1 -
+      extraReservedRows,
   );
   // Reserve 1 row for repo key header and 1 row for footer hint if space allows
   const showHint = bodyRows >= 6;

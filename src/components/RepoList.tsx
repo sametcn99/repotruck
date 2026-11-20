@@ -38,7 +38,7 @@ export function RepoList({
       ? snapshot.modal.initial
       : (snapshot.search ?? ""),
   );
-  const focused = snapshot.focus === "list" && !isSearchOpen;
+  const focused = snapshot.focus === "list" && !snapshot.navFocused && !isSearchOpen;
   const cursorFg = theme.cursorFg();
   const cursorBg = theme.cursorBg();
   const normalFg = theme.muted();

@@ -28,6 +28,7 @@ export interface MouseRouterHost {
   openDetailModal(key: string): void;
   openRepoContextMenu(key: string): void;
   dismissUpdateToast(): void;
+  dismissToast(): void;
   cycleFocus(): void;
   toggleCurrent(): void;
   openHelpModal(): void;
@@ -99,7 +100,10 @@ export function routeMouseEvent(
       (!panes.showStatus || event.x <= width - panes.statusCols);
     if (inListArea) {
       host.setFocus("list");
-      const view = Math.max(1, repoViewportRows(height, state.updateToast !== null) - switcherRows);
+      const view = Math.max(
+        1,
+        repoViewportRows(height, state.updateToast !== null || state.toast !== null) - switcherRows,
+      );
       const total = state.filteredRepos.length;
       if (total === 0) return;
       const slice = visibleSlice(state.cursor, total, view);
@@ -125,9 +129,10 @@ export function routeMouseEvent(
     return;
   }
 
-  if (state.updateToast !== null) {
+  if (state.updateToast !== null || state.toast !== null) {
     const toastTop = height - FOOTER_ROWS - TOAST_RESERVED_ROWS;
     if (event.y >= toastTop && event.y < toastTop + TOAST_RESERVED_ROWS) {
+      host.dismissToast();
       host.dismissUpdateToast();
       return;
     }
@@ -184,7 +189,7 @@ export function routeMouseEvent(
     const localY = event.y - 1 - HEADER_ROWS - switcherRows;
     const availRows = Math.max(
       1,
-      repoViewportRows(height, state.updateToast !== null) - switcherRows,
+      repoViewportRows(height, state.updateToast !== null || state.toast !== null) - switcherRows,
     );
     const rowIndex = sidebarRowIndexForY(localY, state.orgs.length, state.sidebarCursor, availRows);
     if (rowIndex !== null) {
@@ -205,7 +210,10 @@ export function routeMouseEvent(
   if (!panes.showList) return;
 
   host.setFocus("list");
-  const view = Math.max(1, repoViewportRows(height, state.updateToast !== null) - switcherRows);
+  const view = Math.max(
+    1,
+    repoViewportRows(height, state.updateToast !== null || state.toast !== null) - switcherRows,
+  );
   const total = state.filteredRepos.length;
   if (total === 0) return;
   const slice = visibleSlice(state.cursor, total, view);

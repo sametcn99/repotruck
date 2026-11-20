@@ -2,8 +2,9 @@ import { useKeyboard, useTerminalDimensions } from "@opentui/react";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import type { Store } from "../store.ts";
 import { theme } from "../theme.ts";
+import { copyText } from "../ui/JsonCopy.ts";
 import { renderMarkdownLines } from "../ui/MarkdownPane.tsx";
-import { clampBoxLine, scrollSlice } from "../windowing.ts";
+import { clampBoxLine, scrollSlice, visibleSlice } from "../windowing.ts";
 
 /**
  * `repotruck changelog` as a page: since/until/author/repo filter form,
@@ -37,14 +38,50 @@ export function ChangelogView({
   const maxScroll = Math.max(0, styledLines.length - viewportRows);
   const win = scrollSlice(scrollIdx, styledLines.length, viewportRows);
   const preview = styledLines.slice(win.start, win.end);
+  const focused =
+    !snapshot.navFocused &&
+    snapshot.dialog === null &&
+    snapshot.modal === null &&
+    snapshot.contextMenu === null;
 
   useKeyboard((key) => {
-    if (key.name === "g") void store.generateChangelog({ since: "14 days ago" });
-    else if (key.name === "m") void store.generateChangelog({ since: "30 days ago" });
-    else if (key.name === "up" || key.sequence === "k") {
+    const snap = store.getSnapshot();
+    if (
+      snap.navFocused ||
+      snap.dialog !== null ||
+      snap.modal !== null ||
+      snap.contextMenu !== null
+    ) {
+      return;
+    }
+    if (key.sequence === "7") {
+      setScrollIdx(0);
+      void store.generateChangelog({ since: "7 days ago" });
+    } else if (key.name === "g" && !key.shift) {
+      setScrollIdx(0);
+      void store.generateChangelog({ since: "14 days ago" });
+    } else if (key.name === "m") {
+      setScrollIdx(0);
+      void store.generateChangelog({ since: "30 days ago" });
+    } else if (key.name === "c" && page !== null) {
+      const result = copyText("changelog", page.markdown);
+      store.pushStatus(result.ok ? "DONE" : "FAILED", "[changelog]", result.message);
+    } else if (key.name === "up" || key.sequence === "k") {
       setScrollIdx((s) => Math.max(0, Math.min(s, maxScroll) - 1));
     } else if (key.name === "down" || key.sequence === "j") {
       setScrollIdx((s) => Math.min(maxScroll, s + 1));
+    } else if (key.name === "home") {
+      setScrollIdx(0);
+    } else if (
+      key.name === "end" ||
+      key.sequence === "G" ||
+      (key.shift === true && key.name === "g")
+    ) {
+      setScrollIdx(maxScroll);
+    } else if (key.name === "pageup") {
+      setScrollIdx((s) => Math.max(0, Math.min(s, maxScroll) - Math.max(1, viewportRows)));
+    } else if (key.name === "pagedown") {
+      setScrollIdx((s) => Math.min(maxScroll, s + Math.max(1, viewportRows)));
     }
   });
 
@@ -70,6 +107,7 @@ export function ChangelogView({
           flexShrink={0}
           onMouseDown={(event) => {
             event.stopPropagation();
+            setScrollIdx(0);
             void store.generateChangelog({ since: "7 days ago" });
           }}
         >
@@ -81,6 +119,7 @@ export function ChangelogView({
           flexShrink={0}
           onMouseDown={(event) => {
             event.stopPropagation();
+            setScrollIdx(0);
             void store.generateChangelog({ since: "14 days ago" });
           }}
         >
@@ -92,15 +131,30 @@ export function ChangelogView({
           flexShrink={0}
           onMouseDown={(event) => {
             event.stopPropagation();
+            setScrollIdx(0);
             void store.generateChangelog({ since: "30 days ago" });
           }}
         >
           {"[m · 30d]"}
         </text>
+        {page !== null ? (
+          <text
+            fg={theme.dim()}
+            wrapMode="none"
+            flexShrink={0}
+            onMouseDown={(event) => {
+              event.stopPropagation();
+              const result = copyText("changelog", page.markdown);
+              store.pushStatus(result.ok ? "DONE" : "FAILED", "[changelog]", result.message);
+            }}
+          >
+            {"[c · copy]"}
+          </text>
+        ) : null}
       </box>
       <box
         border
-        borderColor={theme.border()}
+        borderColor={focused ? theme.focusBorder() : theme.border()}
         flexDirection="column"
         flexGrow={1}
         width="100%"
@@ -137,7 +191,7 @@ export function ChangelogView({
         </text>
       ) : null}
       <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
-        {"g 14d · m 30d · Esc cockpit"}
+        {clampBoxLine("↑↓/jk/PgUpDn scroll · 7 7d · g 14d · m 30d · c copy · Esc cockpit", width)}
       </text>
     </box>
   );
@@ -162,22 +216,52 @@ export function ScanAdoptView({
   const boxInnerCols = Math.max(10, effectiveWidth - 3);
   const page = snapshot.scanPage;
   const unregistered = page?.unregistered ?? [];
-  const [scrollIdx, setScrollIdx] = useState(0);
+  const [cursor, setCursor] = useState(0);
 
   // Action row (1) + box borders (2) + box header line (1) + footer hint (1) = 5 non-data rows.
   const viewportRows = Math.max(1, height - 5);
-  const maxScroll = Math.max(0, unregistered.length - viewportRows);
-  const win = scrollSlice(scrollIdx, unregistered.length, viewportRows);
+  const maxCursor = Math.max(0, unregistered.length - 1);
+  const clampedCursor = Math.min(cursor, maxCursor);
+  const win = visibleSlice(clampedCursor, unregistered.length, viewportRows);
   const visibleUnregistered = unregistered.slice(win.start, win.end);
+  const focused =
+    !snapshot.navFocused &&
+    snapshot.dialog === null &&
+    snapshot.modal === null &&
+    snapshot.contextMenu === null;
 
   useKeyboard((key) => {
-    if (key.name === "s") void store.scanAndAdopt(false);
-    else if (key.name === "a") void store.scanAndAdopt(true);
-    else if (key.name === "p") store.pruneWorkspaceConfirm();
-    else if (key.name === "up" || key.sequence === "k") {
-      setScrollIdx((s) => Math.max(0, Math.min(s, maxScroll) - 1));
+    const snap = store.getSnapshot();
+    if (
+      snap.navFocused ||
+      snap.dialog !== null ||
+      snap.modal !== null ||
+      snap.contextMenu !== null
+    ) {
+      return;
+    }
+    if (key.name === "s") {
+      void store.scanAndAdopt(false);
+    } else if (key.name === "a") {
+      void store.scanAndAdopt(true);
+    } else if (key.name === "p") {
+      store.pruneWorkspaceConfirm();
+    } else if (key.name === "up" || key.sequence === "k") {
+      setCursor((c) => Math.max(0, Math.min(c, maxCursor) - 1));
     } else if (key.name === "down" || key.sequence === "j") {
-      setScrollIdx((s) => Math.min(maxScroll, s + 1));
+      setCursor((c) => Math.min(maxCursor, Math.min(c, maxCursor) + 1));
+    } else if (key.name === "home" || key.sequence === "g") {
+      setCursor(0);
+    } else if (
+      key.name === "end" ||
+      key.sequence === "G" ||
+      (key.shift === true && key.name === "g")
+    ) {
+      setCursor(maxCursor);
+    } else if (key.name === "pageup") {
+      setCursor((c) => Math.max(0, Math.min(c, maxCursor) - Math.max(1, viewportRows)));
+    } else if (key.name === "pagedown") {
+      setCursor((c) => Math.min(maxCursor, Math.min(c, maxCursor) + Math.max(1, viewportRows)));
     }
   });
 
@@ -188,8 +272,8 @@ export function ScanAdoptView({
       width="100%"
       onMouseScroll={(e) => {
         const isUp = e.scroll?.direction === "up" || e.button === 4;
-        setScrollIdx((s) =>
-          Math.min(maxScroll, Math.max(0, Math.min(s, maxScroll) + (isUp ? -2 : 2))),
+        setCursor((c) =>
+          Math.min(maxCursor, Math.max(0, Math.min(c, maxCursor) + (isUp ? -2 : 2))),
         );
       }}
     >
@@ -239,7 +323,7 @@ export function ScanAdoptView({
       </box>
       <box
         border
-        borderColor={theme.border()}
+        borderColor={focused ? theme.focusBorder() : theme.border()}
         flexDirection="column"
         flexGrow={1}
         width="100%"
@@ -257,18 +341,26 @@ export function ScanAdoptView({
             {"  (none discovered yet — run a scan)"}
           </text>
         ) : (
-          visibleUnregistered.map((line) => (
-            <text key={line} fg={theme.normal()} wrapMode="none" flexShrink={0}>
-              {clampBoxLine(` • ${line}`, boxInnerCols)}
-            </text>
-          ))
+          visibleUnregistered.map((line, offset) => {
+            const idx = win.start + offset;
+            const isCursor = focused && idx === clampedCursor;
+            return (
+              <text
+                key={line}
+                fg={isCursor ? theme.cursorFg() : theme.normal()}
+                bg={isCursor ? theme.cursorBg() : undefined}
+                wrapMode="none"
+                flexShrink={0}
+                onMouseDown={() => setCursor(idx)}
+              >
+                {clampBoxLine(`${isCursor ? ">" : " "}• ${line}`, boxInnerCols)}
+              </text>
+            );
+          })
         )}
       </box>
       <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
-        {clampBoxLine(
-          "adopt is confirm-guarded · prune keeps unclear answers · Esc cockpit",
-          effectiveWidth,
-        )}
+        {clampBoxLine("↑↓/jk move · s scan · a adopt · p prune · Esc cockpit", effectiveWidth)}
       </text>
     </box>
   );
@@ -294,7 +386,7 @@ export function WorktreesView({
   const boxInnerCols = Math.max(10, effectiveWidth - 3);
   const page = snapshot.worktreePage;
   const rows = page?.rows ?? [];
-  const [scrollIdx, setScrollIdx] = useState(0);
+  const [cursor, setCursor] = useState(0);
 
   useEffect(() => {
     if (page === null) void store.scanWorkspaceWorktrees();
@@ -302,16 +394,44 @@ export function WorktreesView({
 
   // Action row (1) + box borders (2) + box header line (1) + footer hint (1) = 5 non-data rows.
   const viewportRows = Math.max(1, height - 5);
-  const maxScroll = Math.max(0, rows.length - viewportRows);
-  const win = scrollSlice(scrollIdx, rows.length, viewportRows);
+  const maxCursor = Math.max(0, rows.length - 1);
+  const clampedCursor = Math.min(cursor, maxCursor);
+  const win = visibleSlice(clampedCursor, rows.length, viewportRows);
   const visibleRows = rows.slice(win.start, win.end);
+  const focused =
+    !snapshot.navFocused &&
+    snapshot.dialog === null &&
+    snapshot.modal === null &&
+    snapshot.contextMenu === null;
 
   useKeyboard((key) => {
-    if (key.name === "s") void store.scanWorkspaceWorktrees();
-    else if (key.name === "up" || key.sequence === "k") {
-      setScrollIdx((s) => Math.max(0, Math.min(s, maxScroll) - 1));
+    const snap = store.getSnapshot();
+    if (
+      snap.navFocused ||
+      snap.dialog !== null ||
+      snap.modal !== null ||
+      snap.contextMenu !== null
+    ) {
+      return;
+    }
+    if (key.name === "s") {
+      void store.scanWorkspaceWorktrees();
+    } else if (key.name === "up" || key.sequence === "k") {
+      setCursor((c) => Math.max(0, Math.min(c, maxCursor) - 1));
     } else if (key.name === "down" || key.sequence === "j") {
-      setScrollIdx((s) => Math.min(maxScroll, s + 1));
+      setCursor((c) => Math.min(maxCursor, Math.min(c, maxCursor) + 1));
+    } else if (key.name === "home" || key.sequence === "g") {
+      setCursor(0);
+    } else if (
+      key.name === "end" ||
+      key.sequence === "G" ||
+      (key.shift === true && key.name === "g")
+    ) {
+      setCursor(maxCursor);
+    } else if (key.name === "pageup") {
+      setCursor((c) => Math.max(0, Math.min(c, maxCursor) - Math.max(1, viewportRows)));
+    } else if (key.name === "pagedown") {
+      setCursor((c) => Math.min(maxCursor, Math.min(c, maxCursor) + Math.max(1, viewportRows)));
     }
   });
 
@@ -322,8 +442,8 @@ export function WorktreesView({
       width="100%"
       onMouseScroll={(e) => {
         const isUp = e.scroll?.direction === "up" || e.button === 4;
-        setScrollIdx((s) =>
-          Math.min(maxScroll, Math.max(0, Math.min(s, maxScroll) + (isUp ? -2 : 2))),
+        setCursor((c) =>
+          Math.min(maxCursor, Math.max(0, Math.min(c, maxCursor) + (isUp ? -2 : 2))),
         );
       }}
     >
@@ -345,7 +465,7 @@ export function WorktreesView({
       </box>
       <box
         border
-        borderColor={theme.border()}
+        borderColor={focused ? theme.focusBorder() : theme.border()}
         flexDirection="column"
         flexGrow={1}
         width="100%"
@@ -360,16 +480,27 @@ export function WorktreesView({
             {"  no scan yet — run [s] (worktree scan)"}
           </text>
         ) : (
-          visibleRows.map((row) => (
-            <text key={row} fg={theme.normal()} wrapMode="none" flexShrink={0}>
-              {clampBoxLine(` ⑂ ${row}`, boxInnerCols)}
-            </text>
-          ))
+          visibleRows.map((row, offset) => {
+            const idx = win.start + offset;
+            const isCursor = focused && idx === clampedCursor;
+            return (
+              <text
+                key={row}
+                fg={isCursor ? theme.cursorFg() : theme.normal()}
+                bg={isCursor ? theme.cursorBg() : undefined}
+                wrapMode="none"
+                flexShrink={0}
+                onMouseDown={() => setCursor(idx)}
+              >
+                {clampBoxLine(`${isCursor ? ">" : " "}⑂ ${row}`, boxInnerCols)}
+              </text>
+            );
+          })
         )}
       </box>
       <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
         {clampBoxLine(
-          "per-repo create/remove lives in the W modal (force option in its confirm) · Esc cockpit",
+          "↑↓/jk move · s scan · per-repo create/remove lives in W modal · Esc cockpit",
           effectiveWidth,
         )}
       </text>

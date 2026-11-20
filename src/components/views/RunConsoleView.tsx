@@ -3,7 +3,7 @@ import { useEffect, useState, useSyncExternalStore } from "react";
 import type { Store } from "../store.ts";
 import { theme } from "../theme.ts";
 import { copyJson } from "../ui/JsonCopy.ts";
-import { clampBoxLine, scrollSlice } from "../windowing.ts";
+import { clampBoxLine, visibleSlice } from "../windowing.ts";
 
 /**
  * `repotruck run` as a page: shell command with quoted-argument tokenizing,
@@ -26,7 +26,7 @@ export function RunConsoleView({
   const state = snapshot.runConsole;
   const [editing, setEditing] = useState(true);
   const [expanded, setExpanded] = useState<string | null>(null);
-  const [scrollIdx, setScrollIdx] = useState(0);
+  const [cursor, setCursor] = useState(0);
 
   useEffect(() => {
     if (state === null) store.updateRunConsole({});
@@ -37,25 +37,66 @@ export function RunConsoleView({
   const results = state?.results ?? [];
   const skipped = state?.skipped ?? [];
   const failed = results.filter((r) => !r.ok).length;
-  const totalItems = results.length + skipped.length;
 
   // 2 top control rows + 3 CLI preview box rows + 2 results box borders + 1 summary row + 1 footer hint = 9 rows.
   const baseViewportRows = Math.max(1, height - 9);
   const viewportRows = Math.max(1, baseViewportRows - (expanded !== null ? 1 : 0));
-  const maxScroll = Math.max(0, totalItems - viewportRows);
+  const maxCursor = Math.max(0, results.length - 1);
+  const clampedCursor = Math.min(cursor, maxCursor);
+  const inputFocused =
+    editing &&
+    !snapshot.navFocused &&
+    snapshot.dialog === null &&
+    snapshot.modal === null &&
+    snapshot.contextMenu === null;
+  const listFocused =
+    !editing &&
+    !snapshot.navFocused &&
+    snapshot.dialog === null &&
+    snapshot.modal === null &&
+    snapshot.contextMenu === null;
 
   useKeyboard((key) => {
+    const snap = store.getSnapshot();
+    if (
+      snap.navFocused ||
+      snap.dialog !== null ||
+      snap.modal !== null ||
+      snap.contextMenu !== null
+    ) {
+      return;
+    }
     if (editing) {
       if (key.name === "escape") setEditing(false);
       return;
     }
-    if (key.name === "return") setEditing(true);
-    else if (key.name === "up" || key.sequence === "k") {
-      setScrollIdx((s) => Math.max(0, Math.min(s, maxScroll) - 1));
+    if (key.name === "return") {
+      setEditing(true);
+    } else if (key.name === "up" || key.sequence === "k") {
+      setCursor((c) => Math.max(0, Math.min(c, maxCursor) - 1));
     } else if (key.name === "down" || key.sequence === "j") {
-      setScrollIdx((s) => Math.min(maxScroll, s + 1));
+      setCursor((c) => Math.min(maxCursor, Math.min(c, maxCursor) + 1));
+    } else if (key.name === "home" || key.sequence === "g") {
+      setCursor(0);
+    } else if (
+      key.name === "end" ||
+      key.sequence === "G" ||
+      (key.shift === true && key.name === "g")
+    ) {
+      setCursor(maxCursor);
+    } else if (key.name === "pageup") {
+      setCursor((c) => Math.max(0, Math.min(c, maxCursor) - Math.max(1, viewportRows)));
+    } else if (key.name === "pagedown") {
+      setCursor((c) => Math.min(maxCursor, Math.min(c, maxCursor) + Math.max(1, viewportRows)));
+    } else if (key.name === "space") {
+      const target = results[clampedCursor];
+      if (target !== undefined) {
+        setExpanded((current) => (current === target.key ? null : target.key));
+      }
     } else if (key.name === "e" && state?.running !== true) {
       void store.runConsoleStart();
+    } else if (key.name === "c") {
+      store.updateRunConsole({ concurrency: nextConc(state?.concurrency ?? 3) });
     } else if (key.name === "s") {
       store.updateRunConsole({
         scope:
@@ -93,7 +134,7 @@ export function RunConsoleView({
   if ((state?.concurrency ?? 3) !== 3) cliParts.push(`-c ${state?.concurrency}`);
   cliParts.push(`-- ${state?.command || "<command>"}`);
 
-  const win = scrollSlice(scrollIdx, results.length, viewportRows);
+  const win = visibleSlice(clampedCursor, results.length, viewportRows);
   const visibleResults = results.slice(win.start, win.end);
   const remainingRows = Math.max(0, viewportRows - visibleResults.length);
 
@@ -104,8 +145,8 @@ export function RunConsoleView({
       width="100%"
       onMouseScroll={(e) => {
         const isUp = e.scroll?.direction === "up" || e.button === 4;
-        setScrollIdx((s) =>
-          Math.min(maxScroll, Math.max(0, Math.min(s, maxScroll) + (isUp ? -2 : 2))),
+        setCursor((c) =>
+          Math.min(maxCursor, Math.max(0, Math.min(c, maxCursor) + (isUp ? -2 : 2))),
         );
       }}
     >
@@ -115,11 +156,12 @@ export function RunConsoleView({
         </text>
         {editing ? (
           <input
-            focused
+            focused={inputFocused}
             value={state?.command ?? ""}
             onInput={(value) => store.updateRunConsole({ command: value })}
             onSubmit={() => {
               setEditing(false);
+              setCursor(0);
               void store.runConsoleStart();
             }}
             width={Math.max(14, Math.min(54, width - 16))}
@@ -179,7 +221,7 @@ export function RunConsoleView({
             store.updateRunConsole({ concurrency: nextConc(state?.concurrency ?? 3) });
           }}
         >
-          {`-c ${state?.concurrency ?? 3}`}
+          {`[c] -c ${state?.concurrency ?? 3}`}
         </text>
         {scope === "profile" ? (
           <input
@@ -209,7 +251,7 @@ export function RunConsoleView({
       </box>
       <box
         border
-        borderColor={theme.border()}
+        borderColor={listFocused ? theme.focusBorder() : theme.border()}
         flexDirection="column"
         flexGrow={1}
         width="100%"
@@ -228,32 +270,40 @@ export function RunConsoleView({
             boxInnerCols,
           )}
         </text>
-        {visibleResults.map((result) => (
-          <box key={result.key} flexDirection="column" flexShrink={0}>
-            <text
-              fg={result.ok ? theme.normal() : theme.error()}
-              wrapMode="none"
-              flexShrink={0}
-              onMouseDown={(event) => {
-                event.stopPropagation?.();
-                setExpanded((current) => (current === result.key ? null : result.key));
-              }}
-            >
-              {clampBoxLine(
-                ` ${result.ok ? "✓" : "✗"} ${result.key} · exit ${result.exitCode ?? "—"} · ${result.durationMs}ms`,
-                boxInnerCols,
-              )}
-            </text>
-            {expanded === result.key ? (
-              <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
+        {visibleResults.map((result, offset) => {
+          const idx = win.start + offset;
+          const isCursor = listFocused && idx === clampedCursor;
+          const marker = isCursor ? ">" : " ";
+          return (
+            <box key={result.key} flexDirection="column" flexShrink={0}>
+              <text
+                fg={isCursor ? theme.cursorFg() : result.ok ? theme.normal() : theme.error()}
+                bg={isCursor ? theme.cursorBg() : undefined}
+                wrapMode="none"
+                flexShrink={0}
+                onMouseDown={(event) => {
+                  event.stopPropagation?.();
+                  setEditing(false);
+                  setCursor(idx);
+                  setExpanded((current) => (current === result.key ? null : result.key));
+                }}
+              >
                 {clampBoxLine(
-                  `   ${(result.stderr || result.stdout || result.message || "(no output)").split("\n")[0] ?? ""}`,
+                  `${marker}${result.ok ? "✓" : "✗"} ${result.key} · exit ${result.exitCode ?? "—"} · ${result.durationMs}ms`,
                   boxInnerCols,
                 )}
               </text>
-            ) : null}
-          </box>
-        ))}
+              {expanded === result.key ? (
+                <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
+                  {clampBoxLine(
+                    `   ${(result.stderr || result.stdout || result.message || "(no output)").split("\n")[0] ?? ""}`,
+                    boxInnerCols,
+                  )}
+                </text>
+              ) : null}
+            </box>
+          );
+        })}
         {skipped.slice(0, remainingRows).map((entry) => (
           <text key={entry.key} fg={theme.dim()} wrapMode="none" flexShrink={0}>
             {clampBoxLine(` · ${entry.key} — ${entry.message}`, boxInnerCols)}
@@ -262,7 +312,7 @@ export function RunConsoleView({
       </box>
       <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
         {clampBoxLine(
-          "Enter edit command · e run · s scope · J JSON · click result for output · Esc cockpit",
+          "Enter edit · ↑↓/jk move · Space expand · e run · s scope · c conc · J JSON · Esc cockpit",
           width,
         )}
       </text>

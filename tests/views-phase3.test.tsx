@@ -134,6 +134,34 @@ function makeStore(wsRoot: string, extra: Partial<StoreDeps> = {}): Store {
         sshUrl: "",
         updatedAt: null,
       }),
+      searchRepos: async (query: string) => [
+        {
+          owner: "acme",
+          name: `${query || "one"}`,
+          description: "first repo",
+          isPrivate: false,
+          isFork: false,
+          isArchived: false,
+          language: "TypeScript",
+          httpsUrl: "",
+          sshUrl: "",
+          updatedAt: null,
+          stars: 10,
+        },
+        {
+          owner: "acme",
+          name: "two",
+          description: "second repo",
+          isPrivate: false,
+          isFork: false,
+          isArchived: false,
+          language: "TypeScript",
+          httpsUrl: "",
+          sshUrl: "",
+          updatedAt: null,
+          stars: 20,
+        },
+      ],
     }),
     updater: async () => ({
       currentVersion: "0.1.0",
@@ -284,9 +312,17 @@ describe("Phase 3 interactive view coverage", () => {
     expect(frame).toContain("2 results");
     expect(frame).toContain("1 failed");
 
+    // Keyboard cursor navigation & Space expand on RunConsoleView results
+    setup.mockInput.pressKey("j");
+    await settle(setup);
+    setup.mockInput.pressKey(" ");
+    await settle(setup);
+    expect(await capture(setup)).toContain("boom");
+
     setup.mockInput.pressKey("s");
     setup.mockInput.pressKey("s");
     setup.mockInput.pressKey("s");
+    setup.mockInput.pressKey("c");
     setup.mockInput.pressKey("J");
     setup.mockInput.pressKey("e");
     setup.mockInput.pressEnter();
@@ -300,6 +336,15 @@ describe("Phase 3 interactive view coverage", () => {
     await settle(setup);
     frame = await capture(setup);
     expect(frame).toContain("function boot");
+
+    // Keyboard cursor down & Space opens DetailModal for highlighted match's repo
+    setup.mockInput.pressKey("j");
+    await settle(setup);
+    setup.mockInput.pressKey(" ");
+    await settle(setup);
+    expect(store.getSnapshot().modal?.type).toBe("detail");
+    setup.mockInput.pressEscape();
+    await settle(setup);
 
     setup.mockInput.pressKey("m");
     setup.mockInput.pressKey("m");
@@ -356,7 +401,7 @@ describe("Phase 3 interactive view coverage", () => {
     setup.mockInput.pressEscape();
     await settle(setup);
 
-    // SyncCenterView: toggle flags s, d, b, t, c, p, l, edit include ('i' + Enter), start ('e'), stop ('x')
+    // SyncCenterView: toggle flags s, d, b, t, c, p, l, edit include ('i' + Enter), exclude ('E' + Enter), start ('e'), stop ('x')
     store.setView("sync");
     await settle(setup);
     setup.mockInput.pressKey("s");
@@ -375,6 +420,13 @@ describe("Phase 3 interactive view coverage", () => {
     await settle(setup);
     await setup.mockInput.typeText("acme/*");
     setup.mockInput.pressEnter();
+    await settle(setup);
+    setup.mockInput.pressKey("E");
+    await settle(setup);
+    await setup.mockInput.typeText("fork/*");
+    setup.mockInput.pressEnter();
+    await settle(setup);
+    expect(store.getSnapshot().syncCenter?.exclude).toBe("fork/*");
     setup.mockInput.pressKey("e");
     setup.mockInput.pressKey("x");
     await settle(setup);
@@ -401,6 +453,82 @@ describe("Phase 3 interactive view coverage", () => {
     await settle(setup);
     setup.mockInput.pressKey("b");
     setup.mockInput.pressKey("r");
+    await settle(setup);
+
+    await setup.dispose();
+  });
+
+  test("Keyboard-only cursor and action controls across Discover, Presets, Profiles, Agents, Settings & Conflicts", async () => {
+    const root = await makeWorkspace("rt-v3-kbd-views-");
+    const store = makeStore(root);
+    const setup = await testRender(
+      <Dashboard store={store} onQuit={() => {}} onSuspendAndRun={async () => {}} />,
+      { width: 140, height: 42, exitOnCtrlC: false },
+    );
+    await waitReady(store, setup);
+
+    // DiscoverView: search then move cursor down & Space to select second repo
+    store.setView("discover");
+    await settle(setup);
+    await setup.mockInput.typeText("mcp");
+    setup.mockInput.pressEnter();
+    await settle(setup);
+    setup.mockInput.pressKey("j");
+    await settle(setup);
+    setup.mockInput.pressKey(" ");
+    await settle(setup);
+    expect(store.getSnapshot().discoverPage?.selected.has("acme/two")).toBe(true);
+
+    // PresetsView: arrow/Enter opens apply confirm dialog
+    store.setView("presets");
+    await settle(setup);
+    setup.mockInput.pressArrow("right");
+    await settle(setup);
+    setup.mockInput.pressEnter();
+    await settle(setup);
+    expect(store.getSnapshot().dialog?.title).toContain("Reorganize");
+    store.resolveDialog(false);
+    await settle(setup);
+
+    // ProfilesView: Right moves to Named profiles pane, 'r' launches RunConsole with profile scope
+    store.setView("profiles");
+    await settle(setup);
+    setup.mockInput.pressArrow("right");
+    await settle(setup);
+    setup.mockInput.pressKey("r");
+    await settle(setup);
+    expect(store.getSnapshot().view).toBe("run");
+    expect(store.getSnapshot().runConsole?.scope).toBe("profile");
+
+    // SettingsView: j moves to sync.blobless (index 2), Enter toggles it via setSetting
+    store.setView("settings");
+    await store.refreshSettingsPage();
+    await settle(setup);
+    setup.mockInput.pressKey("j");
+    setup.mockInput.pressKey("j");
+    await settle(setup);
+    setup.mockInput.pressEnter();
+    await settle(setup);
+    expect(
+      (store.getSnapshot().settingsPage?.settings?.sync as { blobless?: boolean })?.blobless,
+    ).toBe(true);
+
+    // AgentsView: p cycles port, Enter applies first template
+    store.setView("agents");
+    await settle(setup);
+    setup.mockInput.pressKey("p");
+    setup.mockInput.pressEnter();
+    await settle(setup);
+    expect(await capture(setup)).toContain("3100");
+
+    // ConflictResolverView: Enter on failed repo opens DetailModal
+    store.pushStatus("FAILED", "acme/api", "conflict");
+    store.setView("resolve");
+    await settle(setup);
+    setup.mockInput.pressEnter();
+    await settle(setup);
+    expect(store.getSnapshot().modal?.type).toBe("detail");
+    store.closeModal();
     await settle(setup);
 
     await setup.dispose();

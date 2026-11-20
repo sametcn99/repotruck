@@ -22,7 +22,7 @@ import { loadWorkspace } from "../../services/workspace.ts";
 import { restoreWorkspaceSnapshot } from "../../services/workspaceRegistry.ts";
 import { listRepoWorktrees } from "../../services/worktree.ts";
 import { activateTheme, activeThemeName, cycleThemeName } from "../theme.ts";
-import { nextViewId } from "../views/viewRegistry.ts";
+import { nextViewId, VIEW_ORDER } from "../views/viewRegistry.ts";
 import { buildSidebarRows, repoKey } from "./filters.ts";
 import { loadWorkspaceHealthData } from "./gitHealth.ts";
 import {
@@ -122,8 +122,17 @@ export class StoreCore extends StoreBase {
   };
 
   setView = (view: ViewId): void => {
-    if (this.state.view === view) return;
-    this.set({ view, statusScroll: 0 });
+    const navCursor = Math.max(0, VIEW_ORDER.indexOf(view));
+    if (this.state.view === view && !this.state.navFocused && this.state.navCursor === navCursor) {
+      return;
+    }
+    this.set({ view, statusScroll: 0, navFocused: false, navCursor });
+  };
+
+  activateNavRow = (index?: number): void => {
+    if (index !== undefined) this.setNavCursor(index);
+    const target = VIEW_ORDER[this.state.navCursor] ?? "cockpit";
+    this.setView(target);
   };
 
   cycleView = (direction: 1 | -1): void => {

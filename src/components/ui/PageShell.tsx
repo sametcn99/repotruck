@@ -1,5 +1,5 @@
 import { useTerminalDimensions } from "@opentui/react";
-import type { ReactNode } from "react";
+import { type ReactNode, useSyncExternalStore } from "react";
 import type { ViewId } from "../store/types.ts";
 import type { Store } from "../store.ts";
 import { theme } from "../theme.ts";
@@ -26,6 +26,7 @@ export function PageShell({
   store: Store;
   children: ReactNode;
 }) {
+  const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot);
   const { width, height } = useTerminalDimensions();
   const pageWidth = contentWidth(width);
   const compact = height < 22 || pageWidth < 68;
@@ -36,17 +37,21 @@ export function PageShell({
   const innerCols = Math.max(20, pageWidth - (compact ? 2 : 4));
   const breadcrumbMax = Math.max(12, innerCols - backLabel.length - 2);
   const breadcrumb = clampText(`${spec?.group ?? "View"} · ${summary}`, breadcrumbMax);
+  const focused = !snapshot.navFocused;
 
   return (
     <box
       title={title}
       border
-      borderColor={theme.focusBorder()}
+      borderColor={focused ? theme.focusBorder() : theme.border()}
       flexDirection="column"
       flexGrow={1}
       overflow="hidden"
       padding={compact ? 0 : 1}
       gap={0}
+      onMouseDown={() => {
+        if (snapshot.navFocused) store.setNavFocused(false);
+      }}
     >
       <box flexDirection="row" justifyContent="space-between" width="100%" flexShrink={0}>
         <text fg={theme.dim()} wrapMode="none" flexShrink={0}>

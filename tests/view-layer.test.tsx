@@ -243,6 +243,98 @@ describe("t01 view layer — dashboard render", () => {
     await setup.dispose();
   });
 
+  test("nav rail is focusable via Tab/Left, navigates via j/k/arrows, activates with Enter, and protects page inputs", async () => {
+    const root = makeWorkspace("rt-view-navrail-focus-");
+    const store = makeStore(root, [makeRepo("acme", "api")]);
+    const setup = await testRender(
+      <Dashboard store={store} onQuit={() => {}} onSuspendAndRun={async () => {}} />,
+      { width: 140, height: 40, exitOnCtrlC: false },
+    );
+    for (let i = 0; i < 40 && store.getSnapshot().phase !== "ready"; i += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 25));
+    }
+    await settle(setup);
+
+    // Tab cycles cockpit panes -> navFocused: list -> status -> sidebar -> navFocused -> list
+    setup.mockInput.pressKey("\t");
+    await settle(setup);
+    expect(store.getSnapshot().focus).toBe("status");
+    expect(store.getSnapshot().navFocused).toBe(false);
+
+    setup.mockInput.pressKey("\t");
+    await settle(setup);
+    expect(store.getSnapshot().focus).toBe("sidebar");
+    expect(store.getSnapshot().navFocused).toBe(false);
+
+    setup.mockInput.pressKey("\t");
+    await settle(setup);
+    expect(store.getSnapshot().navFocused).toBe(true);
+    const frame = norm(setup.captureCharFrame());
+    expect(frame).toContain("Enter opens");
+
+    // Navigate nav rail with j / k / End / Home and open view with Enter
+    const startCursor = store.getSnapshot().navCursor;
+    setup.mockInput.pressKey("j");
+    await settle(setup);
+    expect(store.getSnapshot().navCursor).toBe((startCursor + 1) % VIEW_ORDER.length);
+    setup.mockInput.pressKey("k");
+    await settle(setup);
+    expect(store.getSnapshot().navCursor).toBe(startCursor);
+
+    setup.mockInput.pressArrow("down");
+    await settle(setup);
+    const targetView = VIEW_ORDER[store.getSnapshot().navCursor]!;
+    setup.mockInput.pressEnter();
+    await settle(setup);
+    expect(store.getSnapshot().view).toBe(targetView);
+    expect(store.getSnapshot().navFocused).toBe(false);
+
+    // Open a view with an active <input> (DiscoverView), press Tab to focus NavRail,
+    // verify j/k navigate NavRail rather than typing into the query input
+    store.setView("discover");
+    await settle(setup);
+    setup.mockInput.pressKey("\t");
+    await settle(setup);
+    expect(store.getSnapshot().navFocused).toBe(true);
+
+    const discoverIdx = VIEW_ORDER.indexOf("discover");
+    expect(store.getSnapshot().navCursor).toBe(discoverIdx);
+    setup.mockInput.pressKey("j");
+    await settle(setup);
+    expect(store.getSnapshot().navCursor).toBe((discoverIdx + 1) % VIEW_ORDER.length);
+    expect(store.getSnapshot().discoverPage?.query ?? "").toBe("");
+
+    // Escape from navFocused unfocuses rail without leaving current view
+    setup.mockInput.pressEscape();
+    await settle(setup);
+    expect(store.getSnapshot().navFocused).toBe(false);
+    expect(store.getSnapshot().view).toBe("discover");
+
+    // Tab again + Enter opens the highlighted view
+    setup.mockInput.pressKey("\t");
+    await settle(setup);
+    setup.mockInput.pressArrow("down");
+    await settle(setup);
+    const chosen = VIEW_ORDER[store.getSnapshot().navCursor]!;
+    setup.mockInput.pressKey(" ");
+    await settle(setup);
+    expect(store.getSnapshot().view).toBe(chosen);
+    expect(store.getSnapshot().navFocused).toBe(false);
+
+    // Left from sidebar focuses NavRail in cockpit
+    store.setView("cockpit");
+    store.setFocus("sidebar");
+    await settle(setup);
+    setup.mockInput.pressArrow("left");
+    await settle(setup);
+    expect(store.getSnapshot().navFocused).toBe(true);
+    setup.mockInput.pressArrow("right");
+    await settle(setup);
+    expect(store.getSnapshot().navFocused).toBe(false);
+
+    await setup.dispose();
+  });
+
   test("narrow and short terminal adapts cockpit to single-pane switcher and stacks views cleanly", async () => {
     const root = makeWorkspace("rt-view-narrow-ws-");
     const store = makeStore(root, [makeRepo("acme", "api")]);

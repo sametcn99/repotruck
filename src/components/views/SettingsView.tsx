@@ -3,7 +3,7 @@ import { useEffect, useState, useSyncExternalStore } from "react";
 import type { Store } from "../store.ts";
 import { theme } from "../theme.ts";
 import { copyText } from "../ui/JsonCopy.ts";
-import { clampBoxLine, scrollSlice } from "../windowing.ts";
+import { clampBoxLine, visibleSlice } from "../windowing.ts";
 
 const SETTING_KEYS = [
   { key: "sync.concurrency", label: "sync concurrency", type: "int" },
@@ -34,7 +34,7 @@ export function SettingsView({
   const { height: termHeight } = useTerminalDimensions();
   const height = heightProp ?? Math.max(8, termHeight - 11);
   const page = snapshot.settingsPage;
-  const [scrollIdx, setScrollIdx] = useState(0);
+  const [cursor, setCursor] = useState(0);
 
   useEffect(() => {
     if (page === null) void store.refreshSettingsPage();
@@ -48,18 +48,94 @@ export function SettingsView({
   const leftInnerCols = Math.max(10, leftColWidth - 3);
   // Left box has 2 borders + 1 header line inside (height - 1) outer rows = height - 4 setting rows.
   const settingCap = stacked ? Math.max(2, height - 10) : Math.max(2, height - 4);
-  const maxScroll = Math.max(0, SETTING_KEYS.length - settingCap);
+  const maxCursor = SETTING_KEYS.length - 1;
+  const clampedCursor = Math.min(cursor, maxCursor);
+  const focused =
+    !snapshot.navFocused &&
+    snapshot.dialog === null &&
+    snapshot.modal === null &&
+    snapshot.contextMenu === null;
+
+  const activateSetting = (entry: (typeof SETTING_KEYS)[number]) => {
+    const raw = readSetting(settings, entry.key);
+    if (entry.key === "sync.blobless" || entry.key === "sync.stash") {
+      void store.setSetting(entry.key, !(raw.value === true));
+      return;
+    }
+    if (entry.key === "sync.divergence") {
+      const opts = ["fail", "rebase", "reset", "skip"] as const;
+      const cur = typeof raw.value === "string" ? raw.value : "fail";
+      const next = opts[(opts.indexOf(cur as "fail") + 1) % opts.length]!;
+      void store.setSetting(entry.key, next);
+      return;
+    }
+    if (entry.key === "sync.concurrency") {
+      const opts = [1, 2, 3, 5, 8] as const;
+      const cur = typeof raw.value === "number" ? raw.value : 3;
+      const next = opts[(opts.indexOf(cur as 3) + 1) % opts.length]!;
+      void store.setSetting(entry.key, next);
+      return;
+    }
+    if (entry.key === "sync.depth") {
+      const opts = [0, 1, 5, 10] as const;
+      const cur = typeof raw.value === "number" ? raw.value : 0;
+      const next = opts[(opts.indexOf(cur as 0) + 1) % opts.length]!;
+      void store.setSetting(entry.key, next);
+      return;
+    }
+    if (entry.key === "theme") {
+      void store.cycleTheme().then(() => store.refreshSettingsPage());
+      return;
+    }
+    store.confirmDialog(
+      {
+        title: `Edit ${entry.key}`,
+        message: `editing ${entry.key} (${entry.type}) — CLI: config set ${entry.key} <value>`,
+        confirmLabel: "OK",
+      },
+      () => {},
+    );
+  };
 
   useKeyboard((key) => {
-    if (key.name === "r") void store.refreshSettingsPage();
-    else if (key.name === "up" || key.sequence === "k") {
-      setScrollIdx((s) => Math.max(0, Math.min(s, maxScroll) - 1));
+    const snap = store.getSnapshot();
+    if (
+      snap.navFocused ||
+      snap.dialog !== null ||
+      snap.modal !== null ||
+      snap.contextMenu !== null
+    ) {
+      return;
+    }
+    if (key.name === "r") {
+      void store.refreshSettingsPage();
+    } else if (key.name === "l") {
+      void store.startDeviceFlow();
+    } else if (key.name === "up" || key.sequence === "k") {
+      setCursor((c) => Math.max(0, Math.min(c, maxCursor) - 1));
     } else if (key.name === "down" || key.sequence === "j") {
-      setScrollIdx((s) => Math.min(maxScroll, s + 1));
+      setCursor((c) => Math.min(maxCursor, Math.min(c, maxCursor) + 1));
+    } else if (key.name === "home" || key.sequence === "g") {
+      setCursor(0);
+    } else if (
+      key.name === "end" ||
+      key.sequence === "G" ||
+      (key.shift === true && key.name === "g")
+    ) {
+      setCursor(maxCursor);
+    } else if (key.name === "return" || key.name === "space") {
+      const entry = SETTING_KEYS[clampedCursor];
+      if (entry !== undefined) activateSetting(entry);
+    } else if (key.name === "u") {
+      const entry = SETTING_KEYS[clampedCursor];
+      if (entry !== undefined) {
+        const raw = readSetting(settings, entry.key);
+        if (!raw.isDefault) void store.unsetSetting(entry.key);
+      }
     }
   });
 
-  const win = scrollSlice(scrollIdx, SETTING_KEYS.length, settingCap);
+  const win = visibleSlice(clampedCursor, SETTING_KEYS.length, settingCap);
   const visibleSettings = SETTING_KEYS.slice(win.start, win.end);
 
   return (
@@ -69,8 +145,8 @@ export function SettingsView({
       width="100%"
       onMouseScroll={(e) => {
         const isUp = e.scroll?.direction === "up" || e.button === 4;
-        setScrollIdx((s) =>
-          Math.min(maxScroll, Math.max(0, Math.min(s, maxScroll) + (isUp ? -1 : 1))),
+        setCursor((c) =>
+          Math.min(maxCursor, Math.max(0, Math.min(c, maxCursor) + (isUp ? -1 : 1))),
         );
       }}
     >
@@ -82,7 +158,7 @@ export function SettingsView({
       >
         <box
           border
-          borderColor={theme.border()}
+          borderColor={focused ? theme.focusBorder() : theme.border()}
           flexDirection="column"
           flexGrow={1}
           width={stacked ? "100%" : leftColWidth}
@@ -92,18 +168,31 @@ export function SettingsView({
           <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
             {clampBoxLine(" Configuration (config list)", leftInnerCols)}
           </text>
-          {visibleSettings.map((entry) => {
+          {visibleSettings.map((entry, offset) => {
+            const idx = win.start + offset;
+            const isCursor = focused && idx === clampedCursor;
             const raw = readSetting(settings, entry.key);
             const isDefault = raw.isDefault;
             const padCols = Math.max(10, Math.min(18, leftInnerCols - 22));
             return (
-              <box key={entry.key} flexDirection="row" gap={1} flexShrink={0}>
-                <text fg={theme.normal()} wrapMode="none" flexShrink={0}>
-                  {` ${entry.label.padEnd(padCols)}`}
+              <box
+                key={entry.key}
+                flexDirection="row"
+                gap={1}
+                flexShrink={0}
+                onMouseDown={() => setCursor(idx)}
+              >
+                <text
+                  fg={isCursor ? theme.cursorFg() : theme.normal()}
+                  bg={isCursor ? theme.cursorBg() : undefined}
+                  wrapMode="none"
+                  flexShrink={0}
+                >
+                  {`${isCursor ? ">" : " "}${entry.label.padEnd(padCols)}`}
                 </text>
                 <text fg={isDefault ? theme.dim() : theme.accent()} wrapMode="none" flexShrink={0}>
                   {clampBoxLine(
-                    String(raw.value || "(default)"),
+                    String(raw.value ?? "(default)"),
                     Math.max(8, leftInnerCols - padCols - 18),
                   )}
                 </text>
@@ -113,14 +202,8 @@ export function SettingsView({
                   flexShrink={0}
                   onMouseDown={(event) => {
                     event.stopPropagation?.();
-                    store.confirmDialog(
-                      {
-                        title: `Edit ${entry.key}`,
-                        message: `editing ${entry.key} (${entry.type}) — value editing lands with the field inputs; CLI: config set ${entry.key} <value>`,
-                        confirmLabel: "OK",
-                      },
-                      () => {},
-                    );
+                    setCursor(idx);
+                    activateSetting(entry);
                   }}
                 >
                   {" [edit]"}
@@ -132,6 +215,7 @@ export function SettingsView({
                     flexShrink={0}
                     onMouseDown={(event) => {
                       event.stopPropagation?.();
+                      setCursor(idx);
                       void store.unsetSetting(entry.key);
                     }}
                   >
@@ -178,7 +262,7 @@ export function SettingsView({
                   void store.startDeviceFlow();
                 }}
               >
-                {" [login] device flow"}
+                {" [l] login device flow"}
               </text>
               <text
                 fg={theme.error()}
@@ -229,11 +313,13 @@ export function SettingsView({
                 flexShrink={0}
                 onMouseDown={(event) => {
                   event.stopPropagation?.();
-                  copyText("update", "npm i -g repotruck@latest");
+                  const result = copyText("update", "npm i -g repotruck@latest");
                   store.pushStatus(
-                    "DONE",
+                    result.ok ? "DONE" : "FAILED",
                     "[update]",
-                    "self-update command copied — the dashboard suspends during updates",
+                    result.ok
+                      ? "self-update command copied — the dashboard suspends during updates"
+                      : result.message,
                   );
                 }}
               >
@@ -261,11 +347,14 @@ export function SettingsView({
                   flexShrink={0}
                   onMouseDown={(event) => {
                     event.stopPropagation?.();
-                    copyText(`completions ${shell}`, `repotruck completions ${shell}`);
+                    const result = copyText(
+                      `completions ${shell}`,
+                      `repotruck completions ${shell}`,
+                    );
                     store.pushStatus(
-                      "DONE",
+                      result.ok ? "DONE" : "FAILED",
                       "[completions]",
-                      `completions ${shell} script command copied`,
+                      result.ok ? `completions ${shell} script command copied` : result.message,
                     );
                   }}
                 >
@@ -278,7 +367,7 @@ export function SettingsView({
       </box>
       <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
         {clampBoxLine(
-          "edit dialog carries the config set parity · unset restores defaults · r refresh · Esc cockpit",
+          "↑↓/jk move · Enter/Space cycle/edit · u unset · l login · r refresh · Esc cockpit",
           inner,
         )}
       </text>

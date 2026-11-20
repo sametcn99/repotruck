@@ -39,7 +39,7 @@ import { StatsView } from "./views/StatsView.tsx";
 import { StatusMatrixView } from "./views/StatusMatrixView.tsx";
 import { SyncCenterView } from "./views/SyncCenterView.tsx";
 import { TrashBackupsView } from "./views/TrashBackupsView.tsx";
-import { VIEW_BY_ID, VIEW_GO_KEYS } from "./views/viewRegistry.ts";
+import { VIEW_BY_ID, VIEW_GO_KEYS, VIEW_ORDER } from "./views/viewRegistry.ts";
 import { WorkspacePicker } from "./WorkspacePicker.tsx";
 import { WorkspaceSkeleton } from "./WorkspaceSkeleton.tsx";
 import { WorktreeModal } from "./WorktreeModal.tsx";
@@ -134,6 +134,12 @@ export function buildRunningSummary(
   }
   const inFlight = counts.CLONING + counts.PULLING;
   return `working… · ${inFlight} cloning/pulling · ${counts.DONE} done · ${counts.FAILED} failed`;
+}
+
+function toastGlyph(phase: StatusPhase): string {
+  if (phase === "DONE") return "\u2713";
+  if (phase === "FAILED") return "\u2717";
+  return "\u203a";
 }
 
 // Compile-time exhaustiveness guard: an unwired ModalState variant fails here
@@ -354,6 +360,7 @@ export function Dashboard({
 
   useKeyboard((key) => {
     const current = store.getSnapshot();
+    const railVisibleNow = navRailVisible(width);
     if (current.dialog !== null || current.contextMenu !== null) {
       // DialogBox / ContextMenu own their keys while open.
       return;
@@ -395,6 +402,62 @@ export function Dashboard({
     }
     if (key.sequence === "!") {
       store.openOmnibar("runner");
+      return;
+    }
+    // ---- nav rail (views panel) keyboard focus & navigation ---------------
+    if (
+      key.name === "tab" &&
+      railVisibleNow &&
+      (current.navFocused || current.view !== "cockpit")
+    ) {
+      store.cycleFocus(true);
+      return;
+    }
+    if (current.navFocused) {
+      if (key.name === "escape" || key.name === "right") {
+        store.setNavFocused(false);
+        return;
+      }
+      if (key.name === "up" || key.sequence === "k") {
+        store.moveNavCursor(-1);
+        return;
+      }
+      if (key.name === "down" || key.sequence === "j") {
+        store.moveNavCursor(1);
+        return;
+      }
+      if (key.name === "home" || key.sequence === "g") {
+        store.setNavCursor(0);
+        return;
+      }
+      if (key.name === "end" || isShiftLetter(key, "G")) {
+        store.setNavCursor(VIEW_ORDER.length - 1);
+        return;
+      }
+      if (key.name === "pageup") {
+        store.moveNavCursor(-5);
+        return;
+      }
+      if (key.name === "pagedown") {
+        store.moveNavCursor(5);
+        return;
+      }
+      if (key.name === "return" || key.name === "space") {
+        store.activateNavRow();
+        return;
+      }
+      if (key.name === "q" && current.view === "cockpit") {
+        handleQuit();
+        return;
+      }
+      if (key.sequence === "[") {
+        store.cycleView(-1);
+        return;
+      }
+      if (key.sequence === "]") {
+        store.cycleView(1);
+        return;
+      }
       return;
     }
     // ---- view layer: Escape back, [ ] cycling, v-prefix go-to -------------
@@ -491,7 +554,7 @@ export function Dashboard({
         return;
       }
       case "tab":
-        store.cycleFocus();
+        store.cycleFocus(railVisibleNow);
         return;
       case "c":
         store.openCloneModal();
@@ -532,6 +595,7 @@ export function Dashboard({
         return;
       case "x":
         store.dismissUpdateToast();
+        store.dismissToast();
         return;
       case "o": {
         if (current.focus === "list") {
@@ -573,6 +637,8 @@ export function Dashboard({
         store.moveSidebarCursor(1);
       } else if (key.name === "space" || key.name === "return") {
         store.activateSidebarRow();
+      } else if (key.name === "left" && railVisibleNow) {
+        store.setNavFocused(true);
       }
       return;
     }
@@ -586,9 +652,15 @@ export function Dashboard({
       } else if (key.name === "end") {
         store.setCursor(current.filteredRepos.length - 1);
       } else if (key.name === "pageup") {
-        store.pageCursor(-1, repoViewportRows(height, current.updateToast !== null));
+        store.pageCursor(
+          -1,
+          repoViewportRows(height, current.updateToast !== null || current.toast !== null),
+        );
       } else if (key.name === "pagedown") {
-        store.pageCursor(1, repoViewportRows(height, current.updateToast !== null));
+        store.pageCursor(
+          1,
+          repoViewportRows(height, current.updateToast !== null || current.toast !== null),
+        );
       } else if (key.name === "space") {
         store.toggleCurrent();
       } else if (key.name === "a") {
@@ -697,8 +769,12 @@ export function Dashboard({
           {showCompactSwitcher ? (
             <box flexDirection="row" gap={1} height={1} flexShrink={0}>
               <text
-                fg={snapshot.focus === "sidebar" ? theme.cursorFg() : dimFg}
-                bg={snapshot.focus === "sidebar" ? theme.cursorBg() : undefined}
+                fg={snapshot.focus === "sidebar" && !snapshot.navFocused ? theme.cursorFg() : dimFg}
+                bg={
+                  snapshot.focus === "sidebar" && !snapshot.navFocused
+                    ? theme.cursorBg()
+                    : undefined
+                }
                 wrapMode="none"
                 flexShrink={0}
                 onMouseDown={(e) => {
@@ -709,8 +785,10 @@ export function Dashboard({
                 {" [Scope] "}
               </text>
               <text
-                fg={snapshot.focus === "list" ? theme.cursorFg() : dimFg}
-                bg={snapshot.focus === "list" ? theme.cursorBg() : undefined}
+                fg={snapshot.focus === "list" && !snapshot.navFocused ? theme.cursorFg() : dimFg}
+                bg={
+                  snapshot.focus === "list" && !snapshot.navFocused ? theme.cursorBg() : undefined
+                }
                 wrapMode="none"
                 flexShrink={0}
                 onMouseDown={(e) => {
@@ -721,8 +799,10 @@ export function Dashboard({
                 {` [Repos (${snapshot.filteredRepos.length})] `}
               </text>
               <text
-                fg={snapshot.focus === "status" ? theme.cursorFg() : dimFg}
-                bg={snapshot.focus === "status" ? theme.cursorBg() : undefined}
+                fg={snapshot.focus === "status" && !snapshot.navFocused ? theme.cursorFg() : dimFg}
+                bg={
+                  snapshot.focus === "status" && !snapshot.navFocused ? theme.cursorBg() : undefined
+                }
                 wrapMode="none"
                 flexShrink={0}
                 onMouseDown={(e) => {
@@ -780,10 +860,33 @@ export function Dashboard({
       ) : (
         <box flexDirection="row" flexGrow={1}>
           {railVisible ? <NavRail store={store} width={NAV_RAIL_WIDTH} /> : null}
-          {renderPage(snapshot.view, store, pageWidth, height, snapshot.updateToast !== null)}
+          {renderPage(
+            snapshot.view,
+            store,
+            pageWidth,
+            height,
+            snapshot.updateToast !== null || snapshot.toast !== null,
+          )}
         </box>
       )}
-      {snapshot.updateToast !== null && shellVisible ? (
+      {snapshot.toast !== null && shellVisible ? (
+        <box
+          border
+          borderColor={theme.phaseColor(snapshot.toast.phase)}
+          height={3}
+          onMouseDown={(event) => {
+            event.stopPropagation?.();
+            store.dismissToast();
+          }}
+        >
+          <text fg={theme.phaseColor(snapshot.toast.phase)}>
+            {trimToWidth(
+              ` ${toastGlyph(snapshot.toast.phase)} ${snapshot.toast.message}`,
+              Math.max(30, width - 4),
+            )}
+          </text>
+        </box>
+      ) : snapshot.updateToast !== null && shellVisible ? (
         <box
           border
           borderColor={theme.toast()}
@@ -809,7 +912,7 @@ export function Dashboard({
             return;
           }
           if (event.x <= 15) {
-            store.cycleFocus();
+            store.cycleFocus(railVisible);
           } else if (event.x <= 32) {
             store.toggleCurrent();
           } else if (event.x <= 45) {

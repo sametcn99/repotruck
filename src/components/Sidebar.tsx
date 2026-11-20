@@ -59,7 +59,7 @@ export function Sidebar({
   const rows = buildSidebarRows(snapshot);
   const orgCount = snapshot.orgs.length;
   const presetIndex = 1 + orgCount;
-  const focused = snapshot.focus === "sidebar";
+  const focused = snapshot.focus === "sidebar" && !snapshot.navFocused;
   const dimFg = theme.dim();
   const maxCols = Math.max(6, width - 2);
 

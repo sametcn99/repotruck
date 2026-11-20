@@ -7,38 +7,72 @@ import { FOOTER_ROWS, HEADER_ROWS, TOAST_RESERVED_ROWS, visibleSlice } from "./w
 
 /**
  * Persistent left navigation rail listing every dashboard view, grouped
- * like the prototype. Click a row to open its page; the sync row carries a
- * live marker while a background task runs. Hidden on narrow terminals —
- * the `v`-prefix keys and `[`/`]` cycling cover navigation there.
+ * like the prototype. Focusable via Tab or clicking; when focused, arrow
+ * keys and j/k move the cursor and Enter/Space opens the view.
  */
 export function NavRail({ store, width }: { store: Store; width: number }) {
   const snapshot = store.getSnapshot();
   const { height } = useTerminalDimensions();
   const inner = Math.max(6, width - 2);
+  const focused = snapshot.navFocused;
 
   const rows: {
+    index: number;
     label: string;
     view: ViewId;
     go: string;
     active: boolean;
+    cursor: boolean;
     running: boolean;
   }[] = [];
-  for (const spec of VIEW_SPECS) {
+  for (let i = 0; i < VIEW_SPECS.length; i += 1) {
+    const spec = VIEW_SPECS[i]!;
     rows.push({
+      index: i,
       label: spec.title,
       view: spec.id,
       go: spec.go,
       active: snapshot.view === spec.id,
+      cursor: focused && snapshot.navCursor === i,
       running:
         snapshot.running && (spec.id === "sync" || spec.id === "run" || spec.id === "cockpit"),
     });
   }
 
   // Available interior rows inside the bordered NavRail box
-  const toastRows = snapshot.updateToast !== null ? TOAST_RESERVED_ROWS : 0;
+  const toastRows =
+    snapshot.updateToast !== null || snapshot.toast !== null ? TOAST_RESERVED_ROWS : 0;
   const availRows = Math.max(3, height - HEADER_ROWS - FOOTER_ROWS - toastRows - 2);
   // Full grouped rail takes 1 (" views") + 5 group headers + 16 view rows + 2 footer hints = 24 lines
   const fullGroupedLines = 1 + NAV_GROUPS.length + rows.length + 2;
+
+  const renderRailRow = (row: (typeof rows)[number]) => {
+    const isHighlighted = row.cursor || (!focused && row.active);
+    const fg = row.cursor
+      ? theme.cursorFg()
+      : !focused && row.active
+        ? theme.cursorFg()
+        : row.active
+          ? theme.accent()
+          : theme.normal();
+    const bg = isHighlighted ? theme.cursorBg() : undefined;
+    return (
+      <text
+        key={row.view}
+        wrapMode="none"
+        flexShrink={0}
+        fg={fg}
+        bg={bg}
+        onMouseDown={(event) => {
+          event.stopPropagation?.();
+          store.setNavCursor(row.index);
+          store.setView(row.view);
+        }}
+      >
+        {formatRailRow(row, inner, focused)}
+      </text>
+    );
+  };
 
   if (availRows >= fullGroupedLines) {
     return (
@@ -46,11 +80,21 @@ export function NavRail({ store, width }: { store: Store; width: number }) {
         flexDirection="column"
         width={width}
         border
-        borderColor={theme.border()}
+        borderColor={focused ? theme.focusBorder() : theme.border()}
         padding={0}
         overflow="hidden"
+        onMouseDown={(event) => {
+          event.stopPropagation?.();
+          store.setNavFocused(true);
+        }}
+        onMouseScroll={(event) => {
+          event.stopPropagation?.();
+          store.setNavFocused(true);
+          const isUp = event.scroll?.direction === "up" || event.button === 4;
+          store.moveNavCursor(isUp ? -1 : 1);
+        }}
       >
-        <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
+        <text fg={focused ? theme.accent() : theme.dim()} wrapMode="none" flexShrink={0}>
           {" views"}
         </text>
         {NAV_GROUPS.flatMap((group) => {
@@ -60,41 +104,29 @@ export function NavRail({ store, width }: { store: Store; width: number }) {
             <text key={`g-${group}`} fg={theme.dim()} wrapMode="none" flexShrink={0}>
               {` ${group.toLowerCase()}`}
             </text>,
-            ...groupRows.map((row) => (
-              <text
-                key={row.view}
-                wrapMode="none"
-                flexShrink={0}
-                fg={row.active ? theme.cursorFg() : theme.normal()}
-                bg={row.active ? theme.cursorBg() : undefined}
-                onMouseDown={(event) => {
-                  event.stopPropagation?.();
-                  store.setView(row.view);
-                }}
-              >
-                {formatRailRow(row, inner)}
-              </text>
-            )),
+            ...groupRows.map(renderRailRow),
           ];
         })}
         <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
-          {" [v]+key opens"}
+          {focused ? " ↑↓ Enter opens" : " [v]+key opens"}
         </text>
         <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
-          {" [ ] cycles"}
+          {focused ? " Tab/Esc back" : " [ ] cycles"}
         </text>
       </box>
     );
   }
 
-  // Compact/windowed mode for short terminals: window the view rows around the active view
-  const activeIdx = Math.max(
-    0,
-    rows.findIndex((r) => r.active),
-  );
+  // Compact/windowed mode for short terminals: window the view rows around the cursor or active view
+  const anchorIdx = focused
+    ? snapshot.navCursor
+    : Math.max(
+        0,
+        rows.findIndex((r) => r.active),
+      );
   const showFooterHint = availRows >= 6;
   const viewBudget = Math.max(1, availRows - 1 - (showFooterHint ? 1 : 0));
-  const { start, end } = visibleSlice(activeIdx, rows.length, viewBudget);
+  const { start, end } = visibleSlice(anchorIdx, rows.length, viewBudget);
   const visibleRows = rows.slice(start, end);
 
   return (
@@ -102,31 +134,27 @@ export function NavRail({ store, width }: { store: Store; width: number }) {
       flexDirection="column"
       width={width}
       border
-      borderColor={theme.border()}
+      borderColor={focused ? theme.focusBorder() : theme.border()}
       padding={0}
       overflow="hidden"
+      onMouseDown={(event) => {
+        event.stopPropagation?.();
+        store.setNavFocused(true);
+      }}
+      onMouseScroll={(event) => {
+        event.stopPropagation?.();
+        store.setNavFocused(true);
+        const isUp = event.scroll?.direction === "up" || event.button === 4;
+        store.moveNavCursor(isUp ? -1 : 1);
+      }}
     >
-      <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
+      <text fg={focused ? theme.accent() : theme.dim()} wrapMode="none" flexShrink={0}>
         {rows.length > viewBudget ? ` views ${start + 1}-${end}/${rows.length}` : " views"}
       </text>
-      {visibleRows.map((row) => (
-        <text
-          key={row.view}
-          wrapMode="none"
-          flexShrink={0}
-          fg={row.active ? theme.cursorFg() : theme.normal()}
-          bg={row.active ? theme.cursorBg() : undefined}
-          onMouseDown={(event) => {
-            event.stopPropagation?.();
-            store.setView(row.view);
-          }}
-        >
-          {formatRailRow(row, inner)}
-        </text>
-      ))}
+      {visibleRows.map(renderRailRow)}
       {showFooterHint ? (
         <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
-          {" [v]+key / [ ]"}
+          {focused ? " ↑↓ Enter · Tab" : " [v]+key / [ ]"}
         </text>
       ) : null}
     </box>
@@ -134,10 +162,18 @@ export function NavRail({ store, width }: { store: Store; width: number }) {
 }
 
 function formatRailRow(
-  row: { label: string; view: ViewId; go: string; active: boolean; running: boolean },
+  row: {
+    label: string;
+    view: ViewId;
+    go: string;
+    active: boolean;
+    cursor: boolean;
+    running: boolean;
+  },
   inner: number,
+  focused: boolean,
 ): string {
-  const marker = row.active ? "> " : "  ";
+  const marker = row.cursor ? "> " : row.active ? (focused ? "• " : "> ") : "  ";
   const badge = row.running ? "*" : row.view === "cockpit" ? "" : row.go;
   const left = `${marker}${row.label}`;
   if (badge === "") {

@@ -4,7 +4,7 @@ import { formatDiskSize } from "../../services/stats.ts";
 import type { Store } from "../store.ts";
 import { theme } from "../theme.ts";
 import { copyJson } from "../ui/JsonCopy.ts";
-import { clampBoxLine, scrollSlice } from "../windowing.ts";
+import { clampBoxLine, visibleSlice } from "../windowing.ts";
 
 /**
  * `repotruck stats --health` as a page: health scorecard with grades and
@@ -24,7 +24,7 @@ export function StatsView({
   const { height: termHeight } = useTerminalDimensions();
   const height = heightProp ?? Math.max(12, termHeight - 4);
   const page = snapshot.statsPage;
-  const [scrollIdx, setScrollIdx] = useState(0);
+  const [cursor, setCursor] = useState(0);
 
   useEffect(() => {
     if (page === null) void store.refreshStatsPage();
@@ -33,25 +33,6 @@ export function StatsView({
   const stats = page?.stats ?? null;
   const health = page?.health ?? null;
   const checks = page?.checks ?? [];
-  const maxItems = Math.max(stats?.languages.length ?? 0, checks.length);
-
-  useKeyboard((key) => {
-    if (key.name === "r") void store.refreshStatsPage();
-    else if (key.name === "up" || key.sequence === "k") {
-      setScrollIdx((s) => Math.max(0, s - 1));
-    } else if (key.name === "down" || key.sequence === "j") {
-      setScrollIdx((s) => Math.min(Math.max(0, maxItems - 1), s + 1));
-    } else if (key.name === "J" || key.sequence === "J") {
-      const result = copyJson("stats", {
-        command: "stats",
-        ok: true,
-        stats: page?.stats ?? null,
-        health: page?.health ?? null,
-      });
-      store.pushStatus(result.ok ? "DONE" : "FAILED", "[stats]", result.message);
-    }
-  });
-
   const inner = Math.max(20, width - 2);
   const stacked = width < 76;
   const colMaxCols = stacked ? width : Math.max(16, Math.floor((width - 1) / 2));
@@ -67,8 +48,54 @@ export function StatsView({
   const recReserved =
     recCount > 0 ? Math.min(recCount + 1, Math.max(2, Math.floor(bodyRows / 2))) : 0;
   const checkCap = Math.max(2, bodyRows - 1 - recReserved);
-  const checkWin = scrollSlice(scrollIdx, checks.length, checkCap);
+  const maxCursor = Math.max(0, checks.length - 1);
+  const clampedCursor = Math.min(cursor, maxCursor);
+  const checkWin = visibleSlice(clampedCursor, checks.length, checkCap);
   const visibleChecks = checks.slice(checkWin.start, checkWin.end);
+  const focused =
+    !snapshot.navFocused &&
+    snapshot.dialog === null &&
+    snapshot.modal === null &&
+    snapshot.contextMenu === null;
+
+  useKeyboard((key) => {
+    const snap = store.getSnapshot();
+    if (
+      snap.navFocused ||
+      snap.dialog !== null ||
+      snap.modal !== null ||
+      snap.contextMenu !== null
+    ) {
+      return;
+    }
+    if (key.name === "r") {
+      void store.refreshStatsPage();
+    } else if (key.name === "up" || key.sequence === "k") {
+      setCursor((c) => Math.max(0, Math.min(c, maxCursor) - 1));
+    } else if (key.name === "down" || key.sequence === "j") {
+      setCursor((c) => Math.min(maxCursor, Math.min(c, maxCursor) + 1));
+    } else if (key.name === "home" || key.sequence === "g") {
+      setCursor(0);
+    } else if (
+      key.name === "end" ||
+      key.sequence === "G" ||
+      (key.shift === true && key.name === "g")
+    ) {
+      setCursor(maxCursor);
+    } else if (key.name === "pageup") {
+      setCursor((c) => Math.max(0, Math.min(c, maxCursor) - Math.max(1, checkCap)));
+    } else if (key.name === "pagedown") {
+      setCursor((c) => Math.min(maxCursor, Math.min(c, maxCursor) + Math.max(1, checkCap)));
+    } else if (key.name === "J" || key.sequence === "J") {
+      const result = copyJson("stats", {
+        command: "stats",
+        ok: true,
+        stats: page?.stats ?? null,
+        health: page?.health ?? null,
+      });
+      store.pushStatus(result.ok ? "DONE" : "FAILED", "[stats]", result.message);
+    }
+  });
 
   return (
     <box
@@ -77,7 +104,9 @@ export function StatsView({
       width="100%"
       onMouseScroll={(e) => {
         const isUp = e.scroll?.direction === "up" || e.button === 4;
-        setScrollIdx((s) => Math.min(Math.max(0, maxItems - 1), Math.max(0, s + (isUp ? -1 : 1))));
+        setCursor((c) =>
+          Math.min(maxCursor, Math.max(0, Math.min(c, maxCursor) + (isUp ? -1 : 1))),
+        );
       }}
     >
       <box flexDirection="row" gap={1} flexWrap="wrap" flexShrink={0}>
@@ -190,25 +219,31 @@ export function StatsView({
             <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
               {"doctor checks"}
             </text>
-            {visibleChecks.map((check) => (
-              <text
-                key={check.check}
-                wrapMode="none"
-                flexShrink={0}
-                fg={
-                  check.status === "ok"
-                    ? theme.success()
-                    : check.status === "warn"
-                      ? theme.warning()
-                      : theme.error()
-                }
-              >
-                {clampBoxLine(
-                  ` ${check.status === "ok" ? "✓" : check.status === "warn" ? "!" : "✗"} ${check.check}`,
-                  colMaxCols,
-                )}
-              </text>
-            ))}
+            {visibleChecks.map((check, offset) => {
+              const idx = checkWin.start + offset;
+              const isCursor = focused && idx === clampedCursor;
+              const baseFg =
+                check.status === "ok"
+                  ? theme.success()
+                  : check.status === "warn"
+                    ? theme.warning()
+                    : theme.error();
+              return (
+                <text
+                  key={check.check}
+                  wrapMode="none"
+                  flexShrink={0}
+                  fg={isCursor ? theme.cursorFg() : baseFg}
+                  bg={isCursor ? theme.cursorBg() : undefined}
+                  onMouseDown={() => setCursor(idx)}
+                >
+                  {clampBoxLine(
+                    `${isCursor ? ">" : " "}${check.status === "ok" ? "✓" : check.status === "warn" ? "!" : "✗"} ${check.check}`,
+                    colMaxCols,
+                  )}
+                </text>
+              );
+            })}
             {health !== null && health.recommendations.length > 0 ? (
               <box flexDirection="column" flexShrink={0}>
                 <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
@@ -227,7 +262,7 @@ export function StatsView({
         </box>
       ) : null}
       <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
-        {"r refresh · J copy JSON · Esc cockpit"}
+        {clampBoxLine("↑↓/jk scroll · r refresh · J copy JSON · Esc cockpit", width)}
       </text>
     </box>
   );

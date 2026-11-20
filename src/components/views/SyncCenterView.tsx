@@ -19,27 +19,50 @@ export function SyncCenterView({ store, width }: { store: Store; width: number }
     if (state === null) store.updateSyncCenter({});
   }, [state, store]);
 
+  const inputFocused =
+    editing !== null &&
+    !snapshot.navFocused &&
+    snapshot.dialog === null &&
+    snapshot.modal === null &&
+    snapshot.contextMenu === null;
+
   useKeyboard((key) => {
+    const snap = store.getSnapshot();
+    if (
+      snap.navFocused ||
+      snap.dialog !== null ||
+      snap.modal !== null ||
+      snap.contextMenu !== null
+    ) {
+      return;
+    }
     if (editing !== null) {
       if (key.name === "escape") setEditing(null);
       return;
     }
-    if (key.name === "e") void store.startSyncCenter();
-    else if (key.name === "x") store.stopSyncCenter();
-    else if (key.name === "s")
-      store.updateSyncCenter({ scope: nextScope(state?.scope ?? "selection", snapshot.orgs) });
-    else if (key.name === "d")
+    if (key.name === "e" && key.shift !== true && key.sequence !== "E") {
+      void store.startSyncCenter();
+    } else if (key.name === "x") {
+      store.stopSyncCenter();
+    } else if (key.name === "s") {
+      store.updateSyncCenter({ scope: nextScope(state?.scope ?? "selection", snap.orgs) });
+    } else if (key.name === "d") {
       store.updateSyncCenter({ divergence: nextDivergence(state?.divergence ?? "fail") });
-    else if (key.name === "b") store.updateSyncCenter({ blobless: !(state?.blobless ?? false) });
-    else if (key.name === "t") store.updateSyncCenter({ stash: !(state?.stash ?? false) });
-    else if (key.name === "c")
+    } else if (key.name === "b") {
+      store.updateSyncCenter({ blobless: !(state?.blobless ?? false) });
+    } else if (key.name === "t") {
+      store.updateSyncCenter({ stash: !(state?.stash ?? false) });
+    } else if (key.name === "c") {
       store.updateSyncCenter({ concurrency: nextOf([1, 2, 3, 5, 8], state?.concurrency ?? 3) });
-    else if (key.name === "p")
+    } else if (key.name === "p") {
       store.updateSyncCenter({ depth: nextOf([0, 1, 5, 10], state?.depth ?? 0) });
-    else if (key.name === "l")
+    } else if (key.name === "l") {
       store.updateSyncCenter({ limit: nextOf([0, 10, 20, 50, 100], state?.limit ?? 0) });
-    else if (key.name === "i") setEditing("include");
-    else if (key.name === "x2") setEditing("exclude");
+    } else if (key.name === "i") {
+      setEditing("include");
+    } else if (key.sequence === "E" || (key.shift === true && key.name === "e")) {
+      setEditing("exclude");
+    }
   });
 
   if (state === null) return null;
@@ -94,7 +117,7 @@ export function SyncCenterView({ store, width }: { store: Store; width: number }
       </box>
       {editing !== null ? (
         <input
-          focused
+          focused={inputFocused}
           value={editing === "include" ? state.include : state.exclude}
           onInput={(value) =>
             store.updateSyncCenter(editing === "include" ? { include: value } : { exclude: value })

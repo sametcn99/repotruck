@@ -56,6 +56,17 @@ export interface StatusEntry {
   message?: string;
 }
 
+/**
+ * Transient feedback line above the footer. Full-page views have no Status
+ * Panel, so `pushStatus` mirrors user-facing results here while the cockpit
+ * is not on screen; the toast auto-dismisses after a short delay.
+ */
+export interface ToastEntry {
+  id: number;
+  phase: StatusPhase;
+  message: string;
+}
+
 export interface FiltersState {
   active: boolean;
   forks: boolean;
@@ -275,6 +286,8 @@ export interface StoreSnapshot {
   preset: PresetRef;
   customPresets: readonly CustomPreset[];
   focus: FocusRegion;
+  navFocused: boolean;
+  navCursor: number;
   view: ViewId;
   modal: ModalState;
   dialog: DialogState | null;
@@ -286,6 +299,8 @@ export interface StoreSnapshot {
   workspaces: readonly WorkspaceListing[];
   movePrefill: string | null;
   updateToast: { version: string } | null;
+  /** Transient action feedback (copies, restores, scans…) — see ToastEntry. */
+  toast: ToastEntry | null;
   running: boolean;
   /** Background tasks tracked by the task model (MCP server, run console…). */
   activeTaskCount: number;
@@ -444,6 +459,10 @@ export type UndoAction =
 export const UNDO_STACK_CAP = 10;
 
 export const STATUSES_CAP = 300;
+
+/** How long a transient toast stays on screen before auto-dismissing. */
+export const TOAST_MS = 2500;
+export const TOAST_FAILED_MS = 5000;
 
 export const STATUS_VIEW_ROWS = 12;
 

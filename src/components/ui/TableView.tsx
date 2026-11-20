@@ -36,6 +36,7 @@ export function TableView<R>({
   viewportRows,
   width,
   emptyLabel = "no rows",
+  focused = true,
 }: {
   columns: readonly TableColumn<R>[];
   rows: readonly TableRow<R>[];
@@ -46,6 +47,7 @@ export function TableView<R>({
   viewportRows: number;
   width: number;
   emptyLabel?: string;
+  focused?: boolean;
 }) {
   if (rows.length === 0) {
     return (
@@ -75,7 +77,8 @@ export function TableView<R>({
         return (
           <box key={rowId} flexDirection="column" flexShrink={0}>
             <text
-              fg={active ? theme.accent() : theme.normal()}
+              fg={active ? (focused ? theme.cursorFg() : theme.accent()) : theme.normal()}
+              bg={active && focused ? theme.cursorBg() : undefined}
               wrapMode="none"
               flexShrink={0}
               onMouseDown={(event) => {

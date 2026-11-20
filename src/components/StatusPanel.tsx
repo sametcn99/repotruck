@@ -269,12 +269,13 @@ export function StatusPanel({
   );
   const compactTabs = maxCols < 34;
   const padActive = maxCols >= 36 || compactTabs;
+  const focused = snapshot.focus === "status" && !snapshot.navFocused;
 
   return (
     <box
       title="Status"
       border
-      borderColor={snapshot.focus === "status" ? theme.focusBorder() : theme.border()}
+      borderColor={focused ? theme.focusBorder() : theme.border()}
       width={width}
       overflow="hidden"
       flexDirection="column"

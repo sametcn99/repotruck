@@ -4,7 +4,7 @@ import { listAgentsMdTemplates } from "../../services/templates.ts";
 import type { Store } from "../store.ts";
 import { theme } from "../theme.ts";
 import { copyText } from "../ui/JsonCopy.ts";
-import { clampBoxLine, scrollSlice } from "../windowing.ts";
+import { clampBoxLine, visibleSlice } from "../windowing.ts";
 
 const FORMATS = ["agents", "cursor", "claude", "copilot"] as const;
 type Format = (typeof FORMATS)[number];
@@ -23,13 +23,13 @@ export function AgentsView({
   width: number;
   height?: number;
 }) {
-  useSyncExternalStore(store.subscribe, store.getSnapshot);
+  const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot);
   const { height: termHeight } = useTerminalDimensions();
   const height = heightProp ?? Math.max(8, termHeight - 11);
   const [format, setFormat] = useState<Format>("cursor");
   const [port, setPort] = useState(3000);
   const [templates, setTemplates] = useState<readonly { name: string; description: string }[]>([]);
-  const [scrollIdx, setScrollIdx] = useState(0);
+  const [cursor, setCursor] = useState(0);
 
   useEffect(() => {
     setTemplates(
@@ -37,7 +37,7 @@ export function AgentsView({
     );
   }, []);
 
-  const mcpRunning = store.getSnapshot().activeTaskCount > 0 && store.taskLabel("mcp") !== null;
+  const mcpRunning = snapshot.activeTaskCount > 0 && store.taskLabel("mcp") !== null;
   const stacked = width < 82;
   const boxInnerCols = stacked
     ? Math.max(10, width - 3)
@@ -46,20 +46,67 @@ export function AgentsView({
   const templateBudget = stacked
     ? Math.max(1, Math.floor((height - 12) / 2))
     : Math.max(1, Math.floor((height - 7) / 2));
-  const maxScroll = Math.max(0, templates.length - templateBudget);
+  const maxCursor = Math.max(0, templates.length - 1);
+  const clampedCursor = Math.min(cursor, maxCursor);
+  const focused =
+    !snapshot.navFocused &&
+    snapshot.dialog === null &&
+    snapshot.modal === null &&
+    snapshot.contextMenu === null;
 
   useKeyboard((key) => {
-    if (key.name === "f") setFormat(FORMATS[(FORMATS.indexOf(format) + 1) % FORMATS.length]!);
-    else if (key.name === "m") void store.startMcpServer(port);
-    else if (key.name === "s") store.stopMcpServer();
-    else if (key.name === "up" || key.sequence === "k") {
-      setScrollIdx((s) => Math.max(0, Math.min(s, maxScroll) - 1));
+    const snap = store.getSnapshot();
+    if (
+      snap.navFocused ||
+      snap.dialog !== null ||
+      snap.modal !== null ||
+      snap.contextMenu !== null
+    ) {
+      return;
+    }
+    if (key.name === "f") {
+      setFormat(FORMATS[(FORMATS.indexOf(format) + 1) % FORMATS.length]!);
+    } else if (key.name === "m") {
+      void store.startMcpServer(port);
+    } else if (key.name === "s") {
+      store.stopMcpServer();
+    } else if (key.name === "e") {
+      void store.exportInstructions(format);
+    } else if (key.name === "r") {
+      store.pushStatus("DONE", "[instructions]", "regenerating AGENTS.md map");
+      void store.runWorkspaceMaintenance("instructions");
+    } else if (key.name === "p") {
+      setPort((p) => (p + 100 > 9000 ? 3000 : p + 100));
+    } else if (key.name === "y") {
+      const config = `claude mcp add repotruck --transport http --url http://127.0.0.1:${port}/mcp`;
+      const result = copyText("client config", config);
+      store.pushStatus(
+        result.ok ? "DONE" : "FAILED",
+        "[mcp]",
+        result.ok ? `client config copied: ${config}` : result.message,
+      );
+    } else if (key.name === "up" || key.sequence === "k") {
+      setCursor((c) => Math.max(0, Math.min(c, maxCursor) - 1));
     } else if (key.name === "down" || key.sequence === "j") {
-      setScrollIdx((s) => Math.min(maxScroll, s + 1));
+      setCursor((c) => Math.min(maxCursor, Math.min(c, maxCursor) + 1));
+    } else if (key.name === "home" || key.sequence === "g") {
+      setCursor(0);
+    } else if (
+      key.name === "end" ||
+      key.sequence === "G" ||
+      (key.shift === true && key.name === "g")
+    ) {
+      setCursor(maxCursor);
+    } else if (key.name === "return" || key.name === "space") {
+      const target = templates[clampedCursor];
+      if (target !== undefined) void store.applyAgentsTemplate(target.name);
+    } else if (key.name === "x" || key.name === "c") {
+      const target = templates[clampedCursor];
+      if (target !== undefined) void store.applyAgentsTemplate(target.name, true);
     }
   });
 
-  const tplWin = scrollSlice(scrollIdx, templates.length, templateBudget);
+  const tplWin = visibleSlice(clampedCursor, templates.length, templateBudget);
   const visibleTemplates = templates.slice(tplWin.start, tplWin.end);
 
   return (
@@ -69,8 +116,8 @@ export function AgentsView({
       width="100%"
       onMouseScroll={(e) => {
         const isUp = e.scroll?.direction === "up" || e.button === 4;
-        setScrollIdx((s) =>
-          Math.min(maxScroll, Math.max(0, Math.min(s, maxScroll) + (isUp ? -1 : 1))),
+        setCursor((c) =>
+          Math.min(maxCursor, Math.max(0, Math.min(c, maxCursor) + (isUp ? -1 : 1))),
         );
       }}
     >
@@ -82,7 +129,7 @@ export function AgentsView({
       >
         <box
           border
-          borderColor={theme.border()}
+          borderColor={focused ? theme.focusBorder() : theme.border()}
           flexDirection="column"
           flexGrow={1}
           flexBasis={stacked ? undefined : 0}
@@ -92,37 +139,56 @@ export function AgentsView({
           <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
             {clampBoxLine(" AGENTS.md templates (instructions template)", boxInnerCols)}
           </text>
-          {visibleTemplates.map((template) => (
-            <box key={template.name} flexDirection="column" flexShrink={0}>
-              <text fg={theme.normal()} wrapMode="none" flexShrink={0}>
-                {clampBoxLine(` ${template.name} — ${template.description}`, boxInnerCols)}
-              </text>
-              <box flexDirection="row" gap={2} flexShrink={0}>
+          {visibleTemplates.map((template, offset) => {
+            const idx = tplWin.start + offset;
+            const isCursor = focused && idx === clampedCursor;
+            return (
+              <box
+                key={template.name}
+                flexDirection="column"
+                flexShrink={0}
+                onMouseDown={() => setCursor(idx)}
+              >
                 <text
-                  fg={theme.accent()}
+                  fg={isCursor ? theme.cursorFg() : theme.normal()}
+                  bg={isCursor ? theme.cursorBg() : undefined}
                   wrapMode="none"
                   flexShrink={0}
-                  onMouseDown={(event) => {
-                    event.stopPropagation?.();
-                    void store.applyAgentsTemplate(template.name);
-                  }}
                 >
-                  {"  [apply]"}
+                  {clampBoxLine(
+                    `${isCursor ? ">" : " "} ${template.name} — ${template.description}`,
+                    boxInnerCols,
+                  )}
                 </text>
-                <text
-                  fg={theme.dim()}
-                  wrapMode="none"
-                  flexShrink={0}
-                  onMouseDown={(event) => {
-                    event.stopPropagation?.();
-                    void store.applyAgentsTemplate(template.name, true);
-                  }}
-                >
-                  {"[clear]"}
-                </text>
+                <box flexDirection="row" gap={2} flexShrink={0}>
+                  <text
+                    fg={theme.accent()}
+                    wrapMode="none"
+                    flexShrink={0}
+                    onMouseDown={(event) => {
+                      event.stopPropagation?.();
+                      setCursor(idx);
+                      void store.applyAgentsTemplate(template.name);
+                    }}
+                  >
+                    {"  [apply]"}
+                  </text>
+                  <text
+                    fg={theme.dim()}
+                    wrapMode="none"
+                    flexShrink={0}
+                    onMouseDown={(event) => {
+                      event.stopPropagation?.();
+                      setCursor(idx);
+                      void store.applyAgentsTemplate(template.name, true);
+                    }}
+                  >
+                    {"[x:clear]"}
+                  </text>
+                </box>
               </box>
-            </box>
-          ))}
+            );
+          })}
           <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
             {" Export (instructions export)"}
           </text>
@@ -147,7 +213,7 @@ export function AgentsView({
                 void store.exportInstructions(format);
               }}
             >
-              {"[export]"}
+              {"[e] export"}
             </text>
           </box>
           <text
@@ -160,7 +226,7 @@ export function AgentsView({
               void store.runWorkspaceMaintenance("instructions");
             }}
           >
-            {" [regenerate map]"}
+            {" [r] regenerate map"}
           </text>
         </box>
         <box
@@ -188,10 +254,10 @@ export function AgentsView({
               flexShrink={0}
               onMouseDown={(event) => {
                 event.stopPropagation?.();
-                setPort(port + 100 > 9000 ? 3000 : port + 100);
+                setPort((p) => (p + 100 > 9000 ? 3000 : p + 100));
               }}
             >
-              {` port: ${port}`}
+              {` [p] port: ${port}`}
             </text>
             {mcpRunning ? (
               <text
@@ -226,11 +292,15 @@ export function AgentsView({
             onMouseDown={(event) => {
               event.stopPropagation?.();
               const config = `claude mcp add repotruck --transport http --url http://127.0.0.1:${port}/mcp`;
-              copyText("client config", config);
-              store.pushStatus("DONE", "[mcp]", `client config copied: ${config}`);
+              const result = copyText("client config", config);
+              store.pushStatus(
+                result.ok ? "DONE" : "FAILED",
+                "[mcp]",
+                result.ok ? `client config copied: ${config}` : result.message,
+              );
             }}
           >
-            {" [copy client config]"}
+            {" [y] copy client config"}
           </text>
           <text
             fg={theme.dim()}
@@ -238,8 +308,12 @@ export function AgentsView({
             flexShrink={0}
             onMouseDown={(event) => {
               event.stopPropagation?.();
-              copyText("stdio config", "claude mcp add repotruck -- repotruck mcp");
-              store.pushStatus("DONE", "[mcp]", "stdio client config copied (repotruck mcp)");
+              const result = copyText("stdio config", "claude mcp add repotruck -- repotruck mcp");
+              store.pushStatus(
+                result.ok ? "DONE" : "FAILED",
+                "[mcp]",
+                result.ok ? "stdio client config copied (repotruck mcp)" : result.message,
+              );
             }}
           >
             {" [stdio] copy stdio setup"}
@@ -251,7 +325,7 @@ export function AgentsView({
       </box>
       <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
         {clampBoxLine(
-          "f export format · m/s MCP start/stop · applies write AGENTS.md immediately · Esc cockpit",
+          "↑↓/jk move · Enter apply · x clear · f format · e export · m/s MCP · Esc cockpit",
           width,
         )}
       </text>

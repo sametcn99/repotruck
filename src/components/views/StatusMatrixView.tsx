@@ -35,36 +35,6 @@ export function StatusMatrixView({
     if (data === null) void store.refreshStatusMatrix();
   }, [data, store]);
 
-  useKeyboard((key) => {
-    const rows = filteredRows(data?.repos ?? [], filter, snapshot.localHealth);
-    if (key.name === "up") {
-      setCursor((c) => Math.max(0, c - 1));
-    } else if (key.name === "down") {
-      setCursor((c) => Math.min(Math.max(0, rows.length - 1), c + 1));
-    } else if (key.name === "return" || key.name === "space") {
-      const row = rows[cursor];
-      if (row !== undefined) {
-        setExpandedKey((current) => (current === row.key ? null : row.key));
-      }
-    } else if (key.name === "f") {
-      setFilter((current) => FILTERS[(FILTERS.indexOf(current) + 1) % FILTERS.length]!);
-      setCursor(0);
-    } else if (key.name === "u") {
-      void store.refreshStatusMatrix(!(data?.remote ?? false));
-    } else if (key.name === "r") {
-      void store.refreshStatusMatrix();
-    } else if (key.name === "J" || key.sequence === "J") {
-      const result = copyJson("status", {
-        command: "status",
-        ok: true,
-        root: snapshot.root,
-        lastSync: data?.lastSync ?? null,
-        repos: rows,
-      });
-      store.pushStatus(result.ok ? "DONE" : "FAILED", "[status]", result.message);
-    }
-  });
-
   const remote = data?.remote ?? false;
   const rows = filteredRows(data?.repos ?? [], filter, snapshot.localHealth);
   const attention = (data?.repos ?? []).filter(
@@ -91,11 +61,67 @@ export function StatusMatrixView({
     detail: statusDetail(line),
   }));
 
+  const clampedCursor = Math.min(cursor, Math.max(0, rows.length - 1));
   const expandedEntry =
     expandedKey !== null ? tableRows.find((r) => (r.cells[0] ?? "") === expandedKey) : undefined;
   const expandedDetailRows = expandedEntry?.detail?.length ?? 0;
   // Chrome inside StatusMatrixView: filter row (1) + summary line (1) + table header (1) + footer (1) = 4 rows.
   const viewportRows = Math.max(2, height - 4 - expandedDetailRows);
+
+  useKeyboard((key) => {
+    const snap = store.getSnapshot();
+    if (
+      snap.navFocused ||
+      snap.dialog !== null ||
+      snap.modal !== null ||
+      snap.contextMenu !== null
+    ) {
+      return;
+    }
+    const currentRows = filteredRows(data?.repos ?? [], filter, snap.localHealth);
+    const maxIdx = Math.max(0, currentRows.length - 1);
+    if (key.name === "up" || key.sequence === "k") {
+      setCursor((c) => Math.max(0, Math.min(c, maxIdx) - 1));
+    } else if (key.name === "down" || key.sequence === "j") {
+      setCursor((c) => Math.min(maxIdx, Math.min(c, maxIdx) + 1));
+    } else if (key.name === "home" || key.sequence === "g") {
+      setCursor(0);
+    } else if (
+      key.name === "end" ||
+      key.sequence === "G" ||
+      (key.shift === true && key.name === "g")
+    ) {
+      setCursor(maxIdx);
+    } else if (key.name === "pageup") {
+      setCursor((c) => Math.max(0, Math.min(c, maxIdx) - Math.max(1, viewportRows)));
+    } else if (key.name === "pagedown") {
+      setCursor((c) => Math.min(maxIdx, Math.min(c, maxIdx) + Math.max(1, viewportRows)));
+    } else if (key.name === "return" || key.name === "space") {
+      const row = currentRows[Math.min(cursor, maxIdx)];
+      if (row !== undefined) {
+        setExpandedKey((current) => (current === row.key ? null : row.key));
+      }
+    } else if (key.name === "o" || key.name === "i") {
+      const row = currentRows[Math.min(cursor, maxIdx)];
+      if (row !== undefined) store.openDetailModal(row.key);
+    } else if (key.name === "f") {
+      setFilter((current) => FILTERS[(FILTERS.indexOf(current) + 1) % FILTERS.length]!);
+      setCursor(0);
+    } else if (key.name === "u") {
+      void store.refreshStatusMatrix(!(data?.remote ?? false));
+    } else if (key.name === "r") {
+      void store.refreshStatusMatrix();
+    } else if (key.name === "J" || key.sequence === "J") {
+      const result = copyJson("status", {
+        command: "status",
+        ok: true,
+        root: snap.root,
+        lastSync: data?.lastSync ?? null,
+        repos: currentRows,
+      });
+      store.pushStatus(result.ok ? "DONE" : "FAILED", "[status]", result.message);
+    }
+  });
 
   return (
     <box flexDirection="column" flexGrow={1} width="100%" padding={0}>
@@ -166,18 +192,19 @@ export function StatusMatrixView({
         <TableView
           columns={columns}
           rows={tableRows}
-          cursor={cursor}
+          cursor={clampedCursor}
           onCursor={setCursor}
           expandedId={expandedKey}
           onToggleExpand={setExpandedKey}
           viewportRows={viewportRows}
           width={width}
+          focused={!snapshot.navFocused}
           emptyLabel={data?.loading ? "loading…" : "no repositories match the filter"}
         />
       </box>
       <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
         {clampBoxLine(
-          "↑↓ move · Enter expand (-D detail) · f filter · u remote PR+CI · r refresh · J JSON · Esc cockpit",
+          "↑↓/jk move · Enter expand · o detail · f filter · u remote PR+CI · r refresh · J JSON · Esc cockpit",
           width,
         )}
       </text>

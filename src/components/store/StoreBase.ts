@@ -9,6 +9,7 @@ import {
   resolveGithubBaseUrl,
 } from "../../services/settings.ts";
 import { loadWorkspace } from "../../services/workspace.ts";
+import { VIEW_ORDER } from "../views/viewRegistry.ts";
 import { buildInitialSnapshot, buildStoreDeps, type ResolvedStoreDeps } from "./defaults.ts";
 import {
   filterByHealth,
@@ -38,6 +39,9 @@ import {
   type StatusPhase,
   type StoreDeps,
   type StoreSnapshot,
+  TOAST_FAILED_MS,
+  TOAST_MS,
+  type ToastEntry,
   UNDO_STACK_CAP,
   type UndoAction,
 } from "./types.ts";
@@ -150,12 +154,52 @@ export class StoreBase {
   openCloneModal = (): void => this.openModal({ type: "clone" });
 
   setFocus = (focus: FocusRegion): void => {
-    if (this.state.focus !== focus) this.set({ focus });
+    if (this.state.focus !== focus || this.state.navFocused) {
+      this.set({ focus, navFocused: false });
+    }
   };
 
-  cycleFocus = (): void => {
+  setNavFocused = (navFocused: boolean): void => {
+    if (this.state.navFocused !== navFocused) {
+      const navCursor = navFocused
+        ? Math.max(0, VIEW_ORDER.indexOf(this.state.view))
+        : this.state.navCursor;
+      this.set({ navFocused, navCursor });
+    }
+  };
+
+  moveNavCursor = (delta: number): void => {
+    const total = VIEW_ORDER.length;
+    if (total === 0) return;
+    const next = (this.state.navCursor + delta + total) % total;
+    this.set({ navCursor: next });
+  };
+
+  setNavCursor = (index: number): void => {
+    const total = VIEW_ORDER.length;
+    if (total === 0) return;
+    this.set({ navCursor: Math.min(Math.max(0, index), total - 1) });
+  };
+
+  cycleFocus = (includeNav = false): void => {
+    if (this.state.view !== "cockpit") {
+      if (includeNav) {
+        this.setNavFocused(!this.state.navFocused);
+      }
+      return;
+    }
+    if (includeNav) {
+      if (this.state.navFocused) {
+        this.set({ navFocused: false, focus: "list" });
+        return;
+      }
+      if (this.state.focus === "sidebar") {
+        this.setNavFocused(true);
+        return;
+      }
+    }
     const index = FOCUS_ORDER.indexOf(this.state.focus);
-    this.set({ focus: FOCUS_ORDER[(index + 1) % FOCUS_ORDER.length]! });
+    this.set({ focus: FOCUS_ORDER[(index + 1) % FOCUS_ORDER.length]!, navFocused: false });
   };
 
   pushStatus = (phase: StatusPhase, key: string, message?: string): void => {
@@ -166,6 +210,38 @@ export class StoreBase {
       ...(message !== undefined ? { message } : {}),
     };
     this.set({ statuses: [...this.state.statuses, entry].slice(-STATUSES_CAP) });
+    // Full-page views have no Status Panel, so surface the result as a
+    // transient toast. The cockpit already shows the activity log inline and
+    // a running sync keeps its progress in the footer summary instead.
+    if (this.state.view !== "cockpit" && this.state.modal === null && !this.state.running) {
+      this.showToast(phase, `${key}${message !== undefined ? ` — ${message}` : ""}`);
+    }
+  };
+
+  // ---- transient toast -------------------------------------------------------
+
+  private toastTimer: ReturnType<typeof setTimeout> | null = null;
+
+  protected showToast = (phase: StatusPhase, message: string): void => {
+    const toast: ToastEntry = { id: this.nextStatusId++, phase, message };
+    if (this.toastTimer !== null) clearTimeout(this.toastTimer);
+    this.set({ toast });
+    // Failures carry a path/next step worth reading; successes can vanish fast.
+    const delay = phase === "FAILED" ? TOAST_FAILED_MS : TOAST_MS;
+    const timer = setTimeout(() => {
+      this.toastTimer = null;
+      if (this.state.toast?.id === toast.id) this.set({ toast: null });
+    }, delay);
+    timer.unref?.();
+    this.toastTimer = timer;
+  };
+
+  dismissToast = (): void => {
+    if (this.toastTimer !== null) {
+      clearTimeout(this.toastTimer);
+      this.toastTimer = null;
+    }
+    if (this.state.toast !== null) this.set({ toast: null });
   };
 
   protected progressToStatus: EmitProgress = (progress) => {

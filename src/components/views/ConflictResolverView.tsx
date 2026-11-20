@@ -3,7 +3,7 @@ import { useKeyboard, useTerminalDimensions } from "@opentui/react";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import type { Store } from "../store.ts";
 import { theme } from "../theme.ts";
-import { clampBoxLine, scrollSlice } from "../windowing.ts";
+import { clampBoxLine, visibleSlice } from "../windowing.ts";
 
 /**
  * `repotruck sync resolve` as a page: repositories that ended a sync in a
@@ -25,7 +25,7 @@ export function ConflictResolverView({
   const effectiveWidth = width ?? Math.max(24, termWidth - 4);
   const boxInnerCols = Math.max(10, effectiveWidth - 3);
   const [output, setOutput] = useState<string[]>([]);
-  const [scrollIdx, setScrollIdx] = useState(0);
+  const [cursor, setCursor] = useState(0);
 
   useEffect(() => {
     setOutput((current) =>
@@ -47,17 +47,49 @@ export function ConflictResolverView({
   const failedCap = Math.max(1, dynamicBudget - outputUsed);
   const actualFailedRows = Math.max(1, Math.min(failed.length, failedCap));
   const outputCap = Math.max(1, dynamicBudget - actualFailedRows);
-  const maxScroll = Math.max(0, failed.length - failedCap);
-  const failedWin = scrollSlice(scrollIdx, failed.length, failedCap);
+  const maxCursor = Math.max(0, failed.length - 1);
+  const clampedCursor = Math.min(cursor, maxCursor);
+  const failedWin = visibleSlice(clampedCursor, failed.length, failedCap);
   const visibleFailed = failed.slice(failedWin.start, failedWin.end);
+  const focused =
+    !snapshot.navFocused &&
+    snapshot.dialog === null &&
+    snapshot.modal === null &&
+    snapshot.contextMenu === null;
 
   useKeyboard((key) => {
-    if (key.name === "g") void gitAll(store, "continue", setOutput);
-    else if (key.name === "a") void gitAll(store, "abort", setOutput);
-    else if (key.name === "up" || key.sequence === "k") {
-      setScrollIdx((s) => Math.max(0, Math.min(s, maxScroll) - 1));
+    const snap = store.getSnapshot();
+    if (
+      snap.navFocused ||
+      snap.dialog !== null ||
+      snap.modal !== null ||
+      snap.contextMenu !== null
+    ) {
+      return;
+    }
+    if (key.name === "g" && !key.shift) {
+      void gitAll(store, "continue", setOutput);
+    } else if (key.name === "a") {
+      void gitAll(store, "abort", setOutput);
+    } else if (key.name === "up" || key.sequence === "k") {
+      setCursor((c) => Math.max(0, Math.min(c, maxCursor) - 1));
     } else if (key.name === "down" || key.sequence === "j") {
-      setScrollIdx((s) => Math.min(maxScroll, s + 1));
+      setCursor((c) => Math.min(maxCursor, Math.min(c, maxCursor) + 1));
+    } else if (key.name === "home") {
+      setCursor(0);
+    } else if (
+      key.name === "end" ||
+      key.sequence === "G" ||
+      (key.shift === true && key.name === "g")
+    ) {
+      setCursor(maxCursor);
+    } else if (key.name === "pageup") {
+      setCursor((c) => Math.max(0, Math.min(c, maxCursor) - Math.max(1, failedCap)));
+    } else if (key.name === "pagedown") {
+      setCursor((c) => Math.min(maxCursor, Math.min(c, maxCursor) + Math.max(1, failedCap)));
+    } else if (key.name === "o" || key.name === "return") {
+      const target = failed[clampedCursor];
+      if (target !== undefined) store.openDetailModal(target.key);
     }
   });
 
@@ -68,8 +100,8 @@ export function ConflictResolverView({
       width="100%"
       onMouseScroll={(e) => {
         const isUp = e.scroll?.direction === "up" || e.button === 4;
-        setScrollIdx((s) =>
-          Math.min(maxScroll, Math.max(0, Math.min(s, maxScroll) + (isUp ? -1 : 1))),
+        setCursor((c) =>
+          Math.min(maxCursor, Math.max(0, Math.min(c, maxCursor) + (isUp ? -1 : 1))),
         );
       }}
     >
@@ -78,7 +110,7 @@ export function ConflictResolverView({
       </text>
       <box
         border
-        borderColor={theme.border()}
+        borderColor={focused ? theme.focusBorder() : theme.border()}
         flexDirection="column"
         width="100%"
         padding={0}
@@ -98,11 +130,28 @@ export function ConflictResolverView({
             {"  none — last sync was clean"}
           </text>
         ) : (
-          visibleFailed.map((entry) => (
-            <text key={`${entry.id}`} fg={theme.error()} wrapMode="none" flexShrink={0}>
-              {clampBoxLine(` ✗ ${entry.key} — ${entry.message ?? "failed"}`, boxInnerCols)}
-            </text>
-          ))
+          visibleFailed.map((entry, offset) => {
+            const idx = failedWin.start + offset;
+            const isCursor = focused && idx === clampedCursor;
+            return (
+              <text
+                key={`${entry.id}`}
+                fg={isCursor ? theme.cursorFg() : theme.error()}
+                bg={isCursor ? theme.cursorBg() : undefined}
+                wrapMode="none"
+                flexShrink={0}
+                onMouseDown={() => {
+                  setCursor(idx);
+                  store.openDetailModal(entry.key);
+                }}
+              >
+                {clampBoxLine(
+                  `${isCursor ? ">" : " "}✗ ${entry.key} — ${entry.message ?? "failed"}`,
+                  boxInnerCols,
+                )}
+              </text>
+            );
+          })
         )}
       </box>
       <box flexDirection="row" flexWrap="wrap" gap={2} flexShrink={0}>
@@ -155,7 +204,7 @@ export function ConflictResolverView({
         })()}
         <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
           {clampBoxLine(
-            " 1. inspect conflicting files in the repo directory or open via cockpit [o]",
+            " 1. inspect conflicting files via [o] / Enter or open via cockpit [o]",
             boxInnerCols,
           )}
         </text>
@@ -173,7 +222,10 @@ export function ConflictResolverView({
         </text>
       </box>
       <text fg={theme.dim()} wrapMode="none" flexShrink={0}>
-        {clampBoxLine("actions run in each failed repo's directory · Esc cockpit", effectiveWidth)}
+        {clampBoxLine(
+          "↑↓/jk select · o/Enter detail · g continue · a abort · Esc cockpit",
+          effectiveWidth,
+        )}
       </text>
     </box>
   );

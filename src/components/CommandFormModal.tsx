@@ -127,7 +127,7 @@ export function CommandFormModal({ store }: { store: Store }) {
           onMouseDown={(event) => {
             event.stopPropagation?.();
             const result = copyText("command", cli);
-            store.pushStatus("DONE", `[${spec.path}]`, result.message);
+            store.pushStatus(result.ok ? "DONE" : "FAILED", `[${spec.path}]`, result.message);
           }}
         >
           {"[ Copy ]"}
@@ -214,12 +214,12 @@ async function runCommand(
   const executor = EXECUTORS[executorKey(spec)];
   if (executor === undefined) {
     const ticket = spec.surface.kind === "planned" ? spec.surface.ticket : "its page ticket";
+    store.closeModal();
     store.pushStatus(
       "DONE",
       `[${spec.path}]`,
       `executed as: ${cli} — full surface arrives with ${ticket}`,
     );
-    store.closeModal();
     return;
   }
   const taskId = `cmd:${spec.id}`;
@@ -227,8 +227,8 @@ async function runCommand(
   try {
     const message = await executor(store, values, positional);
     store.endTask(taskId, message);
-    store.pushStatus("DONE", `[${spec.path}]`, `${cli} — ${message}`);
     store.closeModal();
+    store.pushStatus("DONE", `[${spec.path}]`, `${cli} — ${message}`);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     store.endTask(taskId, message, true);
