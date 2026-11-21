@@ -11,14 +11,20 @@ import {
 import path from "node:path";
 import type { CustomPreset, PresetRef } from "../presets/index.ts";
 import { targetSegmentsForPreset } from "../presets/index.ts";
-import { createCloneLimiter, firstErrorLine } from "./cloner.ts";
-import type { EnvLike } from "./config.ts";
-import { lookupRepoDetails, type RepoLookup } from "./forkSource.ts";
-import { getActualCasingOnDisk } from "./fsUtils.ts";
+import { firstErrorLine } from "./cloner.ts";
+import type { EnvLike, RepoInventoryEntry } from "./config.ts";
+import type { RepoLookup } from "./forkSource.ts";
+import { getActualCasingOnDisk, repoKeyEquals } from "./fsUtils.ts";
 import { moveDir } from "./mover.ts";
-import { buildPlanEntries, occupiedParent, type PlanEntry } from "./reorganizePlan.ts";
+import {
+  adoptedEntry,
+  buildPlanEntries,
+  occupiedParent,
+  type PlanEntry,
+  resolveCategorizedForks,
+} from "./reorganizePlan.ts";
 import { scanForRepos } from "./scanner.ts";
-import { loadWorkspace, updateWorkspace, upsertInventory } from "./workspace.ts";
+import { loadWorkspace, updateWorkspace } from "./workspace.ts";
 import { isLinkedWorktree } from "./worktree.ts";
 
 export interface ReorganizeJournalMove {
@@ -28,6 +34,7 @@ export interface ReorganizeJournalMove {
   status: "pending" | "done";
   tmpPath?: string;
   forkSourceOwner?: string;
+  adopted?: RepoInventoryEntry;
 }
 
 export interface ReorganizeJournal {
@@ -224,9 +231,20 @@ async function resumeReorganize(
           ...entry,
           relativePath: target,
           ...(forkSourceOwner ? { forkSourceOwner } : {}),
+          ...(forkSourceOwner && entry.category === "source" ? { category: "forks" as const } : {}),
           ...(entry.custom === true ? { custom: false } : {}),
         };
       });
+      for (const move of journal.moves) {
+        const adopted = move.adopted;
+        if (
+          adopted &&
+          moveMap.has(move.key.toLowerCase()) &&
+          !repos.some((entry) => repoKeyEquals(entry, adopted.owner, adopted.name))
+        ) {
+          repos.push(adopted);
+        }
+      }
       currentWorking = {
         ...currentWorking,
         repos,
@@ -275,21 +293,7 @@ export async function reorganizeWorkspace(
   const discovered = options.scan === true ? await scanForRepos(root) : [];
   const entries = buildPlanEntries(root, config, discovered, existsFn, result);
   if (newPreset === "categorized" && options.getRepo !== undefined) {
-    const limit = createCloneLimiter(4);
-    await Promise.all(
-      entries
-        .filter(
-          (entry) =>
-            entry.isFork && !entry.forkSourceOwner && !(entry.custom && options.keepCustom),
-        )
-        .map((entry) =>
-          limit(async () => {
-            entry.forkSourceOwner = (
-              await lookupRepoDetails(entry, options.getRepo)
-            )?.forkSourceOwner;
-          }),
-        ),
-    );
+    await resolveCategorizedForks(entries, options.getRepo, options.keepCustom === true);
   }
   const occupied = new Map<string, string>();
   for (const entry of entries) {
@@ -315,7 +319,13 @@ export async function reorganizeWorkspace(
       continue;
     }
 
-    if (newPreset === "categorized" && entry.isFork && !entry.forkSourceOwner) {
+    if (
+      newPreset === "categorized" &&
+      entry.isFork &&
+      !entry.isArchived &&
+      !entry.forkSourceOwner
+    ) {
+      if (existsFn(srcAbs)) settled.set(entry.key.toLowerCase(), entry.relativePath);
       result.skipped.push({ key: entry.key, reason: "fork source owner unavailable" });
       continue;
     }
@@ -405,6 +415,7 @@ export async function reorganizeWorkspace(
       to: p.targetRel,
       status: "pending",
       ...(p.entry.forkSourceOwner ? { forkSourceOwner: p.entry.forkSourceOwner } : {}),
+      ...(!p.entry.tracked ? { adopted: adoptedEntry(p.entry, p.targetRel) } : {}),
     })),
   };
   writeReorganizeJournalAtomically(root, journal);
@@ -472,9 +483,7 @@ export async function reorganizeWorkspace(
 
   const moveMap = new Map(result.moved.map((move) => [move.key.toLowerCase(), move.to] as const));
   const updatedPaths = new Map([...settled, ...moveMap]);
-  const forkOwners = new Map(
-    entries.map((entry) => [entry.key.toLowerCase(), entry.forkSourceOwner]),
-  );
+  const entriesByKey = new Map(entries.map((entry) => [entry.key.toLowerCase(), entry]));
   const oldPathsByKey = new Map(
     config.repos.map(
       (entry) => [`${entry.owner}/${entry.name}`.toLowerCase(), entry.relativePath] as const,
@@ -497,15 +506,19 @@ export async function reorganizeWorkspace(
       const repos = currentWorking.repos.map((entry) => {
         const key = `${entry.owner}/${entry.name}`.toLowerCase();
         const target = updatedPaths.get(key);
-        const forkSourceOwner = entry.forkSourceOwner ?? forkOwners.get(key);
+        const planned = entriesByKey.get(key);
+        const forkSourceOwner = entry.forkSourceOwner ?? planned?.forkSourceOwner;
+        const category = planned?.isFork && entry.category === "source" ? "forks" : entry.category;
         if (
           (target === undefined || target === entry.relativePath) &&
+          category === entry.category &&
           forkSourceOwner === entry.forkSourceOwner
         )
           return entry;
         return {
           ...entry,
           relativePath: target ?? entry.relativePath,
+          category,
           ...(forkSourceOwner ? { forkSourceOwner } : {}),
           ...(entry.custom === true && moveMap.has(key) ? { custom: false } : {}),
         };
@@ -518,20 +531,13 @@ export async function reorganizeWorkspace(
       };
       for (const entry of entries) {
         const relativePath = updatedPaths.get(entry.key.toLowerCase());
-        if (entry.tracked || relativePath === undefined) continue;
-        currentWorking = upsertInventory(
-          currentWorking,
-          {
-            owner: entry.owner,
-            name: entry.name,
-            isArchived: entry.isArchived,
-            isFork: entry.isFork,
-            language: entry.language,
-            updatedAt: null,
-          },
-          relativePath,
-          entry.internal,
-        );
+        if (
+          !entry.tracked &&
+          relativePath !== undefined &&
+          !repos.some((repo) => repoKeyEquals(repo, entry.owner, entry.name))
+        ) {
+          repos.push(adoptedEntry(entry, relativePath));
+        }
       }
       return { config: currentWorking, result: undefined };
     },

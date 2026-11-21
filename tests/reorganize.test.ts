@@ -190,6 +190,105 @@ describe("reorganizeWorkspace core and edge cases", () => {
     expect(config?.aliases?.react).toBe(expected);
     expect((await reorganizeWorkspace(root, "categorized", { dryRun: true })).moved).toEqual([]);
   });
+
+  test("scan recognizes local forks and groups them by the upstream organization or user", async () => {
+    const root = tempDir("rt-reorg-fork-scan-");
+    const checkouts = [
+      ["react", "sametcn99/forks/react", "sametcn99/forks/meta/react"],
+      ["widget", "manual/widget", "sametcn99/forks/maintainer/widget"],
+      ["tool", "sametcn99/forks/other-org/tool", "sametcn99/forks/other-org/tool"],
+      ["unknown", "sametcn99/forks/unknown", "sametcn99/forks/unknown"],
+    ] as const;
+    for (const [name, relativePath] of checkouts) {
+      const dir = path.join(root, relativePath);
+      mkdirSync(dir, { recursive: true });
+      execFileSync("git", ["init", dir], { stdio: "ignore" });
+      execFileSync("git", [
+        "-C",
+        dir,
+        "remote",
+        "add",
+        "origin",
+        `https://github.com/sametcn99/${name}.git`,
+      ]);
+      writeFileSync(path.join(dir, "local.txt"), name);
+    }
+    const getRepo = async (owner: string, name: string) => {
+      if (name === "unknown" || name === "tool") throw new Error("not available");
+      return {
+        owner,
+        name,
+        isFork: true,
+        isArchived: false,
+        isPrivate: false,
+        forkSourceOwner: name === "react" ? "meta" : "maintainer",
+        description: null,
+        language: null,
+        updatedAt: null,
+        httpsUrl: "",
+        sshUrl: "",
+      };
+    };
+    const opts = { scan: true, getRepo };
+    const preview = await reorganizeWorkspace(root, "categorized", { ...opts, dryRun: true });
+    expect(preview.moved).toEqual(
+      expect.arrayContaining(
+        checkouts.slice(0, 2).map(([name, from, to]) => ({ key: `sametcn99/${name}`, from, to })),
+      ),
+    );
+    expect(preview.moved).toHaveLength(2);
+    expect(existsSync(path.join(root, "sametcn99/forks/react/.git"))).toBe(true);
+
+    const result = await reorganizeWorkspace(root, "categorized", opts);
+    expect(result.moved).toEqual(preview.moved);
+    expect(result.failed).toEqual([]);
+    expect(result.skipped).toContainEqual({
+      key: "sametcn99/unknown",
+      reason: "fork source owner unavailable",
+    });
+    const config = await readWorkspaceConfig(root);
+    for (const [name, , relativePath] of checkouts) {
+      expect(existsSync(path.join(root, relativePath, ".git"))).toBe(true);
+      expect(readFileSync(path.join(root, relativePath, "local.txt"), "utf8")).toBe(name);
+      expect(config?.repos.find((entry) => entry.name === name)).toMatchObject({
+        category: "forks",
+        relativePath,
+      });
+    }
+    expect(config?.repos.find((entry) => entry.name === "tool")?.forkSourceOwner).toBe("other-org");
+    expect(config?.repos.find((entry) => entry.name === "react")?.forkSourceOwner).toBe("meta");
+  });
+
+  test("resume registers a discovered fork whose checkout was already moved", async () => {
+    const root = tempDir("rt-reorg-resume-fork-");
+    const to = "sametcn99/forks/meta/react";
+    mkdirSync(path.join(root, to), { recursive: true });
+    writeReorganizeJournalAtomically(root, {
+      version: 1,
+      preset: "categorized",
+      timestamp: new Date().toISOString(),
+      moves: [
+        {
+          key: "sametcn99/react",
+          status: "done",
+          from: "sametcn99/forks/react",
+          to,
+          forkSourceOwner: "meta",
+          adopted: {
+            ...makeEntry("sametcn99", "react", to),
+            category: "forks",
+            forkSourceOwner: "meta",
+          },
+        },
+      ],
+    });
+    const result = await reorganizeWorkspace(root, undefined, { resume: true });
+    expect(result.moved).toHaveLength(1);
+    expect((await readWorkspaceConfig(root))?.repos).toMatchObject([
+      { relativePath: to, category: "forks", forkSourceOwner: "meta" },
+    ]);
+  });
+
   test("C11: dry-run plans moves without touching disk or creating journal", async () => {
     const { root } = await createReorgFixture();
     const diskBefore = snapshotDirectory(root);

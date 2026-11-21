@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.3] - 2026-11-21
+
+### Fixed
+
+- Recognize forks found by disk scan and group them by their upstream account when applying the categorized layout.
+- Preserve fork metadata when adopting an existing checkout or resuming an interrupted reorganization.
+
 ## [1.0.2] - 2026-11-21
 
 ### Added

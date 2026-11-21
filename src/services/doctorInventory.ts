@@ -1,6 +1,7 @@
 import { lstatSync } from "node:fs";
 import path from "node:path";
 import type { EnvLike, RepotruckConfig } from "./config.ts";
+import { forkFromCheckoutPath } from "./forkSource.ts";
 import { removeInventoryEntry } from "./lifecycle.ts";
 import { identifyCheckout, scanLocalCheckouts } from "./scanner.ts";
 import { resolveGithubBaseUrl } from "./settings.ts";
@@ -142,17 +143,21 @@ export async function applyInventoryFixes(
           if (inspectGitDotEntry(checkoutPath(root, target)).kind !== "repo") continue;
           if (fix.action === "adopt") {
             if (entry !== undefined) continue;
+            const fork = forkFromCheckoutPath(fix);
             const repo = {
               owner: fix.owner,
               name: fix.name,
               isArchived: false,
               isFork: false,
               language: null,
+              ...fork,
             };
             config = upsertInventory(config, repo, target, fix.internal);
-            config.repos = config.repos.map((candidate) =>
-              repoKey(candidate) === key ? { ...candidate, custom: true } : candidate,
-            );
+            if (!fork || config.preset !== "categorized") {
+              config.repos = config.repos.map((candidate) =>
+                repoKey(candidate) === key ? { ...candidate, custom: true } : candidate,
+              );
+            }
           } else {
             if (entry?.relativePath !== fix.from || !lacksGitMarker(root, fix.from)) continue;
             config = {

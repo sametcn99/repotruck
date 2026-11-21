@@ -5,6 +5,7 @@ import path from "node:path";
 import { simpleGit } from "simple-git";
 import type { CustomPreset } from "../presets/index.ts";
 import type { EnvLike, RepoInventoryEntry, RepotruckConfig } from "./config.ts";
+import { forkFromCheckoutPath } from "./forkSource.ts";
 import { repoKeyEquals } from "./fsUtils.ts";
 import { moveDir } from "./mover.ts";
 import { GITHUB_HOST, parseGitUrl } from "./singleCloner.ts";
@@ -161,15 +162,10 @@ export function buildAdoptPlan(
 ): AdoptPlan[] {
   const plans: AdoptPlan[] = [];
   for (const repo of repos) {
+    const fork = forkFromCheckoutPath(repo);
     const targetDir = targetDirFor(
       root,
-      {
-        owner: repo.owner,
-        name: repo.name,
-        isArchived: false,
-        isFork: false,
-        language: null,
-      },
+      { ...repo, isArchived: false, isFork: false, ...fork },
       config.preset,
       repo.internal,
       customPresets,
@@ -233,10 +229,12 @@ export async function adoptUnregisteredRepos(
           );
           if (entryExists) return { config: current, result: undefined };
 
+          const fork = forkFromCheckoutPath(plan.repo);
           const newEntry: RepoInventoryEntry = {
             owner: plan.repo.owner,
             name: plan.repo.name,
-            category: "source",
+            category: fork ? "forks" : "source",
+            ...(fork?.forkSourceOwner ? { forkSourceOwner: fork.forkSourceOwner } : {}),
             language: null,
             relativePath: plan.targetRelativePath,
             internal: plan.repo.internal,
