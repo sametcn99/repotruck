@@ -227,6 +227,53 @@ describe("runAppInRepo", () => {
     expect(seen[0]).toBe(path.join(root, "acme", "source", "api"));
   });
 
+  test("passes the recorded repository path as one folder argument to desktop editors", async () => {
+    const root = tempConfigDir();
+    const config = configWith([{ owner: "acme", name: "api", relativePath: "my repos/api" }], {
+      api: "my repos/api",
+    });
+    const repoDir = path.join(root, "my repos", "api");
+    mkdirSync(repoDir, { recursive: true });
+    const whichImpl = async (command: string) => command;
+    for (const name of ["vscode", "code", "code-insiders", "cursor"]) {
+      const app = await resolveApp(name, { customApps: [], whichImpl });
+      expect(app).not.toBeNull();
+      const result = await runAppInRepo(
+        { root, config, ref: "api", app: app!, mode: "foreground" },
+        {
+          spawnImpl: async (request) => {
+            expect(request).toEqual({
+              command: name === "vscode" ? "code" : name,
+              args: [repoDir],
+              cwd: repoDir,
+            });
+            return 0;
+          },
+        },
+      );
+      expect(result.ok).toBe(true);
+    }
+  });
+
+  test("expands the optional repo argument in custom launchers", async () => {
+    const root = tempConfigDir();
+    const repoDir = path.join(root, "acme", "source", "api");
+    mkdirSync(repoDir, { recursive: true });
+    const app = await resolveApp("editor", {
+      customApps: [{ name: "editor", command: "code", args: ["--reuse-window", "{repoDir}"] }],
+    });
+    const result = await runAppInRepo(
+      { root, config, ref: "acme/api", app: app!, mode: "foreground" },
+      {
+        spawnImpl: async (request) => {
+          expect(request.args).toEqual(["--reuse-window", repoDir]);
+          return 0;
+        },
+      },
+    );
+    expect(result.ok).toBe(true);
+  });
+
   test("attached-resume invokes onBeforeResume after the app exits", async () => {
     const root = mkdtempSync(path.join(tmpdir(), "repotruck-runapp-"));
     tempRoots.push(root);

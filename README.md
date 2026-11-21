@@ -134,6 +134,8 @@ Every dashboard action is also a plain subcommand — scriptable, CI-friendly, n
 - `repotruck open <repo> [app]` — open a repository in claude, cursor, vscode, …
 - `repotruck alias set <alias> <repo>` / `alias remove` / `alias list` — short names usable everywhere
 
+VS Code and Cursor open the selected repository folder. Custom launchers can pass that same folder to their executable by including `"{repoDir}"` as a separate item in `args` in `apps.json`.
+
 **Workspace memory & settings**
 
 - `repotruck workspaces list\|remove` — the central workspace registry

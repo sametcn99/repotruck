@@ -8,6 +8,7 @@ import { appConfigDir, type EnvLike } from "./config.ts";
 import { isCmdShim, quoteForShell } from "./shellQuote.ts";
 
 export const APPS_FILENAME = "apps.json";
+const REPO_DIR_ARG = "{repoDir}";
 
 export interface AppEntry {
   name: string;
@@ -114,6 +115,16 @@ export interface ResolveAppOptions {
   env?: EnvLike;
 }
 
+function resolveAppEntry(entry: AppEntry): ResolvedApp {
+  const executable = path
+    .basename(entry.command)
+    .replace(/\.(?:exe|cmd|bat)$/i, "")
+    .toLowerCase();
+  const opensFolder =
+    executable === "code" || executable === "code-insiders" || executable === "cursor";
+  return { ...entry, args: entry.args ?? (opensFolder ? [REPO_DIR_ARG] : []) };
+}
+
 export async function resolveApp(
   name: string,
   options: ResolveAppOptions = {},
@@ -124,19 +135,19 @@ export async function resolveApp(
 
   const customEntry = custom.find((item) => item.name.toLowerCase() === target);
   if (customEntry !== undefined) {
-    return { name: customEntry.name, command: customEntry.command, args: customEntry.args ?? [] };
+    return resolveAppEntry(customEntry);
   }
 
   const builtin = BUILTIN_APPS.find((item) => item.name.toLowerCase() === target);
   if (builtin !== undefined) {
     if ((await which(builtin.command)) !== null) {
-      return { name: builtin.name, command: builtin.command, args: builtin.args ?? [] };
+      return resolveAppEntry(builtin);
     }
     return null;
   }
 
   if ((await which(name)) !== null) {
-    return { name, command: name, args: [] };
+    return resolveAppEntry({ name, command: name });
   }
   return null;
 }
@@ -312,14 +323,14 @@ export async function runAppInRepo(
   if (match === null) {
     return { ok: false, code: 1, message: `repository not found: ${input.ref}` };
   }
-  const repoDir = path.join(input.root, ...match.dir.split("/"));
+  const repoDir = path.resolve(path.join(input.root, ...match.dir.split("/")));
   if (!existsSync(repoDir)) {
     return { ok: false, code: 1, dir: match.dir, message: `${match.dir} is not on disk` };
   }
   try {
     const code = await spawnImpl({
       command: input.app.command,
-      args: input.app.args ?? [],
+      args: (input.app.args ?? []).map((arg) => (arg === REPO_DIR_ARG ? repoDir : arg)),
       cwd: repoDir,
     });
     if (input.mode === "attached-resume") {
