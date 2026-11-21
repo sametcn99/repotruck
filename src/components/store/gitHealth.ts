@@ -174,7 +174,7 @@ export async function loadWorkspaceHealthData(
   const stats = calculateWorkspaceStats(config, disk);
   const trashed = listTrashEntries(root);
   const trashBytes = trashed.reduce((sum, item) => sum + item.sizeBytes, 0);
-  const doctor = await runDoctor();
+  const doctor = await runDoctor({ workspaceRoot: root });
   return {
     loading: false,
     stats,

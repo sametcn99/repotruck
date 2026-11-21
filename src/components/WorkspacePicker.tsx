@@ -45,6 +45,10 @@ export function WorkspacePicker({ store }: { store: Store }) {
       setCursor(Math.min(Math.max(0, selectable.length - 1), boundedCursor + 1));
     } else if (key.name === "return") {
       switchCurrent();
+    } else if (key.name === "n") {
+      store.openWorkspaceAdd();
+    } else if (key.name === "d" && current !== undefined && !current.missing) {
+      void store.submitRoot(current.path);
     } else if (key.name === "x" && current !== undefined) {
       removeEntry(current.path);
     }
@@ -53,7 +57,7 @@ export function WorkspacePicker({ store }: { store: Store }) {
     <ModalShell
       store={store}
       title="Workspaces"
-      hint="Up/Down choose · Enter switch · x removes from the registry · Escape cancels"
+      hint="↑↓ Choose · Enter Switch · n New · d Set default · x Remove · Esc Cancel"
       gap={0}
       onMouseScroll={(e) => {
         const isUp = e.scroll?.direction === "up" || e.button === 4;
@@ -103,6 +107,24 @@ export function WorkspacePicker({ store }: { store: Store }) {
           }}
         >
           {"[ Switch ]"}
+        </text>
+        <text
+          fg={selectedFg}
+          onMouseDown={(event) => {
+            event.stopPropagation();
+            store.openWorkspaceAdd();
+          }}
+        >
+          {"[n] New"}
+        </text>
+        <text
+          fg={current !== undefined && !current.missing ? selectedFg : dimFg}
+          onMouseDown={(event) => {
+            event.stopPropagation();
+            if (current !== undefined && !current.missing) void store.submitRoot(current.path);
+          }}
+        >
+          {"[d] Set default"}
         </text>
         <text
           fg={current !== undefined ? theme.error() : dimFg}

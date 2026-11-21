@@ -1,14 +1,15 @@
-import { mkdir, readFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import { homedir as osHomedir } from "node:os";
 import path from "node:path";
 import { type CustomPreset, validateCustomPreset } from "../presets/index.ts";
+import { migrateAppData, SETTINGS_FILENAME } from "./appDataMigration.ts";
 import { type DivergenceStrategy, isDivergenceStrategy } from "./cloner.ts";
-import { appConfigDir, type EnvLike } from "./config.ts";
+import { appConfigDir, type EnvLike, isAbsoluteUserPath } from "./config.ts";
 import { warnQuiet } from "./diagnostics.ts";
 import { writeFileAtomic } from "./fsUtils.ts";
-import { resolveWorkspaceRoot } from "./workspaceRegistry.ts";
+import { withWorkspaceLock } from "./workspaceLock.ts";
 
-export const SETTINGS_FILENAME = "settings.json";
+export { SETTINGS_FILENAME } from "./appDataMigration.ts";
 
 export type SyncDivergence = DivergenceStrategy;
 
@@ -38,7 +39,7 @@ export interface RepotruckSettings {
   presets?: Record<string, PresetSettings>;
 }
 
-/** Parses and validates the `presets` section of settings.json. */
+/** Parses and validates the `presets` section of config.json. */
 export function loadCustomPresets(settings: RepotruckSettings): CustomPreset[] {
   const raw = settings.presets ?? {};
   const presets: CustomPreset[] = [];
@@ -54,7 +55,7 @@ export function loadCustomPresets(settings: RepotruckSettings): CustomPreset[] {
   return presets;
 }
 
-/** Loads the validated custom presets from settings.json for the given env. */
+/** Loads the validated custom presets from config.json for the given env. */
 export async function readCustomPresets(env: EnvLike = process.env): Promise<CustomPreset[]> {
   return loadCustomPresets(await readSettings(env));
 }
@@ -151,8 +152,16 @@ export function resolveSyncSettings(
   };
 }
 
-function settingsPath(env: EnvLike): string {
+export function settingsPath(env: EnvLike = process.env): string {
   return path.join(appConfigDir(env), SETTINGS_FILENAME);
+}
+
+function parseSettings(raw: string, env: EnvLike): RepotruckSettings {
+  return sanitizeSettings(JSON.parse(raw.replace(/^\uFEFF/, "")), env);
+}
+
+function isMissingSettings(error: unknown): boolean {
+  return (error as NodeJS.ErrnoException | null)?.code === "ENOENT";
 }
 
 function sanitizeSettings(value: unknown, env: EnvLike): RepotruckSettings {
@@ -212,12 +221,12 @@ function sanitizeSettings(value: unknown, env: EnvLike): RepotruckSettings {
 }
 
 export async function readSettings(env: EnvLike = process.env): Promise<RepotruckSettings> {
+  await migrateAppData(env);
+  const file = settingsPath(env);
   try {
-    const raw = (await readFile(settingsPath(env), "utf8")).replace(/^\uFEFF/, "");
-    const parsed: unknown = JSON.parse(raw);
-    return sanitizeSettings(parsed, env);
+    return parseSettings(await readFile(file, "utf8"), env);
   } catch (error) {
-    warnQuiet("settings: read failed, using defaults", error, env);
+    if (!isMissingSettings(error)) warnQuiet("settings: read failed, using defaults", error, env);
     return {};
   }
 }
@@ -226,9 +235,12 @@ export async function writeSettings(
   env: EnvLike = process.env,
   settings: RepotruckSettings,
 ): Promise<void> {
+  await migrateAppData(env);
   const file = settingsPath(env);
-  await mkdir(path.dirname(file), { recursive: true });
-  await writeFileAtomic(file, `${JSON.stringify(settings, null, 2)}\n`);
+  await withWorkspaceLock(() => writeFileAtomic(file, `${JSON.stringify(settings, null, 2)}\n`), {
+    env,
+    lockName: SETTINGS_FILENAME,
+  });
 }
 
 export function homeDirFrom(
@@ -237,10 +249,10 @@ export function homeDirFrom(
   homedirImpl: () => string = osHomedir,
 ): string {
   const envHome = platform === "win32" ? env.USERPROFILE : env.HOME;
-  if (envHome !== undefined && envHome.length > 0) return envHome;
+  if (envHome && isAbsoluteUserPath(envHome, platform)) return envHome;
   try {
     const fallback = homedirImpl();
-    if (fallback.length > 0) return fallback;
+    if (isAbsoluteUserPath(fallback, platform)) return fallback;
   } catch {
     /* fall through to the explicit error */
   }
@@ -252,7 +264,8 @@ export function osDefaultRoot(
   platform: string = process.platform,
   homedirImpl: () => string = osHomedir,
 ): string {
-  return path.join(homeDirFrom(env, platform, homedirImpl), "repotruck");
+  const paths = platform === "win32" ? path.win32 : path.posix;
+  return paths.join(homeDirFrom(env, platform, homedirImpl), "repotruck");
 }
 
 export type RootValidation = { ok: true; root: string } | { ok: false; error: string };
@@ -275,7 +288,7 @@ export function validateRootInput(
   if (candidate === "~" || candidate.startsWith("~/") || candidate.startsWith("~\\")) {
     candidate = p.join(homeDirFrom(env, platform, homedirImpl), candidate.slice(1));
   }
-  if (!p.isAbsolute(candidate)) {
+  if (!isAbsoluteUserPath(candidate, platform)) {
     return {
       ok: false,
       error: `invalid root: path must be absolute (got ${trimmed}); use an absolute path or ~`,
@@ -304,10 +317,7 @@ export async function effectiveRoot(
 
 export async function resolveRootForSession(
   env: EnvLike = process.env,
-  cwd: string = process.cwd(),
   platform: string = process.platform,
 ): Promise<string> {
-  const walked = await resolveWorkspaceRoot(cwd, env);
-  if (walked.found) return walked.root;
   return (await effectiveRoot(env, platform)).root;
 }

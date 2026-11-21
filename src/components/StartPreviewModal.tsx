@@ -1,26 +1,23 @@
 import { useKeyboard, useTerminalDimensions } from "@opentui/react";
-import { useState, useSyncExternalStore } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 import { ModalShell, SelectList } from "./ModalShell.tsx";
 import type { Store } from "./store.ts";
 import { theme } from "./theme.ts";
 import { buildPreviewTree, type PreviewTreeEntry, visibleSlice } from "./windowing.ts";
 
-export const START_PREVIEW_MAX_ROWS = 30;
 const START_PREVIEW_RESERVED_ROWS = 15;
+const EMPTY_ENTRIES: readonly PreviewTreeEntry[] = [];
 
 export function StartPreviewModal({ store }: { store: Store }) {
   const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot);
   const { height } = useTerminalDimensions();
   const modal = snapshot.modal;
   const entries: readonly PreviewTreeEntry[] =
-    modal !== null && modal.type === "preview" ? modal.entries : [];
-  const lines = buildPreviewTree(entries);
+    modal !== null && modal.type === "preview" ? modal.entries : EMPTY_ENTRIES;
+  const lines = useMemo(() => buildPreviewTree(entries), [entries]);
   const [cursor, setCursor] = useState(0);
   const bounded = Math.min(Math.max(cursor, 0), Math.max(0, lines.length - 1));
-  const viewportRows = Math.max(
-    1,
-    Math.min(START_PREVIEW_MAX_ROWS, height - START_PREVIEW_RESERVED_ROWS),
-  );
+  const viewportRows = Math.max(1, height - START_PREVIEW_RESERVED_ROWS);
   const window = visibleSlice(bounded, lines.length, viewportRows);
   const shown = lines.slice(window.start, window.end);
   const accentColor = theme.launcher();
@@ -36,6 +33,10 @@ export function StartPreviewModal({ store }: { store: Store }) {
       setCursor(Math.max(0, bounded - viewportRows));
     } else if (key.name === "pagedown") {
       setCursor(Math.min(Math.max(0, lines.length - 1), bounded + viewportRows));
+    } else if (key.name === "home") {
+      setCursor(0);
+    } else if (key.name === "end") {
+      setCursor(Math.max(0, lines.length - 1));
     } else if (key.name === "return") {
       void store.confirmStartPreview();
     } else if (key.name === "p") {
@@ -46,7 +47,7 @@ export function StartPreviewModal({ store }: { store: Store }) {
     <ModalShell
       store={store}
       title="Start preview"
-      hint="↑↓ / PgUp / PgDn browse · Enter start · p preset"
+      hint="↑↓ / PgUp / PgDn browse · Home / End jump · Enter sync · p preset"
       borderColor={accentColor}
       gap={0}
       onMouseScroll={(e) => {
@@ -63,7 +64,7 @@ export function StartPreviewModal({ store }: { store: Store }) {
           void store.cyclePreset();
         }}
       >
-        {`root: ${snapshot.root} · preset: ${snapshot.preset}`}
+        {`root: ${snapshot.root} · preset for new clones: ${snapshot.preset}`}
       </text>
       <SelectList
         items={shown}

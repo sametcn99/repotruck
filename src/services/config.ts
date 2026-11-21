@@ -1,4 +1,5 @@
 import { mkdir, readFile } from "node:fs/promises";
+import { homedir } from "node:os";
 import path from "node:path";
 import { isPresetRef, type PresetRef, type RepoCategory } from "../presets/index.ts";
 import {
@@ -22,6 +23,9 @@ export interface RepoInventoryEntry {
   internal: boolean;
   language: string | null;
   updatedAt: string | null;
+  description?: string | null;
+  topics?: string[];
+  forkSourceOwner?: string;
   custom?: boolean;
   sparse?: string[];
 }
@@ -43,32 +47,42 @@ export function appConfigDir(
   env: EnvLike,
   platform: typeof process.platform = process.platform,
 ): string {
+  const paths = platform === "win32" ? path.win32 : path.posix;
   const override = env.REPOTRUCK_CONFIG_DIR;
-  if (override !== undefined && override.length > 0) return override;
+  if (override) {
+    if (!isAbsoluteUserPath(override, platform)) {
+      throw new Error("REPOTRUCK_CONFIG_DIR must be an absolute path");
+    }
+    return paths.normalize(override);
+  }
 
   if (platform === "win32") {
-    const appData = env.APPDATA;
-    if (appData !== undefined && appData.length > 0) return path.join(appData, "repotruck");
-    const userProfile = env.USERPROFILE;
-    if (userProfile !== undefined && userProfile.length > 0) {
-      return path.join(userProfile, "AppData", "Roaming", "repotruck");
-    }
+    const appData = env.LOCALAPPDATA;
+    if (appData && isAbsoluteUserPath(appData, platform)) return paths.join(appData, "repotruck");
+    return paths.join(appUserHome(env, platform), "AppData", "Local", "repotruck");
   }
 
-  if (platform === "darwin") {
-    const home = env.HOME ?? env.USERPROFILE;
-    if (home !== undefined && home.length > 0) {
-      return path.join(home, "Library", "Application Support", "repotruck");
-    }
+  const home = appUserHome(env, platform);
+  return platform === "darwin"
+    ? paths.join(home, "Library", "Application Support", "repotruck")
+    : paths.join(home, ".repotruck");
+}
+
+export function isAbsoluteUserPath(value: string, platform: string): boolean {
+  return platform === "win32"
+    ? path.win32.isAbsolute(value) && path.win32.parse(value).root.length > 1
+    : path.posix.isAbsolute(value);
+}
+
+export function appUserHome(env: EnvLike, platform = process.platform): string {
+  const candidates =
+    platform === "win32" ? [env.USERPROFILE, env.HOME] : [env.HOME, env.USERPROFILE];
+  for (const candidate of candidates) {
+    if (candidate && isAbsoluteUserPath(candidate, platform)) return candidate;
   }
-
-  const home = env.HOME ?? env.USERPROFILE;
-  const base =
-    env.XDG_CONFIG_HOME ??
-    (home !== undefined && home.length > 0 ? path.join(home, ".config") : undefined);
-  if (base !== undefined && base.length > 0) return path.join(base, "repotruck");
-
-  return path.join("repotruck");
+  const fallback = homedir();
+  if (isAbsoluteUserPath(fallback, platform)) return fallback;
+  throw new Error("could not determine an absolute user home directory");
 }
 
 export function isRepoInventoryEntry(value: unknown): value is RepoInventoryEntry {
@@ -83,6 +97,11 @@ export function isRepoInventoryEntry(value: unknown): value is RepoInventoryEntr
     typeof entry.internal === "boolean" &&
     (entry.language === null || typeof entry.language === "string") &&
     (entry.updatedAt === null || typeof entry.updatedAt === "string") &&
+    (entry.description === undefined ||
+      entry.description === null ||
+      typeof entry.description === "string") &&
+    (entry.topics === undefined || isStringArray(entry.topics)) &&
+    (entry.forkSourceOwner === undefined || typeof entry.forkSourceOwner === "string") &&
     sparseValid
   );
 }

@@ -21,7 +21,7 @@ export function register(program: Command, _ctx: CliContext): void {
     .description("List trashed repositories in the workspace.")
     .option(
       "-d, --dir <root>",
-      "workspace root directory (default: nearest registered workspace, configured default root, or OS default)",
+      "workspace root directory (default: configured default workspace root or OS default)",
     )
     .option("--json", "Output trashed entries as JSON")
     .action(async (options: { dir?: string; json?: boolean }) => {
@@ -55,7 +55,7 @@ export function register(program: Command, _ctx: CliContext): void {
     .argument("<selector>", "trash entry ID, owner/name, or repository name")
     .option(
       "-d, --dir <root>",
-      "workspace root directory (default: nearest registered workspace, configured default root, or OS default)",
+      "workspace root directory (default: configured default workspace root or OS default)",
     )
     .option("--json", "Output result as JSON")
     .action(async (selector: string, options: { dir?: string; json?: boolean }) => {
@@ -90,7 +90,7 @@ export function register(program: Command, _ctx: CliContext): void {
     .description("Permanently remove trashed repositories from disk.")
     .option(
       "-d, --dir <root>",
-      "workspace root directory (default: nearest registered workspace, configured default root, or OS default)",
+      "workspace root directory (default: configured default workspace root or OS default)",
     )
     .option("--older-than <days>", "only delete entries trashed more than N days ago")
     .option("--yes", "confirm permanent deletion (required)")

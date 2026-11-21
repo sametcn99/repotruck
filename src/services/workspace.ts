@@ -1,3 +1,4 @@
+import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import {
   type CategoryInput,
@@ -14,9 +15,11 @@ import {
   type DivergenceStrategy,
   detectSshAvailability,
   type EmitProgress,
+  firstErrorLine,
 } from "./cloner.ts";
 import type { EnvLike, RepoInventoryEntry, RepotruckConfig } from "./config.ts";
 import { defaultConfig, writeAgentsMd } from "./config.ts";
+import { lookupRepoDetails, type RepoLookup } from "./forkSource.ts";
 import { repoKeyEquals } from "./fsUtils.ts";
 import type { RepoInfo } from "./github.ts";
 import type { ProgressHub } from "./progressHub.ts";
@@ -27,13 +30,16 @@ import {
   readWorkspaceConfig,
   writeWorkspaceConfig,
 } from "./workspaceRegistry.ts";
-import { findLinkedWorktrees } from "./worktree.ts";
+import { findLinkedWorktrees, inspectGitDotEntry } from "./worktree.ts";
 
 export interface InventoryRepoInput extends CategoryInput {
   owner: string;
   name: string;
   language: string | null;
   updatedAt?: string | null;
+  description?: string | null;
+  topics?: readonly string[];
+  forkSourceOwner?: string;
   sparse?: string[];
 }
 
@@ -45,6 +51,47 @@ export function targetDirFor(
   customPresets: readonly CustomPreset[] = [],
 ): string {
   return path.join(root, ...targetSegmentsForPreset(repo, preset, internal, customPresets));
+}
+
+export function resolveRepoPlacement(
+  config: RepotruckConfig,
+  repo: RepoInfo,
+  userLogin: string,
+  orgs: readonly string[],
+  customPresets: readonly CustomPreset[] = [],
+): { relativePath: string; internal: boolean; tracked?: RepoInventoryEntry } {
+  const tracked = config.repos.find((entry) => repoKeyEquals(entry, repo.owner, repo.name));
+  if (tracked !== undefined) {
+    return { relativePath: tracked.relativePath, internal: tracked.internal, tracked };
+  }
+  const internal = isInternalOwner(repo.owner, userLogin, orgs);
+  const segments = targetSegmentsForPreset(repo, config.preset, internal, customPresets);
+  if (config.preset === "categorized" && repoCategory(repo) === "forks" && repo.forkSourceOwner) {
+    const group = segments.slice(0, -1);
+    if (inspectGitDotEntry(path.join(config.root, ...group)).kind !== "none") {
+      throw new Error(
+        `fork group ${group.join("/")} is already a Git checkout; reorganize the workspace first`,
+      );
+    }
+  }
+  return {
+    relativePath: segments.join("/"),
+    internal,
+  };
+}
+
+export async function resolveForkPlacementRepo(
+  repo: RepoInfo,
+  config: RepotruckConfig,
+  getRepo?: RepoLookup,
+): Promise<RepoInfo> {
+  if (config.preset !== "categorized" || repoCategory(repo) !== "forks" || repo.forkSourceOwner) {
+    return repo;
+  }
+  const tracked = config.repos.find((entry) => repoKeyEquals(entry, repo.owner, repo.name));
+  const forkSourceOwner =
+    tracked?.forkSourceOwner ?? (await lookupRepoDetails(repo, getRepo))?.forkSourceOwner;
+  return forkSourceOwner === undefined ? repo : { ...repo, forkSourceOwner };
 }
 
 export function toPosixRelative(root: string, absDir: string): string {
@@ -59,6 +106,9 @@ export function upsertInventory(
 ): RepotruckConfig {
   const index = config.repos.findIndex((entry) => repoKeyEquals(entry, repo.owner, repo.name));
   const previous = index >= 0 ? config.repos[index] : undefined;
+  const description = repo.description === undefined ? previous?.description : repo.description;
+  const topics = repo.topics ?? previous?.topics;
+  const forkSourceOwner = repo.forkSourceOwner ?? previous?.forkSourceOwner;
   const base: RepoInventoryEntry = {
     owner: repo.owner,
     name: repo.name,
@@ -67,7 +117,14 @@ export function upsertInventory(
     internal,
     language: repo.language,
     updatedAt: repo.updatedAt ?? null,
-    ...(repo.sparse ? { sparse: repo.sparse } : {}),
+    ...(description !== undefined ? { description } : {}),
+    ...(topics !== undefined ? { topics: [...topics] } : {}),
+    ...(forkSourceOwner !== undefined ? { forkSourceOwner } : {}),
+    ...(repo.sparse
+      ? { sparse: repo.sparse }
+      : previous?.sparse
+        ? { sparse: previous.sparse }
+        : {}),
   };
   const entry: RepoInventoryEntry =
     previous !== undefined && previous.custom !== undefined
@@ -158,6 +215,20 @@ export async function loadWorkspace(
   return defaultConfig(root, presetOverride ?? "categorized");
 }
 
+export async function registerWorkspace(root: string, env?: EnvLike): Promise<RepotruckConfig> {
+  await mkdir(root, { recursive: true });
+  return await withWorkspaceLock(
+    async () => {
+      const existing = await readWorkspaceConfig(root, env);
+      if (existing !== null) return existing;
+      const config = await loadWorkspace(root, undefined, env);
+      const registered = await updateWorkspace(root, () => ({ config, result: undefined }), env);
+      return registered.config;
+    },
+    { env },
+  );
+}
+
 export interface SyncReposOptions {
   root: string;
   config: RepotruckConfig;
@@ -176,6 +247,7 @@ export interface SyncReposOptions {
   hub?: ProgressHub;
   customPresets?: readonly CustomPreset[];
   cloneOrUpdateImpl?: typeof cloneOrUpdate;
+  getRepo?: RepoLookup;
 }
 
 export interface SyncedEntry {
@@ -197,18 +269,12 @@ export async function syncRepos(options: SyncReposOptions): Promise<SyncReposRes
   const done: SyncedEntry[] = [];
   const failed: SyncReposResult["failed"] = [];
   const skipped: SyncReposResult["skipped"] = [];
+  const syncedRepos = new Map<string, RepoInfo>();
 
   await Promise.all(
-    repos.map((repo, index) =>
+    repos.map((candidate, index) =>
       limit(async () => {
-        const internal = isInternalOwner(repo.owner, userLogin, orgs);
-        const destDir = targetDirFor(
-          root,
-          repo,
-          config.preset,
-          internal,
-          options.customPresets ?? [],
-        );
+        const repo = await resolveForkPlacementRepo(candidate, config, options.getRepo);
         const hub = options.hub;
         const emit = options.emit
           ? (progress: Parameters<EmitProgress>[0]): void => {
@@ -222,8 +288,20 @@ export async function syncRepos(options: SyncReposOptions): Promise<SyncReposRes
                 hub.publish({ ...progress, index: index + 1, total: repos.length });
               }
             : undefined;
+        const { owner, name } = repo;
+        const key = `${owner}/${name}`;
+        let placement: ReturnType<typeof resolveRepoPlacement>;
+        try {
+          placement = resolveRepoPlacement(config, repo, userLogin, orgs, options.customPresets);
+        } catch (error) {
+          const message = firstErrorLine(error);
+          failed.push({ key, message });
+          emit?.({ key, owner, name, phase: "failed", message });
+          return;
+        }
+        const { relativePath, internal, tracked } = placement;
+        const destDir = path.join(root, ...relativePath.split("/"));
         const cloneFn = options.cloneOrUpdateImpl ?? cloneOrUpdate;
-        const inv = config.repos.find((e) => repoKeyEquals(e, repo.owner, repo.name));
         const final = await cloneFn(
           {
             owner: repo.owner,
@@ -239,13 +317,12 @@ export async function syncRepos(options: SyncReposOptions): Promise<SyncReposRes
             blobless: options.blobless,
             stash: options.stash,
             divergence: options.divergence,
-            sparse: inv?.sparse,
+            sparse: tracked?.sparse,
           },
           emit,
         );
-        const key = `${repo.owner}/${repo.name}`;
         if (final.phase === "done") {
-          const relativePath = toPosixRelative(root, destDir);
+          syncedRepos.set(key, repo);
           done.push({ key, relativePath, internal });
         } else if (final.phase === "skipped") {
           skipped.push({ key, message: final.message ?? "divergence skip" });
@@ -261,7 +338,7 @@ export async function syncRepos(options: SyncReposOptions): Promise<SyncReposRes
     (freshConfig) => {
       let updated = freshConfig;
       for (const entry of done) {
-        const repo = repos.find((r) => `${r.owner}/${r.name}` === entry.key);
+        const repo = syncedRepos.get(entry.key);
         if (repo) {
           const invEntry = config.repos.find((e) => repoKeyEquals(e, repo.owner, repo.name));
           updated = upsertInventory(

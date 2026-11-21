@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import type { RepotruckConfig } from "../src/services/config.ts";
@@ -72,6 +73,69 @@ async function createTestWorkspace(name: string): Promise<string> {
 }
 
 describe("doctor diagnostic checks", () => {
+  test("reports inventory drift and fixes paths and records using existing checkouts", async () => {
+    const root = makeTempDir("rt-doctor-inventory-");
+    const env = { REPOTRUCK_CONFIG_DIR: makeTempDir("rt-doctor-inventory-config-") };
+    const makeCheckout = (relative: string, remote?: string) => {
+      const dir = path.join(root, relative);
+      mkdirSync(dir, { recursive: true });
+      execFileSync("git", ["init", dir], { stdio: "ignore" });
+      if (remote) execFileSync("git", ["-C", dir, "remote", "add", "origin", remote]);
+      writeFileSync(path.join(dir, "local.txt"), "local changes");
+    };
+    makeCheckout("actual/tool", "https://github.com/acme/tool.git");
+    makeCheckout("external/new", "https://github.com/acme/new.git");
+    makeCheckout("local-only");
+    await writeWorkspaceConfig(
+      root,
+      {
+        root,
+        version: 1,
+        preset: "categorized",
+        lastSync: null,
+        repos: ["tool", "deleted"].map((name) => ({
+          owner: "acme",
+          name,
+          category: "source",
+          relativePath: `old/${name}`,
+          internal: true,
+          language: null,
+          updatedAt: null,
+          description: `${name} metadata`,
+        })),
+        aliases: { t: "old/tool", d: "old/deleted" },
+        pinned: ["acme/deleted"],
+      },
+      env,
+    );
+
+    const issues = (
+      await runDoctor({ ...healthyBaseDeps, env, workspaceRoot: root })
+    ).checks.filter((check) => check.check === "inventory");
+    expect(issues.map((issue) => issue.inventoryFix?.action)).toEqual([
+      "relink",
+      "remove",
+      "adopt",
+      undefined,
+    ]);
+    await fixDoctor({ ...healthyBaseDeps, env, workspaceRoot: root });
+    const config = await readWorkspaceConfig(root, env);
+    expect(config?.repos.map(({ name, relativePath }) => [name, relativePath])).toEqual([
+      ["tool", "actual/tool"],
+      ["new", "external/new"],
+    ]);
+    expect(config?.aliases).toEqual({ t: "actual/tool" });
+    expect(config?.pinned).toEqual([]);
+    expect(readFileSync(path.join(root, "actual/tool/local.txt"), "utf8")).toBe("local changes");
+    expect(readFileSync(path.join(root, "AGENTS.md"), "utf8")).toContain("tool metadata");
+    const remaining = (
+      await runDoctor({ ...healthyBaseDeps, env, workspaceRoot: root })
+    ).checks.filter((check) => check.check === "inventory");
+    expect(remaining.map((check) => check.detail)).toEqual([
+      "Unregistered Git checkout at local-only",
+    ]);
+  });
+
   test("all healthy returns ok result", async () => {
     const deps: DoctorDeps = {
       whichImpl: async (cmd: string) => `/usr/bin/${cmd}`,

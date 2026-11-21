@@ -489,9 +489,13 @@ export const COMMAND_GROUPS: readonly CommandGroup[] = [
       },
       {
         name: "workspaces",
-        summary: "List or remove registered workspaces",
+        summary: "List, add, or remove registered workspaces",
         usage: "repotruck workspaces [action] [path] [options]",
-        examples: ["repotruck workspaces", "repotruck workspaces remove ../old-workspace"],
+        examples: [
+          "repotruck workspaces",
+          "repotruck workspaces add ~/code/team",
+          "repotruck workspaces remove ../old-workspace",
+        ],
         flags: [
           {
             flag: "--json",
@@ -772,7 +776,11 @@ export const COMMAND_GROUPS: readonly CommandGroup[] = [
         flags: [
           {
             flag: "--fix",
-            description: "attempt fixes (auth login, journal resume)",
+            description: "apply inventory repairs, recover unfinished moves, and offer login",
+          },
+          {
+            flag: "--dir <root>",
+            description: "check and fix inventory in this workspace",
           },
           {
             flag: "--json",

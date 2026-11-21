@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { testRender } from "@opentui/react/test-utils";
@@ -7,6 +7,8 @@ import { simpleGit } from "simple-git";
 import { Dashboard } from "../src/components/Dashboard.tsx";
 import { Store, type StoreDeps } from "../src/components/store.ts";
 import type { RepoInfo } from "../src/services/github.ts";
+import { readSettings } from "../src/services/settings.ts";
+import { listWorkspaces } from "../src/services/workspaceRegistry.ts";
 
 type RendererSetup = Awaited<ReturnType<typeof testRender>>;
 
@@ -218,7 +220,11 @@ describe("dashboard render smoke", () => {
       expect(frame).toContain("Scope");
       expect(frame).toContain("Repositories");
       expect(frame).toContain("Status");
-      expect(frame).toContain("[ ] api");
+      expect(frame).toContain("[ ] acme/source/api");
+      expect(frame).not.toContain("[ ] hello");
+      store.togglePersonal();
+      await settle(setup);
+      frame = norm(setup.captureCharFrame());
       expect(frame).toContain("[ ] hello");
 
       setup.mockInput.pressKey("/");
@@ -234,13 +240,13 @@ describe("dashboard render smoke", () => {
       await settle(setup);
       frame = norm(setup.captureCharFrame());
       expect(frame).toContain("search: hello");
-      expect(frame).not.toContain("[ ] api");
+      expect(frame).not.toContain("[ ] acme/source/api");
       expect(frame).toContain("[ ] hello");
 
       setup.mockInput.pressEscape();
       await settle(setup);
       frame = norm(setup.captureCharFrame());
-      expect(frame).toContain("[ ] api");
+      expect(frame).toContain("[ ] acme/source/api");
 
       setup.mockInput.pressKey("s");
       await settle(setup);
@@ -332,7 +338,7 @@ describe("dashboard render smoke", () => {
     await git.commit("initial");
     writeFileSync(path.join(dir, "file.txt"), "edited\n", "utf8");
 
-    const { setup } = await renderDashboard(root, makeDriveDeps().deps);
+    const { setup, store } = await renderDashboard(root, makeDriveDeps().deps);
     try {
       setup.mockInput.pressKey("i");
       await settle(setup);
@@ -348,6 +354,7 @@ describe("dashboard render smoke", () => {
       setup.mockInput.pressEscape();
       await settle(setup);
 
+      store.togglePersonal();
       setup.mockInput.pressArrow("down");
       await settle(setup);
       setup.mockInput.pressKey("i");
@@ -458,6 +465,36 @@ describe("dashboard render smoke", () => {
     }
   }, 20_000);
 
+  test("Home and End reach both ends of a sync tree larger than the terminal", async () => {
+    await freshIsolation();
+    const root = tempDir("rt-smoke-large-tree-");
+    const drive = makeDriveDeps();
+    const github = drive.deps.github!;
+    const repos = Array.from({ length: 85 }, (_, index) =>
+      repo("monalisa", `project-${String(index).padStart(2, "0")}`),
+    );
+    const { setup, store } = await renderDashboard(root, {
+      ...drive.deps,
+      github: (token, baseUrl) => ({ ...github(token, baseUrl), listUserRepos: async () => repos }),
+    });
+    try {
+      store.selectAll();
+      await store.openStartPreview();
+      await settle(setup);
+      expect(norm(setup.captureCharFrame())).toContain("project-00");
+      setup.mockInput.pressKey("END");
+      await settle(setup);
+      const last = norm(setup.captureCharFrame());
+      expect(last).toContain("project-84");
+      expect(last).not.toContain("more");
+      setup.mockInput.pressKey("HOME");
+      await settle(setup);
+      expect(norm(setup.captureCharFrame())).toContain("project-00");
+    } finally {
+      await setup.dispose();
+    }
+  });
+
   test("workspace picker x removes the highlighted entry", async () => {
     await freshIsolation();
     const root = makeWorkspace("rt-smoke6-");
@@ -484,6 +521,38 @@ describe("dashboard render smoke", () => {
       await setup.dispose();
     }
   }, 20_000);
+
+  test("workspace picker creates and sets the default workspace from the keyboard", async () => {
+    await freshIsolation();
+    const root = makeWorkspace("rt-smoke-workspace-original-");
+    const added = path.join(realpathSync(tempDir("rt-smoke-workspace-parent-")), "new");
+    const drive = makeDriveDeps();
+    const { setup, store } = await renderDashboard(root, {
+      ...drive.deps,
+      listWorkspacesFn: undefined,
+    });
+    try {
+      setup.mockInput.pressKey("w");
+      await settle(setup);
+      setup.mockInput.pressKey("n");
+      await settle(setup);
+      expect(norm(setup.captureCharFrame())).toContain("New workspace");
+      await setup.mockInput.typeText(added);
+      setup.mockInput.pressEnter();
+      await settle(setup);
+      expect(store.getSnapshot().root).toBe(added);
+      expect((await listWorkspaces()).map((workspace) => workspace.path)).toContainEqual(added);
+      expect((await readSettings()).defaultRoot).toBeUndefined();
+
+      setup.mockInput.pressKey("w");
+      await settle(setup);
+      setup.mockInput.pressKey("d");
+      await settle(setup);
+      expect((await readSettings()).defaultRoot).toBe(added);
+    } finally {
+      await setup.dispose();
+    }
+  });
 
   test("running footer shows working counts and q needs a second press while syncing", async () => {
     await freshIsolation();
@@ -586,6 +655,8 @@ describe("dashboard render smoke", () => {
       expect(store.getSnapshot().modal).toBeNull();
 
       // Click second repo row
+      store.togglePersonal();
+      await settle(setup);
       expect(store.getSnapshot().cursor).toBe(0);
       emitMouse({
         type: "down",

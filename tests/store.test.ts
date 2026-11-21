@@ -98,7 +98,7 @@ afterAll(() => {
   }
 });
 
-function tempWorkspace(preset = "categorized"): string {
+function tempWorkspace(preset = "categorized", tracked = false): string {
   const dir = (realpathSync.native ?? realpathSync)(
     mkdtempSync(path.join(tmpdir(), "repotruck-tui-store-")),
   );
@@ -110,17 +110,19 @@ function tempWorkspace(preset = "categorized"): string {
       root: dir,
       preset,
       lastSync: null,
-      repos: [
-        {
-          owner: "acme",
-          name: "api",
-          relativePath: "acme/source/api",
-          category: "source",
-          internal: true,
-          language: "Go",
-          updatedAt: null,
-        },
-      ],
+      repos: tracked
+        ? [
+            {
+              owner: "acme",
+              name: "api",
+              relativePath: "acme/source/api",
+              category: "source",
+              internal: true,
+              language: "Go",
+              updatedAt: null,
+            },
+          ]
+        : [],
     }),
     "utf8",
   );
@@ -344,6 +346,20 @@ function makeStore(root: string, personalRepos: RepoInfo[] = []): TestHarness {
 const tick = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 10));
 
 describe("store init", () => {
+  test("opens the workspace scope, searches local paths and includes account repos on request", async () => {
+    const root = tempWorkspace("flat-by-owner", true);
+    const h = makeStore(root, [repo("monalisa", "new-repo")]);
+    await h.store.init();
+    expect(h.snapshot().workspacePreset).toBe("flat-by-owner");
+    expect(h.snapshot().includePersonal).toBe(false);
+    expect(h.snapshot().repos.map((repo) => repo.owner)).toEqual(["acme"]);
+    expect(h.snapshot().localHealth.get("acme/api")?.relativePath).toBe("acme/source/api");
+    h.store.togglePersonal();
+    expect(h.snapshot().repos.map((repo) => repo.name)).toEqual(["api", "new-repo"]);
+    h.store.applySearch("acme/source");
+    expect(h.snapshot().filteredRepos.map((repo) => repo.name)).toEqual(["api"]);
+  });
+
   test("loads auth, user, orgs and personal repos into a ready snapshot", async () => {
     const root = tempWorkspace();
     const h = makeStore(root, [repo("monalisa", "api"), repo("monalisa", "web")]);
@@ -360,6 +376,7 @@ describe("store init", () => {
 
   test("auth failure lands in the error state with the message", async () => {
     const root = tempWorkspace();
+    rmSync(path.join(root, "repotruck.json"));
     const store = new Store(root, {
       auth: async () => {
         throw new Error("GitHub authentication is not available");
@@ -604,7 +621,7 @@ describe("store modals", () => {
   });
 
   test("move modal: injected failure surfaces in the modal, success closes", async () => {
-    const root = tempWorkspace();
+    const root = tempWorkspace("categorized", true);
     const failing = new Store(root, {
       auth: async () => ({ token: "t", method: "gh-cli" }),
       github: fakeGithub([], makeFakeGithubCalls()),
@@ -632,7 +649,7 @@ describe("store modals", () => {
   });
 
   test("move modal rejects invalid destinations without calling move", async () => {
-    const root = tempWorkspace();
+    const root = tempWorkspace("categorized", true);
     const h = makeStore(root, []);
     await h.store.init();
     await h.store.openMoveModal("acme/api");
@@ -807,22 +824,21 @@ describe("start preview modal", () => {
     writePreviewFixture(root);
     const h = makeStore(root, [repo("monalisa", "api"), repo("monalisa", "web")]);
     await h.store.init();
-    h.store.toggleCurrent();
-    h.store.moveCursor(1);
-    h.store.toggleCurrent();
+    h.store.togglePersonal();
+    h.store.selectAll();
     expect(h.snapshot().selected.size).toBe(2);
     await h.store.openStartPreview();
     const modal = h.snapshot().modal;
     expect(modal !== null && modal.type === "preview").toBe(true);
     if (modal !== null && modal.type === "preview") {
       expect(modal.entries).toEqual([
-        { key: "monalisa/api", relPath: "monalisa/source/api", exists: false },
         {
           key: "monalisa/web",
           relPath: "monalisa/source/web",
           exists: true,
           custom: true,
         },
+        { key: "monalisa/api", relPath: "monalisa/source/api", exists: false },
       ]);
     }
     expect(h.syncs.length).toBe(0);
@@ -833,12 +849,13 @@ describe("start preview modal", () => {
     writePreviewFixture(root);
     const h = makeStore(root, [repo("monalisa", "api"), repo("monalisa", "web")]);
     await h.store.init();
+    h.store.togglePersonal();
     h.store.selectAll();
     await h.store.openStartPreview();
     await h.store.confirmStartPreview();
     expect(h.snapshot().modal).toBeNull();
     expect(h.syncs.length).toBe(1);
-    expect(h.syncs[0]!.keys).toEqual(["monalisa/api", "monalisa/web"]);
+    expect(h.syncs[0]!.keys).toEqual(["monalisa/web", "monalisa/api"]);
   });
 
   test("cancel closes the preview and runs nothing", async () => {
@@ -870,10 +887,12 @@ describe("start preview modal", () => {
     writePreviewFixture(root);
     const h = makeStore(root, [repo("monalisa", "api")]);
     await h.store.init();
+    h.store.togglePersonal();
     expect(h.snapshot().preset).toBe("categorized");
     h.store.cyclePreset();
     expect(h.snapshot().preset).toBe("flat-by-owner");
 
+    h.store.setCursor(1);
     h.store.toggleCurrent();
     await h.store.openStartPreview();
 
@@ -895,8 +914,10 @@ describe("start preview modal", () => {
     writePreviewFixture(root);
     const h = makeStore(root, [repo("monalisa", "api", { language: "TypeScript" })]);
     await h.store.init();
+    h.store.togglePersonal();
     expect(h.snapshot().preset).toBe("categorized");
 
+    h.store.setCursor(1);
     h.store.toggleCurrent();
     await h.store.openStartPreview();
 
@@ -942,9 +963,9 @@ describe("root modal", () => {
     expect(ok).toBe(true);
     expect(h.snapshot().modal).toBeNull();
     expect(h.snapshot().root).toBe(target);
-    const saved = JSON.parse(
-      readFileSync(path.join(isolatedConfigDir, "settings.json"), "utf8"),
-    ) as { defaultRoot?: string };
+    const saved = JSON.parse(readFileSync(path.join(isolatedConfigDir, "config.json"), "utf8")) as {
+      defaultRoot?: string;
+    };
     expect(saved.defaultRoot).toBe(path.resolve(target));
     await h.store.openRootModal();
     modal = h.snapshot().modal;
@@ -1004,13 +1025,13 @@ describe("sidebar rows", () => {
     expect(h.snapshot().filters.archived).toBe(false);
   });
 
-  test("activateSidebarRow cycles the preset row", async () => {
+  test("activateSidebarRow opens the workspace layout preview", async () => {
     const root = tempWorkspace();
     const h = makeStore(root, []);
     await h.store.init();
     h.store.moveSidebarCursor(2);
     h.store.activateSidebarRow();
-    expect(h.snapshot().preset).toBe("flat-by-owner");
+    expect(h.snapshot().modal).toMatchObject({ type: "reorganize", target: "categorized" });
   });
 });
 
@@ -1527,7 +1548,7 @@ describe("store lifecycle actions", () => {
   });
 
   test("openDeleteConfirm needs a tracked entry; confirmDelete runs with yes", async () => {
-    const root = tempWorkspace();
+    const root = tempWorkspace("categorized", true);
     const h = makeStore(root, [repo("acme", "api")]);
     await h.store.init();
     await h.store.openDeleteConfirm("acme/missing");
@@ -1660,27 +1681,27 @@ describe("undo (z)", () => {
 describe("mouse mapping", () => {
   test("sidebarRowIndexForY maps coordinates to sidebar rows accurately", () => {
     // With 0 orgs: 0=SCOPE, 1=Personal(0), 2=PRESET, 3=Preset(1), 4=FILTERS, 5=Active(2), 6=Forks(3), 7=Archived(4)
-    expect(sidebarRowIndexForY(-1, 0)).toBeNull();
-    expect(sidebarRowIndexForY(0, 0)).toBeNull();
-    expect(sidebarRowIndexForY(1, 0)).toBe(0);
-    expect(sidebarRowIndexForY(2, 0)).toBeNull();
-    expect(sidebarRowIndexForY(3, 0)).toBe(1);
-    expect(sidebarRowIndexForY(4, 0)).toBeNull();
-    expect(sidebarRowIndexForY(5, 0)).toBe(2);
-    expect(sidebarRowIndexForY(6, 0)).toBe(3);
-    expect(sidebarRowIndexForY(7, 0)).toBe(4);
-    expect(sidebarRowIndexForY(8, 0)).toBeNull();
-
-    // With 1 org: 1=Personal(0), 2=Org1(1), 3=PRESET, 4=Preset(2), 5=FILTERS, 6=Active(3), 7=Forks(4), 8=Archived(5)
+    expect(sidebarRowIndexForY(-1, 1)).toBeNull();
+    expect(sidebarRowIndexForY(0, 1)).toBeNull();
     expect(sidebarRowIndexForY(1, 1)).toBe(0);
-    expect(sidebarRowIndexForY(2, 1)).toBe(1);
-    expect(sidebarRowIndexForY(3, 1)).toBeNull();
-    expect(sidebarRowIndexForY(4, 1)).toBe(2);
-    expect(sidebarRowIndexForY(5, 1)).toBeNull();
+    expect(sidebarRowIndexForY(2, 1)).toBeNull();
+    expect(sidebarRowIndexForY(3, 1)).toBe(1);
+    expect(sidebarRowIndexForY(4, 1)).toBeNull();
+    expect(sidebarRowIndexForY(5, 1)).toBe(2);
     expect(sidebarRowIndexForY(6, 1)).toBe(3);
     expect(sidebarRowIndexForY(7, 1)).toBe(4);
-    expect(sidebarRowIndexForY(8, 1)).toBe(5);
-    expect(sidebarRowIndexForY(9, 1)).toBeNull();
+    expect(sidebarRowIndexForY(8, 1)).toBeNull();
+
+    // With 1 org: 1=Personal(0), 2=Org1(1), 3=PRESET, 4=Preset(2), 5=FILTERS, 6=Active(3), 7=Forks(4), 8=Archived(5)
+    expect(sidebarRowIndexForY(1, 2)).toBe(0);
+    expect(sidebarRowIndexForY(2, 2)).toBe(1);
+    expect(sidebarRowIndexForY(3, 2)).toBeNull();
+    expect(sidebarRowIndexForY(4, 2)).toBe(2);
+    expect(sidebarRowIndexForY(5, 2)).toBeNull();
+    expect(sidebarRowIndexForY(6, 2)).toBe(3);
+    expect(sidebarRowIndexForY(7, 2)).toBe(4);
+    expect(sidebarRowIndexForY(8, 2)).toBe(5);
+    expect(sidebarRowIndexForY(9, 2)).toBeNull();
   });
 
   test("wheel scrolls the list and a click maps to the row under the cursor", async () => {
@@ -1793,16 +1814,16 @@ describe("mouse mapping", () => {
     expect(store.getSnapshot().modal?.type).toBe("detail");
   });
 
-  test("header clicks cycle preset or open default root modal", async () => {
+  test("header clicks open the layout or default root modal", async () => {
     const root = tempWorkspace();
     const h = makeStore(root, [repo("monalisa", "alpha")]);
     await h.store.init();
     const store = h.store;
 
-    const initialPreset = store.getSnapshot().preset;
     // Click near preset in header (x=45, y=1)
     store.handleMouse({ button: 0, x: 45, y: 1 }, 120, 40);
-    expect(store.getSnapshot().preset).not.toBe(initialPreset);
+    expect(store.getSnapshot().modal?.type).toBe("reorganize");
+    store.closeModal();
 
     // Click near root in header (x=80, y=1)
     store.handleMouse({ button: 0, x: 80, y: 1 }, 120, 40);

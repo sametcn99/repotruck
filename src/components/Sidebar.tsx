@@ -1,9 +1,9 @@
 import { useTerminalDimensions } from "@opentui/react";
 import { useSyncExternalStore } from "react";
-import { sidebarRowToLineIndex } from "./store/filters.ts";
+import { sidebarWindow } from "./store/filters.ts";
 import { buildSidebarRows, type SidebarRow, type Store } from "./store.ts";
 import { theme } from "./theme.ts";
-import { repoViewportRows, visibleSlice } from "./windowing.ts";
+import { repoViewportRows } from "./windowing.ts";
 
 function clampSidebarLine(raw: string, maxCols: number): string {
   if (raw.length <= maxCols) return raw;
@@ -57,8 +57,7 @@ export function Sidebar({
   const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot);
   const { height } = useTerminalDimensions();
   const rows = buildSidebarRows(snapshot);
-  const orgCount = snapshot.orgs.length;
-  const presetIndex = 1 + orgCount;
+  const presetIndex = rows.findIndex((row) => row.kind === "preset");
   const focused = snapshot.focus === "sidebar" && !snapshot.navFocused;
   const dimFg = theme.dim();
   const maxCols = Math.max(6, width - 2);
@@ -121,17 +120,16 @@ export function Sidebar({
   // Sidebar has no bottom count line inside its box, so it can fit 1 more row than repoViewportRows.
   const availableRows = Math.max(
     2,
-    repoViewportRows(height, snapshot.updateToast !== null) + 1 - extraReservedRows,
+    repoViewportRows(height, snapshot.updateToast !== null || snapshot.toast !== null) +
+      1 -
+      extraReservedRows,
   );
-  let visibleElements = elements;
-  if (elements.length > availableRows) {
-    const activeLine = sidebarRowToLineIndex(snapshot.sidebarCursor, orgCount);
-    // When cursor is at the last filter row, pull the bottom health rows into view if space allows
-    const anchorLine =
-      snapshot.sidebarCursor >= rows.length - 1 ? elements.length - 1 : Math.max(0, activeLine);
-    const { start, end } = visibleSlice(anchorLine, elements.length, availableRows);
-    visibleElements = elements.slice(start, end);
-  }
+  const { start, end } = sidebarWindow(
+    snapshot.sidebarCursor,
+    elements.length,
+    presetIndex,
+    availableRows,
+  );
 
   return (
     <box
@@ -151,7 +149,7 @@ export function Sidebar({
         store.moveSidebarCursor(isUp ? -1 : 1);
       }}
     >
-      {visibleElements}
+      {elements.slice(start, end)}
     </box>
   );
 }

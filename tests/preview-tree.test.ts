@@ -1,9 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import {
-  buildPreviewTree,
-  PREVIEW_TREE_CAP,
-  type PreviewTreeEntry,
-} from "../src/components/windowing.ts";
+import { buildPreviewTree, type PreviewTreeEntry } from "../src/components/windowing.ts";
 
 function entry(key: string, relPath: string, exists: boolean, custom?: boolean): PreviewTreeEntry {
   return custom === undefined ? { key, relPath, exists } : { key, relPath, exists, custom };
@@ -84,28 +80,15 @@ describe("buildPreviewTree", () => {
     expect(buildPreviewTree([])).toEqual([]);
   });
 
-  test("output is capped with an ... and N more tail", () => {
-    const entries: PreviewTreeEntry[] = [];
-    for (let i = 0; i < PREVIEW_TREE_CAP + 5; i += 1) {
-      const name = `d${String(i).padStart(2, "0")}`;
-      entries.push(entry(name, name, false));
-    }
+  test("keeps every entry in a large tree", () => {
+    const entries = Array.from({ length: 85 }, (_, index) => {
+      const name = `d${String(index).padStart(2, "0")}`;
+      return entry(name, name, false);
+    });
     const lines = buildPreviewTree(entries);
-    expect(lines.length).toBe(PREVIEW_TREE_CAP + 1);
-    expect(lines[PREVIEW_TREE_CAP]).toBe(`... and 5 more`);
+    expect(lines.length).toBe(85);
     expect(lines[0]).toBe("├── d00 [clone]");
-    expect(lines[PREVIEW_TREE_CAP - 1]).toBe("├── d39 [clone]");
-  });
-
-  test("output at exactly the cap has no tail", () => {
-    const entries: PreviewTreeEntry[] = [];
-    for (let i = 0; i < PREVIEW_TREE_CAP; i += 1) {
-      const name = `d${String(i).padStart(2, "0")}`;
-      entries.push(entry(name, name, true));
-    }
-    const lines = buildPreviewTree(entries);
-    expect(lines.length).toBe(PREVIEW_TREE_CAP);
-    expect(lines[lines.length - 1]).toBe("└── d39 [update]");
+    expect(lines.at(-1)).toBe("└── d84 [clone]");
   });
 
   test("a destination that is a prefix of another keeps its marker on the shared node", () => {

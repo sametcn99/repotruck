@@ -18,7 +18,7 @@ export function register(program: Command, _ctx: CliContext): void {
     .argument("<repo>", "repository alias, workspace-relative path, or owner/name")
     .option(
       "-d, --dir <root>",
-      "workspace root directory (default: the nearest registered workspace found walking up, otherwise the configured default root, otherwise the OS default)",
+      "workspace root directory (default: the configured default workspace root, otherwise the OS default)",
     )
     .action(async (alias: string, repo: string, options: { dir?: string }) => {
       await runAction(async () => {
@@ -35,7 +35,7 @@ export function register(program: Command, _ctx: CliContext): void {
     .argument("<alias>", "alias name")
     .option(
       "-d, --dir <root>",
-      "workspace root directory (default: the nearest registered workspace found walking up, otherwise the configured default root, otherwise the OS default)",
+      "workspace root directory (default: the configured default workspace root, otherwise the OS default)",
     )
     .action(async (alias: string, options: { dir?: string }) => {
       await runAction(async () => {
@@ -51,7 +51,7 @@ export function register(program: Command, _ctx: CliContext): void {
     .description("List all repository aliases.")
     .option(
       "-d, --dir <root>",
-      "workspace root directory (default: the nearest registered workspace found walking up, otherwise the configured default root, otherwise the OS default)",
+      "workspace root directory (default: the configured default workspace root, otherwise the OS default)",
     )
     .option("--json", "Output aliases as JSON")
     .action(async (options: { dir?: string; json?: boolean }) => {

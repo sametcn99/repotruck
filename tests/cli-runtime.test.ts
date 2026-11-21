@@ -16,7 +16,7 @@ import { fileURLToPath } from "node:url";
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const cliPath = path.join(repoRoot, "src", "cli.ts");
 
-function runCli(args: string[], env?: Record<string, string>) {
+function runCli(args: string[], env?: Record<string, string>, cwd = repoRoot) {
   const mergedEnv: Record<string, string | undefined> = { ...process.env, ...env };
   if (env) {
     for (const key of Object.keys(env)) {
@@ -30,7 +30,7 @@ function runCli(args: string[], env?: Record<string, string>) {
   // Node's spawnSync, not Bun.spawnSync: Bun's piped spawnSync empties or
   // truncates child output under concurrent load on CI runners.
   const result = spawnSync(process.execPath, ["run", cliPath, ...args], {
-    cwd: repoRoot,
+    cwd,
     env: mergedEnv as Record<string, string>,
     stdio: ["ignore", "pipe", "pipe"],
     maxBuffer: 32 * 1024 * 1024,
@@ -275,6 +275,33 @@ describe("CLI errors", () => {
 });
 
 describe("CLI root action guards", () => {
+  test("registers multiple workspaces and uses the selected default independently of cwd", () => {
+    const configDir = tempDir("rt-global-cli-config-");
+    const parent = tempDir("rt-global-cli-workspaces-");
+    const first = path.join(parent, "first");
+    const second = path.join(parent, "second");
+    const env = { REPOTRUCK_CONFIG_DIR: configDir };
+    for (const root of [first, second]) {
+      const registration = runCli(["workspaces", "add", root, "--json"], env, parent);
+      expect(registration.exitCode).toBe(0);
+      expect(JSON.parse(registration.stdout.toString())).toMatchObject({ root });
+      expect(existsSync(path.join(root, "AGENTS.md"))).toBe(true);
+    }
+    expect(runCli(["root", first], env, second).exitCode).toBe(0);
+    const status = runCli(["status", "--json"], env, second);
+    expect(status.exitCode).toBe(0);
+    expect(JSON.parse(status.stdout.toString()).root).toBe(first);
+    const explicit = runCli(["status", "--json", "--dir", second], env, first);
+    expect(explicit.exitCode).toBe(0);
+    expect(JSON.parse(explicit.stdout.toString()).root).toBe(second);
+    const list = runCli(["workspaces", "list", "--json"], env, second);
+    expect(
+      JSON.parse(list.stdout.toString())
+        .workspaces.map((workspace: { path: string }) => workspace.path)
+        .sort(),
+    ).toEqual([first, second]);
+  });
+
   test("bare command in a non-TTY context fails with the TTY message", () => {
     const result = runCli([]);
     expect(result.exitCode).toBe(1);

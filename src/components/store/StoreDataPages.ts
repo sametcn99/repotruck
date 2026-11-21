@@ -1,4 +1,5 @@
 import { listWorkspaceSnapshots } from "../../services/backups.ts";
+import { runDoctor } from "../../services/doctor.ts";
 import { listTrashEntries, restoreTrashEntry } from "../../services/trash.ts";
 import { loadWorkspace } from "../../services/workspace.ts";
 import { restoreWorkspaceSnapshot } from "../../services/workspaceRegistry.ts";
@@ -129,9 +130,25 @@ export class StoreDataPages extends StoreWorkspacePages {
   };
 
   runHealthDoctorFix = async (): Promise<void> => {
-    await performDoctorFixAction(this.pushStatus);
-    await this.refreshLocalState();
-    await this.refreshHealthTab();
+    const root = this.rootValue;
+    const { checks } = await runDoctor({ workspaceRoot: root });
+    const fixes = checks.flatMap((check) => (check.inventoryFix ? [check.inventoryFix] : []));
+    const runFix = async () => {
+      if (this.rootValue !== root) return;
+      await performDoctorFixAction(this.pushStatus, root, fixes);
+      await this.refreshLocalState();
+      await this.refreshHealthTab();
+    };
+    if (fixes.length === 0) return await runFix();
+    if (this.rootValue !== root) return;
+    this.confirmDialog(
+      {
+        title: "Apply Doctor inventory fixes?",
+        message: `${fixes.length} proposed inventory changes in ${root}. Doctor registers, relinks or removes records in the inventory.`,
+        confirmLabel: "Apply fixes",
+      },
+      () => void runFix(),
+    );
   };
 
   runWorkspaceMaintenance = async (kind: WorkspaceMaintenanceKind): Promise<void> => {

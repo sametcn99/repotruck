@@ -8,11 +8,15 @@ let atomicWriteCounter = 0;
  * Writes a file through a temp file + rename so readers never observe a
  * half-written state file, cleaning the temp file up on failure.
  */
-export async function writeFileAtomic(file: string, content: string): Promise<void> {
+export async function writeFileAtomic(
+  file: string,
+  content: string | Uint8Array,
+  mode?: number,
+): Promise<void> {
   atomicWriteCounter += 1;
   const tmp = `${file}.tmp-${process.pid}-${atomicWriteCounter}`;
   try {
-    await writeFile(tmp, content, "utf8");
+    await writeFile(tmp, content, { encoding: "utf8", mode });
     await rename(tmp, file);
   } catch (error) {
     try {

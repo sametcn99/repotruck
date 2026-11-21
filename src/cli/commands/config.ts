@@ -15,7 +15,7 @@ import { type CliContext, exitFail, parseIntStrict, runAction } from "../shared.
 export function register(program: Command, _ctx: CliContext): void {
   program
     .command("config")
-    .description("Read and write repotruck settings (settings.json in the app config dir).")
+    .description("Read and write the global user config.json.")
     .argument("<action>", "get, set, unset, or list")
     .argument(
       "[key]",

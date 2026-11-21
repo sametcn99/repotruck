@@ -89,9 +89,9 @@ export function DocsBody() {
       <section className="section" id="settings" aria-label="Settings">
         <h2>Settings</h2>
         <p className="section-sub">
-          <code>repotruck config get/set/list</code> reads and writes <code>settings.json</code> in
-          the app config dir. Every key prints its current value and whether it comes from settings
-          or the default.
+          <code>repotruck config get/set/list</code> reads and writes <code>config.json</code> in
+          the per-user app data directory. Every key prints its current value and whether it comes
+          from settings or the default.
         </p>
         <div className="panel">
           <span className="panel-label">Keys</span>

@@ -9,6 +9,7 @@ import { defaultConfig } from "../src/services/config.ts";
 import type { RepoInfo } from "../src/services/github.ts";
 import { createProgressHub } from "../src/services/progressHub.ts";
 import { syncRepos } from "../src/services/workspace.ts";
+import { readWorkspaceConfig, writeWorkspaceConfig } from "../src/services/workspaceRegistry.ts";
 
 const tempDirs: string[] = [];
 let configDir: string;
@@ -250,6 +251,102 @@ describe("cloneOrUpdate against file:// remotes", () => {
 });
 
 describe("syncRepos with real git", () => {
+  test("clones a categorized fork under its source account and keeps the path on subsequent sync", async () => {
+    const remote = await makeRemote("rt-git-fork-layout");
+    const root = tempDir("rt-git-fork-root-");
+    const repo: RepoInfo = {
+      owner: "sametcn99",
+      name: "react",
+      description: null,
+      isPrivate: false,
+      isFork: true,
+      isArchived: false,
+      language: null,
+      updatedAt: null,
+      httpsUrl: remote.fileUrl,
+      sshUrl: remote.fileUrl,
+    };
+    let lookups = 0;
+    const getRepo = async () => {
+      lookups += 1;
+      return { ...repo, forkSourceOwner: "meta" };
+    };
+    const options = {
+      root,
+      repos: [repo],
+      userLogin: "sametcn99",
+      orgs: [],
+      env: configEnv,
+      getRepo,
+    };
+    const relativePath = "sametcn99/forks/meta/react";
+    const result = await syncRepos({ ...options, config: defaultConfig(root) });
+    expect(result.done).toEqual([{ key: "sametcn99/react", relativePath, internal: true }]);
+    expect(existsSync(path.join(root, relativePath, ".git"))).toBe(true);
+    const config = await readWorkspaceConfig(root, configEnv);
+    expect(config?.repos[0]).toMatchObject({ relativePath, forkSourceOwner: "meta" });
+    await syncRepos({ ...options, config: config! });
+    expect(lookups).toBe(1);
+  });
+  test("pulls into the existing custom checkout and updates inventory metadata and AGENTS.md", async () => {
+    const remote = await makeRemote("rt-git-existing");
+    const root = tempDir("rt-git-existing-root-");
+    const relativePath = "projects/current-api";
+    const dest = path.join(root, relativePath);
+    await cloneOrUpdate(targetFor(remote.fileUrl, dest));
+    await remote.commitOnRemote("new content", "incoming.txt", "incoming\n");
+
+    const config = {
+      ...defaultConfig(root, "flat-by-owner"),
+      repos: [
+        {
+          owner: "acme",
+          name: "api",
+          relativePath,
+          category: "source" as const,
+          internal: true,
+          language: null,
+          updatedAt: null,
+          custom: true,
+        },
+      ],
+    };
+    await writeWorkspaceConfig(root, config, configEnv);
+    const repo: RepoInfo = {
+      owner: "acme",
+      name: "api",
+      description: "The service API",
+      topics: ["api", "backend"],
+      isPrivate: false,
+      isFork: false,
+      isArchived: false,
+      language: null,
+      httpsUrl: remote.fileUrl,
+      sshUrl: remote.fileUrl,
+      updatedAt: null,
+    };
+    const result = await syncRepos({
+      root,
+      config,
+      repos: [repo],
+      userLogin: "other",
+      orgs: [],
+      env: configEnv,
+    });
+    expect(result.failed).toEqual([]);
+    expect(result.done).toEqual([{ key: "acme/api", relativePath, internal: true }]);
+    expect(readFileSync(path.join(dest, "incoming.txt"), "utf8")).toBe("incoming\n");
+    expect(existsSync(path.join(root, "community", "acme", "api"))).toBe(false);
+    expect((await readWorkspaceConfig(root, configEnv))?.repos[0]).toMatchObject({
+      relativePath,
+      custom: true,
+      description: "The service API",
+      topics: ["api", "backend"],
+    });
+    const agents = readFileSync(path.join(root, "AGENTS.md"), "utf8");
+    expect(agents).toContain("The service API");
+    expect(agents).toContain("Topics: api, backend");
+  });
   test("routes skipped repositories and publishes hub events with a summary", async () => {
     const cleanRemote = await makeRemote("rt-git-sr-clean");
     const divergedRemote = await makeRemote("rt-git-sr-div");

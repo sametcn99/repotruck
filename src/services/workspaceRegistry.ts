@@ -3,6 +3,7 @@ import { copyFile, mkdir, readFile, realpath, rm, stat } from "node:fs/promises"
 import path from "node:path";
 import { isPresetRef, type PresetRef } from "../presets/index.ts";
 import { parsePresetFromAgentsMd } from "./agentsMd.ts";
+import { migrateAppData } from "./appDataMigration.ts";
 import { listWorkspaceSnapshots, writeWorkspaceSnapshot } from "./backups.ts";
 import {
   appConfigDir,
@@ -156,6 +157,7 @@ export async function readWorkspaceEntries(
   env?: EnvLike,
   deps?: ReadWorkspaceEntriesDeps,
 ): Promise<WorkspaceEntry[]> {
+  await migrateAppData(env);
   const file = centralStorePath(env);
   const cached = storeReadCache;
   const stamp = deps?.readFile === undefined ? await storeFileStamp(file) : null;

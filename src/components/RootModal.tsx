@@ -6,25 +6,34 @@ import { theme } from "./theme.ts";
 export function RootModal({ store }: { store: Store }) {
   const snapshot: StoreSnapshot = useSyncExternalStore(store.subscribe, store.getSnapshot);
   const modal = snapshot.modal;
+  const addingWorkspace = modal?.type === "workspaceAdd";
   const effective = modal !== null && modal.type === "root" ? modal.effective : "";
   const fromOverride = modal !== null && modal.type === "root" ? modal.fromOverride : false;
   const [value, setValue] = useState(effective);
   const accentColor = theme.launcher();
+  const submit = addingWorkspace ? store.submitWorkspaceAdd : store.submitRoot;
+  const action = addingWorkspace ? "Create" : "Save";
   return (
     <ModalShell
       store={store}
-      title="Default root"
-      hint="Enter Save · Escape Cancel"
+      title={addingWorkspace ? "New workspace" : "Default root"}
+      hint={`Enter ${action} · Escape Cancel`}
       borderColor={accentColor}
     >
-      <text>{`Effective root: ${effective} (${fromOverride ? "settings override" : "OS default"})`}</text>
-      <text>New default root (absolute path, ~ allowed):</text>
+      {!addingWorkspace && (
+        <text>{`Effective root: ${effective} (${fromOverride ? "settings override" : "OS default"})`}</text>
+      )}
+      <text>
+        {addingWorkspace
+          ? "Workspace directory (absolute path, ~ allowed)"
+          : "New default root (absolute path, ~ allowed):"}
+      </text>
       <input
         focused
         value={value}
         onInput={setValue}
         onSubmit={(submitted) => {
-          void store.submitRoot(typeof submitted === "string" ? submitted : "");
+          void submit(typeof submitted === "string" ? submitted : "");
         }}
         width="100%"
       />
@@ -33,10 +42,10 @@ export function RootModal({ store }: { store: Store }) {
           fg={accentColor}
           onMouseDown={(e) => {
             e.stopPropagation();
-            void store.submitRoot(value);
+            void submit(value);
           }}
         >
-          {"[ Save ]"}
+          {`[ ${action} ]`}
         </text>
         <text
           fg={theme.dim()}

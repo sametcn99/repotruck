@@ -11,7 +11,7 @@ export function register(program: Command, ctx: CliContext): void {
     .argument("<relative-path>", "new workspace-relative destination path")
     .option(
       "-d, --dir <root>",
-      "workspace root directory (default: the nearest registered workspace found walking up, otherwise the configured default root, otherwise the OS default)",
+      "workspace root directory (default: the configured default workspace root, otherwise the OS default)",
     )
     .action(async (key: string, destRelative: string, options: { dir?: string }) => {
       await runAction(async () => {
@@ -33,7 +33,7 @@ export function register(program: Command, ctx: CliContext): void {
     )
     .option(
       "-d, --dir <root>",
-      "workspace root directory (default: the nearest registered workspace found walking up, otherwise the configured default root, otherwise the OS default)",
+      "workspace root directory (default: the configured default workspace root, otherwise the OS default)",
     )
     .action(async (ref: string, options: { dir?: string }) => {
       await runAction(async () => {
@@ -53,7 +53,7 @@ export function register(program: Command, ctx: CliContext): void {
     .option("--base-url <url>", "GitHub Enterprise base URL (e.g. https://ghe.example.com)")
     .option(
       "-d, --dir <root>",
-      "workspace root directory (default: the nearest registered workspace found walking up, otherwise the configured default root, otherwise the OS default)",
+      "workspace root directory (default: the configured default workspace root, otherwise the OS default)",
     )
     .option("--json", "Output results as JSON")
     .action(
@@ -103,7 +103,7 @@ export function register(program: Command, ctx: CliContext): void {
     .option("--yes", "confirm the deletion (required; this permanently removes the directory)")
     .option(
       "-d, --dir <root>",
-      "workspace root directory (default: the nearest registered workspace found walking up, otherwise the configured default root, otherwise the OS default)",
+      "workspace root directory (default: the configured default workspace root, otherwise the OS default)",
     )
     .action(async (ref: string, options: { yes?: boolean; dir?: string }) => {
       await runAction(async () => {
@@ -126,7 +126,7 @@ export function register(program: Command, ctx: CliContext): void {
     .option("--base-url <url>", "GitHub Enterprise base URL (e.g. https://ghe.example.com)")
     .option(
       "-d, --dir <root>",
-      "workspace root directory (default: the nearest registered workspace found walking up, otherwise the configured default root, otherwise the OS default)",
+      "workspace root directory (default: the configured default workspace root, otherwise the OS default)",
     )
     .action(async (ref: string, options: { dir?: string; baseUrl?: string }) => {
       await runAction(async () => {

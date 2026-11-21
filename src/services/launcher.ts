@@ -1,6 +1,7 @@
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import path from "node:path";
+import { migrateAppData } from "./appDataMigration.ts";
 import { firstErrorLine } from "./cloner.ts";
 import type { RepoInventoryEntry, RepotruckConfig } from "./config.ts";
 import { appConfigDir, type EnvLike } from "./config.ts";
@@ -41,6 +42,7 @@ function isAppEntry(value: unknown): value is AppEntry {
 }
 
 export async function loadCustomApps(env?: EnvLike): Promise<AppEntry[]> {
+  await migrateAppData(env);
   try {
     const { readFile } = await import("node:fs/promises");
     const raw = (await readFile(appsFilePath(env), "utf8")).replace(/^\uFEFF/, "");

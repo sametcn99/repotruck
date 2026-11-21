@@ -161,7 +161,7 @@ export function registerWorkspaceResources(server: McpServer, ctx: ToolContext):
     {
       title: "Workspace AGENTS.md map",
       description:
-        "The AGENTS.md workspace map of the resolved default workspace (nearest registered workspace walking up from the server's working directory, otherwise the configured default root): workspace metadata, every repository with its relative path, agent rules, and the custom instructions block.",
+        "The AGENTS.md workspace map of the configured default workspace: workspace metadata, every repository with its relative path, agent rules, and the custom instructions block.",
       mimeType: "text/markdown",
     },
     async (uri) => {

@@ -421,16 +421,6 @@ describe("TUI v2 Store & Cockpit capabilities", () => {
         await new Promise((r) => setTimeout(r, 25));
       }
       await settle(setup);
-      expect(store.getSnapshot().phase).toBe("error");
-      expect(norm(setup.captureCharFrame())).toContain("Offline Mode");
-
-      // Press o to enter offline mode with local workspace inventory
-      setup.mockInput.pressKey("o");
-      await settle(setup);
-      for (let i = 0; i < 30 && store.getSnapshot().phase !== "ready"; i += 1) {
-        await new Promise((r) => setTimeout(r, 25));
-      }
-      await settle(setup);
       expect(store.getSnapshot().phase).toBe("ready");
       expect(store.getSnapshot().offline).toBe(true);
       expect(store.getSnapshot().repos.length).toBe(2);

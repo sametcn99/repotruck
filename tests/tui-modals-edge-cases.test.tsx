@@ -683,7 +683,8 @@ describe("TUI Modals Edge Cases & Omni-actions", () => {
     frame = norm(setup.captureCharFrame());
     expect(frame).toContain("acme/gone [MISSING]");
 
-    // Inspector on uncloned repo
+    // Inspector on an uncloned repo in the personal scope
+    store.togglePersonal();
     store.setCursor(2);
     await store.refreshInspector();
     await settle(setup);

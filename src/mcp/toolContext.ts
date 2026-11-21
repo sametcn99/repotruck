@@ -5,8 +5,12 @@ import { getAuthInfo } from "../services/auth.ts";
 import type { EnvLike } from "../services/config.ts";
 import { appConfigDir, CONFIG_FILENAME } from "../services/config.ts";
 import { fileEtagCache, GitHubService } from "../services/github.ts";
-import { effectiveRoot, readCustomPresets, resolveGithubBaseUrl } from "../services/settings.ts";
-import { isRegisteredWorkspace, resolveWorkspaceRoot } from "../services/workspaceRegistry.ts";
+import {
+  readCustomPresets,
+  resolveGithubBaseUrl,
+  resolveRootForSession,
+} from "../services/settings.ts";
+import { isRegisteredWorkspace } from "../services/workspaceRegistry.ts";
 import { makeRequirePreset } from "./toolHelpers.ts";
 
 export interface ToolContext {
@@ -29,10 +33,8 @@ export async function createToolContext(options: {
   const requirePresetRef = makeRequirePreset(customPresets);
 
   async function resolveRoot(rootArg?: string): Promise<string> {
-    if (rootArg !== undefined && rootArg.length > 0) return path.resolve(rootArg);
-    const walked = await resolveWorkspaceRoot(cwd, env);
-    if (walked.found) return walked.root;
-    return (await effectiveRoot(env)).root;
+    if (rootArg !== undefined && rootArg.length > 0) return path.resolve(cwd, rootArg);
+    return await resolveRootForSession(env);
   }
 
   async function requireWorkspaceRoot(rootArg?: string): Promise<string> {

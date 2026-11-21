@@ -41,33 +41,42 @@ describe("appConfigDir", () => {
     expect(appConfigDir({ REPOTRUCK_CONFIG_DIR: "/custom" }, "darwin")).toBe("/custom");
   });
 
-  test("win32 uses APPDATA", () => {
-    expect(appConfigDir({ APPDATA: "C:\\Users\\sam\\AppData\\Roaming" }, "win32")).toBe(
-      path.join("C:\\Users\\sam\\AppData\\Roaming", "repotruck"),
-    );
+  test("win32 uses LocalAppData for machine-specific workspace records", () => {
+    expect(
+      appConfigDir(
+        {
+          LOCALAPPDATA: "C:\\Users\\sam\\AppData\\Local",
+          APPDATA: "C:\\Users\\sam\\AppData\\Roaming",
+        },
+        "win32",
+      ),
+    ).toBe("C:\\Users\\sam\\AppData\\Local\\repotruck");
   });
 
-  test("win32 falls back to USERPROFILE\\AppData\\Roaming", () => {
+  test("win32 falls back to USERPROFILE AppData Local", () => {
     expect(appConfigDir({ USERPROFILE: "C:\\Users\\sam" }, "win32")).toBe(
-      path.join("C:\\Users\\sam", "AppData", "Roaming", "repotruck"),
+      "C:\\Users\\sam\\AppData\\Local\\repotruck",
     );
   });
 
   test("darwin uses HOME Library Application Support", () => {
     expect(appConfigDir({ HOME: "/Users/sam" }, "darwin")).toBe(
-      path.join("/Users/sam", "Library", "Application Support", "repotruck"),
+      "/Users/sam/Library/Application Support/repotruck",
     );
   });
 
-  test("linux prefers XDG_CONFIG_HOME", () => {
+  test("linux uses a fixed dot directory under the user's home", () => {
     expect(appConfigDir({ XDG_CONFIG_HOME: "/xdg", HOME: "/home/sam" }, "linux")).toBe(
-      path.join("/xdg", "repotruck"),
+      "/home/sam/.repotruck",
     );
   });
 
-  test("linux falls back to HOME/.config", () => {
-    expect(appConfigDir({ HOME: "/home/sam" }, "linux")).toBe(
-      path.join("/home/sam", ".config", "repotruck"),
+  test("rejects relative storage overrides on Linux and Windows", () => {
+    expect(() => appConfigDir({ REPOTRUCK_CONFIG_DIR: "relative" }, "linux")).toThrow(
+      "absolute path",
+    );
+    expect(() => appConfigDir({ REPOTRUCK_CONFIG_DIR: "C:relative" }, "win32")).toThrow(
+      "absolute path",
     );
   });
 

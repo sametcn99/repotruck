@@ -39,7 +39,7 @@ export function register(program: Command, ctx: CliContext): void {
     .description("Clone or update repositories in bulk, without the interactive interface.")
     .option(
       "-d, --dir <root>",
-      "workspace root directory (default: the nearest registered workspace found walking up, otherwise the configured default root, otherwise the OS default)",
+      "workspace root directory (default: the configured default workspace root, otherwise the OS default)",
     )
     .option("-p, --preset <id>", `preset for the target layout: ${PRESET_IDS.join(", ")}`)
     .option(
@@ -268,6 +268,7 @@ export function register(program: Command, ctx: CliContext): void {
                 root,
                 config,
                 repos,
+                getRepo: (owner, name) => github.getRepo(owner, name),
                 userLogin,
                 orgs,
                 token: auth.token,
@@ -348,7 +349,7 @@ export function register(program: Command, ctx: CliContext): void {
     .description("Inspect git conflict / rebase state and get actionable resolution steps.")
     .option(
       "-d, --dir <root>",
-      "workspace root directory (default: nearest registered workspace, configured default root, or OS default)",
+      "workspace root directory (default: configured default workspace root or OS default)",
     )
     .option("--action <action>", "action to execute: continue or abort")
     .option("--json", "Output resolution guide as JSON")

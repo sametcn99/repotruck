@@ -10,7 +10,7 @@ export function register(program: Command, _ctx: CliContext): void {
     .description("Display repository statistics, language breakdown, and disk usage.")
     .option(
       "-d, --dir <root>",
-      "workspace root directory (default: the nearest registered workspace found walking up, otherwise the configured default root, otherwise the OS default)",
+      "workspace root directory (default: the configured default workspace root, otherwise the OS default)",
     )
     .option("--health", "calculate and display overall workspace health scoreboard")
     .option("--json", "Output the statistics as JSON")

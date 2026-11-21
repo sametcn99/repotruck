@@ -21,7 +21,7 @@ export function register(program: Command, _ctx: CliContext): void {
     .argument("<repo>", "Repository alias, workspace-relative path, or owner/name")
     .option(
       "-d, --dir <root>",
-      "workspace root directory (default: nearest registered workspace, configured default root, or OS default)",
+      "workspace root directory (default: configured default workspace root or OS default)",
     )
     .option("--json", "Output worktree list as JSON")
     .action(async (repoArg: string, options: { dir?: string; json?: boolean }) => {
@@ -64,7 +64,7 @@ export function register(program: Command, _ctx: CliContext): void {
     .description("Discover all linked git worktrees across the workspace.")
     .option(
       "-d, --dir <root>",
-      "workspace root directory (default: nearest registered workspace, configured default root, or OS default)",
+      "workspace root directory (default: configured default workspace root or OS default)",
     )
     .option("--json", "Output discovered worktrees as JSON")
     .action(async (options: { dir?: string; json?: boolean }) => {
@@ -101,7 +101,7 @@ export function register(program: Command, _ctx: CliContext): void {
     .option("-b, --new-branch", "Create a new branch instead of checking out existing")
     .option(
       "-d, --dir <root>",
-      "workspace root directory (default: nearest registered workspace, configured default root, or OS default)",
+      "workspace root directory (default: configured default workspace root or OS default)",
     )
     .option("--json", "Output creation result as JSON")
     .action(
@@ -158,7 +158,7 @@ export function register(program: Command, _ctx: CliContext): void {
     .option("-f, --force", "Force removal even if worktree contains untracked changes")
     .option(
       "-d, --dir <root>",
-      "workspace root directory (default: nearest registered workspace, configured default root, or OS default)",
+      "workspace root directory (default: configured default workspace root or OS default)",
     )
     .option("--json", "Output removal result as JSON")
     .action(

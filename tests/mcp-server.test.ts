@@ -13,6 +13,7 @@ import {
 import type { RepotruckConfig } from "../src/services/config.ts";
 import { APPS_FILENAME } from "../src/services/launcher.ts";
 import { createProgressHub } from "../src/services/progressHub.ts";
+import { writeSettings } from "../src/services/settings.ts";
 import { updateWorkspace } from "../src/services/workspace.ts";
 
 const tempRoots: string[] = [];
@@ -103,6 +104,7 @@ beforeAll(async () => {
   env = { REPOTRUCK_CONFIG_DIR: configDir };
   cwd = tempDir("repotruck-mcp-cwd-");
   await makeFixtureWorkspace();
+  await writeSettings(env, { defaultRoot: wsRoot });
 });
 
 afterAll(() => {
@@ -341,9 +343,8 @@ describe("repotruck MCP server", () => {
     expect(textOf(result)).toContain("invalid preset: bogus");
   });
 
-  test("root resolution walks up from the server working directory", async () => {
-    const nested = path.join(wsRoot, "acme", "source", "api");
-    const client = await connect({ cwd: nested });
+  test("root resolution uses the configured workspace from another directory", async () => {
+    const client = await connect({ cwd });
     const result = jsonOf<{ root: string; count: number }>(
       await call(client, "repotruck_list_repos", {}),
     );

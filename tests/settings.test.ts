@@ -1,8 +1,17 @@
 import { afterAll, afterEach, describe, expect, test } from "bun:test";
-import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { CONFIG_FILENAME } from "../src/services/config.ts";
+import { cachedLoginExists, logout } from "../src/services/auth.ts";
+import { appConfigDir, CONFIG_FILENAME } from "../src/services/config.ts";
 import {
   effectiveRoot,
   homeDirFrom,
@@ -11,9 +20,11 @@ import {
   resolveRootForSession,
   resolveSyncSettings,
   SETTINGS_FILENAME,
+  settingsPath,
   validateRootInput,
   writeSettings,
 } from "../src/services/settings.ts";
+import { listWorkspaces } from "../src/services/workspaceRegistry.ts";
 
 const tempRoots: string[] = [];
 const pendingTempDirs: string[] = [];
@@ -54,7 +65,7 @@ afterAll(() => {
 describe("osDefaultRoot", () => {
   test("windows uses USERPROFILE", () => {
     expect(osDefaultRoot({ USERPROFILE: "C:\\Users\\x" }, "win32")).toBe(
-      path.join("C:\\Users\\x", "repotruck"),
+      path.win32.join("C:\\Users\\x", "repotruck"),
     );
   });
 
@@ -65,7 +76,7 @@ describe("osDefaultRoot", () => {
 
   test("windows ignores HOME and prefers USERPROFILE", () => {
     expect(osDefaultRoot({ HOME: "/home/other", USERPROFILE: "C:\\Users\\x" }, "win32")).toBe(
-      path.join("C:\\Users\\x", "repotruck"),
+      path.win32.join("C:\\Users\\x", "repotruck"),
     );
   });
 
@@ -108,6 +119,74 @@ describe("osDefaultRoot", () => {
 });
 
 describe("settings read and write", () => {
+  test("keeps the existing global preference and migrates workspace records and login beside it", async () => {
+    const home = tempDir("rt-layout-home-");
+    const env = {
+      HOME: home,
+      USERPROFILE: home,
+      XDG_CONFIG_HOME: path.join(home, "legacy-xdg"),
+      APPDATA: path.join(home, "AppData", "Roaming"),
+      LOCALAPPDATA: path.join(home, "AppData", "Local"),
+    };
+    const dataDir = appConfigDir(env);
+    const legacyDir =
+      process.platform === "win32"
+        ? path.join(env.APPDATA, "repotruck")
+        : process.platform === "darwin"
+          ? dataDir
+          : path.join(env.XDG_CONFIG_HOME, "repotruck");
+    const splitDir = path.join(home, ".repotruck");
+    const root = tempDir("rt-layout-workspace-");
+    mkdirSync(legacyDir, { recursive: true });
+    mkdirSync(splitDir, { recursive: true });
+    writeFileSync(
+      path.join(splitDir, "config.json"),
+      JSON.stringify({ defaultRoot: root, theme: "contrast" }),
+    );
+    writeFileSync(path.join(legacyDir, "settings.json"), JSON.stringify({ theme: "light" }));
+    const inventory = JSON.stringify({
+      version: 1,
+      workspaces: [
+        { version: 1, root, preset: "flat", lastSync: null, lastUsed: "2026-11-20", repos: [] },
+      ],
+    });
+    writeFileSync(path.join(legacyDir, CONFIG_FILENAME), inventory);
+    writeFileSync(
+      path.join(legacyDir, "auth.json"),
+      JSON.stringify({ token: "synthetic-fixture" }),
+    );
+
+    const [settings, workspaces, loggedIn] = await Promise.all([
+      readSettings(env),
+      listWorkspaces(env),
+      cachedLoginExists(env),
+    ]);
+    expect(settings).toEqual({ defaultRoot: root, theme: "contrast" });
+    expect(settingsPath(env)).toBe(path.join(dataDir, "config.json"));
+    expect(readFileSync(path.join(dataDir, CONFIG_FILENAME), "utf8")).toBe(inventory);
+    expect(workspaces[0]).toMatchObject({ path: root, preset: "flat" });
+    expect(loggedIn).toBe(true);
+    expect(await logout(env)).toBe(true);
+    expect(await cachedLoginExists(env)).toBe(false);
+    if (legacyDir !== dataDir) expect(existsSync(path.join(legacyDir, "auth.json"))).toBe(true);
+  });
+
+  test("migrates settings.json once into the user data directory", async () => {
+    const home = tempDir("rt-settings-home-");
+    const env = { HOME: home, USERPROFILE: home };
+    const legacyDir = appConfigDir(env);
+    mkdirSync(legacyDir, { recursive: true });
+    const legacy = path.join(legacyDir, "settings.json");
+    writeFileSync(legacy, JSON.stringify({ theme: "light", sync: { concurrency: 8 } }));
+
+    expect(await readSettings(env)).toEqual({ theme: "light", sync: { concurrency: 8 } });
+    expect(settingsPath(env)).toBe(path.join(legacyDir, "config.json"));
+    expect(JSON.parse(readFileSync(settingsPath(env), "utf8")).theme).toBe("light");
+    await writeSettings(env, { theme: "contrast" });
+    expect(await readSettings(env)).toEqual({ theme: "contrast" });
+    expect(JSON.parse(readFileSync(legacy, "utf8")).theme).toBe("light");
+  });
+
   test("missing file reads as empty settings", async () => {
     const env = { REPOTRUCK_CONFIG_DIR: tempDir("rt-settings-missing-") };
     expect(await readSettings(env)).toEqual({});
@@ -291,31 +370,23 @@ describe("resolveSyncSettings (flag > settings > default)", () => {
 });
 
 describe("resolveRootForSession", () => {
-  test("a walk-up workspace beats the settings override", async () => {
-    const parent = tempDir("rt-session-parent-");
-    const child = path.join(parent, "deep", "child");
-    mkdirSync(child, { recursive: true });
-    writeFileSync(path.join(parent, CONFIG_FILENAME), "{}", "utf8");
+  test("returns the configured workspace", async () => {
     const configDir = tempDir("rt-session-cfg-");
     const env = { HOME: "/home/x", REPOTRUCK_CONFIG_DIR: configDir };
     await writeSettings(env, { defaultRoot: "/tmp/elsewhere" });
-    expect(await resolveRootForSession(env, child, "linux")).toBe(path.resolve(parent));
+    expect(await resolveRootForSession(env, "linux")).toBe("/tmp/elsewhere");
   });
 
   test("outside any workspace the settings override applies", async () => {
-    const empty = tempDir("rt-session-empty-");
     const configDir = tempDir("rt-session-cfg2-");
     const env = { HOME: "/home/x", REPOTRUCK_CONFIG_DIR: configDir };
     await writeSettings(env, { defaultRoot: "/tmp/chosen" });
-    expect(await resolveRootForSession(env, empty, "linux")).toBe(
-      path.posix.resolve("/tmp/chosen"),
-    );
+    expect(await resolveRootForSession(env, "linux")).toBe(path.posix.resolve("/tmp/chosen"));
   });
 
   test("outside any workspace with no settings the OS default applies", async () => {
-    const empty = tempDir("rt-session-empty2-");
     const configDir = tempDir("rt-session-cfg3-");
     const env = { HOME: "/home/x", REPOTRUCK_CONFIG_DIR: configDir };
-    expect(await resolveRootForSession(env, empty, "linux")).toBe(osDefaultRoot(env, "linux"));
+    expect(await resolveRootForSession(env, "linux")).toBe(osDefaultRoot(env, "linux"));
   });
 });

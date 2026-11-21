@@ -20,9 +20,8 @@ const AUTH_STEPS: readonly { source: string; detail: string }[] = [
 
 const ROOT_STEPS: readonly string[] = [
   "-d, --dir <root> when given",
-  "the nearest registered workspace root found walking up from the current directory",
-  "the configured default root (repotruck root <path>, stored as defaultRoot in settings.json)",
-  "the OS default root",
+  "the configured default root (repotruck root <path>, stored as defaultRoot in config.json)",
+  "the OS default root if none has been configured",
 ];
 
 const DEFAULT_ROOT_ROWS: readonly { platform: string; root: string }[] = [
@@ -38,8 +37,7 @@ const ENV_ROWS: readonly { variable: string; effect: string }[] = [
   },
   {
     variable: "REPOTRUCK_CONFIG_DIR",
-    effect:
-      "Overrides the app config directory that holds repotruck.json, settings.json and auth.json.",
+    effect: "Stores settings, inventory and credentials in the supplied directory.",
   },
   { variable: "REPOTRUCK_VERBOSE", effect: "Verbose diagnostic logging (same as --verbose)." },
   { variable: "NO_COLOR", effect: "Disables ANSI terminal coloring (same as --no-color)." },
@@ -139,8 +137,9 @@ export function ReferenceSection() {
           All workspace records live in one central <code>repotruck.json</code> in the app config
           dir — never inside your workspaces. Each entry remembers the workspace root, preset, last
           sync, last use, aliases and the full repository inventory, so repotruck can recall every
-          workspace it has ever written. The workspace directories themselves hold only{" "}
-          <code>AGENTS.md</code> and your repositories.
+          workspace it has ever written. Use <code>repotruck workspaces add &lt;path&gt;</code> to
+          register another directory and <code>repotruck root &lt;path&gt;</code> to set the
+          default.
         </p>
         <p>Every workspace command resolves its root the same way:</p>
         <ol>
@@ -169,11 +168,11 @@ export function ReferenceSection() {
           </tbody>
         </table>
         <p className="ref-note">
-          The config dir follows your platform convention (<code>%APPDATA%\\repotruck</code> on
-          Windows, <code>~/Library/Application Support/repotruck</code> on macOS,{" "}
-          <code>$XDG_CONFIG_HOME/repotruck</code> or <code>~/.config/repotruck</code> on Linux);
-          <code>REPOTRUCK_CONFIG_DIR</code> overrides it. The current directory is never turned into
-          a workspace implicitly. Manually moved repositories are flagged <code>custom: true</code>;{" "}
+          Settings and workspace records live together in <code>%LOCALAPPDATA%\repotruck</code> on
+          Windows, <code>~/Library/Application Support/repotruck</code> on macOS, and{" "}
+          <code>~/.repotruck</code> on Linux. An absolute <code>REPOTRUCK_CONFIG_DIR</code>
+          can select an alternate data directory. Repotruck copies older app data on first use.
+          Manually moved repositories are flagged <code>custom: true</code> and{" "}
           <code>reorganize --keep-custom</code> spares them. Legacy workspace-local{" "}
           <code>repotruck.json</code> files are imported and removed on first use.
         </p>

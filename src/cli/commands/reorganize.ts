@@ -1,7 +1,9 @@
 import type { Command } from "commander";
 import { PRESET_IDS } from "../../presets/index.ts";
+import { getAuthInfo } from "../../services/auth.ts";
+import { lazyRepoLookup } from "../../services/forkSource.ts";
 import { reorganizeWorkspace } from "../../services/reorganizer.ts";
-import { readCustomPresets } from "../../services/settings.ts";
+import { readCustomPresets, resolveGithubBaseUrl } from "../../services/settings.ts";
 import {
   type CliContext,
   exitFail,
@@ -10,7 +12,7 @@ import {
   runAction,
 } from "../shared.ts";
 
-export function register(program: Command, _ctx: CliContext): void {
+export function register(program: Command, ctx: CliContext): void {
   program
     .command("reorganize")
     .usage("[options] <preset>")
@@ -18,7 +20,7 @@ export function register(program: Command, _ctx: CliContext): void {
     .argument("[preset]", `target preset: ${PRESET_IDS.join(", ")} or a custom preset id`)
     .option(
       "-d, --dir <root>",
-      "workspace root directory (default: the nearest registered workspace found walking up, otherwise the configured default root, otherwise the OS default)",
+      "workspace root directory (default: the configured default workspace root, otherwise the OS default)",
     )
     .option("--scan", "also discover untracked Git repositories on disk and adopt them")
     .option("--dry-run", "show the move plan without touching anything")
@@ -85,6 +87,10 @@ export function register(program: Command, _ctx: CliContext): void {
               keepCustom: options.keepCustom === true,
               env: process.env,
               customPresets: await readCustomPresets(process.env),
+              getRepo: lazyRepoLookup(async () => {
+                const auth = await getAuthInfo(process.env, { interactive: false });
+                return ctx.buildGithub(auth.token, await resolveGithubBaseUrl(process.env));
+              }),
             });
             if (options.json) {
               process.stdout.write(

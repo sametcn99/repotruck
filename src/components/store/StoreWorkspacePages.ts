@@ -1,9 +1,10 @@
 import { existsSync } from "node:fs";
 import path from "node:path";
-import type { PresetRef } from "../../presets/index.ts";
+import { PRESET_IDS, type PresetRef } from "../../presets/index.ts";
 import { formatChangelogMarkdown, getWorkspaceChangelog } from "../../services/changelog.ts";
-import { firstErrorLine } from "../../services/cloner.ts";
+import { createCloneLimiter, firstErrorLine } from "../../services/cloner.ts";
 import { refreshCodeIndexIfPresent } from "../../services/codeSearch.ts";
+import type { RepoInfo } from "../../services/github.ts";
 import { computeWorkspaceHealthScore } from "../../services/healthScore.ts";
 import { pruneWorkspace } from "../../services/lifecycle.ts";
 import {
@@ -16,7 +17,7 @@ import { loadWorkspace } from "../../services/workspace.ts";
 import { listRepoWorktrees } from "../../services/worktree.ts";
 import { repoKey } from "./filters.ts";
 import { loadWorkspaceHealthData } from "./gitHealth.ts";
-import { buildPreviewEntries } from "./modalWorkflows.ts";
+import { buildPreviewEntries, computeReorganizePreview } from "./modalWorkflows.ts";
 import { StoreCore } from "./StoreCore.ts";
 
 /**
@@ -25,6 +26,31 @@ import { StoreCore } from "./StoreCore.ts";
  * split out of StoreCore for the file-size budget. Behavior is unchanged.
  */
 export class StoreWorkspacePages extends StoreCore {
+  private async syncRepoMetadata(repos: readonly RepoInfo[]): Promise<RepoInfo[]> {
+    const github = this.github;
+    if (this.state.offline || github === null) return [...repos];
+    const known = new Set(
+      [
+        ...this.personalRepos,
+        ...[...this.orgReposCache.values()].flat(),
+        ...this.sessionAddedRepos.values(),
+      ].map((repo) => repoKey(repo).toLowerCase()),
+    );
+    const limit = createCloneLimiter(4);
+    return await Promise.all(
+      repos.map((repo) => {
+        if (known.has(repoKey(repo).toLowerCase())) return repo;
+        return limit(async () => {
+          try {
+            return await github.getRepo(repo.owner, repo.name);
+          } catch {
+            return repo;
+          }
+        });
+      }),
+    );
+  }
+
   // ---- Sync Center (t14) -------------------------------------------------------
   updateSyncCenter = (partial: Partial<import("./types.ts").SyncCenterState>): void => {
     const current = this.state.syncCenter ?? defaultSyncCenterState();
@@ -48,7 +74,7 @@ export class StoreWorkspacePages extends StoreCore {
           .filter(([, h]) => h.pinned)
           .map(([k]) => k.toLowerCase()),
       );
-      chosen = this.state.repos.filter((repo) =>
+      chosen = this.composeRepos(new Set(), false, this.state.offline, true).filter((repo) =>
         pinned.has(`${repo.owner}/${repo.name}`.toLowerCase()),
       );
     } else if (scope.startsWith("org:")) {
@@ -60,17 +86,16 @@ export class StoreWorkspacePages extends StoreCore {
       }
       chosen = this.orgReposCache.get(org) ?? [];
     } else if (scope === "all") {
-      chosen = this.state.repos;
       for (const org of this.state.orgs) {
         if (!this.orgReposCache.has(org) && this.github !== null) {
           try {
             this.orgReposCache.set(org, await this.github.listOrgRepos(org));
           } catch {}
         }
-        chosen = [...chosen, ...(this.orgReposCache.get(org) ?? [])];
       }
+      chosen = this.composeRepos(new Set(this.state.orgs), true, this.state.offline, true);
     } else {
-      chosen = this.state.repos.filter((repo) => repo.owner === (this.userLoginValue ?? ""));
+      chosen = this.state.offline ? [] : this.personalRepos;
     }
     const includeGlobs = state.include
       .split(",")
@@ -108,9 +133,10 @@ export class StoreWorkspacePages extends StoreCore {
       await this.deps.sync({
         root: this.rootValue,
         config,
-        repos: chosen,
+        repos: await this.syncRepoMetadata(chosen),
+        getRepo: this.lookupForkRepo,
         userLogin: this.userLoginValue ?? "",
-        orgs: [...this.state.selectedOrgs],
+        orgs: this.state.orgs,
         token: this.token,
         emit: this.progressToStatus,
         customPresets: this.state.customPresets,
@@ -361,6 +387,87 @@ export class StoreWorkspacePages extends StoreCore {
     }
   };
 
+  openReorganizeModal = async (): Promise<void> => {
+    if (this.state.running) return;
+    const current = this.localConfig?.preset ?? this.state.preset;
+    this.openModal({
+      type: "reorganize",
+      current,
+      target: current,
+      keepCustom: true,
+      scan: this.localConfig?.repos.length === 0,
+      preview: null,
+    });
+    await this.refreshReorganizePreview();
+  };
+
+  private refreshReorganizePreview = async () => {
+    const modal = this.state.modal;
+    if (modal?.type !== "reorganize") return;
+    const preview = await computeReorganizePreview(
+      this.rootValue,
+      modal.target,
+      modal.keepCustom,
+      this.state.customPresets,
+      this.deps.reorganize,
+      modal.scan,
+      this.lookupForkRepo,
+    );
+    if (this.state.modal === modal) this.setModal({ ...modal, preview });
+  };
+
+  setReorganizeTarget = async (target: PresetRef): Promise<void> => {
+    if (this.state.modal?.type !== "reorganize") return;
+    this.setModal({ ...this.state.modal, target, preview: null });
+    await this.refreshReorganizePreview();
+  };
+
+  cycleReorganizeTarget = async (delta: number): Promise<void> => {
+    if (this.state.modal?.type !== "reorganize") return;
+    const ids = [...PRESET_IDS, ...this.state.customPresets.map((preset) => preset.id)];
+    const index = Math.max(0, ids.indexOf(this.state.modal.target));
+    await this.setReorganizeTarget(ids[(index + delta + ids.length) % ids.length]!);
+  };
+
+  toggleReorganizeKeepCustom = async (): Promise<void> => {
+    if (this.state.modal?.type !== "reorganize") return;
+    this.setModal({ ...this.state.modal, keepCustom: !this.state.modal.keepCustom, preview: null });
+    await this.refreshReorganizePreview();
+  };
+
+  toggleReorganizeScan = async (): Promise<void> => {
+    if (this.state.modal?.type !== "reorganize") return;
+    this.setModal({ ...this.state.modal, scan: !this.state.modal.scan, preview: null });
+    await this.refreshReorganizePreview();
+  };
+
+  confirmReorganize = async (): Promise<void> => {
+    const modal = this.state.modal;
+    if (modal?.type !== "reorganize" || modal.preview === null || this.state.running) return;
+    if (modal.preview.failed.some((failure) => failure.key === "preview")) return;
+    this.closeModal();
+    this.set({ running: true });
+    const root = this.rootValue;
+    try {
+      const result = await this.deps.reorganize(root, modal.target, {
+        keepCustom: modal.keepCustom,
+        customPresets: this.state.customPresets,
+        scan: modal.scan,
+        getRepo: this.lookupForkRepo,
+      });
+      this.pushStatus(
+        "DONE",
+        "[reorganize]",
+        `${modal.target}: ${result.moved.length} moved, ${result.skipped.length} skipped, ${result.collisions.length} collisions, ${result.failed.length} failed`,
+      );
+      if (this.rootValue === root) await this.refreshLocalState();
+    } catch (error) {
+      this.pushStatus("FAILED", "[reorganize]", firstErrorLine(error));
+    } finally {
+      this.set({ running: false });
+    }
+  };
+
   start = async (): Promise<void> => {
     if (this.state.running) return;
     const chosen = this.state.repos.filter((repo) => this.state.selected.has(repoKey(repo)));
@@ -375,9 +482,10 @@ export class StoreWorkspacePages extends StoreCore {
       await this.deps.sync({
         root: this.rootValue,
         config,
-        repos: chosen,
+        repos: await this.syncRepoMetadata(chosen),
+        getRepo: this.lookupForkRepo,
         userLogin: this.userLoginValue ?? "",
-        orgs: [...this.state.selectedOrgs],
+        orgs: this.state.orgs,
         token: this.token,
         emit: this.progressToStatus,
         customPresets: this.state.customPresets,
@@ -404,22 +512,29 @@ export class StoreWorkspacePages extends StoreCore {
   };
 
   confirmStartPreview = async (): Promise<void> => {
-    if (this.state.modal?.type !== "preview") return;
+    if (this.state.modal?.type !== "preview" || this.state.modal.entries.length === 0) return;
     this.closeModal();
     await this.start();
   };
   protected refreshStartPreviewModal = async (preset: PresetRef): Promise<void> => {
     if (this.state.modal?.type !== "preview") return;
+    const pending = { type: "preview", entries: [] } as const;
+    this.setModal(pending);
     const chosen = this.state.repos.filter((repo) => this.state.selected.has(repoKey(repo)));
-    const entries = await buildPreviewEntries({
-      root: this.rootValue,
-      chosen,
-      preset,
-      orgs: [...this.state.selectedOrgs],
-      userLogin: this.userLoginValue ?? "",
-      customPresets: this.state.customPresets,
-    });
-    if (this.state.modal?.type === "preview") this.set({ modal: { type: "preview", entries } });
+    try {
+      const entries = await buildPreviewEntries({
+        root: this.rootValue,
+        chosen,
+        preset,
+        getRepo: this.lookupForkRepo,
+        orgs: this.state.orgs,
+        userLogin: this.userLoginValue ?? "",
+        customPresets: this.state.customPresets,
+      });
+      if (this.state.modal === pending) this.setModal({ type: "preview", entries });
+    } catch (error) {
+      if (this.state.modal === pending) this.setModalError(firstErrorLine(error));
+    }
   };
 }
 

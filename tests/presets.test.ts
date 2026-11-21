@@ -135,6 +135,24 @@ describe("targetSegments", () => {
     ]);
   });
 
+  test("categorized groups forks by source owner and gives archived repos priority", () => {
+    const fork = { ...baseRepo, isFork: true, forkSourceOwner: "meta" };
+    expect(targetSegments(fork, "categorized", true)).toEqual(["acme", "forks", "meta", "api"]);
+    expect(targetSegments(fork, "categorized", false)).toEqual([
+      "community",
+      "acme",
+      "forks",
+      "meta",
+      "api",
+    ]);
+    expect(targetSegments({ ...fork, isArchived: true }, "categorized", true)).toEqual([
+      "acme",
+      "archived",
+      "api",
+    ]);
+    expect(targetSegments(fork, "category-first", true)).toEqual(["forks", "acme", "api"]);
+  });
+
   test("language-first internal", () => {
     expect(targetSegments(baseRepo, "language-first", true)).toEqual(["TypeScript", "acme", "api"]);
   });

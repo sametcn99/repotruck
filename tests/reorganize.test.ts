@@ -113,6 +113,83 @@ async function createReorgFixture(): Promise<{ root: string; config: RepotruckCo
 }
 
 describe("reorganizeWorkspace core and edge cases", () => {
+  test("moves a checkout out of the future source-owner folder before moving siblings into it", async () => {
+    const root = tempDir("rt-reorg-fork-overlap-");
+    const repos = ["react", "meta"].map((name) => ({
+      ...makeEntry("acme", name, `acme/forks/${name}`),
+      category: "forks" as const,
+      forkSourceOwner: "meta",
+    }));
+    for (const repo of repos) {
+      const dir = path.join(root, repo.relativePath);
+      mkdirSync(dir, { recursive: true });
+      writeFileSync(path.join(dir, "local.txt"), repo.name);
+    }
+    await writeWorkspaceConfig(root, {
+      root,
+      version: 1,
+      preset: "categorized",
+      lastSync: null,
+      repos,
+    });
+
+    const result = await reorganizeWorkspace(root, "categorized");
+    expect(result.collisions).toEqual([]);
+    expect(result.failed).toEqual([]);
+    expect(result.moved.map((move) => move.key)).toEqual(["acme/meta", "acme/react"]);
+    for (const repo of repos) {
+      expect(readFileSync(path.join(root, "acme/forks/meta", repo.name, "local.txt"), "utf8")).toBe(
+        repo.name,
+      );
+    }
+  });
+
+  test("learns the source owner of an existing fork and moves the local checkout", async () => {
+    const root = tempDir("repotruck-reorg-fork-");
+    const original = "sametcn99/forks/react";
+    const expected = "sametcn99/forks/meta/react";
+    const dir = path.join(root, original);
+    mkdirSync(dir, { recursive: true });
+    execFileSync("git", ["init", dir], { stdio: "ignore" });
+    writeFileSync(path.join(dir, "local.txt"), "local work");
+    await writeWorkspaceConfig(root, {
+      root,
+      version: 1,
+      preset: "categorized",
+      lastSync: null,
+      repos: [{ ...makeEntry("sametcn99", "react", original), category: "forks" }],
+      aliases: { react: original },
+    });
+    const unavailable = await reorganizeWorkspace(root, "categorized", { dryRun: true });
+    expect(unavailable.skipped).toEqual([
+      { key: "sametcn99/react", reason: "fork source owner unavailable" },
+    ]);
+
+    const getRepo = async (owner: string, name: string) => ({
+      owner,
+      name,
+      isFork: true,
+      isArchived: false,
+      isPrivate: false,
+      forkSourceOwner: "meta",
+      description: null,
+      language: null,
+      updatedAt: null,
+      httpsUrl: "",
+      sshUrl: "",
+    });
+    const preview = await reorganizeWorkspace(root, "categorized", { dryRun: true, getRepo });
+    expect(preview.moved).toEqual([{ key: "sametcn99/react", from: original, to: expected }]);
+    expect((await readWorkspaceConfig(root))?.repos[0]?.forkSourceOwner).toBeUndefined();
+    const applied = await reorganizeWorkspace(root, "categorized", { getRepo });
+    expect(applied.moved).toEqual(preview.moved);
+    expect(existsSync(path.join(root, expected, ".git"))).toBe(true);
+    expect(readFileSync(path.join(root, expected, "local.txt"), "utf8")).toBe("local work");
+    const config = await readWorkspaceConfig(root);
+    expect(config?.repos[0]).toMatchObject({ relativePath: expected, forkSourceOwner: "meta" });
+    expect(config?.aliases?.react).toBe(expected);
+    expect((await reorganizeWorkspace(root, "categorized", { dryRun: true })).moved).toEqual([]);
+  });
   test("C11: dry-run plans moves without touching disk or creating journal", async () => {
     const { root } = await createReorgFixture();
     const diskBefore = snapshotDirectory(root);
@@ -312,6 +389,38 @@ describe("reorganizeWorkspace core and edge cases", () => {
     const cfg = await readWorkspaceConfig(root);
     expect(cfg?.aliases?.apiService).toBe("acme/source/api");
     expect(cfg?.aliases?.webFrontend).toBe("acme/source/web");
+  });
+
+  test("disk scanning moves an existing checkout from its actual path without cloning", async () => {
+    const { root, config } = await createReorgFixture();
+    await writeWorkspaceConfig(root, { ...config, aliases: { api: "acme/api" } });
+    const actual = path.join(root, "manual", "api-copy");
+    moveDir(path.join(root, "acme", "api"), actual);
+    execFileSync("git", ["init", actual], { stdio: "ignore" });
+    execFileSync("git", [
+      "-C",
+      actual,
+      "remote",
+      "add",
+      "origin",
+      "https://github.com/acme/api.git",
+    ]);
+    writeFileSync(path.join(actual, "local-only.txt"), "work in progress");
+
+    const preview = await reorganizeWorkspace(root, "categorized", { scan: true, dryRun: true });
+    expect(preview.moved).toContainEqual({
+      key: "acme/api",
+      from: "manual/api-copy",
+      to: "acme/source/api",
+    });
+    expect(existsSync(actual)).toBe(true);
+    await reorganizeWorkspace(root, "categorized", { scan: true });
+    expect(existsSync(actual)).toBe(false);
+    expect(existsSync(path.join(root, "acme/source/api/.git"))).toBe(true);
+    expect(readFileSync(path.join(root, "acme/source/api/local-only.txt"), "utf8")).toBe(
+      "work in progress",
+    );
+    expect((await readWorkspaceConfig(root))?.aliases).toEqual({ api: "acme/source/api" });
   });
 
   test("C18: --keep-custom preserves custom repos in place", async () => {

@@ -145,6 +145,7 @@ export function registerSyncTools(server: McpServer, ctx: ToolContext): void {
           root,
           config,
           repos,
+          getRepo: (owner, name) => github.getRepo(owner, name),
           userLogin,
           orgs,
           token,

@@ -5,8 +5,8 @@ import { AuthError, getAuthInfo } from "../services/auth.ts";
 import { type CloneProgress, type EmitProgress, firstErrorLine } from "../services/cloner.ts";
 import { appConfigDir, CONFIG_FILENAME } from "../services/config.ts";
 import { fileEtagCache, GitHubService } from "../services/github.ts";
-import { effectiveRoot, readCustomPresets } from "../services/settings.ts";
-import { isRegisteredWorkspace, resolveWorkspaceRoot } from "../services/workspaceRegistry.ts";
+import { readCustomPresets, resolveRootForSession } from "../services/settings.ts";
+import { isRegisteredWorkspace } from "../services/workspaceRegistry.ts";
 
 /**
  * Control-flow signal for CLI termination. Throwing (instead of calling
@@ -61,10 +61,7 @@ export async function runAction(
 
 export async function resolveRootOption(dirOption?: string): Promise<string> {
   if (dirOption !== undefined) return path.resolve(dirOption);
-  const walked = await resolveWorkspaceRoot(process.cwd());
-  if (walked.found) return walked.root;
-  const effective = await effectiveRoot(process.env);
-  return effective.root;
+  return await resolveRootForSession();
 }
 
 export async function requireExistingRoot(dirOption?: string): Promise<string> {

@@ -232,6 +232,23 @@ describe("modalWorkflows pure helpers", () => {
     expect(okApp.code).toBe(0);
   });
 
+  test("sync preview uses the same source-owner path as cloning categorized forks", async () => {
+    const { root } = await setupWorkspace();
+    const fork = makeRepo("acme", "forked", { isFork: true });
+    const entries = await buildPreviewEntries({
+      root,
+      chosen: [fork],
+      preset: "categorized",
+      orgs: [],
+      userLogin: "acme",
+      customPresets: [],
+      getRepo: async () => ({ ...fork, forkSourceOwner: "meta" }),
+    });
+    expect(entries).toEqual([
+      { key: "acme/forked", relPath: "acme/forks/meta/forked", exists: false },
+    ]);
+  });
+
   test("performSubmitRoot, buildPreviewEntries, computeReorganizePreview", async () => {
     const { root } = await setupWorkspace();
     const badRoot = await performSubmitRoot("");

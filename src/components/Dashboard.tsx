@@ -130,7 +130,7 @@ export function Dashboard({
   const offlinePrefix = snapshot.offline ? "[OFFLINE] " : "";
   const viewTitle =
     snapshot.view === "cockpit" ? null : (VIEW_BY_ID.get(snapshot.view)?.title ?? null);
-  const header = `${offlinePrefix}repotruck · ${login} (auth: ${snapshot.authMethod ?? "?"}) · preset: ${snapshot.preset} · root: ${snapshot.root} · ${reposCount}${viewTitle !== null ? ` · view: ${viewTitle}` : ""}`;
+  const header = `${offlinePrefix}repotruck · ${login} (auth: ${snapshot.authMethod ?? "?"}) · preset: ${snapshot.workspacePreset} · root: ${snapshot.root} · ${reposCount}${viewTitle !== null ? ` · view: ${viewTitle}` : ""}`;
   const showCockpit = snapshot.modal === null || snapshot.modal.type === "search";
   const shellVisible = snapshot.modal === null;
   const showToastBand = shellVisible && height >= TOAST_BAND_MIN_HEIGHT;
@@ -187,7 +187,7 @@ export function Dashboard({
               inlineNotice.dismiss();
               return;
             }
-            if (event.x >= 35 && event.x <= 65) void store.cyclePreset();
+            if (event.x >= 35 && event.x <= 65) void store.openReorganizeModal();
             else if (event.x > 65 && event.x <= 95) void store.openRootModal();
           }}
         >

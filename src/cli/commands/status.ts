@@ -11,7 +11,7 @@ export function register(program: Command, ctx: CliContext): void {
     .description("Show per-repository health: dirty state, ahead/behind, category, aliases.")
     .option(
       "-d, --dir <root>",
-      "workspace root directory (default: the nearest registered workspace found walking up, otherwise the configured default root, otherwise the OS default)",
+      "workspace root directory (default: the configured default workspace root, otherwise the OS default)",
     )
     .option("-D, --detail", "Show detailed unpushed commits and modified files with diff stats")
     .option(

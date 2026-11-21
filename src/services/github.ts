@@ -8,6 +8,8 @@ export interface RepoInfo {
   owner: string;
   name: string;
   description: string | null;
+  topics?: string[];
+  forkSourceOwner?: string;
   isPrivate: boolean;
   isFork: boolean;
   isArchived: boolean;
@@ -206,26 +208,33 @@ function firstString(value: unknown): string | null {
   return typeof value === "string" && value.length > 0 ? value : null;
 }
 
-function ownerLogin(raw: unknown): string {
+function ownerLogin(raw: unknown): string | undefined {
   if (typeof raw === "object" && raw !== null) {
     const login = (raw as { login?: unknown }).login;
     if (typeof login === "string" && login.length > 0) return login;
   }
-  return "unknown";
 }
 
 export function toRepoInfo(input: unknown): RepoInfo {
   const repo = (input ?? {}) as Record<string, unknown>;
-  const owner = ownerLogin(repo.owner);
+  const owner = ownerLogin(repo.owner) ?? "unknown";
   const name = firstString(repo.name) ?? "unknown";
   const httpsUrl = firstString(repo.clone_url) ?? `https://github.com/${owner}/${name}.git`;
   const sshUrl = firstString(repo.ssh_url) ?? `git@github.com:${owner}/${name}.git`;
+  const parent = repo.parent as { owner?: unknown } | null | undefined;
+  const source = repo.source as { owner?: unknown } | null | undefined;
+  const forkSourceOwner =
+    repo.fork === true ? (ownerLogin(parent?.owner) ?? ownerLogin(source?.owner)) : undefined;
   return {
     owner,
     name,
     description: typeof repo.description === "string" ? repo.description : null,
+    ...(Array.isArray(repo.topics)
+      ? { topics: repo.topics.filter((topic): topic is string => typeof topic === "string") }
+      : {}),
     isPrivate: repo.private === true,
     isFork: repo.fork === true,
+    ...(forkSourceOwner === undefined ? {} : { forkSourceOwner }),
     isArchived: repo.archived === true,
     language: typeof repo.language === "string" ? repo.language : null,
     httpsUrl: cleanHttpsUrl(httpsUrl),

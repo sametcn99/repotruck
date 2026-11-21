@@ -25,7 +25,7 @@ export function register(program: Command, ctx: CliContext): void {
     .argument("<query>", "GitHub repository search query")
     .option(
       "-d, --dir <root>",
-      "workspace root directory when --clone is used (default: nearest registered workspace, configured default root, or OS default)",
+      "workspace root directory when --clone is used (default: configured default workspace root or OS default)",
     )
     .option(
       "-p, --preset <id>",
@@ -130,6 +130,7 @@ export function register(program: Command, ctx: CliContext): void {
                 root,
                 config,
                 repos,
+                getRepo: (owner, name) => github.getRepo(owner, name),
                 userLogin,
                 orgs,
                 token: auth.token,

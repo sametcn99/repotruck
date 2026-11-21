@@ -69,6 +69,13 @@ describe("orgLoginsFromMemberships", () => {
 });
 
 describe("toRepoInfo defensive mapping", () => {
+  test("reads the immediate fork parent and falls back to the original source", () => {
+    const source = { owner: { login: "meta" } };
+    const parent = { owner: { login: "maintainer" } };
+    expect(toRepoInfo({ fork: true, parent, source }).forkSourceOwner).toBe("maintainer");
+    expect(toRepoInfo({ fork: true, source }).forkSourceOwner).toBe("meta");
+    expect(toRepoInfo({ fork: true }).forkSourceOwner).toBeUndefined();
+  });
   test("maps a realistic repository payload", () => {
     const info = toRepoInfo({
       name: "express",

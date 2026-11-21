@@ -26,6 +26,8 @@ export interface AgentsMdRepo {
   internal: boolean;
   category?: string | null;
   language?: string | null;
+  description?: string | null;
+  topics?: readonly string[];
 }
 
 export interface AgentsMdWorktree {
@@ -131,7 +133,19 @@ function renderEntry(repo: AgentsMdRepo, aliasByPath?: Map<string, string[]>): s
       ? []
       : (aliasByPath.get(repo.relativePath.toLowerCase()) ?? []).sort((a, b) => a.localeCompare(b));
   const aliasSuffix = repoAliases.length > 0 ? ` (alias: ${repoAliases.join(", ")})` : "";
-  return `- \`${repo.owner}/${repo.name}\` — \`${repo.relativePath}\`${suffix}${aliasSuffix}`;
+  const description = inlineMetadata(repo.description ?? "");
+  const topics = (repo.topics ?? []).map(inlineMetadata).filter(Boolean);
+  const metadata = [description, topics.length > 0 ? `Topics: ${topics.join(", ")}` : ""].filter(
+    Boolean,
+  );
+  return `- \`${repo.owner}/${repo.name}\` — \`${repo.relativePath}\`${suffix}${aliasSuffix}${metadata.map((value) => ` · ${value}`).join("")}`;
+}
+
+function inlineMetadata(value: string): string {
+  return value
+    .trim()
+    .replace(/\s+/g, " ")
+    .replace(/[\\`*_~[\]<>|&!]/g, "\\$&");
 }
 
 export function generateAgentsMd(input: GenerateAgentsMdInput): string {

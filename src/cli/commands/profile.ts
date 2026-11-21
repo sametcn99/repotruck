@@ -24,7 +24,7 @@ export function register(program: Command, _ctx: CliContext): void {
     .description("List pinned repositories and named profiles in the workspace.")
     .option(
       "-d, --dir <root>",
-      "workspace root directory (default: nearest registered workspace, configured default root, or OS default)",
+      "workspace root directory (default: configured default workspace root or OS default)",
     )
     .option("--json", "Output pinned repos and profiles as JSON")
     .action(async (options: { dir?: string; json?: boolean }) => {
@@ -65,7 +65,7 @@ export function register(program: Command, _ctx: CliContext): void {
     .argument("<repos...>", "repositories by owner/name, alias, or workspace-relative path")
     .option(
       "-d, --dir <root>",
-      "workspace root directory (default: nearest registered workspace, configured default root, or OS default)",
+      "workspace root directory (default: configured default workspace root or OS default)",
     )
     .option("--json", "Output result as JSON")
     .action(async (repos: string[], options: { dir?: string; json?: boolean }) => {
@@ -99,7 +99,7 @@ export function register(program: Command, _ctx: CliContext): void {
     .argument("<repos...>", "repositories by owner/name, alias, or workspace-relative path")
     .option(
       "-d, --dir <root>",
-      "workspace root directory (default: nearest registered workspace, configured default root, or OS default)",
+      "workspace root directory (default: configured default workspace root or OS default)",
     )
     .option("--json", "Output result as JSON")
     .action(async (repos: string[], options: { dir?: string; json?: boolean }) => {
@@ -135,7 +135,7 @@ export function register(program: Command, _ctx: CliContext): void {
     .option("--from-pinned", "populate the profile from the currently pinned repositories")
     .option(
       "-d, --dir <root>",
-      "workspace root directory (default: nearest registered workspace, configured default root, or OS default)",
+      "workspace root directory (default: configured default workspace root or OS default)",
     )
     .option("--json", "Output result as JSON")
     .action(
@@ -173,7 +173,7 @@ export function register(program: Command, _ctx: CliContext): void {
     .argument("<name>", "profile name")
     .option(
       "-d, --dir <root>",
-      "workspace root directory (default: nearest registered workspace, configured default root, or OS default)",
+      "workspace root directory (default: configured default workspace root or OS default)",
     )
     .option("--json", "Output result as JSON")
     .action(async (name: string, options: { dir?: string; json?: boolean }) => {

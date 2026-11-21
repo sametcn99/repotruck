@@ -44,6 +44,10 @@ export class StoreCore extends StoreBase {
     this.recomputeVisible({ includePersonal: !this.state.includePersonal, cursor: 0 });
   };
 
+  toggleWorkspace = (): void => {
+    this.recomputeVisible({ includeWorkspace: !this.state.includeWorkspace, cursor: 0 });
+  };
+
   toggleOrg = async (org: string): Promise<void> => {
     const selected = new Set(this.state.selectedOrgs);
     if (selected.has(org)) {

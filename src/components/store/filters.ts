@@ -26,7 +26,9 @@ export function inventoryEntryToRepoInfo(entry: RepoInventoryEntry): RepoInfo {
   return {
     owner: entry.owner,
     name: entry.name,
-    description: null,
+    description: entry.description ?? null,
+    ...(entry.topics !== undefined ? { topics: entry.topics } : {}),
+    ...(entry.forkSourceOwner !== undefined ? { forkSourceOwner: entry.forkSourceOwner } : {}),
     isPrivate: false,
     isFork: entry.category === "forks",
     isArchived: entry.category === "archived",
@@ -109,12 +111,13 @@ export function searchRepos(
     }
     if (needle.length === 0) return true;
     const keyLower = repoOrderKey(repo);
-    const alias = localHealth?.get(keyLower)?.alias;
+    const health = localHealth?.get(keyLower);
     return (
       repo.owner.toLowerCase().includes(needle) ||
       repo.name.toLowerCase().includes(needle) ||
       keyLower.includes(needle) ||
-      alias?.toLowerCase().includes(needle) === true
+      health?.alias?.toLowerCase().includes(needle) === true ||
+      health?.relativePath?.toLowerCase().includes(needle) === true
     );
   });
 }
@@ -199,13 +202,21 @@ export function validateCreateDraft(draft: CreateDraft): string | null {
 }
 
 export function buildSidebarRows(snapshot: StoreSnapshot): SidebarRow[] {
-  const rows: SidebarRow[] = [
-    {
+  const rows: SidebarRow[] = [];
+  if (snapshot.localHealth.size > 0 || snapshot.offline) {
+    rows.push({
+      kind: "workspace",
+      label: `Workspace (${snapshot.localHealth.size})`,
+      checked: snapshot.includeWorkspace,
+    });
+  }
+  if (!snapshot.offline) {
+    rows.push({
       kind: "personal",
       label: `Personal (${snapshot.userLogin ?? "unknown"})`,
-      checked: snapshot.includePersonal ?? true,
-    },
-  ];
+      checked: snapshot.includePersonal,
+    });
+  }
   for (const org of snapshot.orgs) {
     rows.push({
       kind: "org",
@@ -214,7 +225,7 @@ export function buildSidebarRows(snapshot: StoreSnapshot): SidebarRow[] {
       checked: snapshot.selectedOrgs.has(org),
     });
   }
-  rows.push({ kind: "preset", label: `Preset: ${snapshot.preset}`, checked: false });
+  rows.push({ kind: "preset", label: `Preset: ${snapshot.workspacePreset}`, checked: false });
   rows.push({
     kind: "filter",
     key: "active",
@@ -236,8 +247,7 @@ export function buildSidebarRows(snapshot: StoreSnapshot): SidebarRow[] {
   return rows;
 }
 
-export function sidebarRowToLineIndex(rowIndex: number, orgCount: number): number {
-  const presetIndex = 1 + orgCount;
+export function sidebarRowToLineIndex(rowIndex: number, presetIndex: number): number {
   if (rowIndex < presetIndex) {
     return 1 + rowIndex;
   }
@@ -247,36 +257,37 @@ export function sidebarRowToLineIndex(rowIndex: number, orgCount: number): numbe
   return 3 + rowIndex;
 }
 
-export function sidebarTotalLines(orgCount: number): number {
-  // 4 headers (SCOPE, PRESET, FILTERS, HEALTH) + (1 + orgCount + 1 + 3) rows + 2 health rows
-  return 11 + orgCount;
+export function sidebarWindow(
+  cursor: number,
+  totalLines: number,
+  presetIndex: number,
+  viewportRows: number,
+) {
+  const anchor =
+    cursor === presetIndex + 3 ? totalLines - 1 : sidebarRowToLineIndex(cursor, presetIndex);
+  return visibleSlice(anchor, totalLines, viewportRows);
+}
+
+export function sidebarTotalLines(scopeRows: number): number {
+  return scopeRows + 10;
 }
 
 export function sidebarRowIndexForY(
   localY: number,
-  orgCount: number,
+  presetIndex: number,
   sidebarCursor = 0,
   viewportRows?: number,
 ): number | null {
-  const totalLines = sidebarTotalLines(orgCount);
-  let y = localY;
-  if (viewportRows !== undefined && viewportRows < totalLines) {
-    const activeLine = sidebarRowToLineIndex(sidebarCursor, orgCount);
-    const { start } = visibleSlice(activeLine, totalLines, Math.max(1, viewportRows));
-    y = start + localY;
-  }
-  if (y <= 0) return null;
-  if (y <= 1 + orgCount) {
-    return y - 1;
-  }
-  if (y === 2 + orgCount) return null;
-  if (y === 3 + orgCount) {
-    return 1 + orgCount;
-  }
-  if (y === 4 + orgCount) return null;
-  const filterOffset = y - (5 + orgCount);
-  if (filterOffset >= 0 && filterOffset < 3) {
-    return 2 + orgCount + filterOffset;
+  if (localY < 0 || (viewportRows !== undefined && localY >= viewportRows)) return null;
+  const totalLines = sidebarTotalLines(presetIndex);
+  const { start } = sidebarWindow(
+    sidebarCursor,
+    totalLines,
+    presetIndex,
+    viewportRows ?? totalLines,
+  );
+  for (let row = 0; row <= presetIndex + 3; row += 1) {
+    if (sidebarRowToLineIndex(row, presetIndex) === start + localY) return row;
   }
   return null;
 }

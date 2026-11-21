@@ -1,25 +1,25 @@
 import { randomUUID } from "node:crypto";
-import type { Dirent } from "node:fs";
 import {
   existsSync,
   mkdirSync,
   readFileSync,
   renameSync,
+  rmdirSync,
   unlinkSync,
   writeFileSync,
 } from "node:fs";
-import { readdir } from "node:fs/promises";
 import path from "node:path";
-import { simpleGit } from "simple-git";
 import type { CustomPreset, PresetRef } from "../presets/index.ts";
 import { targetSegmentsForPreset } from "../presets/index.ts";
-import { firstErrorLine } from "./cloner.ts";
-import type { EnvLike, RepotruckConfig } from "./config.ts";
-import { getActualCasingOnDisk, repoKeyEquals } from "./fsUtils.ts";
+import { createCloneLimiter, firstErrorLine } from "./cloner.ts";
+import type { EnvLike } from "./config.ts";
+import { lookupRepoDetails, type RepoLookup } from "./forkSource.ts";
+import { getActualCasingOnDisk } from "./fsUtils.ts";
 import { moveDir } from "./mover.ts";
-import { type ParsedGitUrl, parseGitUrl } from "./singleCloner.ts";
-import { loadWorkspace, toPosixRelative, updateWorkspace, upsertInventory } from "./workspace.ts";
-import { inspectGitDotEntry, isLinkedWorktree } from "./worktree.ts";
+import { buildPlanEntries, occupiedParent, type PlanEntry } from "./reorganizePlan.ts";
+import { scanForRepos } from "./scanner.ts";
+import { loadWorkspace, updateWorkspace, upsertInventory } from "./workspace.ts";
+import { isLinkedWorktree } from "./worktree.ts";
 
 export interface ReorganizeJournalMove {
   key: string;
@@ -27,6 +27,7 @@ export interface ReorganizeJournalMove {
   to: string;
   status: "pending" | "done";
   tmpPath?: string;
+  forkSourceOwner?: string;
 }
 
 export interface ReorganizeJournal {
@@ -87,6 +88,7 @@ export interface ReorganizeOptions {
   resume?: boolean;
   env?: EnvLike;
   customPresets?: readonly CustomPreset[];
+  getRepo?: RepoLookup;
   moveDirImpl?: typeof moveDir;
   existsSyncImpl?: (p: string) => boolean;
 }
@@ -120,102 +122,16 @@ export interface ReorganizeResult {
   collisions: ReorganizeCollision[];
 }
 
-interface PlanEntry {
-  key: string;
-  owner: string;
-  name: string;
-  isArchived: boolean;
-  isFork: boolean;
-  language: string | null;
-  internal: boolean;
-  relativePath: string;
-  custom: boolean;
-  tracked: boolean;
-}
-
-interface DiscoveredRepo {
-  owner: string;
-  name: string;
-  relativePath: string;
-  internal: boolean;
-}
-
-const MAX_SCAN_DEPTH = 6;
-
-async function scanForRepos(root: string): Promise<DiscoveredRepo[]> {
-  const found: DiscoveredRepo[] = [];
-  const walk = async (dir: string, depth: number): Promise<void> => {
-    if (depth > MAX_SCAN_DEPTH) return;
-    let items: Dirent[];
-    try {
-      items = await readdir(dir, { withFileTypes: true });
-    } catch {
-      return;
-    }
-    for (const item of items) {
-      if (!item.isDirectory()) continue;
-      if (item.name === "node_modules" || item.name.startsWith(".")) continue;
-      const full = path.join(dir, item.name);
-      const gitDot = inspectGitDotEntry(full);
-      if (gitDot.kind === "worktree") {
-        continue;
-      }
-      if (gitDot.kind === "repo") {
-        const relativePath = toPosixRelative(root, full);
-        let parsed: ParsedGitUrl | null = null;
-        try {
-          const remote = await simpleGit(full).raw(["remote", "get-url", "origin"]);
-          parsed = parseGitUrl(remote.trim());
-        } catch {
-          parsed = null;
-        }
-        if (parsed !== null) {
-          found.push({
-            owner: parsed.owner,
-            name: parsed.name,
-            relativePath,
-            internal: !relativePath.toLowerCase().startsWith("community/"),
-          });
-        }
-        continue;
-      }
-      await walk(full, depth + 1);
-    }
-  };
-  await walk(root, 0);
-  return found;
-}
-
-function buildPlanEntries(config: RepotruckConfig, discovered: DiscoveredRepo[]): PlanEntry[] {
-  const entries: PlanEntry[] = config.repos.map((entry) => ({
-    key: `${entry.owner}/${entry.name}`,
-    owner: entry.owner,
-    name: entry.name,
-    isArchived: entry.category === "archived",
-    isFork: entry.category === "forks",
-    language: entry.language,
-    internal: entry.internal,
-    relativePath: entry.relativePath,
-    custom: entry.custom === true,
-    tracked: true,
-  }));
-  for (const item of discovered) {
-    const exists = entries.some((entry) => repoKeyEquals(entry, item.owner, item.name));
-    if (exists) continue;
-    entries.push({
-      key: `${item.owner}/${item.name}`,
-      owner: item.owner,
-      name: item.name,
-      isArchived: false,
-      isFork: false,
-      language: null,
-      internal: item.internal,
-      relativePath: item.relativePath,
-      custom: false,
-      tracked: false,
-    });
+function restoreStagedMove(
+  move: typeof moveDir,
+  temp: string,
+  source: string,
+  destination: string,
+): void {
+  if (path.dirname(destination).toLowerCase() === source.toLowerCase() && existsSync(source)) {
+    rmdirSync(source);
   }
-  return entries;
+  move(temp, source);
 }
 
 async function resumeReorganize(
@@ -240,7 +156,7 @@ async function resumeReorganize(
       if (existsFn(tmpAbs)) {
         const fromAbs = path.join(root, ...move.from.split("/"));
         try {
-          moveFn(tmpAbs, fromAbs);
+          restoreStagedMove(moveFn, tmpAbs, fromAbs, path.join(root, ...move.to.split("/")));
           result.skipped.push({ key: move.key, reason: "interrupted move rolled back to source" });
         } catch (err) {
           result.failed.push({
@@ -282,6 +198,9 @@ async function resumeReorganize(
 
   const moveMap = new Map(successfulMoves.map((m) => [m.key.toLowerCase(), m.to] as const));
   const oldPathsByKey = new Map(journal.moves.map((m) => [m.key.toLowerCase(), m.from] as const));
+  const forkOwners = new Map(
+    journal.moves.map((move) => [move.key.toLowerCase(), move.forkSourceOwner]),
+  );
 
   await updateWorkspace(
     root,
@@ -297,11 +216,14 @@ async function resumeReorganize(
         }
       }
       const repos = currentWorking.repos.map((entry) => {
-        const target = moveMap.get(`${entry.owner}/${entry.name}`.toLowerCase());
+        const key = `${entry.owner}/${entry.name}`.toLowerCase();
+        const target = moveMap.get(key);
         if (target === undefined) return entry;
+        const forkSourceOwner = forkOwners.get(key);
         return {
           ...entry,
           relativePath: target,
+          ...(forkSourceOwner ? { forkSourceOwner } : {}),
           ...(entry.custom === true ? { custom: false } : {}),
         };
       });
@@ -349,8 +271,26 @@ export async function reorganizeWorkspace(
   }
 
   const config = await loadWorkspace(root, undefined, options.env);
-  const entries = buildPlanEntries(config, options.scan === true ? await scanForRepos(root) : []);
   const result: ReorganizeResult = { moved: [], skipped: [], failed: [], collisions: [] };
+  const discovered = options.scan === true ? await scanForRepos(root) : [];
+  const entries = buildPlanEntries(root, config, discovered, existsFn, result);
+  if (newPreset === "categorized" && options.getRepo !== undefined) {
+    const limit = createCloneLimiter(4);
+    await Promise.all(
+      entries
+        .filter(
+          (entry) =>
+            entry.isFork && !entry.forkSourceOwner && !(entry.custom && options.keepCustom),
+        )
+        .map((entry) =>
+          limit(async () => {
+            entry.forkSourceOwner = (
+              await lookupRepoDetails(entry, options.getRepo)
+            )?.forkSourceOwner;
+          }),
+        ),
+    );
+  }
   const occupied = new Map<string, string>();
   for (const entry of entries) {
     occupied.set(entry.relativePath.toLowerCase(), entry.key);
@@ -361,32 +301,33 @@ export async function reorganizeWorkspace(
     targetRel: string;
     srcAbs: string;
     destAbs: string;
-    isCaseOnly: boolean;
+    needsTemp: boolean;
   }
 
   const plannedMoves: PlannedMove[] = [];
+  const settled = new Map<string, string>();
 
   for (const entry of entries) {
-    const segments = targetSegmentsForPreset(
-      {
-        owner: entry.owner,
-        name: entry.name,
-        isArchived: entry.isArchived,
-        isFork: entry.isFork,
-        language: entry.language,
-      },
-      newPreset,
-      entry.internal,
-      options.customPresets ?? [],
-    );
-    const targetRel = segments.join("/");
     const srcAbs = path.join(root, ...entry.relativePath.split("/"));
-    const destAbs = path.join(root, ...segments);
-
     if (options.keepCustom === true && entry.custom) {
+      settled.set(entry.key.toLowerCase(), entry.relativePath);
       result.skipped.push({ key: entry.key, reason: "custom placement kept" });
       continue;
     }
+
+    if (newPreset === "categorized" && entry.isFork && !entry.forkSourceOwner) {
+      result.skipped.push({ key: entry.key, reason: "fork source owner unavailable" });
+      continue;
+    }
+
+    const segments = targetSegmentsForPreset(
+      entry,
+      newPreset,
+      entry.internal,
+      options.customPresets,
+    );
+    const targetRel = segments.join("/");
+    const destAbs = path.join(root, ...segments);
 
     if (options.existsSyncImpl === undefined && isLinkedWorktree(srcAbs)) {
       result.skipped.push({ key: entry.key, reason: "linked git worktree kept" });
@@ -397,6 +338,7 @@ export async function reorganizeWorkspace(
     const isCaseOnly = entry.relativePath.toLowerCase() === targetRel.toLowerCase() && !isExactSame;
 
     if (isExactSame) {
+      if (existsFn(srcAbs)) settled.set(entry.key.toLowerCase(), targetRel);
       result.skipped.push({ key: entry.key, reason: "already at target" });
       continue;
     }
@@ -418,7 +360,32 @@ export async function reorganizeWorkspace(
       continue;
     }
 
-    plannedMoves.push({ entry, targetRel, srcAbs, destAbs, isCaseOnly });
+    const belowSource = targetRel.toLowerCase().startsWith(`${entry.relativePath.toLowerCase()}/`);
+    plannedMoves.push({ entry, targetRel, srcAbs, destAbs, needsTemp: isCaseOnly || belowSource });
+  }
+
+  // A former fork checkout can occupy the directory that will become a source-owner group.
+  const pending = [...plannedMoves];
+  plannedMoves.length = 0;
+  const futureOccupied = new Map(occupied);
+  while (pending.length > 0) {
+    const index = pending.findIndex(({ entry, targetRel }) => {
+      const blocker = occupiedParent(targetRel, futureOccupied);
+      return blocker === undefined || blocker === entry.relativePath.toLowerCase();
+    });
+    if (index < 0) break;
+    const [next] = pending.splice(index, 1) as [PlannedMove];
+    plannedMoves.push(next);
+    futureOccupied.delete(next.entry.relativePath.toLowerCase());
+    futureOccupied.set(next.targetRel.toLowerCase(), next.entry.key);
+  }
+  for (const { entry, targetRel } of pending) {
+    const blocker = occupiedParent(targetRel, futureOccupied)!;
+    result.collisions.push({
+      key: entry.key,
+      target: targetRel,
+      occupiedBy: futureOccupied.get(blocker)!,
+    });
   }
 
   if (options.dryRun === true) {
@@ -437,14 +404,24 @@ export async function reorganizeWorkspace(
       from: p.entry.relativePath,
       to: p.targetRel,
       status: "pending",
+      ...(p.entry.forkSourceOwner ? { forkSourceOwner: p.entry.forkSourceOwner } : {}),
     })),
   };
   writeReorganizeJournalAtomically(root, journal);
 
   for (const plan of plannedMoves) {
+    const blocker = occupiedParent(plan.targetRel, occupied);
+    if (blocker !== undefined && blocker !== plan.entry.relativePath.toLowerCase()) {
+      result.collisions.push({
+        key: plan.entry.key,
+        target: plan.targetRel,
+        occupiedBy: occupied.get(blocker)!,
+      });
+      continue;
+    }
     const journalEntry = journal.moves.find((m) => m.key === plan.entry.key);
     try {
-      if (plan.isCaseOnly) {
+      if (plan.needsTemp) {
         const tmpRel = `${plan.entry.relativePath}.tmp-${randomUUID().slice(0, 8)}`;
         const tmpAbs = path.join(root, ...tmpRel.split("/"));
         if (journalEntry) {
@@ -458,7 +435,7 @@ export async function reorganizeWorkspace(
           moveFn(tmpAbs, plan.destAbs);
         } catch (phase2Error) {
           try {
-            moveFn(tmpAbs, plan.srcAbs);
+            restoreStagedMove(moveFn, tmpAbs, plan.srcAbs, plan.destAbs);
             if (journalEntry) {
               journalEntry.tmpPath = undefined;
               writeReorganizeJournalAtomically(root, journal);
@@ -494,8 +471,14 @@ export async function reorganizeWorkspace(
   }
 
   const moveMap = new Map(result.moved.map((move) => [move.key.toLowerCase(), move.to] as const));
+  const updatedPaths = new Map([...settled, ...moveMap]);
+  const forkOwners = new Map(
+    entries.map((entry) => [entry.key.toLowerCase(), entry.forkSourceOwner]),
+  );
   const oldPathsByKey = new Map(
-    entries.map((entry) => [entry.key.toLowerCase(), entry.relativePath] as const),
+    config.repos.map(
+      (entry) => [`${entry.owner}/${entry.name}`.toLowerCase(), entry.relativePath] as const,
+    ),
   );
 
   await updateWorkspace(
@@ -504,20 +487,27 @@ export async function reorganizeWorkspace(
       let currentWorking = { ...current };
       const currentAliases: Record<string, string> = { ...(currentWorking.aliases ?? {}) };
       for (const [alias, target] of Object.entries(currentAliases)) {
-        for (const move of result.moved) {
-          const oldPath = oldPathsByKey.get(move.key.toLowerCase());
+        for (const [key, relativePath] of updatedPaths) {
+          const oldPath = oldPathsByKey.get(key);
           if (oldPath !== undefined && oldPath.toLowerCase() === target.toLowerCase()) {
-            currentAliases[alias] = move.to;
+            currentAliases[alias] = relativePath;
           }
         }
       }
       const repos = currentWorking.repos.map((entry) => {
-        const target = moveMap.get(`${entry.owner}/${entry.name}`.toLowerCase());
-        if (target === undefined) return entry;
+        const key = `${entry.owner}/${entry.name}`.toLowerCase();
+        const target = updatedPaths.get(key);
+        const forkSourceOwner = entry.forkSourceOwner ?? forkOwners.get(key);
+        if (
+          (target === undefined || target === entry.relativePath) &&
+          forkSourceOwner === entry.forkSourceOwner
+        )
+          return entry;
         return {
           ...entry,
-          relativePath: target,
-          ...(entry.custom === true ? { custom: false } : {}),
+          relativePath: target ?? entry.relativePath,
+          ...(forkSourceOwner ? { forkSourceOwner } : {}),
+          ...(entry.custom === true && moveMap.has(key) ? { custom: false } : {}),
         };
       });
       currentWorking = {
@@ -526,9 +516,9 @@ export async function reorganizeWorkspace(
         repos,
         ...(Object.keys(currentAliases).length > 0 ? { aliases: currentAliases } : {}),
       };
-      for (const move of result.moved) {
-        const entry = entries.find((item) => item.key === move.key);
-        if (entry === undefined || entry.tracked) continue;
+      for (const entry of entries) {
+        const relativePath = updatedPaths.get(entry.key.toLowerCase());
+        if (entry.tracked || relativePath === undefined) continue;
         currentWorking = upsertInventory(
           currentWorking,
           {
@@ -539,7 +529,7 @@ export async function reorganizeWorkspace(
             language: entry.language,
             updatedAt: null,
           },
-          move.to,
+          relativePath,
           entry.internal,
         );
       }

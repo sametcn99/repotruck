@@ -2,23 +2,22 @@ import { existsSync } from "node:fs";
 import path from "node:path";
 import { REGISTRY_BY_ID } from "../../commands/registry.ts";
 import { setWorkspaceAlias } from "../../core/aliases.ts";
-import {
-  type CustomPreset,
-  isInternalOwner,
-  type PresetRef,
-  targetSegmentsForPreset,
-} from "../../presets/index.ts";
+import type { CustomPreset, PresetRef } from "../../presets/index.ts";
 import type { EmitProgress } from "../../services/cloner.ts";
-import { firstErrorLine } from "../../services/cloner.ts";
+import { createCloneLimiter, firstErrorLine } from "../../services/cloner.ts";
 import type { RepoInventoryEntry } from "../../services/config.ts";
+import type { RepoLookup } from "../../services/forkSource.ts";
 import type { RepoInfo } from "../../services/github.ts";
 import { resolveRepoRef } from "../../services/launcher.ts";
 import { validateMoveDestination } from "../../services/mover.ts";
 import type { ReorganizeResult } from "../../services/reorganizer.ts";
 import { readSettings, validateRootInput, writeSettings } from "../../services/settings.ts";
 import { parseGitUrl } from "../../services/singleCloner.ts";
-import { loadWorkspace } from "../../services/workspace.ts";
-import { resolveWorkspaceRoot } from "../../services/workspaceRegistry.ts";
+import {
+  loadWorkspace,
+  resolveForkPlacementRepo,
+  resolveRepoPlacement,
+} from "../../services/workspace.ts";
 import { VIEW_BY_ID } from "../views/viewRegistry.ts";
 import type { PreviewTreeEntry } from "../windowing.ts";
 import type { ResolvedStoreDeps } from "./defaults.ts";
@@ -78,9 +77,7 @@ export async function performSubmitRoot(
   if (!validated.ok) return { ok: false, error: validated.error };
   const settings = await readSettings(process.env);
   await writeSettings(process.env, { ...settings, defaultRoot: validated.root });
-  const walked = await resolveWorkspaceRoot(process.cwd());
-  const nextRoot = walked.found ? walked.root : validated.root;
-  return { ok: true, nextRoot };
+  return { ok: true, nextRoot: validated.root };
 }
 
 export async function buildPreviewEntries(params: {
@@ -90,28 +87,30 @@ export async function buildPreviewEntries(params: {
   orgs: readonly string[];
   userLogin: string;
   customPresets: readonly CustomPreset[];
+  getRepo?: RepoLookup;
 }): Promise<PreviewTreeEntry[]> {
   const config = await loadWorkspace(params.root, params.preset);
-  return params.chosen.map((repo) => {
-    const internal = isInternalOwner(repo.owner, params.userLogin, [...params.orgs]);
-    const relPath = targetSegmentsForPreset(
-      repo,
-      params.preset,
-      internal,
-      params.customPresets,
-    ).join("/");
-    const tracked = config.repos.find(
-      (item) =>
-        item.owner.toLowerCase() === repo.owner.toLowerCase() &&
-        item.name.toLowerCase() === repo.name.toLowerCase(),
-    );
-    return {
-      key: repoKey(repo),
-      relPath,
-      exists: existsSync(path.join(params.root, ...relPath.split("/"))),
-      ...(tracked?.custom === true ? { custom: true } : {}),
-    };
-  });
+  const limit = createCloneLimiter(4);
+  return await Promise.all(
+    params.chosen.map((candidate) =>
+      limit(async () => {
+        const repo = await resolveForkPlacementRepo(candidate, config, params.getRepo);
+        const { relativePath: relPath, tracked } = resolveRepoPlacement(
+          config,
+          repo,
+          params.userLogin,
+          params.orgs,
+          params.customPresets,
+        );
+        return {
+          key: repoKey(repo),
+          relPath,
+          exists: existsSync(path.join(params.root, ...relPath.split("/"))),
+          ...(tracked?.custom === true ? { custom: true } : {}),
+        };
+      }),
+    ),
+  );
 }
 
 export async function computeReorganizePreview(
@@ -120,9 +119,17 @@ export async function computeReorganizePreview(
   keepCustom: boolean,
   customPresets: readonly CustomPreset[],
   reorganize: ResolvedStoreDeps["reorganize"],
+  scan = false,
+  getRepo?: RepoLookup,
 ): Promise<ReorganizeResult> {
   try {
-    return await reorganize(root, target, { dryRun: true, keepCustom, customPresets });
+    return await reorganize(root, target, {
+      dryRun: true,
+      keepCustom,
+      customPresets,
+      scan,
+      getRepo,
+    });
   } catch (error) {
     return {
       moved: [],

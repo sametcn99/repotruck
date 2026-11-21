@@ -56,6 +56,7 @@ import {
   resolveGithubBaseUrl,
   resolveRootForSession,
   resolveSyncSettings,
+  SETTINGS_FILENAME,
   validateRootInput,
   writeSettings,
 } from "../src/services/settings.ts";
@@ -507,7 +508,7 @@ describe("settings & root validation edge cases", () => {
       github: { baseUrl: "https://ghe.example.com" },
       futureExtension: { flag: true },
     })}`;
-    writeFileSync(path.join(cfgDir, "settings.json"), rawPayload, "utf8");
+    writeFileSync(path.join(cfgDir, SETTINGS_FILENAME), rawPayload, "utf8");
 
     const parsed = await readSettings(env);
     expect(parsed.theme).toBeUndefined();
@@ -517,13 +518,13 @@ describe("settings & root validation edge cases", () => {
     expect((parsed as Record<string, unknown>).futureExtension).toEqual({ flag: true });
 
     // Empty-string theme is also rejected
-    writeFileSync(path.join(cfgDir, "settings.json"), JSON.stringify({ theme: "" }), "utf8");
+    writeFileSync(path.join(cfgDir, SETTINGS_FILENAME), JSON.stringify({ theme: "" }), "utf8");
     expect((await readSettings(env)).theme).toBeUndefined();
 
     // Array JSON & corrupt JSON return `{}`
-    writeFileSync(path.join(cfgDir, "settings.json"), "[1, 2, 3]", "utf8");
+    writeFileSync(path.join(cfgDir, SETTINGS_FILENAME), "[1, 2, 3]", "utf8");
     expect(await readSettings(env)).toEqual({});
-    writeFileSync(path.join(cfgDir, "settings.json"), "{broken json", "utf8");
+    writeFileSync(path.join(cfgDir, SETTINGS_FILENAME), "{broken json", "utf8");
     expect(await readSettings(env)).toEqual({});
   });
 
@@ -583,7 +584,7 @@ describe("settings & root validation edge cases", () => {
 
     const eff = await effectiveRoot(env, "linux");
     expect(eff).toEqual({ root: path.join("/home/tester", "repotruck"), fromOverride: false });
-    const sessionRoot = await resolveRootForSession(env, cfgDir, "linux");
+    const sessionRoot = await resolveRootForSession(env, "linux");
     expect(sessionRoot).toBe(path.join("/home/tester", "repotruck"));
   });
 });

@@ -10,7 +10,7 @@ export const PRESET_ROWS: readonly PresetRow[] = [
     preset: "categorized",
     yours: "monalisa/source/api",
     community: "community/acme/source/api",
-    note: "category is source, forks, or archived (archived wins over fork)",
+    note: "forks are grouped by their source owner, for example monalisa/forks/meta/react (archived wins over fork)",
   },
   {
     preset: "flat-by-owner",
@@ -145,7 +145,7 @@ export function PresetTable() {
           Define your own layout from the four segment tokens — <code>owner</code>,{" "}
           <code>category</code>, <code>language</code>, <code>name</code> (name must come last) —
           with <code>repotruck preset add lang-owner language owner name</code>. The preset is
-          stored in <code>settings.json</code> and works everywhere a built-in id is accepted:
+          stored in <code>config.json</code> and works everywhere a built-in id is accepted:
           <code> sync -p</code>, <code>clone -p</code>, <code>reorganize</code>, the dashboard and
           the MCP tools. <code>repotruck preset list</code> shows built-ins plus your customs;
           <code> repotruck preset remove &lt;id&gt;</code> deletes one.

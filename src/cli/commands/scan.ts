@@ -16,7 +16,7 @@ export function register(program: Command, _ctx: CliContext): void {
     )
     .option(
       "-d, --dir <root>",
-      "workspace root directory (default: the nearest registered workspace found walking up)",
+      "workspace root directory (default: the configured default workspace root)",
     )
     .option(
       "-m, --move",

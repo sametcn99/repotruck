@@ -3,6 +3,7 @@ import type { EmitProgress } from "../../services/cloner.ts";
 import { firstErrorLine } from "../../services/cloner.ts";
 import type { RepotruckConfig } from "../../services/config.ts";
 import { diagSnapshot, diagSubscribe, logDiag } from "../../services/diagnostics.ts";
+import { memoizeRepoLookup, type RepoLookup } from "../../services/forkSource.ts";
 import type { RepoInfo } from "../../services/github.ts";
 import {
   DEFAULT_GITHUB_BASE_URL,
@@ -10,6 +11,7 @@ import {
   resolveGithubBaseUrl,
 } from "../../services/settings.ts";
 import { loadWorkspace } from "../../services/workspace.ts";
+import { isRegisteredWorkspace } from "../../services/workspaceRegistry.ts";
 import { VIEW_ORDER } from "../views/viewRegistry.ts";
 import { buildInitialSnapshot, buildStoreDeps, type ResolvedStoreDeps } from "./defaults.ts";
 import {
@@ -54,6 +56,7 @@ export class StoreBase {
   protected rootValue: string;
   protected dismissedVersionValue: string | null = null;
   protected github: GithubClient | null = null;
+  protected lookupForkRepo?: RepoLookup;
   protected token: string | null = null;
   protected userLoginValue: string | null = null;
   protected undoStack: UndoAction[] = [];
@@ -272,27 +275,36 @@ export class StoreBase {
     selectedOrgs: ReadonlySet<string> = this.state.selectedOrgs,
     includePersonal: boolean = this.state.includePersonal,
     offline: boolean = this.state.offline,
-    healthFilter: HealthFilter = this.state.healthFilter,
+    includeWorkspace: boolean = this.state.includeWorkspace,
   ): RepoInfo[] {
-    if (offline) return (this.localConfig?.repos ?? []).map(inventoryEntryToRepoInfo);
-    const repos: RepoInfo[] = includePersonal ? [...this.personalRepos] : [];
-    const seen = new Set(repos.map((r) => repoKey(r).toLowerCase()));
-    const addUnique = (repo: RepoInfo): void => {
-      const k = repoKey(repo).toLowerCase();
-      if (!seen.has(k)) {
-        seen.add(k);
-        repos.push(repo);
+    const remote = new Map<string, RepoInfo>();
+    if (!offline) {
+      for (const repo of this.personalRepos) remote.set(repoKey(repo).toLowerCase(), repo);
+      for (const repos of this.orgReposCache.values()) {
+        for (const repo of repos) remote.set(repoKey(repo).toLowerCase(), repo);
       }
+      for (const repo of this.sessionAddedRepos.values())
+        remote.set(repoKey(repo).toLowerCase(), repo);
+    }
+    const repos = new Map<string, RepoInfo>();
+    if (includeWorkspace) {
+      const entries = [...(this.localConfig?.repos ?? [])].sort((a, b) =>
+        a.relativePath.localeCompare(b.relativePath),
+      );
+      for (const entry of entries) {
+        const key = repoKey(entry).toLowerCase();
+        repos.set(key, remote.get(key) ?? inventoryEntryToRepoInfo(entry));
+      }
+    }
+    const add = (list: Iterable<RepoInfo>): void => {
+      for (const repo of list) repos.set(repoKey(repo).toLowerCase(), repo);
     };
-    for (const org of selectedOrgs) {
-      for (const repo of this.orgReposCache.get(org) ?? []) addUnique(repo);
+    if (!offline) {
+      if (includePersonal) add(this.personalRepos);
+      for (const org of selectedOrgs) add(this.orgReposCache.get(org) ?? []);
+      add(this.sessionAddedRepos.values());
     }
-    for (const repo of this.sessionAddedRepos.values()) addUnique(repo);
-    const includeAllLocal = healthFilter !== "all" && healthFilter !== "uncloned";
-    for (const entry of this.localConfig?.repos ?? []) {
-      if (entry.internal === false || includeAllLocal) addUnique(inventoryEntryToRepoInfo(entry));
-    }
-    return repos;
+    return [...repos.values()];
   }
 
   protected visibleFrom(
@@ -318,7 +330,7 @@ export class StoreBase {
         nextState.selectedOrgs,
         nextState.includePersonal,
         nextState.offline,
-        nextState.healthFilter,
+        nextState.includeWorkspace,
       );
     const filteredRepos = this.visibleFrom(
       repos,
@@ -329,8 +341,15 @@ export class StoreBase {
       nextState.healthFilter,
       nextState.localHealth,
     );
+    const currentRepo = this.state.filteredRepos[this.state.cursor];
+    const sameRepo =
+      partial.cursor === undefined && currentRepo !== undefined
+        ? filteredRepos.findIndex(
+            (repo) => repoKey(repo).toLowerCase() === repoKey(currentRepo).toLowerCase(),
+          )
+        : -1;
     const clampedCursor =
-      filteredRepos.length === 0 ? 0 : Math.min(nextState.cursor, filteredRepos.length - 1);
+      sameRepo >= 0 ? sameRepo : Math.max(0, Math.min(nextState.cursor, filteredRepos.length - 1));
     this.set({ ...partial, repos, filteredRepos, cursor: clampedCursor });
   }
 
@@ -396,16 +415,19 @@ export class StoreBase {
   };
 
   refreshLocalState = async (): Promise<void> => {
+    const root = this.rootValue;
     try {
-      const config = await loadWorkspace(this.rootValue);
-      this.localConfig = config;
+      const config = await loadWorkspace(root);
       const customPresets = await readCustomPresets();
-      const fast = buildFastLocalHealthMap(this.rootValue, config);
+      if (this.rootValue !== root) return;
+      this.localConfig = config;
+      const fast = buildFastLocalHealthMap(root, config);
       this.recomputeVisible({
         localHealth: fast.map,
         pinnedCount: fast.pinnedCount,
         lastSync: config.lastSync,
         preset: config.preset,
+        workspacePreset: config.preset,
         customPresets,
       });
       this.scheduleHydrateGitHealth(config, fast.map);
@@ -430,33 +452,40 @@ export class StoreBase {
       await this.enterOfflineMode();
       return;
     }
+    let hasWorkspace = false;
     try {
+      const [customPresets, config] = await Promise.all([
+        readCustomPresets(),
+        loadWorkspace(this.rootValue),
+      ]);
+      const hasWorkspaceRepos = config.repos.length > 0;
+      hasWorkspace = hasWorkspaceRepos || (await isRegisteredWorkspace(this.rootValue));
       const baseUrl = await resolveGithubBaseUrl(process.env);
       const auth = await this.deps.auth();
       this.token = auth.token;
-      this.github = this.deps.github(
+      const github = this.deps.github(
         auth.token,
         baseUrl !== DEFAULT_GITHUB_BASE_URL ? baseUrl : undefined,
       );
+      this.github = github;
+      this.lookupForkRepo = memoizeRepoLookup((owner, name) => github.getRepo(owner, name));
       const userLogin = await this.github.getUserLogin();
       const orgs = await this.github.getActiveOrgs();
       this.userLoginValue = userLogin;
       this.personalRepos = await this.github.listUserRepos();
       this.orgReposCache.clear();
-      const [customPresets, config] = await Promise.all([
-        readCustomPresets(),
-        loadWorkspace(this.rootValue),
-      ]);
       this.localConfig = config;
       const fast = buildFastLocalHealthMap(this.rootValue, config);
-      const repos = this.composeRepos(new Set<string>(), true, false, "all");
+      const includePersonal = !hasWorkspaceRepos;
+      const repos = this.composeRepos(new Set<string>(), includePersonal, false, true);
       this.set({
         phase: "ready",
         errorMessage: null,
         offline: false,
         authMethod: auth.method,
         userLogin,
-        includePersonal: true,
+        includeWorkspace: true,
+        includePersonal,
         orgs,
         selectedOrgs: new Set<string>(),
         selected: new Set<string>(),
@@ -473,15 +502,23 @@ export class StoreBase {
           fast.map,
         ),
         preset: config.preset,
+        workspacePreset: config.preset,
         customPresets,
         lastSync: config.lastSync,
         cursor: 0,
         sortKey: "default",
+        sortDescending: false,
+        sidebarCursor: 0,
         healthFilter: "all",
         search: null,
       });
       this.scheduleHydrateGitHealth(config, fast.map);
     } catch (error) {
+      if (hasWorkspace) {
+        await this.enterOfflineMode();
+        this.pushStatus("FAILED", "[github]", firstErrorLine(error));
+        return;
+      }
       this.set({
         phase: "error",
         errorMessage: error instanceof AuthError ? error.message : firstErrorLine(error),
@@ -490,6 +527,10 @@ export class StoreBase {
   };
 
   enterOfflineMode = async (): Promise<void> => {
+    this.github = null;
+    this.lookupForkRepo = undefined;
+    this.token = null;
+    this.userLoginValue = null;
     try {
       const [customPresets, config] = await Promise.all([
         readCustomPresets(),
@@ -497,15 +538,18 @@ export class StoreBase {
       ]);
       this.localConfig = config;
       const fast = buildFastLocalHealthMap(this.rootValue, config);
-      const repos = this.composeRepos(new Set<string>(), true, true, "all");
+      const repos = this.composeRepos(new Set<string>(), false, true, true);
       this.set({
         phase: "ready",
         errorMessage: null,
         offline: true,
         authMethod: "offline",
         userLogin: "local",
+        includeWorkspace: true,
+        includePersonal: false,
         orgs: [],
         selectedOrgs: new Set<string>(),
+        selected: new Set<string>(),
         localHealth: fast.map,
         pinnedCount: fast.pinnedCount,
         repos,
@@ -519,9 +563,15 @@ export class StoreBase {
           fast.map,
         ),
         preset: config.preset,
+        workspacePreset: config.preset,
         customPresets,
         lastSync: config.lastSync,
         cursor: 0,
+        sidebarCursor: 0,
+        sortKey: "default",
+        sortDescending: false,
+        healthFilter: "all",
+        search: null,
       });
       this.pushStatus("DONE", "[offline]", `loaded ${repos.length} local tracked repositories`);
       this.scheduleHydrateGitHealth(config, fast.map);

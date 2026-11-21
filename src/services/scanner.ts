@@ -7,7 +7,7 @@ import type { CustomPreset } from "../presets/index.ts";
 import type { EnvLike, RepoInventoryEntry, RepotruckConfig } from "./config.ts";
 import { repoKeyEquals } from "./fsUtils.ts";
 import { moveDir } from "./mover.ts";
-import { GITHUB_HOST, type ParsedGitUrl, parseGitUrl } from "./singleCloner.ts";
+import { GITHUB_HOST, parseGitUrl } from "./singleCloner.ts";
 import { targetDirFor, toPosixRelative, updateWorkspace } from "./workspace.ts";
 import { inspectGitDotEntry } from "./worktree.ts";
 
@@ -18,6 +18,12 @@ export interface DiscoveredRepo {
   absolutePath: string;
   remoteUrl: string;
   internal: boolean;
+}
+
+export interface LocalCheckout {
+  relativePath: string;
+  absolutePath: string;
+  remoteUrl: string | null;
 }
 
 export interface ScanResult {
@@ -51,12 +57,11 @@ const IGNORED_DIRS = new Set([
   ".repotruck",
 ]);
 
-export async function scanForRepos(
+export async function scanLocalCheckouts(
   root: string,
   maxDepth = MAX_SCAN_DEPTH,
-  hosts: readonly string[] = [GITHUB_HOST],
-): Promise<DiscoveredRepo[]> {
-  const found: DiscoveredRepo[] = [];
+): Promise<LocalCheckout[]> {
+  const found: LocalCheckout[] = [];
   const resolvedRoot = path.resolve(root);
 
   const walk = async (dir: string, depth: number): Promise<void> => {
@@ -76,26 +81,16 @@ export async function scanForRepos(
         continue;
       }
       if (gitDot.kind === "repo") {
-        const relativePath = toPosixRelative(resolvedRoot, full);
-        let parsed: ParsedGitUrl | null = null;
-        let remoteUrl = "";
+        let remoteUrl: string | null = null;
         try {
           const remote = await simpleGit(full).raw(["remote", "get-url", "origin"]);
           remoteUrl = remote.trim();
-          parsed = parseGitUrl(remoteUrl, hosts);
-        } catch {
-          parsed = null;
-        }
-        if (parsed !== null) {
-          found.push({
-            owner: parsed.owner,
-            name: parsed.name,
-            relativePath,
-            absolutePath: full,
-            remoteUrl,
-            internal: !relativePath.toLowerCase().startsWith("community/"),
-          });
-        }
+        } catch {}
+        found.push({
+          relativePath: toPosixRelative(resolvedRoot, full),
+          absolutePath: full,
+          remoteUrl,
+        });
         continue;
       }
       await walk(full, depth + 1);
@@ -103,7 +98,33 @@ export async function scanForRepos(
   };
 
   await walk(resolvedRoot, 0);
-  return found;
+  return found.sort((a, b) => a.relativePath.localeCompare(b.relativePath));
+}
+
+export function identifyCheckout(
+  checkout: LocalCheckout,
+  hosts: readonly string[] = [GITHUB_HOST],
+): DiscoveredRepo | null {
+  if (checkout.remoteUrl === null) return null;
+  const parsed = parseGitUrl(checkout.remoteUrl, hosts);
+  if (parsed === null) return null;
+  return {
+    ...checkout,
+    ...parsed,
+    remoteUrl: checkout.remoteUrl,
+    internal: !checkout.relativePath.toLowerCase().startsWith("community/"),
+  };
+}
+
+export async function scanForRepos(
+  root: string,
+  maxDepth = MAX_SCAN_DEPTH,
+  hosts: readonly string[] = [GITHUB_HOST],
+): Promise<DiscoveredRepo[]> {
+  const checkouts = await scanLocalCheckouts(root, maxDepth);
+  return checkouts
+    .map((checkout) => identifyCheckout(checkout, hosts))
+    .filter((repo) => repo !== null);
 }
 
 export async function scanWorkspaceRepos(

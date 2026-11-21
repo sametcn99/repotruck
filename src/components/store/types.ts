@@ -204,6 +204,7 @@ export type ModalState =
   | { type: "clone" }
   | { type: "move"; key: string }
   | { type: "workspaces"; recordsPath: string }
+  | { type: "workspaceAdd" }
   | { type: "create"; step: CreateStep; draft: CreateDraft }
   | { type: "open"; key: string; apps: AppEntry[] | null }
   | { type: "alias"; key: string; prefill: string }
@@ -217,8 +218,10 @@ export type ModalState =
   | { type: "confirmArchive"; key: string; keys?: readonly string[] }
   | {
       type: "reorganize";
+      current: PresetRef;
       target: PresetRef;
       keepCustom: boolean;
+      scan: boolean;
       preview: ReorganizeResult | null;
     }
   | {
@@ -252,6 +255,7 @@ export interface StoreSnapshot {
   themeName: ThemeName;
   userLogin: string | null;
   authMethod: string | null;
+  includeWorkspace: boolean;
   includePersonal: boolean;
   orgs: readonly string[];
   selectedOrgs: ReadonlySet<string>;
@@ -285,6 +289,7 @@ export interface StoreSnapshot {
   omnibarSymbols: readonly CodeSearchMatch[];
   omnibarGithubRepos: readonly RepoInfo[];
   preset: PresetRef;
+  workspacePreset: PresetRef;
   customPresets: readonly CustomPreset[];
   focus: FocusRegion;
   navFocused: boolean;
@@ -470,7 +475,7 @@ export const STATUS_VIEW_ROWS = 12;
 export const FOCUS_ORDER: readonly FocusRegion[] = ["sidebar", "list", "status"];
 
 export type SidebarRow =
-  | { kind: "personal"; label: string; checked: boolean }
+  | { kind: "workspace" | "personal"; label: string; checked: boolean }
   | { kind: "org"; org: string; label: string; checked: boolean }
   | { kind: "preset"; label: string; checked: false }
   | { kind: "filter"; key: keyof FiltersState; label: string; checked: boolean };

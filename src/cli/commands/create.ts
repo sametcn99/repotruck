@@ -23,7 +23,7 @@ export function register(program: Command, ctx: CliContext): void {
     .option("--base-url <url>", "GitHub Enterprise base URL (e.g. https://ghe.example.com)")
     .option(
       "-d, --dir <root>",
-      "workspace root directory (default: the nearest registered workspace found walking up, otherwise the configured default root, otherwise the OS default)",
+      "workspace root directory (default: the configured default workspace root, otherwise the OS default)",
     )
     .action(
       async (

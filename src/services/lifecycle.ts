@@ -33,7 +33,7 @@ function entryKey(entry: RepoInventoryEntry): string {
   return `${entry.owner}/${entry.name}`;
 }
 
-function removeEntry(
+export function removeInventoryEntry(
   config: RepotruckConfig,
   entry: RepoInventoryEntry,
 ): {
@@ -82,7 +82,7 @@ export async function forgetRepository(
   await updateWorkspace(
     root,
     (current) => ({
-      config: { ...current, ...removeEntry(current, match.entry) },
+      config: { ...current, ...removeInventoryEntry(current, match.entry) },
       result: undefined,
     }),
     env,
@@ -173,7 +173,7 @@ export async function pruneWorkspace(
     (current) => {
       let next = current;
       for (const entry of gone) {
-        next = { ...next, ...removeEntry(next, entry) };
+        next = { ...next, ...removeInventoryEntry(next, entry) };
       }
       return { config: next, result: undefined };
     },
@@ -270,7 +270,7 @@ export async function deleteRepository(
   await updateWorkspace(
     root,
     (current) => ({
-      config: { ...current, ...removeEntry(current, entry) },
+      config: { ...current, ...removeInventoryEntry(current, entry) },
       result: undefined,
     }),
     env,

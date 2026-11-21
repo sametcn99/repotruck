@@ -24,7 +24,7 @@ export function register(program: Command, _ctx: CliContext): void {
     .argument("[name]", "Template name to apply (node, python, monorepo)")
     .option(
       "-d, --dir <root>",
-      "workspace root directory (default: the nearest registered workspace found walking up, otherwise the configured default root, otherwise the OS default)",
+      "workspace root directory (default: the configured default workspace root, otherwise the OS default)",
     )
     .option("--clear", "Clear any applied template rules from AGENTS.md")
     .action(async (name: string | undefined, options: { dir?: string; clear?: boolean }) => {
@@ -81,7 +81,7 @@ export function register(program: Command, _ctx: CliContext): void {
     .option("-o, --out <path>", "custom output file path")
     .option(
       "-d, --dir <root>",
-      "workspace root directory (default: the nearest registered workspace found walking up, otherwise the configured default root, otherwise the OS default)",
+      "workspace root directory (default: the configured default workspace root, otherwise the OS default)",
     )
     .option("--json", "Output result as JSON")
     .action(async (options: { format?: string; out?: string; dir?: string; json?: boolean }) => {

@@ -191,11 +191,11 @@ describe("panel widths", () => {
   });
 
   test("windowed sidebarRowIndexForY maps localY accurately on short terminals", () => {
-    expect(sidebarTotalLines(2)).toBe(13);
+    expect(sidebarTotalLines(3)).toBe(13);
     // Unwindowed: row 0 is at localY=1
-    expect(sidebarRowIndexForY(1, 2)).toBe(0);
+    expect(sidebarRowIndexForY(1, 3)).toBe(0);
     // Windowed to 5 rows when cursor is at the bottom filter (index 6 -> line 9)
-    expect(sidebarRowIndexForY(1, 2, 6, 5)).not.toBe(0);
+    expect(sidebarRowIndexForY(1, 3, 6, 5)).not.toBe(0);
   });
 });
 

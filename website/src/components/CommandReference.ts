@@ -22,7 +22,7 @@ export const SETTING_ROWS: readonly SettingRow[] = [
   {
     key: "defaultRoot",
     value: "(not set)",
-    description: "workspace root used when no registered workspace is found walking up",
+    description: "workspace root used when no explicit path is provided",
   },
   {
     key: "github.baseUrl",

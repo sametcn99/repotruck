@@ -5,6 +5,7 @@ import { firstErrorLine } from "../../services/cloner.ts";
 import { buildCodeIndex } from "../../services/codeSearch.ts";
 import type { RepotruckConfig } from "../../services/config.ts";
 import { fixDoctor } from "../../services/doctor.ts";
+import type { InventoryFix } from "../../services/doctorInventory.ts";
 import { resolveRepoRef } from "../../services/launcher.ts";
 import type {
   archiveRepository,
@@ -233,15 +234,24 @@ export async function performTogglePin(
 
 export async function performDoctorFixAction(
   pushStatus: (phase: StatusPhase, key: string, message?: string) => void,
+  workspaceRoot?: string,
+  approvedInventoryFixes?: readonly InventoryFix[],
 ): Promise<void> {
   try {
     const res = await fixDoctor({
+      workspaceRoot,
+      approvedInventoryFixes,
       onFixProgress: (msg) => pushStatus("PULLING", "[doctor]", msg),
     });
+    const inventoryIssues = res.checks.filter((check) => check.check === "inventory").length;
     pushStatus(
       res.ok ? "DONE" : "FAILED",
       "[doctor]",
-      res.ok ? "all doctor checks clean" : "some doctor checks still failing",
+      !res.ok
+        ? "some doctor checks still failing"
+        : inventoryIssues > 0
+          ? `${inventoryIssues} inventory issue(s) still need attention`
+          : "doctor finished",
     );
   } catch (error) {
     pushStatus("FAILED", "[doctor]", firstErrorLine(error));

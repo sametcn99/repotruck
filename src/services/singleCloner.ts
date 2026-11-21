@@ -1,11 +1,10 @@
+import path from "node:path";
 import type { CustomPreset, PresetRef } from "../presets/index.ts";
-import { isInternalOwner } from "../presets/index.ts";
 import { type CloneProgress, cloneOrUpdate, type EmitProgress } from "./cloner.ts";
 import type { GitHubRepoReader, RepoInfo } from "./github.ts";
 import {
   loadWorkspace,
-  targetDirFor,
-  toPosixRelative,
+  resolveRepoPlacement,
   updateWorkspace,
   upsertInventory,
 } from "./workspace.ts";
@@ -154,15 +153,16 @@ export async function cloneSingleRepository(
     throw new Error(`invalid GitHub repository URL: ${url}`);
   }
   const repo = await options.github.getRepo(parsed.owner, parsed.name);
-  const internal = isInternalOwner(repo.owner, options.userLogin, options.orgs);
   const config = await loadWorkspace(options.root, options.presetOverride);
-  const destDir = targetDirFor(
-    options.root,
+  const { relativePath, internal, tracked } = resolveRepoPlacement(
+    config,
     repo,
-    config.preset,
-    internal,
-    options.customPresets ?? [],
+    options.userLogin,
+    options.orgs,
+    options.customPresets,
   );
+  const destDir = path.join(options.root, ...relativePath.split("/"));
+  const sparse = options.sparse ?? tracked?.sparse;
 
   const isGhe = isGheUrl(url, hosts);
   const preferSsh = isGhe ? false : options.preferSsh;
@@ -180,21 +180,15 @@ export async function cloneSingleRepository(
       preferSsh,
       depth: options.depth,
       blobless: options.blobless,
-      sparse: options.sparse,
+      sparse,
     },
     options.emit,
   );
   if (progress.phase !== "done") {
     throw new Error(progress.message ?? `failed to clone ${repo.owner}/${repo.name}`);
   }
-  const relativePath = toPosixRelative(options.root, destDir);
   await updateWorkspace(options.root, (current) => {
-    const next = upsertInventory(
-      current,
-      { ...repo, sparse: options.sparse },
-      relativePath,
-      internal,
-    );
+    const next = upsertInventory(current, { ...repo, sparse }, relativePath, internal);
     return { config: { ...next, lastSync: new Date().toISOString() }, result: undefined };
   });
   return { repo, destDir, internal, preset: config.preset, progress };

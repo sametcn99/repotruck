@@ -10,9 +10,10 @@ export function ReorganizeModal({ store }: { store: Store }) {
   const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot);
   const { height } = useTerminalDimensions();
   const modal = snapshot.modal;
-  const target = modal !== null && modal.type === "reorganize" ? modal.target : null;
-  const keepCustom = modal !== null && modal.type === "reorganize" ? modal.keepCustom : true;
-  const preview = modal !== null && modal.type === "reorganize" ? modal.preview : null;
+  const plan = modal?.type === "reorganize" ? modal : null;
+  const target = plan?.target ?? null;
+  const preview = plan?.preview ?? null;
+  const canApply = preview !== null && !preview.failed.some((failure) => failure.key === "preview");
   const dimFg = theme.dim();
   const selectedFg = theme.success();
   const warningFg = theme.warning();
@@ -26,6 +27,8 @@ export function ReorganizeModal({ store }: { store: Store }) {
       void store.cycleReorganizeTarget(1);
     } else if (key.name === "k") {
       void store.toggleReorganizeKeepCustom();
+    } else if (key.name === "s") {
+      void store.toggleReorganizeScan();
     } else if (key.name === "return") {
       void store.confirmReorganize();
     }
@@ -34,7 +37,7 @@ export function ReorganizeModal({ store }: { store: Store }) {
   const ids = [...PRESET_IDS, ...snapshot.customPresets.map((preset) => preset.id)];
   const cursorIdx = target === null ? 0 : Math.max(0, ids.indexOf(target));
   // Budget rows between preset selector and preview list so [ Apply ] [ Cancel ] never overflow
-  const totalBudget = Math.max(3, height - 15);
+  const totalBudget = Math.max(3, height - 16);
   const presetViewport = Math.max(2, Math.min(ids.length, Math.ceil(totalBudget * 0.45)));
   const presetWin = visibleSlice(cursorIdx, ids.length, presetViewport);
   const visibleIds = ids.slice(presetWin.start, presetWin.end);
@@ -76,7 +79,7 @@ export function ReorganizeModal({ store }: { store: Store }) {
     <ModalShell
       store={store}
       title="Reorganize workspace"
-      hint="Up/Down preset · k keep-custom · Enter apply · Escape cancels"
+      hint="↑↓ preset · k keep custom · s scan disk · Enter apply · Esc cancel"
       gap={0}
       onMouseScroll={(e) => {
         const isUp = e.scroll?.direction === "up" || e.button === 4;
@@ -84,17 +87,17 @@ export function ReorganizeModal({ store }: { store: Store }) {
       }}
     >
       <text fg={dimFg} wrapMode="none" flexShrink={0}>
-        Target preset (Up/Down choose):
+        Target layout · {snapshot.root}
       </text>
       <SelectList
         items={visibleIds}
         cursor={target === null ? -1 : cursorIdx - presetWin.start}
         keyOf={(preset) => preset}
-        labelOf={(preset) => `${preset}${preset === snapshot.preset ? " (current)" : ""}`}
+        labelOf={(preset) => `${preset}${preset === plan?.current ? " (current)" : ""}`}
         onSelect={(preset) => void store.setReorganizeTarget(preset)}
       />
       <text
-        fg={keepCustom ? selectedFg : dimFg}
+        fg={plan?.keepCustom ? selectedFg : dimFg}
         wrapMode="none"
         flexShrink={0}
         onMouseDown={(e) => {
@@ -102,7 +105,18 @@ export function ReorganizeModal({ store }: { store: Store }) {
           void store.toggleReorganizeKeepCustom();
         }}
       >
-        {`[${keepCustom ? "x" : " "}] keep custom placements (k toggles; on by default here, unlike the CLI)`}
+        {`[${plan?.keepCustom ? "x" : " "}] [k] Keep custom paths`}
+      </text>
+      <text
+        fg={plan?.scan ? selectedFg : dimFg}
+        wrapMode="none"
+        flexShrink={0}
+        onMouseDown={(e) => {
+          e.stopPropagation();
+          void store.toggleReorganizeScan();
+        }}
+      >
+        {`[${plan?.scan ? "x" : " "}] [s] Scan disk for existing clones`}
       </text>
       {preview === null ? (
         <text fg={dimFg} wrapMode="none" flexShrink={0}>
@@ -116,7 +130,7 @@ export function ReorganizeModal({ store }: { store: Store }) {
             </text>
           ))}
           <text fg={dimFg} wrapMode="none" flexShrink={0}>
-            {`${preview.moved.length} moves · ${preview.skipped.length} skipped · ${preview.collisions.length} collisions`}
+            {`${preview.moved.length} local moves · ${preview.skipped.length} skipped · ${preview.collisions.length} collisions`}
           </text>
         </>
       )}
@@ -128,13 +142,13 @@ export function ReorganizeModal({ store }: { store: Store }) {
         flexShrink={0}
       >
         <text
-          fg={selectedFg}
+          fg={canApply ? selectedFg : dimFg}
           onMouseDown={(e) => {
             e.stopPropagation();
             void store.confirmReorganize();
           }}
         >
-          {"[ Apply ]"}
+          {"[ Enter ] Apply layout"}
         </text>
         <text
           fg={dimFg}

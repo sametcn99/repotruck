@@ -1,6 +1,7 @@
 import { spawn } from "node:child_process";
 import { mkdir, realpath } from "node:fs/promises";
 import path from "node:path";
+import { migrateAppData } from "./appDataMigration.ts";
 import { firstErrorLine } from "./cloner.ts";
 import { appConfigDir, type EnvLike } from "./config.ts";
 import { warnQuiet } from "./diagnostics.ts";
@@ -44,6 +45,7 @@ export function updateStatePath(env: EnvLike): string {
 }
 
 export async function readUpdateState(env: EnvLike): Promise<UpdateState> {
+  await migrateAppData(env);
   try {
     const { readFile } = await import("node:fs/promises");
     const raw = (await readFile(updateStatePath(env), "utf8")).replace(/^\uFEFF/, "");
@@ -57,6 +59,7 @@ export async function readUpdateState(env: EnvLike): Promise<UpdateState> {
 }
 
 export async function writeUpdateState(env: EnvLike, state: UpdateState): Promise<void> {
+  await migrateAppData(env);
   const file = updateStatePath(env);
   await mkdir(path.dirname(file), { recursive: true });
   await writeFileAtomic(file, `${JSON.stringify(state, null, 2)}\n`);

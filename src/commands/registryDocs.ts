@@ -177,7 +177,11 @@ export const DOC_EXAMPLES: Record<string, readonly string[]> = {
     "repotruck profile save core monalisa/api acme/sdk",
     "repotruck profile delete core",
   ],
-  workspaces: ["repotruck workspaces", "repotruck workspaces remove ../old-workspace"],
+  workspaces: [
+    "repotruck workspaces",
+    "repotruck workspaces add ~/code/team",
+    "repotruck workspaces remove ../old-workspace",
+  ],
   backup: ["repotruck backup list", "repotruck backup restore 20261024T120000.json --yes"],
   root: ["repotruck root", "repotruck root ~/code", "repotruck root --reset"],
   alias: [

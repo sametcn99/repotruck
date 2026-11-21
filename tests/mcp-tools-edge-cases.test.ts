@@ -7,6 +7,7 @@ import { type CallToolResult, InMemoryTransport } from "@modelcontextprotocol/se
 import { simpleGit } from "simple-git";
 import { createRepotruckMcpServer, type McpServerOptions } from "../src/mcp/server.ts";
 import type { RepotruckConfig } from "../src/services/config.ts";
+import { writeSettings } from "../src/services/settings.ts";
 import { updateWorkspace } from "../src/services/workspace.ts";
 
 const tempRoots: string[] = [];
@@ -172,6 +173,7 @@ beforeAll(async () => {
   await gApi.commit("initial in api");
 
   await updateWorkspace(wsRoot, () => ({ config, result: undefined }), env);
+  await writeSettings(env, { defaultRoot: wsRoot });
 });
 
 afterAll(() => {
@@ -477,7 +479,7 @@ describe("MCP tools edge cases", () => {
   });
 
   test("fixed resources and prompts work end to end", async () => {
-    const client = await connect();
+    const client = await connect({ cwd: tempDir("rt-unrelated-cwd-") });
 
     const mdRes = await client.readResource({ uri: "repotruck://agents-md" });
     expect((mdRes.contents[0] as { text?: string }).text).toContain("acme/api");
@@ -488,7 +490,9 @@ describe("MCP tools edge cases", () => {
     const treeRes = await client.readResource({ uri: "repotruck://tree" });
     expect((treeRes.contents[0] as { text?: string }).text).toContain(wsRoot);
 
-    const uninitClient = await connect({ cwd: tempDir("rt-uninit-cwd-") });
+    const uninitEnv = { ...env, REPOTRUCK_CONFIG_DIR: tempDir("rt-uninit-cfg-") };
+    await writeSettings(uninitEnv, { defaultRoot: tempDir("rt-uninit-root-") });
+    const uninitClient = await connect({ env: uninitEnv });
     await expect(uninitClient.readResource({ uri: "repotruck://inventory" })).rejects.toThrow();
 
     const prompt1 = await client.getPrompt({

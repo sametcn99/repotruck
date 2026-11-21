@@ -12,7 +12,7 @@ export function register(program: Command, _ctx: CliContext): void {
     )
     .option(
       "-d, --dir <root>",
-      "workspace root directory (default: nearest registered workspace, configured default root, or OS default)",
+      "workspace root directory (default: configured default workspace root or OS default)",
     )
     .option(
       "--since <duration>",

@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.2] - 2026-11-21
+
+### Added
+
+- Register multiple workspaces and choose a default from the CLI or the terminal dashboard.
+- Record GitHub descriptions and topics in the workspace inventory and generated `AGENTS.md`.
+- Detect missing or unregistered Git checkouts and apply inventory repairs from Doctor.
+
+### Changed
+
+- Store settings and workspace records in a per-user directory on Linux, Windows, and macOS, with automatic migration of legacy data.
+- Open the default workspace from any working directory. Commands with `--dir` can select a different workspace for one invocation.
+- Group forks by their source owner in the categorized layout.
+
+### Fixed
+
+- Make the terminal cockpit reflect the existing workspace layout and move existing checkouts when reorganizing.
+- Show the full preset preview tree with keyboard scrolling.
+
 ## [1.0.1] - 2026-11-21
 
 ### Added

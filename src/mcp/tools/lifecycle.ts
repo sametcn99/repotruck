@@ -1,6 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod/v4";
 import { archiveRepo, deleteRepo, forgetRepo, moveRepo, pruneRepos } from "../../core/repos.ts";
+import { lazyRepoLookup } from "../../services/forkSource.ts";
 import { reorganizeWorkspace } from "../../services/reorganizer.ts";
 import type { ToolContext } from "../toolContext.ts";
 import { fail, guarded, ok, presetRequired, rootParam } from "../toolHelpers.ts";
@@ -62,6 +63,7 @@ export function registerLifecycleTools(server: McpServer, ctx: ToolContext): voi
           keepCustom: keepCustom === true,
           env,
           customPresets,
+          getRepo: lazyRepoLookup(async () => (await requireAuth()).github),
         });
         const hasProblems = result.failed.length > 0 || result.collisions.length > 0;
         return {

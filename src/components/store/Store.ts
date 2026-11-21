@@ -1,9 +1,9 @@
 import path from "node:path";
-import { PRESET_IDS, type PresetRef, targetSegmentsForPreset } from "../../presets/index.ts";
+import { targetSegmentsForPreset } from "../../presets/index.ts";
 import { firstErrorLine } from "../../services/cloner.ts";
-import { effectiveRoot } from "../../services/settings.ts";
+import { effectiveRoot, validateRootInput } from "../../services/settings.ts";
 import { parseGitUrl } from "../../services/singleCloner.ts";
-import { loadWorkspace } from "../../services/workspace.ts";
+import { loadWorkspace, registerWorkspace } from "../../services/workspace.ts";
 import { centralStorePath } from "../../services/workspaceRegistry.ts";
 import { buildSidebarRows, repoKey } from "./filters.ts";
 import {
@@ -13,7 +13,6 @@ import {
   performUntrackRepos,
 } from "./lifecycleActions.ts";
 import {
-  computeReorganizePreview,
   executeOmnibarCommandById,
   findTrackedEntryInRoot,
   performCreateWorktree,
@@ -45,9 +44,10 @@ export class Store extends StorePages {
     if (index !== undefined) this.setSidebarCursor(index);
     const row = buildSidebarRows(this.state)[this.state.sidebarCursor];
     if (row === undefined) return;
-    if (row.kind === "personal") this.togglePersonal();
+    if (row.kind === "workspace") this.toggleWorkspace();
+    else if (row.kind === "personal") this.togglePersonal();
     else if (row.kind === "org") void this.toggleOrg(row.org);
-    else if (row.kind === "preset") void this.cyclePreset();
+    else if (row.kind === "preset") void this.openReorganizeModal();
     else if (row.kind === "filter") this.setFilter(row.key, !row.checked);
   };
 
@@ -174,66 +174,6 @@ export class Store extends StorePages {
     }
   };
 
-  openReorganizeModal = async (): Promise<void> => {
-    const target = this.state.preset;
-    this.openModal({ type: "reorganize", target, keepCustom: true, preview: null });
-    await this.refreshReorganizePreview(target, true);
-  };
-
-  private refreshReorganizePreview = async (target: PresetRef, keepCustom: boolean) => {
-    if (this.state.modal?.type !== "reorganize") return;
-    const preview = await computeReorganizePreview(
-      this.rootValue,
-      target,
-      keepCustom,
-      this.state.customPresets,
-      this.deps.reorganize,
-    );
-    if (this.state.modal?.type === "reorganize") this.setModal({ ...this.state.modal, preview });
-  };
-
-  setReorganizeTarget = async (target: PresetRef): Promise<void> => {
-    if (this.state.modal?.type !== "reorganize") return;
-    const { keepCustom } = this.state.modal;
-    this.setModal({ ...this.state.modal, target, preview: null });
-    await this.refreshReorganizePreview(target, keepCustom);
-  };
-
-  cycleReorganizeTarget = async (delta: number): Promise<void> => {
-    if (this.state.modal?.type !== "reorganize") return;
-    const ids = [...PRESET_IDS, ...this.state.customPresets.map((preset) => preset.id)];
-    const index = Math.max(0, ids.indexOf(this.state.modal.target));
-    await this.setReorganizeTarget(ids[(index + delta + ids.length) % ids.length]!);
-  };
-
-  toggleReorganizeKeepCustom = async (): Promise<void> => {
-    if (this.state.modal?.type !== "reorganize") return;
-    const next = !this.state.modal.keepCustom;
-    const { target } = this.state.modal;
-    this.setModal({ ...this.state.modal, keepCustom: next, preview: null });
-    await this.refreshReorganizePreview(target, next);
-  };
-
-  confirmReorganize = async (): Promise<void> => {
-    const modal = this.state.modal;
-    if (modal === null || modal.type !== "reorganize") return;
-    this.closeModal();
-    try {
-      const result = await this.deps.reorganize(this.rootValue, modal.target, {
-        keepCustom: modal.keepCustom,
-        customPresets: this.state.customPresets,
-      });
-      this.pushStatus(
-        "DONE",
-        "[reorganize]",
-        `${modal.target}: ${result.moved.length} moved, ${result.skipped.length} skipped, ${result.collisions.length} collisions, ${result.failed.length} failed`,
-      );
-      await this.refreshLocalState();
-    } catch (error) {
-      this.pushStatus("FAILED", "[reorganize]", firstErrorLine(error));
-    }
-  };
-
   removeWorkspaceEntry = async (target: string): Promise<void> => {
     try {
       await this.deps.removeWorkspaceFn(target);
@@ -355,6 +295,19 @@ export class Store extends StorePages {
     }
   };
 
+  openWorkspaceAdd = (): void => this.openModal({ type: "workspaceAdd" });
+
+  submitWorkspaceAdd = async (input: string): Promise<void> => {
+    const validated = validateRootInput(input);
+    if (!validated.ok) return this.setModalError(validated.error);
+    try {
+      const config = await registerWorkspace(validated.root);
+      await this.switchWorkspace(config.root);
+    } catch (error) {
+      this.setModalError(firstErrorLine(error));
+    }
+  };
+
   switchWorkspace = async (target: string): Promise<void> => {
     this.rootValue = target;
     this.set({ root: target });
@@ -362,6 +315,9 @@ export class Store extends StorePages {
     this.personalRepos = [];
     this.orgReposCache.clear();
     this.sessionAddedRepos.clear();
+    this.localConfig = null;
+    this.undoStack = [];
+    this.set({ canUndo: false });
     await this.init();
   };
 
@@ -388,10 +344,8 @@ export class Store extends StorePages {
       this.set({ modalError: res.error });
       return false;
     }
-    this.rootValue = res.nextRoot;
-    this.set({ root: res.nextRoot });
-    await this.refreshLocalState();
-    this.closeModal();
+    if (this.rootValue === res.nextRoot) this.closeModal();
+    else await this.switchWorkspace(res.nextRoot);
     return true;
   };
 

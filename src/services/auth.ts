@@ -1,9 +1,10 @@
 import { execFile } from "node:child_process";
-import { chmod, mkdir, readFile } from "node:fs/promises";
+import { mkdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
 import { createOAuthDeviceAuth } from "@octokit/auth-oauth-device";
 import { Octokit } from "@octokit/rest";
+import { migrateAppData } from "./appDataMigration.ts";
 import { appConfigDir, type EnvLike } from "./config.ts";
 import { warnQuiet } from "./diagnostics.ts";
 import { writeFileAtomic } from "./fsUtils.ts";
@@ -27,6 +28,7 @@ export class AuthError extends Error {
 }
 
 async function readCachedAuth(env: EnvLike): Promise<AuthInfo | null> {
+  await migrateAppData(env);
   try {
     const raw = await readFile(path.join(appConfigDir(env), AUTH_FILENAME), "utf8");
     const parsed: unknown = JSON.parse(raw);
@@ -41,6 +43,7 @@ async function readCachedAuth(env: EnvLike): Promise<AuthInfo | null> {
 }
 
 async function writeCachedAuth(env: EnvLike, token: string): Promise<void> {
+  await migrateAppData(env);
   const dir = appConfigDir(env);
   await mkdir(dir, { recursive: true });
   const file = path.join(dir, AUTH_FILENAME);
@@ -49,12 +52,7 @@ async function writeCachedAuth(env: EnvLike, token: string): Promise<void> {
     method: "device",
     createdAt: new Date().toISOString(),
   };
-  await writeFileAtomic(file, `${JSON.stringify(body, null, 2)}\n`);
-  try {
-    await chmod(file, 0o600);
-  } catch {
-    /* no-op on filesystems without POSIX modes (e.g. Windows) */
-  }
+  await writeFileAtomic(file, `${JSON.stringify(body, null, 2)}\n`, 0o600);
 }
 
 /** Scopes requested from the device flow; `workflow` lets created repos push GitHub Actions files. */
@@ -163,6 +161,7 @@ export async function cachedLoginExists(env: EnvLike): Promise<boolean> {
 }
 
 export async function logout(env: EnvLike): Promise<boolean> {
+  await migrateAppData(env);
   const { rm } = await import("node:fs/promises");
   const file = path.join(appConfigDir(env), AUTH_FILENAME);
   try {

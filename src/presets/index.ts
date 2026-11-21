@@ -118,6 +118,7 @@ export interface TargetSegmentsInput extends CategoryInput {
   owner: string;
   name: string;
   language?: string | null;
+  forkSourceOwner?: string;
 }
 
 export function targetSegments(
@@ -132,7 +133,9 @@ export function targetSegments(
   const prefix = internal ? [] : (["community"] as string[]);
   switch (preset) {
     case "categorized":
-      return [...prefix, owner, category, name];
+      return category === "forks" && repo.forkSourceOwner
+        ? [...prefix, owner, category, sanitizeSegment(repo.forkSourceOwner), name]
+        : [...prefix, owner, category, name];
     case "flat-by-owner":
       return [...prefix, owner, name];
     case "topic-focused":

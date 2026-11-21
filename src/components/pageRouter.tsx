@@ -140,6 +140,7 @@ export function renderModal(
     case "preview":
       return <StartPreviewModal store={store} />;
     case "root":
+    case "workspaceAdd":
       return <RootModal store={store} />;
     case "search":
       return <SearchModal store={store} />;

@@ -225,6 +225,8 @@ export async function createRepository(input: CreateRepositoryInput): Promise<Cr
         isFork: false,
         language: repo.language,
         updatedAt: repo.updatedAt,
+        description: repo.description,
+        topics: repo.topics,
       },
       destRel,
       true,

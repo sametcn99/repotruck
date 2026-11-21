@@ -54,7 +54,18 @@ export const PLATFORM_COMMANDS: readonly CommandSpec[] = [
     surface: { kind: "action", action: "runHealthDoctorFix" },
     requires: [],
     flags: [
-      f("--fix", "bool", "attempt fixes (auth login, journal resume)", "F · run doctor auto-fix"),
+      f(
+        "--fix",
+        "bool",
+        "apply inventory repairs, recover unfinished moves, and offer login",
+        "F · review Doctor fixes",
+      ),
+      f(
+        "--dir",
+        "path",
+        "check and fix inventory in this workspace",
+        "active workspace in the Health panel",
+      ),
       jsonFlag("checks as JSON copy"),
     ],
   },

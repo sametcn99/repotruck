@@ -17,7 +17,7 @@ export function register(program: Command, _ctx: CliContext): void {
     .argument("[app]", "app name (builtin, custom apps.json entry, or bare PATH executable)")
     .option(
       "-d, --dir <root>",
-      "workspace root directory (default: the nearest registered workspace found walking up, otherwise the configured default root, otherwise the OS default)",
+      "workspace root directory (default: the configured default workspace root, otherwise the OS default)",
     )
     .action(async (repo: string, app: string | undefined, options: { dir?: string }) => {
       await runAction(async () => {

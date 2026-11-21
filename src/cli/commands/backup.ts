@@ -11,7 +11,7 @@ export function register(program: Command, _ctx: CliContext): void {
     .argument("[snapshot]", 'snapshot filename to restore (required with "restore")')
     .option(
       "-d, --dir <root>",
-      "workspace root directory (default: the nearest registered workspace found walking up, otherwise the configured default root, otherwise the OS default)",
+      "workspace root directory (default: the configured default workspace root, otherwise the OS default)",
     )
     .option("--yes", "confirm the restore (required; it replaces the current inventory)")
     .option("--json", "Output the snapshot listing as JSON")

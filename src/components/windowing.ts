@@ -213,8 +213,6 @@ export interface PreviewTreeEntry {
   custom?: boolean;
 }
 
-export const PREVIEW_TREE_CAP = 40;
-
 interface PreviewNode {
   children: Map<string, PreviewNode>;
   marker: string | null;
@@ -260,14 +258,11 @@ export function buildPreviewTree(entries: readonly PreviewTreeEntry[]): string[]
     }
   };
   walk(root, "");
-  if (lines.length > PREVIEW_TREE_CAP) {
-    const hidden = lines.length - PREVIEW_TREE_CAP;
-    return [...lines.slice(0, PREVIEW_TREE_CAP), `... and ${hidden} more`];
-  }
   return lines;
 }
 
 export interface RepoRowBadges {
+  relativePath?: string | null;
   alias?: string | null;
   pinned?: boolean;
   missing?: boolean;
@@ -287,7 +282,7 @@ export function repoRowLabel(
   },
   badges?: RepoRowBadges,
 ): string {
-  let label = repo.name;
+  let label = badges?.relativePath ?? repo.name;
   if (badges?.pinned) label += " [\u2605]";
   if (badges?.alias) label += ` [@${badges.alias}]`;
   if (badges?.missing) {

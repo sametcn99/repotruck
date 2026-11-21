@@ -28,7 +28,7 @@ afterAll(() => {
   }
 });
 
-function makeWorkspace(prefix: string): string {
+function makeWorkspace(prefix: string, tracked = true): string {
   const root = mkdtempSync(path.join(tmpdir(), prefix));
   const cfg = mkdtempSync(path.join(tmpdir(), `${prefix}-cfg-`));
   tempDirs.push(root, cfg);
@@ -41,17 +41,19 @@ function makeWorkspace(prefix: string): string {
       root,
       preset: "categorized",
       lastSync: null,
-      repos: [
-        {
-          owner: "acme",
-          name: "api",
-          relativePath: "acme/source/api",
-          category: "source",
-          internal: true,
-          language: "TypeScript",
-          updatedAt: null,
-        },
-      ],
+      repos: tracked
+        ? [
+            {
+              owner: "acme",
+              name: "api",
+              relativePath: "acme/source/api",
+              category: "source",
+              internal: true,
+              language: "TypeScript",
+              updatedAt: null,
+            },
+          ]
+        : [],
       aliases: {},
     }),
     "utf8",
@@ -166,7 +168,8 @@ describe("Dashboard helpers and full keyboard surface", () => {
   );
 
   test("error phase supports r retry, o offline, and q quit", async () => {
-    const ws = makeWorkspace("rt-dash-err-");
+    const ws = makeWorkspace("rt-dash-err-", false);
+    rmSync(path.join(ws, "repotruck.json"));
     const store = makeStore(ws, true);
     let quitCount = 0;
     const setup = await testRender(

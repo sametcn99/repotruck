@@ -7,6 +7,11 @@ import { type AuthProbe, probeAuth } from "./auth.ts";
 import { firstErrorLine } from "./cloner.ts";
 import type { EnvLike } from "./config.ts";
 import {
+  applyInventoryFixes,
+  type InventoryFix,
+  inspectWorkspaceInventory,
+} from "./doctorInventory.ts";
+import {
   DEFAULT_BUNDLED_GRAMMAR_DIRS,
   defaultGrammarCacheDir,
   GRAMMAR_FILES,
@@ -18,8 +23,10 @@ import {
   reorganizeJournalPath,
   reorganizeWorkspace,
 } from "./reorganizer.ts";
+import { quoteForShell } from "./shellQuote.ts";
 import { formatDiskSize } from "./stats.ts";
 import { listTrashEntries, type TrashEntry } from "./trash.ts";
+import { loadWorkspace } from "./workspace.ts";
 import { readWorkspaceEntries, type WorkspaceEntry } from "./workspaceRegistry.ts";
 
 const execFileAsync = promisify(execFile);
@@ -33,6 +40,7 @@ export interface DoctorCheck {
   suggestion?: string;
   formatted: string;
   workspaceRoot?: string;
+  inventoryFix?: InventoryFix;
 }
 
 export interface DoctorResult {
@@ -42,6 +50,8 @@ export interface DoctorResult {
 
 export interface DoctorDeps {
   env?: EnvLike;
+  workspaceRoot?: string;
+  approvedInventoryFixes?: readonly InventoryFix[];
   whichImpl?: (cmd: string) => Promise<string | null>;
   execImpl?: (cmd: string, args: string[]) => Promise<{ stdout: string }>;
   probeAuthImpl?: (env: EnvLike) => Promise<AuthProbe>;
@@ -172,7 +182,7 @@ export async function runDoctor(deps: DoctorDeps = {}): Promise<DoctorResult> {
     );
   }
 
-  // 5. disk, reorganize & trash checks
+  // 5. disk, inventory, reorganize & trash checks
   if (entries !== null) {
     const paths = entries.map((e) => e.root);
     const missing: string[] = [];
@@ -204,14 +214,16 @@ export async function runDoctor(deps: DoctorDeps = {}): Promise<DoctorResult> {
       );
     }
 
-    // Check for unfinished or corrupt reorganize journals and accumulated trash across workspace roots
-    for (const p of paths) {
+    const inspected = deps.workspaceRoot === undefined ? paths : [deps.workspaceRoot];
+    for (const p of inspected) {
       const journalPath = reorganizeJournalPath(p);
       const hasJournal = deps.readJournalImpl !== undefined || existsFn(journalPath);
+      let needsJournalRecovery = false;
       if (hasJournal) {
         try {
           const journal = readJournalFn(p);
           if (journal !== null) {
+            needsJournalRecovery = true;
             checks.push(
               makeCheck(
                 "fail",
@@ -223,6 +235,7 @@ export async function runDoctor(deps: DoctorDeps = {}): Promise<DoctorResult> {
             );
           }
         } catch {
+          needsJournalRecovery = true;
           checks.push(
             makeCheck(
               "fail",
@@ -254,6 +267,25 @@ export async function runDoctor(deps: DoctorDeps = {}): Promise<DoctorResult> {
           }
         } catch {
           /* ignore unreadable trash directory */
+        }
+      }
+
+      if (gitPath !== null && existsFn(p) && !needsJournalRecovery) {
+        try {
+          const config =
+            entries.find((entry) => entry.root === p) ?? (await loadWorkspace(p, undefined, env));
+          for (const issue of await inspectWorkspaceInventory(config, env)) {
+            const fixCommand = quoteForShell("repotruck", ["doctor", "--fix", "--dir", p]);
+            const suggestion = issue.fix
+              ? `${issue.suggestion} with ${fixCommand}`
+              : issue.suggestion;
+            checks.push({
+              ...makeCheck("warn", "inventory", issue.detail, suggestion, p),
+              inventoryFix: issue.fix,
+            });
+          }
+        } catch (error) {
+          checks.push(makeCheck("warn", "inventory", firstErrorLine(error), undefined, p));
         }
       }
     }
@@ -369,7 +401,6 @@ export async function runDoctor(deps: DoctorDeps = {}): Promise<DoctorResult> {
 
 export async function fixDoctor(deps: DoctorDeps = {}): Promise<DoctorResult> {
   const result = await runDoctor(deps);
-  if (result.ok) return result;
 
   const existsFn = deps.existsSyncImpl ?? existsSync;
   const reorgFails = result.checks.filter(
@@ -394,6 +425,26 @@ export async function fixDoctor(deps: DoctorDeps = {}): Promise<DoctorResult> {
       deps.onFixProgress?.(`failed to resume reorganize in ${root}: ${firstErrorLine(err)}`);
     }
   }
+
+  const afterJournal = reorgFails.length > 0 ? await runDoctor(deps) : result;
+  const inventoryByRoot = new Map<string, InventoryFix[]>();
+  const approved = deps.approvedInventoryFixes?.map((fix) => JSON.stringify(fix));
+  for (const check of afterJournal.checks) {
+    if (check.inventoryFix === undefined || check.workspaceRoot === undefined) continue;
+    if (approved && !approved.includes(JSON.stringify(check.inventoryFix))) continue;
+    const fixes = inventoryByRoot.get(check.workspaceRoot) ?? [];
+    fixes.push(check.inventoryFix);
+    inventoryByRoot.set(check.workspaceRoot, fixes);
+  }
+  for (const [root, fixes] of inventoryByRoot) {
+    try {
+      const count = await applyInventoryFixes(root, fixes, deps.env ?? process.env);
+      deps.onFixProgress?.(`Fixed ${count} inventory record(s) in ${root}`);
+    } catch (error) {
+      deps.onFixProgress?.(`Could not fix inventory in ${root}: ${firstErrorLine(error)}`);
+    }
+  }
+  if (inventoryByRoot.size === 0) return afterJournal;
 
   return await runDoctor(deps);
 }

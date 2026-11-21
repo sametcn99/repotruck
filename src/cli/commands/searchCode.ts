@@ -28,7 +28,7 @@ export function register(program: Command, _ctx: CliContext): void {
     .argument("<pattern>", "Symbol name or substring to search for")
     .option(
       "-d, --dir <root>",
-      "workspace root directory (default: the nearest registered workspace found walking up, otherwise the configured default root, otherwise the OS default)",
+      "workspace root directory (default: the configured default workspace root, otherwise the OS default)",
     )
     .option(
       "--kind <kind>",

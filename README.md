@@ -17,7 +17,7 @@ Run `repotruck` with no arguments and the interactive terminal UI takes over:
 repotruck
 ```
 
-Three panes share the screen. A **Scope** sidebar holds your account (checked by default), your organizations, filters and the active preset — one checkbox each. The **repository list** supports live search, sorting and multi-select. A **status panel** streams everything as it happens. Every workspace operation is reachable from the keyboard:
+Three panes share the screen. **Scope** opens on the active workspace when it has tracked repositories. Enable your personal account or an organization to bring additional GitHub repositories into the list. The **repository list** shows tracked paths relative to the workspace root, and supports live search, sorting and multi-select. A **status panel** streams everything as it happens. Every workspace operation is reachable from the keyboard:
 
 | Key               | Action                                                                                                                                        |
 | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -32,6 +32,8 @@ Three panes share the screen. A **Scope** sidebar holds your account (checked by
 | `Tab` / `?` / `q` | Cycle pane focus / full shortcut list / quit (double-`q` while a sync runs)                                                                   |
 
 The mouse works too — the wheel scrolls, a click focuses and moves the cursor. Themes: `default`, `light` and `contrast`. The dashboard needs Node.js >= 26.4 or Bun >= 1.3.14; everything below runs headless on Node.js >= 20.
+
+The `categorized` preset groups forks by their source account, for example `sametcn99/forks/meta/react`. To move existing checkouts into these folders, preview `categorized` with `R` or `repotruck reorganize categorized --dry-run`.
 
 **Pages (TUI v2).** The Views menu groups workspace, inspection, automation, organization and system pages. Press `F10` to open it, `←` / `→` to change groups, `↑` / `↓` to choose a view, and `Enter` to open it. Press `?` or `F1` for shortcuts on the current page. You can also open pages with `v` followed by the page letter (`v s` Sync Center, `v t` Status Matrix, `v e` Code Search, `v r` Run Console, `v a` Settings, …), cycle with `[` / `]`, return with `Escape`, or pick them from the `:` palette. Right-clicking (or pressing `→` on) a repository opens a context menu with every repo-targeted action. Data pages copy their table as JSON with `J` (the `--json` counterpart), and the palette's Command Form edits any command's flags with the equivalent CLI line built live at the bottom.
 
@@ -150,7 +152,17 @@ Every dashboard action is also a plain subcommand — scriptable, CI-friendly, n
 
 ## Coding agents
 
-Every workspace root carries an `AGENTS.md` map — metadata, the repository inventory, agent rules — rewritten on every change, with a custom-instructions block preserved verbatim. On top of that, `repotruck mcp` exposes the whole surface as an MCP server (stdio, or Streamable HTTP with `--http`) through 25 agent tools:
+The central `repotruck.json` inventory records repository paths, GitHub descriptions and topics. Repotruck generates each workspace’s `AGENTS.md` from that inventory and preserves the custom-instructions block. The inventory and `config.json` settings live in the same per-user directory. Repotruck copies legacy data on first access.
+
+| Platform | User data directory |
+| --- | --- |
+| Linux | `~/.repotruck` |
+| Windows | `%LOCALAPPDATA%\repotruck` |
+| macOS | `~/Library/Application Support/repotruck` |
+
+Use `repotruck workspaces add <absolute-path>` to create or register a workspace and `repotruck root <absolute-path>` to choose the default. The TUI's `w` picker offers the same controls. When run without an explicit workspace path, Repotruck uses that default from any directory. Commands that accept `--dir` can select a different workspace for a single invocation.
+
+Use `repotruck doctor --dir <workspace>` to compare the inventory with the Git checkouts on disk. Add `--fix` or use **Health → F** in the TUI to apply the proposed inventory repairs. On top of that, `repotruck mcp` exposes the whole surface as an MCP server (stdio, or Streamable HTTP with `--http`) through 25 agent tools:
 
 ```bash
 claude mcp add repotruck -- repotruck mcp

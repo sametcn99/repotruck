@@ -7,7 +7,7 @@ import {
   TOAST_RESERVED_ROWS,
   visibleSlice,
 } from "../windowing.ts";
-import { repoKey, sidebarRowIndexForY } from "./filters.ts";
+import { buildSidebarRows, repoKey, sidebarRowIndexForY } from "./filters.ts";
 import type {
   FocusRegion,
   MouseCallbacks,
@@ -36,7 +36,7 @@ export interface MouseRouterHost {
   openOmnibar(mode?: OmnibarMode, initialQuery?: string): void;
   openSearchModal(): void;
   cycleHealthFilter(): void;
-  cyclePreset(): Promise<void>;
+  openReorganizeModal(): Promise<void>;
   openRootModal(): Promise<void>;
   setSidebarCursor(index: number): void;
   activateSidebarRow(): void;
@@ -164,7 +164,7 @@ export function routeMouseEvent(
 
   if (event.y < HEADER_ROWS) {
     if (event.x >= 35 && event.x <= 65) {
-      void host.cyclePreset();
+      void host.openReorganizeModal();
     } else if (event.x > 65 && event.x <= 95) {
       void host.openRootModal();
     }
@@ -189,10 +189,13 @@ export function routeMouseEvent(
     host.setFocus("sidebar");
     const localY = event.y - 1 - HEADER_ROWS - switcherRows;
     const availRows = Math.max(
-      1,
-      repoViewportRows(height, state.updateToast !== null || state.toast !== null) - switcherRows,
+      2,
+      repoViewportRows(height, state.updateToast !== null || state.toast !== null) +
+        1 -
+        switcherRows,
     );
-    const rowIndex = sidebarRowIndexForY(localY, state.orgs.length, state.sidebarCursor, availRows);
+    const presetIndex = buildSidebarRows(state).findIndex((row) => row.kind === "preset");
+    const rowIndex = sidebarRowIndexForY(localY, presetIndex, state.sidebarCursor, availRows);
     if (rowIndex !== null) {
       const prevCursor = state.sidebarCursor;
       host.setSidebarCursor(rowIndex);

@@ -13,7 +13,7 @@ import { type createProgressHub, isRepoProgressEvent } from "../services/progres
 import { quoteForShell } from "../services/shellQuote.ts";
 
 const ROOT_PARAM_DESCRIPTION =
-  "Workspace root directory. Default: the nearest registered workspace found walking up from the MCP server's working directory (records live in the central repotruck.json in the app config dir), otherwise the configured default root (settings.json), otherwise the OS default.";
+  "Workspace root directory. Defaults to the configured root in the user config.json, then the OS default. The central repotruck.json tracks registered workspaces.";
 
 export const rootParam = z.string().optional().describe(ROOT_PARAM_DESCRIPTION);
 

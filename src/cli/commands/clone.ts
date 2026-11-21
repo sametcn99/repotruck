@@ -27,7 +27,7 @@ export function register(program: Command, ctx: CliContext): void {
     .argument("<url>", "GitHub repository URL or owner/name")
     .option(
       "-d, --dir <root>",
-      "workspace root directory (default: the nearest registered workspace found walking up, otherwise the configured default root, otherwise the OS default)",
+      "workspace root directory (default: the configured default workspace root, otherwise the OS default)",
     )
     .option("-p, --preset <id>", `preset for the target layout: ${PRESET_IDS.join(", ")}`)
     .option("--depth <n>", "create a shallow clone with the given commit depth")

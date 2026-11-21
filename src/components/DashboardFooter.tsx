@@ -68,7 +68,10 @@ export function DashboardFooter({
             { label: "[/] Filter repos", activate: store.openSearchModal },
           ]
         : snapshot.focus === "sidebar"
-          ? [{ label: "↑↓ Move · Enter Toggle" }]
+          ? [
+              { label: "↑↓ Move · Enter Open/toggle" },
+              { label: "[R] Layout", activate: () => void store.openReorganizeModal() },
+            ]
           : [{ label: "↑↓ Scroll · 1/2/3 Tabs" }];
     items = [
       help,

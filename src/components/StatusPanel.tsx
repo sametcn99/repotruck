@@ -223,7 +223,7 @@ function renderHealthBody(
       {summaryLines.map((line) => (
         <PanelLine key={line.id} text={line.text} fg={line.fg} maxCols={maxCols} />
       ))}
-      {visibleChecks.map((chk, idx) => {
+      {visibleChecks.map((chk) => {
         const fg =
           chk.status === "ok"
             ? theme.success()
@@ -232,8 +232,8 @@ function renderHealthBody(
               : theme.error();
         return (
           <PanelLine
-            key={`${chk.check}:${chk.workspaceRoot ?? idx}`}
-            text={`[${chk.status}] ${chk.check}: ${chk.detail}`}
+            key={`${chk.check}:${chk.workspaceRoot ?? ""}:${chk.detail}`}
+            text={`[${chk.status}] ${chk.inventoryFix?.action ?? chk.check}: ${chk.detail}`}
             fg={fg}
             maxCols={maxCols}
           />

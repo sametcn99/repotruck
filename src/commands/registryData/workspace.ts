@@ -179,10 +179,10 @@ export const WORKSPACE_COMMANDS: readonly CommandSpec[] = [
     path: "workspaces",
     title: "Workspaces",
     group: "Workspace",
-    summary: "List or remove registered workspaces",
+    summary: "List, add, or remove registered workspaces",
     args: [
-      { name: "action", required: false, summary: "list (default) | remove" },
-      { name: "path", required: false, summary: "workspace path (remove)" },
+      { name: "action", required: false, summary: "list (default) | add | remove" },
+      { name: "path", required: false, summary: "workspace path (add or remove)" },
     ],
     surface: { kind: "modal", modal: "workspaces" },
     requires: [],

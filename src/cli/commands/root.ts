@@ -11,7 +11,7 @@ import { type CliContext, exitFail, runAction } from "../shared.ts";
 export function register(program: Command, _ctx: CliContext): void {
   program
     .command("root")
-    .description("Show, set, or reset the default workspace root used when no workspace is found.")
+    .description("Show, set, or reset the default workspace root.")
     .argument("[path]", "new default root (absolute path, ~ allowed)")
     .option("--reset", "clear the saved default root and return to the OS default")
     .action(async (pathArg: string | undefined, options: { reset?: boolean }) => {
