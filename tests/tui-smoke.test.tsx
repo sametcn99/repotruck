@@ -541,14 +541,15 @@ describe("dashboard render smoke", () => {
       setup.mockInput.pressEnter();
       await settle(setup);
       expect(store.getSnapshot().root).toBe(added);
-      expect((await listWorkspaces()).map((workspace) => workspace.path)).toContainEqual(added);
+      const registeredPath = (realpathSync.native ?? realpathSync)(added);
+      expect((await listWorkspaces()).map((workspace) => workspace.path)).toContain(registeredPath);
       expect((await readSettings()).defaultRoot).toBeUndefined();
 
       setup.mockInput.pressKey("w");
       await settle(setup);
       setup.mockInput.pressKey("d");
       await settle(setup);
-      expect((await readSettings()).defaultRoot).toBe(added);
+      expect((await readSettings()).defaultRoot).toBe(registeredPath);
     } finally {
       await setup.dispose();
     }

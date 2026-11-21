@@ -583,9 +583,9 @@ describe("settings & root validation edge cases", () => {
     });
 
     const eff = await effectiveRoot(env, "linux");
-    expect(eff).toEqual({ root: path.join("/home/tester", "repotruck"), fromOverride: false });
+    expect(eff).toEqual({ root: "/home/tester/repotruck", fromOverride: false });
     const sessionRoot = await resolveRootForSession(env, "linux");
-    expect(sessionRoot).toBe(path.join("/home/tester", "repotruck"));
+    expect(sessionRoot).toBe("/home/tester/repotruck");
   });
 });
 

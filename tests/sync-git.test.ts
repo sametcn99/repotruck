@@ -335,7 +335,8 @@ describe("syncRepos with real git", () => {
     });
     expect(result.failed).toEqual([]);
     expect(result.done).toEqual([{ key: "acme/api", relativePath, internal: true }]);
-    expect(readFileSync(path.join(dest, "incoming.txt"), "utf8")).toBe("incoming\n");
+    const incoming = readFileSync(path.join(dest, "incoming.txt"), "utf8");
+    expect(incoming.replace(/\r\n/g, "\n")).toBe("incoming\n");
     expect(existsSync(path.join(root, "community", "acme", "api"))).toBe(false);
     expect((await readWorkspaceConfig(root, configEnv))?.repos[0]).toMatchObject({
       relativePath,

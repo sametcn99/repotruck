@@ -70,8 +70,8 @@ describe("osDefaultRoot", () => {
   });
 
   test("macos and linux use HOME", () => {
-    expect(osDefaultRoot({ HOME: "/Users/x" }, "darwin")).toBe(path.join("/Users/x", "repotruck"));
-    expect(osDefaultRoot({ HOME: "/home/x" }, "linux")).toBe(path.join("/home/x", "repotruck"));
+    expect(osDefaultRoot({ HOME: "/Users/x" }, "darwin")).toBe("/Users/x/repotruck");
+    expect(osDefaultRoot({ HOME: "/home/x" }, "linux")).toBe("/home/x/repotruck");
   });
 
   test("windows ignores HOME and prefers USERPROFILE", () => {
@@ -81,7 +81,7 @@ describe("osDefaultRoot", () => {
   });
 
   test("falls back to the injected homedir when the env is empty", () => {
-    expect(osDefaultRoot({}, "linux", () => "/hd")).toBe(path.join("/hd", "repotruck"));
+    expect(osDefaultRoot({}, "linux", () => "/hd")).toBe("/hd/repotruck");
   });
 
   test("last resort is an explicit error when the homedir fallback throws (spec: no cwd fallback)", () => {
