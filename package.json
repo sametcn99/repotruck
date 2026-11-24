@@ -1,6 +1,6 @@
 {
   "name": "repotruck",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Clone and mirror your GitHub repositories into organized local directory layouts, with an AGENTS.md workspace map and a built-in MCP server for coding agents.",
   "keywords": [
     "github",

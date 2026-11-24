@@ -7,6 +7,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.5] - 2026-11-24
+
+### Added
+
+- An About page in the terminal dashboard and matching `repotruck about` / `repotruck --about` commands with a short description and the project GitHub link.
+- An explicit **Give star** action in About, available by mouse or `s` / Enter through the existing github.com session. Repotruck checks the account's current star status, hides the action when already starred, prevents duplicate submissions, and verifies the result after starring.
+
+### Fixed
+
+- Keep background dashboard work tied to its workspace/session so stale results from initialization, authentication, search, maintenance, and other page operations do not overwrite newer state.
+- Preserve input focus, typed values, selection, and navigation through terminal resizing; improve modal/global shortcut boundaries and Unicode-aware terminal text clipping.
+- Stage clones before final placement and preserve existing repositories when clone or placement fails.
+- Make move undo restore the original inventory path and matching aliases while preserving later alias edits; refuse undo against a repository whose recorded path has changed.
+- Reconcile interrupted reorganizations using recorded directory identity and durable completion state. Preserve journals for ambiguous destinations and collisions, and recover completed cross-device moves without treating unrelated directories as moved repositories.
+- Strengthen stale-lock recovery so a previous observation cannot remove a newer lock owner; serialize backup naming/retention and improve workspace inventory recovery after interrupted writes.
+- Write critical atomic files through exclusive temporary files, sync and close them before replacement, and clean up failed writes.
+- Resolve Windows executable extensions before command quoting, preserve arguments and UTF-8 output, cap captured output, and wait for child process/stdio closure.
+- Close MCP-owned process trees and incomplete HTTP connections during bounded shutdown, including waiting for Windows `taskkill` and child reaping.
+- Honor GitHub rate-limit headers and configured retry settings, recognize transient network failures wrapped by Octokit, and cancel delayed star retries when their workspace/session is no longer current.
+- Make clean-install package smoke paths independent of the invocation directory and canonicalize temporary workspace paths on macOS and Windows.
+- Preserve public `.well-known` discovery assets with the updated Pages action and validate Open Graph assets by source/output hashes instead of file timestamps.
+- Replace timing-based acceptance assertions with editor readiness, completed operations, and persisted-state checks; drain pending fixture writers before cleanup and observe completed cache persistence.
+
+### Security
+
+- Reject invalid inventory-relative paths, traversal, symlinked path components, and paths escaping the workspace in repository filesystem operations.
+- Run regular-expression search in an isolated worker with an execution deadline so pathological patterns do not block the dashboard or MCP event loop.
+- Reject empty MCP HTTP tokens, require authentication for non-local binds, and limit request bodies to 1 MiB.
+- Keep project-star requests restricted to github.com sessions and return sanitized authentication, permission, network, and rate-limit errors.
+
+### Validation and maintenance
+
+- Expand real keyboard/mouse acceptance coverage for dashboard pages, dialogs, worktrees, search, settings, profiles, trash/restore, and About.
+- Add real PTY suspend/resume coverage with two child exit/resume cycles, move undo, and persisted path/alias checks; retain isolated real-editor smoke coverage for VS Code and Cursor.
+- Enforce a separate 80% TUI function-coverage gate alongside the aggregate 85% line / 75% function gates, without excluding source files to improve results.
+- Validate Linux, macOS, Windows, minimum headless Node versions, minimum TUI runtimes, clean npm installs, six offline grammars, and MCP tools in hosted CI.
+- Isolate test configuration, add reproducible randomized repeats and selected mutation checks, and update five pinned GitHub Actions across CI, Pages, and release workflows.
+
 ## [1.0.4] - 2026-11-21
 
 ### Fixed
