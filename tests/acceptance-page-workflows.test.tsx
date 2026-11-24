@@ -14,8 +14,25 @@ import { settleRender, testRender } from "./helpers/render.tsx";
 
 const fixtures: ReturnType<typeof workspaceFixture>[] = [];
 const stores: Store[] = [];
+const pendingActions = new WeakMap<Store, Set<Promise<void>>>();
+const actionFailures = new WeakMap<Store, unknown[]>();
 const priorConfigDir = process.env.REPOTRUCK_CONFIG_DIR;
 activateTheme("default");
+
+const trackedAsyncActions = [
+  "generateChangelog",
+  "scanAndAdopt",
+  "scanWorkspaceWorktrees",
+  "openWorktreeModal",
+  "refreshDetailLocal",
+  "refreshInspector",
+  "refreshHealthTab",
+  "runCodeSearchPage",
+  "rebuildCodeIndex",
+  "runConsoleStart",
+  "refreshStatusMatrix",
+  "startSyncCenter",
+] as const;
 
 function fixture() {
   const value = workspaceFixture();
@@ -26,8 +43,44 @@ function fixture() {
 
 function makeStore(f: ReturnType<typeof fixture>, extra: Parameters<typeof storeDeps>[0] = {}) {
   const value = new Store(f.root, storeDeps(extra));
+  pendingActions.set(value, new Set());
+  actionFailures.set(value, []);
+  const methods = value as unknown as Record<string, unknown>;
+  for (const name of trackedAsyncActions) {
+    const original = methods[name];
+    if (typeof original !== "function") throw new Error(`missing async Store action ${name}`);
+    methods[name] = (...args: unknown[]) => {
+      const result = (original as (...values: unknown[]) => unknown).apply(value, args);
+      if (result === null || typeof result !== "object" || !("then" in result)) return result;
+      let tracked: Promise<void>;
+      tracked = Promise.resolve(result).then(
+        () => undefined,
+        (error: unknown) => {
+          actionFailures.get(value)?.push(error);
+        },
+      );
+      const pending = pendingActions.get(value)!;
+      pending.add(tracked);
+      void tracked.then(() => pending.delete(tracked));
+      return result;
+    };
+  }
   stores.push(value);
   return value;
+}
+
+async function drainPendingActions(store: Store) {
+  const pending = pendingActions.get(store);
+  if (pending === undefined) return;
+  while (pending.size > 0) {
+    const batch = [...pending];
+    const timeout = waitUntil(() => pending.size === 0, 2000).catch(() => {
+      throw new Error("timed out waiting for pending Store actions before fixture cleanup");
+    });
+    await Promise.race([Promise.all(batch), timeout]);
+  }
+  const failures = actionFailures.get(store)?.splice(0) ?? [];
+  if (failures.length > 0) throw new AggregateError(failures, "a dispatched Store action rejected");
 }
 
 async function mount(store: Store, width = 130, height = 44, onQuit = () => {}) {
@@ -72,11 +125,24 @@ function samePhysicalDirectory(left: string, right: string): boolean {
   return canonical(left) === canonical(right);
 }
 
-afterEach(() => {
+afterEach(async () => {
+  const drainFailures: unknown[] = [];
+  for (const store of stores) {
+    try {
+      await drainPendingActions(store);
+    } catch (error) {
+      drainFailures.push(error);
+    }
+  }
   for (const store of stores.splice(0)) store.dispose();
   if (priorConfigDir === undefined) delete process.env.REPOTRUCK_CONFIG_DIR;
   else process.env.REPOTRUCK_CONFIG_DIR = priorConfigDir;
-  for (const f of fixtures.splice(0)) f.cleanup();
+  const pendingFixtures = fixtures.splice(0);
+  if (drainFailures.length === 0) {
+    for (const f of pendingFixtures) f.cleanup();
+  }
+  if (drainFailures.length > 0)
+    throw new AggregateError(drainFailures, "pending Store actions failed before fixture cleanup");
 });
 
 describe("acceptance: page workflows through actual terminal events", () => {
@@ -176,11 +242,13 @@ describe("acceptance: page workflows through actual terminal events", () => {
       store.setView("changelog");
       await settle(setup);
       await clickText(setup, "[7 · 7d]");
+      await drainPendingActions(store);
       expect(store.getSnapshot().changelogPage?.markdown).toContain(
         "record local acceptance change",
       );
       await clickText(setup, "[g · 14d]");
       await clickText(setup, "[m · 30d]");
+      await drainPendingActions(store);
       await clickText(setup, "[c · copy]");
       setup.mockInput.pressKey("m");
       await settle(setup);
@@ -219,6 +287,7 @@ describe("acceptance: page workflows through actual terminal events", () => {
       store.setView("scan");
       await settle(setup);
       await clickText(setup, "[s] scan");
+      await drainPendingActions(store);
       expect(
         store.getSnapshot().scanPage?.unregistered.some((line) => line.includes("extra/notes")),
       ).toBe(true);
@@ -238,6 +307,7 @@ describe("acceptance: page workflows through actual terminal events", () => {
 
       await clickText(setup, "[a] adopt (--move)");
       await clickText(setup, "[Enter] Confirm");
+      await drainPendingActions(store);
       await waitUntil(() => store.getSnapshot().repos.some((repo) => repo.owner === "extra"));
       const adopted = store.getSnapshot().repos.find((repo) => repo.owner === "extra");
       expect(adopted?.name).toBe("notes");
@@ -275,6 +345,7 @@ describe("acceptance: page workflows through actual terminal events", () => {
       store.setView("worktree");
       await settle(setup);
       await clickText(setup, "[s] scan workspace worktrees");
+      await drainPendingActions(store);
       const linkedRow = store
         .getSnapshot()
         .worktreePage?.rows.find(
@@ -338,6 +409,7 @@ describe("acceptance: page workflows through actual terminal events", () => {
       await setup.mockInput.typeText("Needle");
       setup.mockInput.pressEnter();
       await settle(setup);
+      await drainPendingActions(store);
       expect(store.getSnapshot().codeSearchPage?.matches[0]?.name).toBe("Needle");
       await clickText(setup, "acme/api needle.ts:1 class Needle");
       expect(store.getSnapshot().modal?.type).toBe("detail");
@@ -354,14 +426,17 @@ describe("acceptance: page workflows through actual terminal events", () => {
       setup.mockInput.pressKey("J");
       setup.mockInput.pressKey("s");
       await settle(setup);
+      await drainPendingActions(store);
       expect(store.getSnapshot().codeSearchPage?.matches).toEqual([]);
       expect(searches).toBe(2);
       expect(store.getSnapshot().statuses.some((entry) => entry.key === "[search-code]")).toBe(
         true,
       );
       await clickText(setup, "[r] rebuild index");
+      await drainPendingActions(store);
       await clickText(setup, "[s] search");
       await settle(setup);
+      await drainPendingActions(store);
       expect(searches).toBeGreaterThanOrEqual(3);
       await clickText(setup, "Needle");
       setup.mockInput.pressKey("END");
@@ -369,6 +444,7 @@ describe("acceptance: page workflows through actual terminal events", () => {
       await setup.mockInput.typeText("[");
       setup.mockInput.pressEnter();
       await settle(setup);
+      await drainPendingActions(store);
       expect(store.getSnapshot().codeSearchPage).toMatchObject({ mode: "re", pattern: "[" });
       expect(
         store
@@ -414,6 +490,7 @@ describe("acceptance: page workflows through actual terminal events", () => {
       setup.mockInput.pressEscape();
       await settle(setup);
       await clickText(setup, "[e] Run");
+      await drainPendingActions(store);
       await settle(setup);
       expect(received).toBeDefined();
       expect(store.getSnapshot().runConsole?.results[0]).toMatchObject({
@@ -461,9 +538,11 @@ describe("acceptance: page workflows through actual terminal events", () => {
       await clickText(setup, "[ ] dirty");
       expect(setup.captureCharFrame()).toContain("1 repos");
       await clickText(setup, "[u] remote: off");
+      await drainPendingActions(store);
       expect(store.getSnapshot().statusMatrix?.remote).toBe(true);
       expect(requests).toBeGreaterThanOrEqual(2);
       await clickText(setup, "[r] refresh");
+      await drainPendingActions(store);
       await clickText(setup, "[J] copy JSON");
       await clickText(setup, "acme/api");
       setup.mockInput.pressKey("o");
@@ -475,6 +554,7 @@ describe("acceptance: page workflows through actual terminal events", () => {
       await settle(setup);
       setup.mockInput.pressKey("u");
       await settle(setup);
+      await drainPendingActions(store);
       setup.mockInput.pressKey("J");
       await settle(setup);
       expect(store.getSnapshot().statusMatrix?.remote).toBe(false);
@@ -519,12 +599,75 @@ describe("acceptance: page workflows through actual terminal events", () => {
       await settle(setup);
       expect(store.getSnapshot().syncCenter?.exclude).toBe("fork/*");
       await clickText(setup, "[e] Start Sync");
-      await settle(setup);
+      await drainPendingActions(store);
+      await waitUntil(
+        () =>
+          store.getSnapshot().syncCenter?.running === false &&
+          store.getSnapshot().statuses.some((entry) => entry.phase === "FAILED"),
+      );
       expect(store.getSnapshot().statuses.some((entry) => entry.phase === "FAILED")).toBe(true);
       await clickText(setup, "[V] Preview cockpit selection");
       await settle(setup);
       expect(store.getSnapshot().view).toBe("cockpit");
     } finally {
+      await setup.dispose();
+    }
+  });
+
+  test("sync start stays pending until its real sync dependency completes", async () => {
+    const f = fixture();
+    await f.save();
+    let announceSyncStarted!: () => void;
+    const syncStarted = new Promise<void>((resolve) => {
+      announceSyncStarted = resolve;
+    });
+    let rejectSync!: (error: Error) => void;
+    const syncGate = new Promise<never>((_resolve, reject) => {
+      rejectSync = reject;
+    });
+    const store = makeStore(f, {
+      sync: async () => {
+        announceSyncStarted();
+        await syncGate;
+        return { done: [], failed: [], skipped: [] } as never;
+      },
+    });
+    await store.init();
+    const setup = await mount(store);
+    try {
+      store.updateSyncCenter({ scope: "all" });
+      store.setView("sync");
+      await settle(setup);
+      await clickText(setup, "[e] Start Sync");
+      await syncStarted;
+      expect(store.getSnapshot().syncCenter?.running).toBe(true);
+      expect(store.getSnapshot().statuses.some((entry) => entry.phase === "FAILED")).toBe(false);
+
+      let drainFinished = false;
+      const drain = drainPendingActions(store).then(() => {
+        drainFinished = true;
+      });
+      await Promise.resolve();
+      expect(drainFinished).toBe(false);
+
+      rejectSync(new Error("fixture sync failure"));
+      await drain;
+      await waitUntil(
+        () =>
+          store.getSnapshot().syncCenter?.running === false &&
+          store
+            .getSnapshot()
+            .statuses.some(
+              (entry) =>
+                entry.phase === "FAILED" && entry.message?.includes("fixture sync failure"),
+            ),
+      );
+      expect(
+        store.getSnapshot().statuses.some((entry) => entry.message === "fixture sync failure"),
+      ).toBe(true);
+    } finally {
+      rejectSync(new Error("release sync gate during cleanup"));
+      await drainPendingActions(store);
       await setup.dispose();
     }
   });
@@ -546,7 +689,13 @@ describe("acceptance: page workflows through actual terminal events", () => {
       await settle(setup);
       await act(async () => {
         await clickText(setup, "[a] git rebase --abort");
-        await new Promise((resolve) => setTimeout(resolve, 40));
+        await waitUntil(() =>
+          store
+            .getSnapshot()
+            .statuses.some(
+              (entry) => entry.key === "[resolve]" && entry.message?.includes("abort"),
+            ),
+        );
       });
       await settle(setup);
       expect(setup.captureCharFrame()).toContain("Resolution output");
@@ -557,7 +706,13 @@ describe("acceptance: page workflows through actual terminal events", () => {
       ).toBe(true);
       await act(async () => {
         await clickText(setup, "[g] git rebase --continue");
-        await new Promise((resolve) => setTimeout(resolve, 40));
+        await waitUntil(() =>
+          store
+            .getSnapshot()
+            .statuses.some(
+              (entry) => entry.key === "[resolve]" && entry.message?.includes("continue"),
+            ),
+        );
       });
       expect(
         store
