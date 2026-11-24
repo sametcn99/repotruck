@@ -1,5 +1,13 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  watch,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import type { Octokit } from "@octokit/rest";
@@ -682,9 +690,41 @@ describe("GitHubService & fileEtagCache edge cases", () => {
     await store.set("repos/a/two", { etag: '"e2"', body: { name: "two" }, savedAt: 1_100 });
     await store.set("repos/a/three", { etag: '"e3"', body: { name: "three" }, savedAt: 1_200 });
 
-    // Wait for scheduled async persist (500ms) so maxEntries eviction runs
-    await new Promise((r) => setTimeout(r, 600));
-    const persisted = JSON.parse(readFileSync(cacheFile, "utf8")) as Record<string, unknown>;
+    // Observe the atomic rename itself: set() schedules a debounced write, and
+    // the file may still contain the original corrupt bytes after that timer.
+    const persistedPromise = new Promise<Record<string, unknown>>((resolve, reject) => {
+      let settled = false;
+      let directoryWatcher: ReturnType<typeof watch>;
+      let deadline: ReturnType<typeof setTimeout>;
+      const finish = (complete: () => void) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(deadline);
+        directoryWatcher.close();
+        complete();
+      };
+
+      directoryWatcher = watch(path.dirname(cacheFile), (_event, filename) => {
+        if (filename && filename.toString() !== path.basename(cacheFile)) return;
+        try {
+          const persisted = JSON.parse(readFileSync(cacheFile, "utf8")) as Record<string, unknown>;
+          if (Object.keys(persisted).length === 2 && "repos/a/three" in persisted) {
+            finish(() => resolve(persisted));
+          }
+        } catch {
+          // A rename notification can race with visibility on some platforms;
+          // only resolve after the complete replacement file is readable.
+        }
+      });
+      directoryWatcher.on("error", (error) => {
+        finish(() => reject(error));
+      });
+      deadline = setTimeout(() => {
+        finish(() => reject(new Error("Timed out waiting for the atomic etag cache replacement")));
+      }, 5_000);
+      deadline.unref?.();
+    });
+    const persisted = await persistedPromise;
     expect(Object.keys(persisted).sort()).toEqual(["repos/a/three", "repos/a/two"]);
 
     // Advance clock past TTL -> entry expires
