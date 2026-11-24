@@ -14,6 +14,7 @@ import { isRegisteredWorkspace } from "../services/workspaceRegistry.ts";
 import { makeRequirePreset } from "./toolHelpers.ts";
 
 export interface ToolContext {
+  signal?: AbortSignal;
   env: EnvLike;
   customPresets: readonly CustomPreset[];
   requirePresetRef: (value: string) => PresetRef;
@@ -26,6 +27,7 @@ export async function createToolContext(options: {
   env?: EnvLike;
   cwd?: string;
   baseUrl?: string;
+  signal?: AbortSignal;
 }): Promise<ToolContext> {
   const env = options.env ?? process.env;
   const cwd = options.cwd ?? process.cwd();
@@ -65,5 +67,13 @@ export async function createToolContext(options: {
     };
   }
 
-  return { env, customPresets, requirePresetRef, resolveRoot, requireWorkspaceRoot, requireAuth };
+  return {
+    env,
+    customPresets,
+    requirePresetRef,
+    resolveRoot,
+    requireWorkspaceRoot,
+    requireAuth,
+    ...(options.signal ? { signal: options.signal } : {}),
+  };
 }

@@ -1,0 +1,376 @@
+[
+  {
+    "id": "E01",
+    "files": ["tests/hardening-regressions.test.ts", "scripts/test-mutations.ts"],
+    "layer": "Probe → kalıcı regresyon"
+  },
+  {
+    "id": "E02",
+    "files": ["tests/hardening-regressions.test.ts", "scripts/test-mutations.ts"],
+    "layer": "Probe → kalıcı regresyon"
+  },
+  {
+    "id": "E03",
+    "files": ["tests/hardening-regressions.test.ts"],
+    "layer": "Probe → kalıcı regresyon"
+  },
+  {
+    "id": "E04",
+    "files": ["tests/hardening-regressions.test.ts", "scripts/test-mutations.ts"],
+    "layer": "Probe → kalıcı regresyon"
+  },
+  {
+    "id": "E05",
+    "files": ["tests/hardening-regressions.test.ts", "scripts/test-mutations.ts"],
+    "layer": "Probe → kalıcı regresyon"
+  },
+  {
+    "id": "E06",
+    "files": ["tests/hardening-regressions.test.ts"],
+    "layer": "Probe → kalıcı regresyon"
+  },
+  {
+    "id": "E07",
+    "files": ["tests/hardening-regressions.test.ts", "scripts/test-mutations.ts"],
+    "layer": "Probe → kalıcı regresyon"
+  },
+  {
+    "id": "E08",
+    "files": ["tests/hardening-regressions.test.ts", "scripts/test-mutations.ts"],
+    "layer": "Probe → kalıcı regresyon"
+  },
+  {
+    "id": "E09",
+    "files": ["tests/hardening-regressions.test.ts", "scripts/test-mutations.ts"],
+    "layer": "Probe → kalıcı regresyon"
+  },
+  {
+    "id": "E10",
+    "files": ["tests/hardening-regressions.test.ts", "scripts/test-mutations.ts"],
+    "layer": "Probe → kalıcı regresyon"
+  },
+  {
+    "id": "E11",
+    "files": ["tests/hardening-regressions.test.ts", "scripts/test-mutations.ts"],
+    "layer": "Probe → kalıcı regresyon"
+  },
+  {
+    "id": "E12",
+    "files": ["tests/hardening-filesystem.test.ts"],
+    "layer": "Servis + gerçek geçici FS + hata enjeksiyonu"
+  },
+  {
+    "id": "E13",
+    "files": ["tests/hardening-filesystem.test.ts"],
+    "layer": "Servis + gerçek geçici FS + hata enjeksiyonu"
+  },
+  {
+    "id": "E14",
+    "files": ["tests/hardening-filesystem.test.ts"],
+    "layer": "Servis + gerçek geçici FS + hata enjeksiyonu"
+  },
+  {
+    "id": "E15",
+    "files": ["tests/hardening-filesystem.test.ts"],
+    "layer": "Servis + gerçek geçici FS + hata enjeksiyonu"
+  },
+  {
+    "id": "E16",
+    "files": ["tests/hardening-filesystem.test.ts"],
+    "layer": "Servis + gerçek geçici FS + hata enjeksiyonu"
+  },
+  {
+    "id": "E17",
+    "files": ["tests/hardening-filesystem.test.ts"],
+    "layer": "Servis + gerçek geçici FS + hata enjeksiyonu"
+  },
+  {
+    "id": "E18",
+    "files": ["tests/hardening-git.test.ts", "tests/hardening-filesystem.test.ts"],
+    "layer": "Servis + gerçek geçici FS + hata enjeksiyonu"
+  },
+  {
+    "id": "E19",
+    "files": ["tests/hardening-filesystem.test.ts"],
+    "layer": "Servis + gerçek geçici FS + hata enjeksiyonu"
+  },
+  {
+    "id": "E20",
+    "files": ["tests/hardening-filesystem.test.ts"],
+    "layer": "Servis + gerçek geçici FS + hata enjeksiyonu"
+  },
+  {
+    "id": "E21",
+    "files": ["tests/hardening-filesystem.test.ts"],
+    "layer": "Servis + gerçek geçici FS + hata enjeksiyonu"
+  },
+  {
+    "id": "E22",
+    "files": ["tests/hardening-storage.test.ts"],
+    "layer": "İki gerçek süreç + bariyer + hata noktası"
+  },
+  {
+    "id": "E23",
+    "files": ["tests/hardening-storage.test.ts"],
+    "layer": "İki gerçek süreç + bariyer + hata noktası"
+  },
+  {
+    "id": "E24",
+    "files": ["tests/hardening-storage.test.ts"],
+    "layer": "İki gerçek süreç + bariyer + hata noktası"
+  },
+  {
+    "id": "E25",
+    "files": ["tests/hardening-storage.test.ts"],
+    "layer": "İki gerçek süreç + bariyer + hata noktası"
+  },
+  {
+    "id": "E26",
+    "files": ["tests/hardening-storage.test.ts"],
+    "layer": "İki gerçek süreç + bariyer + hata noktası"
+  },
+  {
+    "id": "E27",
+    "files": ["tests/hardening-storage.test.ts"],
+    "layer": "İki gerçek süreç + bariyer + hata noktası"
+  },
+  {
+    "id": "E28",
+    "files": ["tests/hardening-storage.test.ts"],
+    "layer": "İki gerçek süreç + bariyer + hata noktası"
+  },
+  {
+    "id": "E29",
+    "files": ["tests/hardening-storage.test.ts"],
+    "layer": "İki gerçek süreç + bariyer + hata noktası"
+  },
+  {
+    "id": "E30",
+    "files": ["tests/hardening-storage.test.ts"],
+    "layer": "İki gerçek süreç + bariyer + hata noktası"
+  },
+  {
+    "id": "E31",
+    "files": ["tests/hardening-storage.test.ts"],
+    "layer": "İki gerçek süreç + bariyer + hata noktası"
+  },
+  {
+    "id": "E32",
+    "files": ["tests/hardening-git.test.ts"],
+    "layer": "Yerel bare remote ile servis/CLI entegrasyonu"
+  },
+  {
+    "id": "E33",
+    "files": ["tests/hardening-git.test.ts"],
+    "layer": "Yerel bare remote ile servis/CLI entegrasyonu"
+  },
+  {
+    "id": "E34",
+    "files": ["tests/hardening-git.test.ts"],
+    "layer": "Yerel bare remote ile servis/CLI entegrasyonu"
+  },
+  {
+    "id": "E35",
+    "files": ["tests/hardening-git.test.ts"],
+    "layer": "Yerel bare remote ile servis/CLI entegrasyonu"
+  },
+  {
+    "id": "E36",
+    "files": ["tests/hardening-git.test.ts"],
+    "layer": "Yerel bare remote ile servis/CLI entegrasyonu"
+  },
+  {
+    "id": "E37",
+    "files": ["tests/hardening-git.test.ts"],
+    "layer": "Yerel bare remote ile servis/CLI entegrasyonu"
+  },
+  {
+    "id": "E38",
+    "files": ["tests/hardening-git.test.ts"],
+    "layer": "Yerel bare remote ile servis/CLI entegrasyonu"
+  },
+  {
+    "id": "E39",
+    "files": ["tests/hardening-git.test.ts"],
+    "layer": "Yerel bare remote ile servis/CLI entegrasyonu"
+  },
+  {
+    "id": "E40",
+    "files": ["tests/hardening-git.test.ts"],
+    "layer": "Yerel bare remote ile servis/CLI entegrasyonu"
+  },
+  {
+    "id": "E41",
+    "files": ["tests/hardening-git.test.ts"],
+    "layer": "Yerel bare remote ile servis/CLI entegrasyonu"
+  },
+  {
+    "id": "E42",
+    "files": ["tests/hardening-protocols.test.ts"],
+    "layer": "Gerçek SDK + sahte transport; MCP süreç/soket entegrasyonu"
+  },
+  {
+    "id": "E43",
+    "files": ["tests/hardening-protocols.test.ts"],
+    "layer": "Gerçek SDK + sahte transport; MCP süreç/soket entegrasyonu"
+  },
+  {
+    "id": "E44",
+    "files": ["tests/hardening-protocols.test.ts"],
+    "layer": "Gerçek SDK + sahte transport; MCP süreç/soket entegrasyonu"
+  },
+  {
+    "id": "E45",
+    "files": ["tests/hardening-protocols.test.ts"],
+    "layer": "Gerçek SDK + sahte transport; MCP süreç/soket entegrasyonu"
+  },
+  {
+    "id": "E46",
+    "files": ["tests/hardening-protocols.test.ts"],
+    "layer": "Gerçek SDK + sahte transport; MCP süreç/soket entegrasyonu"
+  },
+  {
+    "id": "E47",
+    "files": ["tests/hardening-protocols.test.ts"],
+    "layer": "Gerçek SDK + sahte transport; MCP süreç/soket entegrasyonu"
+  },
+  {
+    "id": "E48",
+    "files": ["tests/hardening-protocols.test.ts"],
+    "layer": "Gerçek SDK + sahte transport; MCP süreç/soket entegrasyonu"
+  },
+  {
+    "id": "E49",
+    "files": ["tests/hardening-protocols.test.ts", "tests/hardening-tui.test.tsx"],
+    "layer": "Gerçek SDK + sahte transport; MCP süreç/soket entegrasyonu"
+  },
+  {
+    "id": "E50",
+    "files": ["tests/hardening-search.test.ts", "scripts/test-mutations.ts"],
+    "layer": "Parser/servis + gerçek fixture + izole süreç"
+  },
+  {
+    "id": "E51",
+    "files": ["tests/hardening-search.test.ts"],
+    "layer": "Parser/servis + gerçek fixture + izole süreç"
+  },
+  {
+    "id": "E52",
+    "files": ["tests/hardening-search.test.ts"],
+    "layer": "Parser/servis + gerçek fixture + izole süreç"
+  },
+  {
+    "id": "E53",
+    "files": ["tests/hardening-search.test.ts"],
+    "layer": "Parser/servis + gerçek fixture + izole süreç"
+  },
+  {
+    "id": "E54",
+    "files": ["tests/hardening-search.test.ts"],
+    "layer": "Parser/servis + gerçek fixture + izole süreç"
+  },
+  {
+    "id": "E55",
+    "files": ["tests/hardening-search.test.ts"],
+    "layer": "Parser/servis + gerçek fixture + izole süreç"
+  },
+  {
+    "id": "E56",
+    "files": ["tests/hardening-search.test.ts"],
+    "layer": "Parser/servis + gerçek fixture + izole süreç"
+  },
+  {
+    "id": "E57",
+    "files": ["tests/hardening-search.test.ts", "tests/hardening-processes.test.ts"],
+    "layer": "Parser/servis + gerçek fixture + izole süreç"
+  },
+  {
+    "id": "E58",
+    "files": ["tests/hardening-tui.test.tsx"],
+    "layer": "Tam Dashboard renderer + gerçek PTY + state oracle"
+  },
+  {
+    "id": "E59",
+    "files": ["tests/hardening-tui.test.tsx"],
+    "layer": "Tam Dashboard renderer + gerçek PTY + state oracle"
+  },
+  {
+    "id": "E60",
+    "files": ["tests/hardening-tui.test.tsx", "tests/artifact-acceptance.test.ts"],
+    "layer": "Tam Dashboard renderer + gerçek PTY + state oracle"
+  },
+  {
+    "id": "E61",
+    "files": ["tests/hardening-tui.test.tsx", "tests/artifact-acceptance.test.ts"],
+    "layer": "Tam Dashboard renderer + gerçek PTY + state oracle"
+  },
+  {
+    "id": "E62",
+    "files": ["tests/hardening-processes.test.ts"],
+    "layer": "Tam Dashboard renderer + gerçek PTY + state oracle"
+  },
+  {
+    "id": "E63",
+    "files": ["tests/hardening-tui.test.tsx"],
+    "layer": "Tam Dashboard renderer + gerçek PTY + state oracle"
+  },
+  {
+    "id": "E64",
+    "files": ["tests/hardening-tui.test.tsx"],
+    "layer": "Tam Dashboard renderer + gerçek PTY + state oracle"
+  },
+  {
+    "id": "E65",
+    "files": ["tests/hardening-delivery.test.ts", "scripts/pack-smoke.ts"],
+    "layer": "CI contract + temiz paket + gerçek browser + test harness"
+  },
+  {
+    "id": "E66",
+    "files": ["tests/hardening-processes.test.ts"],
+    "layer": "CI contract + temiz paket + gerçek browser + test harness"
+  },
+  {
+    "id": "E67",
+    "files": ["scripts/pack-smoke.ts", "scripts/smoke-installed.mjs"],
+    "layer": "CI contract + temiz paket + gerçek browser + test harness"
+  },
+  {
+    "id": "E68",
+    "files": ["website/tests/hardening-command-builder.test.tsx"],
+    "layer": "CI contract + temiz paket + gerçek browser + test harness"
+  },
+  {
+    "id": "E69",
+    "files": ["website/e2e/interaction.spec.ts"],
+    "layer": "CI contract + temiz paket + gerçek browser + test harness"
+  },
+  {
+    "id": "E70",
+    "files": ["tests/hardening-delivery.test.ts"],
+    "layer": "CI contract + temiz paket + gerçek browser + test harness"
+  },
+  {
+    "id": "E71",
+    "files": ["tests/hardening-delivery.test.ts"],
+    "layer": "CI contract + temiz paket + gerçek browser + test harness"
+  },
+  {
+    "id": "E72",
+    "files": ["scripts/test-mutations.ts"],
+    "layer": "CI contract + temiz paket + gerçek browser + test harness"
+  },
+  {
+    "id": "E73",
+    "files": [
+      "tests/hardening-regressions.test.ts",
+      "tests/hardening-tui.test.tsx",
+      "scripts/test-mutations.ts"
+    ],
+    "layer": "CLI + TUI + temiz paket"
+  },
+  {
+    "id": "E74",
+    "files": ["tests/project-star.test.tsx"],
+    "layer": "Gerçek Octokit transport + TUI fare/klavye + async sahiplik"
+  }
+]

@@ -38,3 +38,7 @@ vendor/*
 !vendor/grammars/
 website/.lighthouseci
 skills/system/run-workflow/SKILL.md
+
+# retained validation reports
+test-results/
+website/test-results/

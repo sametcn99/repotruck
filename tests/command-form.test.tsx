@@ -2,13 +2,13 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { testRender } from "@opentui/react/test-utils";
 import { REGISTRY_BY_ID } from "../src/commands/registry.ts";
 import { Dashboard } from "../src/components/Dashboard.tsx";
 import { executeRegistryCommand } from "../src/components/store/modalWorkflows.ts";
 import { Store, type StoreDeps, type StoreSnapshot } from "../src/components/store.ts";
 import { activateTheme } from "../src/components/theme.ts";
 import { buildCliArguments, defaultFieldValues } from "../src/components/ui/FieldGroup.tsx";
+import { settleRender, testRender } from "./helpers/render.tsx";
 
 const tempDirs: string[] = [];
 let savedConfigDir: string | undefined;
@@ -87,8 +87,7 @@ function makeStore(wsRoot: string): Store {
 }
 
 async function settle(setup: Awaited<ReturnType<typeof testRender>>): Promise<void> {
-  await new Promise((resolve) => setTimeout(resolve, 60));
-  await setup.flush({ maxPasses: 4 });
+  await settleRender(setup);
 }
 
 function norm(frame: string): string {

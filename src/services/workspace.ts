@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import {
@@ -18,19 +19,26 @@ import {
   firstErrorLine,
 } from "./cloner.ts";
 import type { EnvLike, RepoInventoryEntry, RepotruckConfig } from "./config.ts";
-import { defaultConfig, writeAgentsMd } from "./config.ts";
+import { defaultConfig } from "./config.ts";
 import { lookupRepoDetails, type RepoLookup } from "./forkSource.ts";
 import { repoKeyEquals } from "./fsUtils.ts";
 import type { RepoInfo } from "./github.ts";
 import type { ProgressHub } from "./progressHub.ts";
 import { withWorkspaceLock } from "./workspaceLock.ts";
+import { workspacePath } from "./workspacePaths.ts";
+import {
+  agentsRecoveryPath,
+  prepareAgentsUpdate,
+  recoverWorkspaceMap,
+  regenerateWorkspaceMap,
+} from "./workspaceRecovery.ts";
 import {
   deleteLegacyWorkspaceConfig,
   readLegacyWorkspaceConfig,
   readWorkspaceConfig,
   writeWorkspaceConfig,
 } from "./workspaceRegistry.ts";
-import { findLinkedWorktrees, inspectGitDotEntry } from "./worktree.ts";
+import { inspectGitDotEntry } from "./worktree.ts";
 
 export interface InventoryRepoInput extends CategoryInput {
   owner: string;
@@ -152,6 +160,10 @@ export async function updateWorkspace<T = void>(
     current: RepotruckConfig,
   ) => { config: RepotruckConfig; result: T } | Promise<{ config: RepotruckConfig; result: T }>,
   env?: EnvLike,
+  deps: {
+    writeConfig?: typeof writeWorkspaceConfig;
+    writeMap?: typeof regenerateWorkspaceMap;
+  } = {},
 ): Promise<{ config: RepotruckConfig; result: T }> {
   return await withWorkspaceLock(
     async () => {
@@ -160,25 +172,15 @@ export async function updateWorkspace<T = void>(
       const { config: nextConfig, result } = await mutate(baseConfig);
 
       const resolved: RepotruckConfig = { ...nextConfig, root };
-      await writeWorkspaceConfig(root, resolved, env);
-      let worktrees: Awaited<ReturnType<typeof findLinkedWorktrees>> = [];
+      await prepareAgentsUpdate(root);
+      await (deps.writeConfig ?? writeWorkspaceConfig)(root, resolved, env);
       try {
-        worktrees = await findLinkedWorktrees(root, 4);
-      } catch {
-        worktrees = [];
+        await (deps.writeMap ?? regenerateWorkspaceMap)(root, resolved);
+      } catch (error) {
+        throw new Error(
+          `inventory saved but AGENTS.md regeneration failed (${firstErrorLine(error)}); retry to recover the workspace map`,
+        );
       }
-      await writeAgentsMd(
-        root,
-        resolved.repos,
-        resolved.preset,
-        resolved.lastSync,
-        resolved.aliases,
-        undefined,
-        {
-          pinned: resolved.pinned,
-          worktrees,
-        },
-      );
       return { config: resolved, result };
     },
     { env },
@@ -210,6 +212,16 @@ export async function loadWorkspace(
     );
   }
   if (central !== null) {
+    if (existsSync(agentsRecoveryPath(root))) {
+      return await withWorkspaceLock(
+        async () => {
+          const fresh = (await readWorkspaceConfig(root, env)) ?? central;
+          await recoverWorkspaceMap(root, fresh);
+          return presetOverride === undefined ? fresh : { ...fresh, preset: presetOverride };
+        },
+        { env },
+      );
+    }
     return presetOverride === undefined ? central : { ...central, preset: presetOverride };
   }
   return defaultConfig(root, presetOverride ?? "categorized");
@@ -290,6 +302,19 @@ export async function syncRepos(options: SyncReposOptions): Promise<SyncReposRes
             : undefined;
         const { owner, name } = repo;
         const key = `${owner}/${name}`;
+        if (
+          config.preset === "categorized" &&
+          repo.isFork &&
+          !repo.isArchived &&
+          !repo.forkSourceOwner &&
+          !config.repos.some((entry) => repoKeyEquals(entry, owner, name))
+        ) {
+          skipped.push({
+            key,
+            message: "fork source owner unavailable; retry when repository details are available",
+          });
+          return;
+        }
         let placement: ReturnType<typeof resolveRepoPlacement>;
         try {
           placement = resolveRepoPlacement(config, repo, userLogin, orgs, options.customPresets);
@@ -300,7 +325,13 @@ export async function syncRepos(options: SyncReposOptions): Promise<SyncReposRes
           return;
         }
         const { relativePath, internal, tracked } = placement;
-        const destDir = path.join(root, ...relativePath.split("/"));
+        let destDir: string;
+        try {
+          destDir = workspacePath(root, relativePath);
+        } catch (error) {
+          failed.push({ key, message: firstErrorLine(error) });
+          return;
+        }
         const cloneFn = options.cloneOrUpdateImpl ?? cloneOrUpdate;
         const final = await cloneFn(
           {

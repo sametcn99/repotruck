@@ -2,12 +2,12 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { testRender } from "@opentui/react/test-utils";
 import { buildHeaderLine, buildRunningSummary, Dashboard } from "../src/components/Dashboard.tsx";
 import { Store, type StoreDeps } from "../src/components/store.ts";
 import { activateTheme } from "../src/components/theme.ts";
 import type { RepoInfo } from "../src/services/github.ts";
 import type { UpdateCheckResult, UpdateState } from "../src/services/updater.ts";
+import { settleRender, testRender } from "./helpers/render.tsx";
 
 const tempDirs: string[] = [];
 let savedConfigDir: string | undefined;
@@ -110,8 +110,7 @@ function makeStore(wsRoot: string, failAuth = false, overrides: StoreDeps = {}):
 }
 
 async function settle(setup: Awaited<ReturnType<typeof testRender>>): Promise<void> {
-  await new Promise((r) => setTimeout(r, 50));
-  await setup.flush({ maxPasses: 4 });
+  await settleRender(setup);
 }
 
 describe("Dashboard helpers and full keyboard surface", () => {

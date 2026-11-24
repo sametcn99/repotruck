@@ -52,11 +52,42 @@ export function scrollSlice(
  * Clamps a single line of text so it fits cleanly inside a bordered box of
  * interior width `maxCols` without touching or overflowing the right border.
  */
+const graphemes = new Intl.Segmenter(undefined, { granularity: "grapheme" });
+function cellWidth(text: string): number {
+  if (/^[\p{Mark}\p{Control}\p{Format}]*$/u.test(text)) return 0;
+  if (/\p{Extended_Pictographic}|\p{Regional_Indicator}/u.test(text)) return 2;
+  const code = text.codePointAt(0) ?? 0;
+  return code >= 0x1100 &&
+    (code <= 0x115f ||
+      code === 0x2329 ||
+      code === 0x232a ||
+      (code >= 0x2e80 && code <= 0xa4cf) ||
+      (code >= 0xac00 && code <= 0xd7a3) ||
+      (code >= 0xf900 && code <= 0xfaff) ||
+      (code >= 0xfe10 && code <= 0xfe6f) ||
+      (code >= 0xff01 && code <= 0xff60) ||
+      (code >= 0xffe0 && code <= 0xffe6) ||
+      (code >= 0x20000 && code <= 0x3ffff))
+    ? 2
+    : 1;
+}
+export function terminalWidth(text: string): number {
+  return [...graphemes.segment(text)].reduce((width, item) => width + cellWidth(item.segment), 0);
+}
 export function clampBoxLine(raw: string, maxCols: number): string {
   const clean = raw.replace(/[\r\n\t]+/g, " ");
-  if (maxCols <= 1) return clean.slice(0, Math.max(0, maxCols));
-  if (clean.length <= maxCols) return clean;
-  return `${clean.slice(0, maxCols - 1)}\u2026`;
+  if (maxCols <= 0) return "";
+  if (terminalWidth(clean) <= maxCols) return clean;
+  const budget = maxCols <= 1 ? maxCols : maxCols - 1;
+  let result = "",
+    width = 0;
+  for (const { segment } of graphemes.segment(clean)) {
+    const next = cellWidth(segment);
+    if (width + next > budget) break;
+    result += segment;
+    width += next;
+  }
+  return result + (maxCols > 1 ? "…" : "");
 }
 
 // Side panels together must leave at least 20 columns for the repository list.

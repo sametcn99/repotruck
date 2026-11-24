@@ -103,9 +103,10 @@ export function repoCategory(repo: CategoryInput): RepoCategory {
 const ILLEGAL_SEGMENT_CHARS = /[<>:"/\\|?*\u0000-\u001f\u007f]/g;
 
 export function sanitizeSegment(segment: string): string {
-  const replaced = segment.replace(ILLEGAL_SEGMENT_CHARS, "-");
+  const replaced = segment.normalize("NFC").replace(ILLEGAL_SEGMENT_CHARS, "-");
   const stripped = replaced.replace(/[. ]+$/u, "");
   if (stripped.length === 0) return "other";
+  if (/^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i.test(stripped)) return `_${stripped}`;
   return stripped;
 }
 

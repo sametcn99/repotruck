@@ -330,6 +330,8 @@ export function makeScreenshotStore(root: string): Store {
   const deps: StoreDeps = {
     auth: async () => ({ token: "shot-token", method: "gh-cli" }),
     github: () => ({
+      isProjectStarred: async () => false,
+      starProject: async () => {},
       getUserLogin: async () => USER,
       getActiveOrgs: async () => [ORG_A, ORG_B],
       listUserRepos: async () => PERSONAL.map((repo, i) => repoInfo(repo, 40 - i)),

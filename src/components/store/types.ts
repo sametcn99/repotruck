@@ -109,6 +109,7 @@ export type ViewId =
   | "worktree"
   | "agents"
   | "settings"
+  | "about"
   | "log";
 
 export type OmnibarMode = "commands" | "symbols" | "github" | "runner";
@@ -273,6 +274,7 @@ export interface StoreSnapshot {
   statusScroll: number;
   rightPaneTab: RightPaneTab;
   inspector: InspectorState | null;
+  detailData: { key: string; local: import("./repoDetail.ts").DetailLocal | null } | null;
   healthData: HealthPanelData | null;
   statusMatrix: StatusMatrixData | null;
   codeSearchPage: CodeSearchPageState | null;
@@ -285,12 +287,14 @@ export interface StoreSnapshot {
   changelogPage: ChangelogPageState | null;
   scanPage: ScanPageState | null;
   worktreePage: WorktreePageState | null;
+  projectStar: ProjectStarState;
   omnibarLoading: boolean;
   omnibarSymbols: readonly CodeSearchMatch[];
   omnibarGithubRepos: readonly RepoInfo[];
   preset: PresetRef;
   workspacePreset: PresetRef;
   customPresets: readonly CustomPreset[];
+  profiles: Record<string, string[]>;
   focus: FocusRegion;
   navFocused: boolean;
   navCursor: number;
@@ -331,6 +335,13 @@ export interface GithubClient extends GitHubRepoReader {
   archiveRepo?(owner: string, name: string): Promise<RepoInfo>;
   searchRepos?(query: string, limit: number): Promise<RepoInfo[]>;
   getRepoRemoteHealth?(owner: string, name: string): Promise<RemoteRepoHealth>;
+  isProjectStarred?(signal?: AbortSignal): Promise<boolean>;
+  starProject?(signal?: AbortSignal): Promise<void>;
+}
+
+export interface ProjectStarState {
+  status: "idle" | "checking" | "available" | "submitting" | "starred" | "error" | "unavailable";
+  message: string | null;
 }
 
 export interface CodeSearchPageState {
@@ -417,6 +428,9 @@ export interface StatusMatrixData {
 }
 
 export interface StoreDeps {
+  restoreTrashFn?: typeof import("../../services/trash.ts").restoreTrashEntry;
+  restoreSnapshotFn?: typeof import("../../services/workspaceRegistry.ts").restoreWorkspaceSnapshot;
+  maintenanceFn?: typeof import("./lifecycleActions.ts").performWorkspaceMaintenanceAction;
   auth?: () => Promise<AuthInfo>;
   github?: (token: string, baseUrl?: string) => GithubClient;
   cloneSingle?: typeof cloneSingleRepository;

@@ -14,8 +14,8 @@
  */
 import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { testRender } from "@opentui/react/test-utils";
 import { Dashboard } from "../src/components/Dashboard.tsx";
+import { testRender } from "../tests/helpers/render.tsx";
 import {
   buildFixtureWorkspace,
   makeScreenshotStore,
@@ -161,6 +161,8 @@ async function waitFor(predicate: () => boolean, timeoutMs = 4000): Promise<void
 }
 
 async function main(): Promise<void> {
+  // Screenshots document the default color theme regardless of a CI NO_COLOR setting.
+  delete process.env.NO_COLOR;
   const root = buildFixtureWorkspace();
   await registerFixtureWorkspace(root);
   const store = makeScreenshotStore(root);
@@ -350,6 +352,9 @@ async function main(): Promise<void> {
 
   await store.refreshSettingsPage();
   await waitFor(() => snapshot().settingsPage !== null);
+  store.setView("about");
+  await shot("about");
+
   store.setView("settings");
   await shot("settings");
 

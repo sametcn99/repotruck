@@ -1,3 +1,6 @@
+import { existsSync } from "node:fs";
+import path from "node:path";
+
 /**
  * Builds a single shell command string from a command and its arguments so
  * that spawning through a shell (needed for `.cmd`/`.bat` shims on Windows
@@ -19,6 +22,20 @@ export interface QuoteForShellOptions {
 
 export function isCmdShim(command: string): boolean {
   return /\.(cmd|bat)$/i.test(command);
+}
+
+/** Resolve PATHEXT before quoting: extensionless npm shims need two cmd passes. */
+export function resolveWindowsCommand(command: string, cwd: string): string {
+  if (process.platform !== "win32" || path.extname(command)) return command;
+  const directories = /[\\/]/.test(command)
+    ? [cwd]
+    : [cwd, ...(process.env.PATH ?? "").split(path.delimiter)];
+  for (const directory of directories)
+    for (const extension of (process.env.PATHEXT ?? ".EXE;.CMD;.BAT").split(";")) {
+      const candidate = path.resolve(directory, `${command}${extension.toLowerCase()}`);
+      if (existsSync(candidate)) return candidate;
+    }
+  return command;
 }
 
 const POSIX_SAFE = /^[A-Za-z0-9_@%+=:,./-]+$/;

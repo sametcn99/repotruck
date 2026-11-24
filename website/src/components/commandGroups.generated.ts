@@ -752,6 +752,12 @@ export const COMMAND_GROUPS: readonly CommandGroup[] = [
     blurb: "Manage authentication, system diagnostics, repository stats, and shell completions.",
     commands: [
       {
+        name: "about",
+        summary: "Application description and GitHub project link",
+        usage: "repotruck about",
+        examples: ["repotruck --about", "repotruck about"],
+      },
+      {
         name: "auth",
         summary: "Manage GitHub authentication",
         usage:
@@ -878,6 +884,10 @@ export const COMMAND_GROUPS: readonly CommandGroup[] = [
 ];
 
 export const GLOBAL_FLAGS: readonly { flag: string; description: string }[] = [
+  {
+    flag: "--about",
+    description: "application description and GitHub link",
+  },
   {
     flag: "-d, --dir <root>",
     description: "workspace root override",

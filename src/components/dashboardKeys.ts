@@ -49,9 +49,10 @@ export function useDashboardKeys(
   // pending React re-render between the two keypresses.
   const viewPrefixRef = useRef(0);
 
+  const running = store.getSnapshot().running;
   useEffect(() => {
-    if (!store.getSnapshot().running) setQuitArmedAt(0);
-  }, [store]);
+    if (!running && quitArmedAt !== 0) setQuitArmedAt(0);
+  }, [running, quitArmedAt]);
 
   const handleQuit = useCallback(() => {
     const current = store.getSnapshot();

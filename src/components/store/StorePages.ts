@@ -16,7 +16,7 @@ import { StoreDataPages } from "./StoreDataPages.ts";
 export class StorePages extends StoreDataPages {
   // ---- Settings page (t10) ---------------------------------------------------
   startDeviceFlow = async (): Promise<void> => {
-    if (this.state.deviceFlow?.waiting === true) return;
+    if (this.state.deviceFlow?.waiting === true || this.state.deviceFlow?.loading === true) return;
     if ((process.env.REPOTRUCK_TOKEN ?? "").length > 0) {
       this.pushStatus(
         "FAILED",
@@ -25,6 +25,7 @@ export class StorePages extends StoreDataPages {
       );
       return;
     }
+    const operation = this.operations.start("device-flow");
     this.openModal({ type: "deviceFlow" });
     this.set({
       deviceFlow: {
@@ -36,7 +37,12 @@ export class StorePages extends StoreDataPages {
       },
     });
     try {
-      const handle = await this.deps.beginDeviceLoginFn({ env: process.env });
+      const handle = await this.deps.beginDeviceLoginFn({
+        env: process.env,
+        signal: operation.signal,
+      });
+      void handle.completion.catch(() => {});
+      if (!operation.current()) return;
       this.set({
         deviceFlow: {
           loading: false,
@@ -46,14 +52,14 @@ export class StorePages extends StoreDataPages {
           error: null,
         },
       });
-      // Background poll: abandoning the handle on cancel is safe — a late
-      // authorization only writes a valid token into the cache.
       await handle.completion;
+      if (!operation.current()) return;
       this.set({ deviceFlow: null });
       this.closeModal();
       this.pushStatus("DONE", "[auth]", "logged in via device flow");
       await this.init();
     } catch (error) {
+      if (!operation.current()) return;
       const message = error instanceof Error ? error.message : String(error);
       this.pushStatus("FAILED", "[auth]", message);
       this.set({
@@ -65,10 +71,13 @@ export class StorePages extends StoreDataPages {
           error: message,
         },
       });
+    } finally {
+      operation.finish();
     }
   };
 
   cancelDeviceFlow = (): void => {
+    this.operations.cancel("device-flow");
     if (this.state.modal?.type === "deviceFlow") this.closeModal();
     if (this.state.deviceFlow !== null) this.set({ deviceFlow: null });
   };
@@ -164,52 +173,63 @@ export class StorePages extends StoreDataPages {
 
   // ---- Profiles page (t11) ------------------------------------------------------
   profileSaveFromSelection = async (name: string): Promise<void> => {
+    const operation = this.workspaceOperation("profileSaveFromSelection");
+    const { pushStatus } = operation;
     try {
-      const refs =
-        this.state.selected.size > 0
-          ? [...this.state.selected]
-          : [...this.state.localHealth.entries()].filter(([, h]) => h.pinned).map(([key]) => key);
-      const result = await saveWorkspaceProfile(this.rootValue, name, refs);
-      this.pushStatus(result.ok ? "DONE" : "FAILED", "[profile]", result.message);
-      if (result.ok) await this.refreshLocalState();
-    } catch (error) {
-      this.pushStatus(
-        "FAILED",
-        "[profile]",
-        error instanceof Error ? error.message : String(error),
-      );
+      try {
+        const refs =
+          this.state.selected.size > 0
+            ? [...this.state.selected]
+            : [...this.state.localHealth.entries()].filter(([, h]) => h.pinned).map(([key]) => key);
+        const result = await saveWorkspaceProfile(operation.root, name, refs);
+        pushStatus(result.ok ? "DONE" : "FAILED", "[profile]", result.message);
+        if (result.ok) if (operation.current()) await this.refreshLocalState();
+      } catch (error) {
+        pushStatus("FAILED", "[profile]", error instanceof Error ? error.message : String(error));
+      }
+    } finally {
+      operation.finish();
     }
   };
 
   profileDelete = async (name: string): Promise<void> => {
+    const operation = this.workspaceOperation("profileDelete");
+    const { pushStatus } = operation;
     try {
-      const result = await deleteWorkspaceProfile(this.rootValue, name);
-      this.pushStatus(result.ok ? "DONE" : "FAILED", "[profile]", result.message);
-      if (result.ok) await this.refreshLocalState();
-    } catch (error) {
-      this.pushStatus(
-        "FAILED",
-        "[profile]",
-        error instanceof Error ? error.message : String(error),
-      );
+      try {
+        const result = await deleteWorkspaceProfile(operation.root, name);
+        pushStatus(result.ok ? "DONE" : "FAILED", "[profile]", result.message);
+        if (result.ok) if (operation.current()) await this.refreshLocalState();
+      } catch (error) {
+        pushStatus("FAILED", "[profile]", error instanceof Error ? error.message : String(error));
+      }
+    } finally {
+      operation.finish();
     }
   };
 
   // ---- Agents page (t12) ---------------------------------------------------------
   applyAgentsTemplate = async (name: string, clear = false): Promise<void> => {
+    const operation = this.workspaceOperation("applyAgentsTemplate");
+    const { pushStatus } = operation;
     try {
-      const input = await this.agentsMdInput();
-      const templateInput = { ...input, root: this.rootValue };
-      const result = clear
-        ? await clearAgentsMdTemplate(templateInput)
-        : await applyAgentsMdTemplate(templateInput, name);
-      this.pushStatus(result.ok ? "DONE" : "FAILED", "[instructions]", result.message);
-    } catch (error) {
-      this.pushStatus(
-        "FAILED",
-        "[instructions]",
-        error instanceof Error ? error.message : String(error),
-      );
+      try {
+        const input = await this.agentsMdInput(operation.root);
+        if (!operation.current()) return;
+        const templateInput = { ...input, root: operation.root };
+        const result = clear
+          ? await clearAgentsMdTemplate(templateInput)
+          : await applyAgentsMdTemplate(templateInput, name);
+        pushStatus(result.ok ? "DONE" : "FAILED", "[instructions]", result.message);
+      } catch (error) {
+        pushStatus(
+          "FAILED",
+          "[instructions]",
+          error instanceof Error ? error.message : String(error),
+        );
+      }
+    } finally {
+      operation.finish();
     }
   };
 
@@ -217,22 +237,28 @@ export class StorePages extends StoreDataPages {
     format: "agents" | "cursor" | "claude" | "copilot",
     outPath?: string,
   ): Promise<void> => {
+    const operation = this.workspaceOperation("exportInstructions");
+    const { pushStatus } = operation;
     try {
-      const input = await this.agentsMdInput();
-      const result = await exportInstructionsFile(this.rootValue, input, format, outPath);
-      this.pushStatus("DONE", "[instructions]", `exported ${format} -> ${result.targetPath}`);
-    } catch (error) {
-      this.pushStatus(
-        "FAILED",
-        "[instructions]",
-        error instanceof Error ? error.message : String(error),
-      );
+      try {
+        const input = await this.agentsMdInput(operation.root);
+        if (!operation.current()) return;
+        const result = await exportInstructionsFile(operation.root, input, format, outPath);
+        pushStatus("DONE", "[instructions]", `exported ${format} -> ${result.targetPath}`);
+      } catch (error) {
+        pushStatus(
+          "FAILED",
+          "[instructions]",
+          error instanceof Error ? error.message : String(error),
+        );
+      }
+    } finally {
+      operation.finish();
     }
   };
 
-  private async agentsMdInput(): Promise<GenerateAgentsMdInput> {
-    const config = this.localConfig ?? (await loadWorkspace(this.rootValue));
-    this.localConfig = config;
+  private async agentsMdInput(root = this.rootValue): Promise<GenerateAgentsMdInput> {
+    const config = this.localConfig ?? (await loadWorkspace(root));
     return {
       preset: config.preset,
       lastSync: config.lastSync,
@@ -272,12 +298,14 @@ export class StorePages extends StoreDataPages {
     const form = this.state.codeSearchPage ?? defaultCodeSearchForm();
     const pattern = form.pattern.trim();
     if (pattern.length === 0) return;
+    const operation = this.operations.start("code-search");
     this.set({ codeSearchPage: { ...form, loading: true } });
     try {
-      const config = this.localConfig ?? (await loadWorkspace(this.rootValue));
+      const config = this.localConfig ?? (await loadWorkspace(operation.root));
+      if (!operation.current()) return;
       this.localConfig = config;
       const result = await this.deps.searchCodeFn({
-        root: this.rootValue,
+        root: operation.root,
         config,
         pattern,
         ...(form.kind !== "" ? { kind: form.kind } : {}),
@@ -287,35 +315,46 @@ export class StorePages extends StoreDataPages {
         ...(form.mode === "text" ? { text: true } : {}),
         ...(form.mode === "re" ? { regex: true } : {}),
       });
+      if (!operation.current()) return;
       const guard = this.state.codeSearchPage;
       if (guard !== null)
         this.set({ codeSearchPage: { ...guard, loading: false, matches: result.matches } });
     } catch (error) {
+      if (!operation.current()) return;
       const message = error instanceof Error ? error.message : String(error);
       this.pushStatus("FAILED", "[search-code]", message);
       const guard = this.state.codeSearchPage;
       if (guard !== null) this.set({ codeSearchPage: { ...guard, loading: false, matches: [] } });
+    } finally {
+      operation.finish();
     }
   };
 
   rebuildCodeIndex = async (): Promise<void> => {
+    const operation = this.workspaceOperation("rebuildCodeIndex");
+    const { pushStatus } = operation;
     try {
-      const config = this.localConfig ?? (await loadWorkspace(this.rootValue));
-      this.localConfig = config;
-      await this.deps.searchCodeFn({
-        root: this.rootValue,
-        config,
-        pattern: "",
-        rebuild: true,
-        offline: true,
-      });
-      this.pushStatus("DONE", "[search-code]", "symbol index rebuilt");
-    } catch (error) {
-      this.pushStatus(
-        "FAILED",
-        "[search-code]",
-        error instanceof Error ? error.message : String(error),
-      );
+      try {
+        const config = this.localConfig ?? (await loadWorkspace(operation.root));
+        if (!operation.current()) return;
+        this.localConfig = config;
+        await this.deps.searchCodeFn({
+          root: operation.root,
+          config,
+          pattern: "",
+          rebuild: true,
+          offline: true,
+        });
+        pushStatus("DONE", "[search-code]", "symbol index rebuilt");
+      } catch (error) {
+        pushStatus(
+          "FAILED",
+          "[search-code]",
+          error instanceof Error ? error.message : String(error),
+        );
+      }
+    } finally {
+      operation.finish();
     }
   };
 
@@ -326,51 +365,60 @@ export class StorePages extends StoreDataPages {
   };
 
   runConsoleStart = async (): Promise<void> => {
-    const state = this.state.runConsole ?? defaultRunConsoleState();
-    const commandLine = state.command.trim();
-    if (commandLine.length === 0 || state.running) return;
-    const [command, ...args] = tokenizeCommandLine(commandLine);
-    if (command === undefined) return;
-    const refs =
-      state.scope === "selection"
-        ? [...this.state.selected]
-        : state.scope === "pinned"
-          ? [...this.state.localHealth.entries()].filter(([, h]) => h.pinned).map(([key]) => key)
-          : state.scope === "profile"
-            ? await profileRefs(this.rootValue, state.profile)
-            : [];
-    this.set({ runConsole: { ...state, running: true, results: [], skipped: [] } });
-    const taskId = "run-console";
-    this.beginTask(taskId, "run");
+    if (this.operations.has("runConsoleStart")) return;
+    const operation = this.workspaceOperation("runConsoleStart");
+    const { set: update, endTask } = operation;
     try {
-      const config = this.localConfig ?? (await loadWorkspace(this.rootValue));
-      this.localConfig = config;
-      const result = await this.deps.runInReposFn({
-        root: this.rootValue,
-        config,
-        refs,
-        command,
-        args,
-        concurrency: state.concurrency,
-      });
-      const guard = this.state.runConsole;
-      if (guard !== null) {
-        this.set({
-          runConsole: {
-            ...guard,
-            running: false,
-            results: result.results,
-            skipped: result.skipped,
-          },
+      const state = this.state.runConsole ?? defaultRunConsoleState();
+      const commandLine = state.command.trim();
+      if (commandLine.length === 0 || state.running) return;
+      const [command, ...args] = tokenizeCommandLine(commandLine);
+      if (command === undefined) return;
+      const refs =
+        state.scope === "selection"
+          ? [...this.state.selected]
+          : state.scope === "pinned"
+            ? [...this.state.localHealth.entries()].filter(([, h]) => h.pinned).map(([key]) => key)
+            : state.scope === "profile"
+              ? await profileRefs(operation.root, state.profile)
+              : [];
+      if (!operation.current()) return;
+      update({ runConsole: { ...state, running: true, results: [], skipped: [] } });
+      const taskId = "run-console";
+      this.beginTask(taskId, "run");
+      try {
+        const config = this.localConfig ?? (await loadWorkspace(operation.root));
+        if (!operation.current()) return;
+        this.localConfig = config;
+        const result = await this.deps.runInReposFn({
+          root: operation.root,
+          config,
+          refs,
+          command,
+          args,
+          concurrency: state.concurrency,
         });
+        const guard = this.state.runConsole;
+        if (guard !== null) {
+          update({
+            runConsole: {
+              ...guard,
+              running: false,
+              results: result.results,
+              skipped: result.skipped,
+            },
+          });
+        }
+        const failed = result.results.filter((r) => !r.ok).length;
+        endTask(taskId, `${result.results.length} repos · ${failed} failed`, failed > 0);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        endTask(taskId, message, true);
+        const guard = this.state.runConsole;
+        if (guard !== null) update({ runConsole: { ...guard, running: false } });
       }
-      const failed = result.results.filter((r) => !r.ok).length;
-      this.endTask(taskId, `${result.results.length} repos · ${failed} failed`, failed > 0);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      this.endTask(taskId, message, true);
-      const guard = this.state.runConsole;
-      if (guard !== null) this.set({ runConsole: { ...guard, running: false } });
+    } finally {
+      operation.finish();
     }
   };
 }

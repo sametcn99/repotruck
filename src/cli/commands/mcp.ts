@@ -37,13 +37,13 @@ export function register(program: Command, _ctx: CliContext): void {
           if (options.http === true) {
             if (!/^\d+$/.test(options.port.trim())) {
               exitFail(
-                `invalid --port value: ${options.port} (expected an integer between 1 and 65535)`,
+                `invalid --port value: ${options.port} (expected an integer between 0 and 65535)`,
               );
             }
             const port = Number.parseInt(options.port.trim(), 10);
-            if (port <= 0 || port > 65535) {
+            if (port < 0 || port > 65535) {
               exitFail(
-                `invalid --port value: ${options.port} (expected an integer between 1 and 65535)`,
+                `invalid --port value: ${options.port} (expected an integer between 0 and 65535)`,
               );
             }
             const { runRepotruckMcpHttpServer, validateHttpBindOptions } = await import(

@@ -4,70 +4,81 @@
 <style>text{font-family:ui-monospace,"SF Mono","Cascadia Code",Consolas,"Liberation Mono",Menlo,monospace;font-size:14px;white-space:pre}</style>
 <text x="12.0" y="26" fill="rgb(48,54,61)" textLength="1344.0" lengthAdjust="spacingAndGlyphs">┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐</text>
 <text x="12.0" y="43" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="43" fill="rgb(88,166,255)" textLength="840.0" lengthAdjust="spacingAndGlyphs"> repotruck · devuser (auth: gh-cli) · preset: categorized · root: /tmp/repotruck-shots-ws · 13 repos</text>
-<text x="860.4" y="43" fill="rgb(255,255,255)" textLength="487.2" lengthAdjust="spacingAndGlyphs">                                                          </text>
+<text x="20.4" y="43" fill="rgb(110,118,129)" textLength="92.4" lengthAdjust="spacingAndGlyphs">[F10] Views</text>
+<text x="112.8" y="43" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="121.2" y="43" fill="rgb(110,118,129)" textLength="109.2" lengthAdjust="spacingAndGlyphs"> Workspace ▾ </text>
+<text x="230.4" y="43" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="238.8" y="43" fill="rgb(110,118,129)" textLength="92.4" lengthAdjust="spacingAndGlyphs"> Inspect ▾ </text>
+<text x="331.2" y="43" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="339.6" y="43" fill="rgb(110,118,129)" textLength="100.8" lengthAdjust="spacingAndGlyphs"> Automate ▾ </text>
+<text x="440.4" y="43" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="448.8" y="43" fill="rgb(110,118,129)" textLength="100.8" lengthAdjust="spacingAndGlyphs"> Organize ▾ </text>
+<text x="549.6" y="43" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="558.0" y="43" fill="rgb(110,118,129)" textLength="84.0" lengthAdjust="spacingAndGlyphs"> System ▾ </text>
+<text x="642.0" y="43" fill="rgb(255,255,255)" textLength="705.6" lengthAdjust="spacingAndGlyphs">                                                                                    </text>
 <text x="1347.6" y="43" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="12.0" y="60" fill="rgb(48,54,61)" textLength="1344.0" lengthAdjust="spacingAndGlyphs">└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘</text>
-<text x="12.0" y="77" fill="rgb(247,129,102)" textLength="1344.0" lengthAdjust="spacingAndGlyphs">┌─GitHub login · device flow───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐</text>
-<text x="12.0" y="94" fill="rgb(247,129,102)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="94" fill="rgb(255,255,255)" textLength="1327.2" lengthAdjust="spacingAndGlyphs">                                                                                                                                                              </text>
-<text x="1347.6" y="94" fill="rgb(247,129,102)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="12.0" y="60" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="60" fill="rgb(88,166,255)" textLength="840.0" lengthAdjust="spacingAndGlyphs"> repotruck · devuser (auth: gh-cli) · preset: categorized · root: /tmp/repotruck-shots-ws · 13 repos</text>
+<text x="860.4" y="60" fill="rgb(255,255,255)" textLength="487.2" lengthAdjust="spacingAndGlyphs">                                                          </text>
+<text x="1347.6" y="60" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="12.0" y="77" fill="rgb(48,54,61)" textLength="1344.0" lengthAdjust="spacingAndGlyphs">└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘</text>
+<text x="12.0" y="94" fill="rgb(247,129,102)" textLength="1344.0" lengthAdjust="spacingAndGlyphs">┌─GitHub login · device flow───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐</text>
 <text x="12.0" y="111" fill="rgb(247,129,102)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="111" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="111" fill="rgb(247,129,102)" textLength="218.4" lengthAdjust="spacingAndGlyphs">GitHub login · device flow</text>
-<text x="247.2" y="111" fill="rgb(255,255,255)" textLength="1016.4" lengthAdjust="spacingAndGlyphs">                                                                                                                         </text>
-<text x="1263.6" y="111" fill="rgb(110,118,129)" textLength="75.6" lengthAdjust="spacingAndGlyphs">[× Close]</text>
-<text x="1339.2" y="111" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="20.4" y="111" fill="rgb(255,255,255)" textLength="1327.2" lengthAdjust="spacingAndGlyphs">                                                                                                                                                              </text>
 <text x="1347.6" y="111" fill="rgb(247,129,102)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="128" fill="rgb(247,129,102)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="128" fill="rgb(255,255,255)" textLength="571.2" lengthAdjust="spacingAndGlyphs">                                                                    </text>
-<text x="591.6" y="128" fill="rgb(201,209,217)" textLength="176.4" lengthAdjust="spacingAndGlyphs">open in your browser:</text>
-<text x="768.0" y="128" fill="rgb(255,255,255)" textLength="579.6" lengthAdjust="spacingAndGlyphs">                                                                     </text>
+<text x="20.4" y="128" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="28.8" y="128" fill="rgb(247,129,102)" textLength="218.4" lengthAdjust="spacingAndGlyphs">GitHub login · device flow</text>
+<text x="247.2" y="128" fill="rgb(255,255,255)" textLength="1016.4" lengthAdjust="spacingAndGlyphs">                                                                                                                         </text>
+<text x="1263.6" y="128" fill="rgb(110,118,129)" textLength="75.6" lengthAdjust="spacingAndGlyphs">[× Close]</text>
+<text x="1339.2" y="128" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
 <text x="1347.6" y="128" fill="rgb(247,129,102)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="145" fill="rgb(247,129,102)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="145" fill="rgb(255,255,255)" textLength="1327.2" lengthAdjust="spacingAndGlyphs">                                                                                                                                                              </text>
+<text x="20.4" y="145" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="28.8" y="145" fill="rgb(110,118,129)" textLength="462.0" lengthAdjust="spacingAndGlyphs">authorization continues in the background · Esc cancels</text>
+<text x="490.8" y="145" fill="rgb(255,255,255)" textLength="856.8" lengthAdjust="spacingAndGlyphs">                                                                                                      </text>
 <text x="1347.6" y="145" fill="rgb(247,129,102)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="162" fill="rgb(247,129,102)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="162" fill="rgb(255,255,255)" textLength="529.2" lengthAdjust="spacingAndGlyphs">                                                               </text>
-<text x="549.6" y="162" fill="rgb(247,129,102)" textLength="260.4" lengthAdjust="spacingAndGlyphs">https://github.com/login/device</text>
-<text x="810.0" y="162" fill="rgb(255,255,255)" textLength="537.6" lengthAdjust="spacingAndGlyphs">                                                                </text>
+<text x="20.4" y="162" fill="rgb(255,255,255)" textLength="579.6" lengthAdjust="spacingAndGlyphs">                                                                     </text>
+<text x="600.0" y="162" fill="rgb(201,209,217)" textLength="176.4" lengthAdjust="spacingAndGlyphs">open in your browser:</text>
+<text x="776.4" y="162" fill="rgb(255,255,255)" textLength="571.2" lengthAdjust="spacingAndGlyphs">                                                                    </text>
 <text x="1347.6" y="162" fill="rgb(247,129,102)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="179" fill="rgb(247,129,102)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="179" fill="rgb(255,255,255)" textLength="1327.2" lengthAdjust="spacingAndGlyphs">                                                                                                                                                              </text>
 <text x="1347.6" y="179" fill="rgb(247,129,102)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="196" fill="rgb(247,129,102)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="196" fill="rgb(255,255,255)" textLength="596.4" lengthAdjust="spacingAndGlyphs">                                                                       </text>
-<text x="616.8" y="196" fill="rgb(201,209,217)" textLength="134.4" lengthAdjust="spacingAndGlyphs">enter this code:</text>
-<text x="751.2" y="196" fill="rgb(255,255,255)" textLength="596.4" lengthAdjust="spacingAndGlyphs">                                                                       </text>
+<text x="20.4" y="196" fill="rgb(255,255,255)" textLength="537.6" lengthAdjust="spacingAndGlyphs">                                                                </text>
+<text x="558.0" y="196" fill="rgb(247,129,102)" textLength="260.4" lengthAdjust="spacingAndGlyphs">https://github.com/login/device</text>
+<text x="818.4" y="196" fill="rgb(255,255,255)" textLength="529.2" lengthAdjust="spacingAndGlyphs">                                                               </text>
 <text x="1347.6" y="196" fill="rgb(247,129,102)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="213" fill="rgb(247,129,102)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="213" fill="rgb(255,255,255)" textLength="1327.2" lengthAdjust="spacingAndGlyphs">                                                                                                                                                              </text>
 <text x="1347.6" y="213" fill="rgb(247,129,102)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="230" fill="rgb(247,129,102)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="230" fill="rgb(255,255,255)" textLength="604.8" lengthAdjust="spacingAndGlyphs">                                                                        </text>
-<text x="625.2" y="230" fill="rgb(247,129,102)" textLength="109.2" lengthAdjust="spacingAndGlyphs">  XLQW-TRHD  </text>
-<text x="734.4" y="230" fill="rgb(255,255,255)" textLength="613.2" lengthAdjust="spacingAndGlyphs">                                                                         </text>
+<text x="20.4" y="230" fill="rgb(255,255,255)" textLength="596.4" lengthAdjust="spacingAndGlyphs">                                                                       </text>
+<text x="616.8" y="230" fill="rgb(201,209,217)" textLength="134.4" lengthAdjust="spacingAndGlyphs">enter this code:</text>
+<text x="751.2" y="230" fill="rgb(255,255,255)" textLength="596.4" lengthAdjust="spacingAndGlyphs">                                                                       </text>
 <text x="1347.6" y="230" fill="rgb(247,129,102)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="247" fill="rgb(247,129,102)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="247" fill="rgb(255,255,255)" textLength="1327.2" lengthAdjust="spacingAndGlyphs">                                                                                                                                                              </text>
 <text x="1347.6" y="247" fill="rgb(247,129,102)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="264" fill="rgb(247,129,102)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="264" fill="rgb(255,255,255)" textLength="554.4" lengthAdjust="spacingAndGlyphs">                                                                  </text>
-<text x="574.8" y="264" fill="rgb(110,118,129)" textLength="218.4" lengthAdjust="spacingAndGlyphs">waiting for authorization…</text>
-<text x="793.2" y="264" fill="rgb(255,255,255)" textLength="554.4" lengthAdjust="spacingAndGlyphs">                                                                  </text>
+<text x="20.4" y="264" fill="rgb(255,255,255)" textLength="613.2" lengthAdjust="spacingAndGlyphs">                                                                         </text>
+<text x="633.6" y="264" fill="rgb(247,129,102)" textLength="109.2" lengthAdjust="spacingAndGlyphs">  XLQW-TRHD  </text>
+<text x="742.8" y="264" fill="rgb(255,255,255)" textLength="604.8" lengthAdjust="spacingAndGlyphs">                                                                        </text>
 <text x="1347.6" y="264" fill="rgb(247,129,102)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="281" fill="rgb(247,129,102)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="281" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="281" fill="rgb(110,118,129)" textLength="84.0" lengthAdjust="spacingAndGlyphs">[ Cancel ]</text>
-<text x="112.8" y="281" fill="rgb(255,255,255)" textLength="1234.8" lengthAdjust="spacingAndGlyphs">                                                                                                                                                   </text>
+<text x="20.4" y="281" fill="rgb(255,255,255)" textLength="1327.2" lengthAdjust="spacingAndGlyphs">                                                                                                                                                              </text>
 <text x="1347.6" y="281" fill="rgb(247,129,102)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="298" fill="rgb(247,129,102)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="298" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="298" fill="rgb(110,118,129)" textLength="462.0" lengthAdjust="spacingAndGlyphs">authorization continues in the background · Esc cancels</text>
-<text x="490.8" y="298" fill="rgb(255,255,255)" textLength="856.8" lengthAdjust="spacingAndGlyphs">                                                                                                      </text>
+<text x="20.4" y="298" fill="rgb(255,255,255)" textLength="554.4" lengthAdjust="spacingAndGlyphs">                                                                  </text>
+<text x="574.8" y="298" fill="rgb(110,118,129)" textLength="218.4" lengthAdjust="spacingAndGlyphs">waiting for authorization…</text>
+<text x="793.2" y="298" fill="rgb(255,255,255)" textLength="554.4" lengthAdjust="spacingAndGlyphs">                                                                  </text>
 <text x="1347.6" y="298" fill="rgb(247,129,102)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="315" fill="rgb(247,129,102)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="315" fill="rgb(255,255,255)" textLength="1327.2" lengthAdjust="spacingAndGlyphs">                                                                                                                                                              </text>
+<text x="20.4" y="315" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="28.8" y="315" fill="rgb(110,118,129)" textLength="84.0" lengthAdjust="spacingAndGlyphs">[ Cancel ]</text>
+<text x="112.8" y="315" fill="rgb(255,255,255)" textLength="1234.8" lengthAdjust="spacingAndGlyphs">                                                                                                                                                   </text>
 <text x="1347.6" y="315" fill="rgb(247,129,102)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="332" fill="rgb(247,129,102)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="332" fill="rgb(255,255,255)" textLength="1327.2" lengthAdjust="spacingAndGlyphs">                                                                                                                                                              </text>
@@ -162,8 +173,9 @@
 <text x="12.0" y="842" fill="rgb(247,129,102)" textLength="1344.0" lengthAdjust="spacingAndGlyphs">└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘</text>
 <text x="12.0" y="859" fill="rgb(48,54,61)" textLength="1344.0" lengthAdjust="spacingAndGlyphs">┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐</text>
 <text x="12.0" y="876" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="876" fill="rgb(110,118,129)" textLength="714.0" lengthAdjust="spacingAndGlyphs"> [Tab] Focus  [Space] Select  [?] Help  [q] Quit  [:] Omnibar  [/] Search  [f] Health</text>
-<text x="734.4" y="876" fill="rgb(255,255,255)" textLength="613.2" lengthAdjust="spacingAndGlyphs">                                                                         </text>
+<text x="20.4" y="876" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="28.8" y="876" fill="rgb(110,118,129)" textLength="92.4" lengthAdjust="spacingAndGlyphs">[Esc] Close</text>
+<text x="121.2" y="876" fill="rgb(255,255,255)" textLength="1226.4" lengthAdjust="spacingAndGlyphs">                                                                                                                                                  </text>
 <text x="1347.6" y="876" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="893" fill="rgb(48,54,61)" textLength="1344.0" lengthAdjust="spacingAndGlyphs">└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘</text>
 <rect x="20.4" y="29.0" width="8.4" height="17" fill="none" stroke="#e6edf3" stroke-opacity="0.55" rx="1"/>

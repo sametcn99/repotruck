@@ -2,10 +2,10 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { testRender } from "@opentui/react/test-utils";
 import { Dashboard } from "../src/components/Dashboard.tsx";
 import { Store, type StoreDeps } from "../src/components/store.ts";
 import { WorkspaceSkeleton } from "../src/components/WorkspaceSkeleton.tsx";
+import { testRender } from "./helpers/render.tsx";
 
 const tempDirs: string[] = [];
 let savedConfigDir: string | undefined;

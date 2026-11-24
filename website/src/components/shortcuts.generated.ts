@@ -256,6 +256,10 @@ export const SHORTCUT_ROWS: readonly ShortcutRow[] = [
     action: "Settings — configuration, auth, update and completions",
   },
   {
+    key: "v o",
+    action: "About — about Repotruck and its GitHub project",
+  },
+  {
     key: "v l",
     action: "Log — captured errors, warnings and runtime diagnostics",
   },

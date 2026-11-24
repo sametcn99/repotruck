@@ -180,10 +180,13 @@ export interface DeviceLoginOptions {
   requestImpl?: unknown;
   /** Extra listener for the issued verification pair (used by beginDeviceLogin callers). */
   onVerification?: (verification: { verification_uri: string; user_code: string }) => void;
+  signal?: AbortSignal;
 }
 
 export async function deviceLogin(options: DeviceLoginOptions): Promise<AuthInfo> {
+  options.signal?.throwIfAborted();
   const info = await deviceFlowAuth(options.env, options.baseUrl, options.requestImpl);
+  options.signal?.throwIfAborted();
   await writeCachedAuth(options.env, info.token);
   return info;
 }
@@ -218,10 +221,16 @@ export async function beginDeviceLogin(options: DeviceLoginOptions): Promise<Dev
       settleVerification?.(verification);
     },
   ).then(async (info) => {
+    options.signal?.throwIfAborted();
     await writeCachedAuth(options.env, info.token);
     return info;
   });
-  const verification = await verificationPromise;
+  const verification = await Promise.race([
+    verificationPromise,
+    completion.then(() => {
+      throw new AuthError("device flow completed without a verification code");
+    }),
+  ]);
   return {
     verificationUri: verification.verification_uri,
     userCode: verification.user_code,

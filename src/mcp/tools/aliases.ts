@@ -146,6 +146,7 @@ export function registerAliasesTools(server: McpServer, ctx: ToolContext): void 
           command,
           args: args ?? [],
           concurrency,
+          signal: ctx.signal,
         });
         return {
           ...ok({

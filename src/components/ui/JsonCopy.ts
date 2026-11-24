@@ -21,18 +21,33 @@ function osc52Sequence(text: string): string {
 }
 
 /** Copy an arbitrary text payload (OSC 52, temp-file fallback). */
-export function copyText(label: string, payload: string): JsonCopyResult {
+export interface ClipboardOutput {
+  isTTY?: boolean;
+  write: (text: string) => unknown;
+}
+export const MAX_OSC52_BYTES = 100_000;
+
+export function copyText(
+  label: string,
+  payload: string,
+  output: ClipboardOutput = process.stdout,
+): JsonCopyResult {
   let clipboard = false;
-  if (process.stdout.isTTY === true) {
+  if (output.isTTY === true && Buffer.byteLength(payload, "utf8") <= MAX_OSC52_BYTES) {
     try {
-      process.stdout.write(osc52Sequence(payload));
+      output.write(osc52Sequence(payload));
       clipboard = true;
     } catch {
       clipboard = false;
     }
   }
   if (clipboard) {
-    return { ok: true, clipboard: true, filePath: null, message: `${label} copied to clipboard` };
+    return {
+      ok: true,
+      clipboard: true,
+      filePath: null,
+      message: `${label} clipboard copy requested (OSC 52; terminal acceptance is unverified)`,
+    };
   }
   try {
     const dir = mkdtempSync(path.join(tmpdir(), "repotruck-copy-"));
@@ -57,7 +72,11 @@ export function copyText(label: string, payload: string): JsonCopyResult {
 export function copyJson(label: string, data: unknown, writeFile = false): JsonCopyResult {
   const json = JSON.stringify(data, null, 2);
   let clipboard = false;
-  if (!writeFile && process.stdout.isTTY === true) {
+  if (
+    !writeFile &&
+    process.stdout.isTTY === true &&
+    Buffer.byteLength(json, "utf8") <= MAX_OSC52_BYTES
+  ) {
     try {
       process.stdout.write(osc52Sequence(json));
       clipboard = true;
@@ -70,7 +89,7 @@ export function copyJson(label: string, data: unknown, writeFile = false): JsonC
       ok: true,
       clipboard: true,
       filePath: null,
-      message: `${label} JSON copied to clipboard`,
+      message: `${label} JSON clipboard copy requested (OSC 52; terminal acceptance is unverified)`,
     };
   }
   try {

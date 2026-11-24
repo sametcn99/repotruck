@@ -22,13 +22,10 @@ import {
   TOAST_RESERVED_ROWS,
 } from "./windowing.ts";
 
-function trimToWidth(line: string, innerWidth: number): string {
-  if (line.length <= innerWidth) return line;
-  return `${line.slice(0, Math.max(1, innerWidth - 1))}…`;
-}
+const trimToWidth = clampBoxLine;
 
 export function buildHeaderLine(width: number, header: string): string {
-  const innerWidth = Math.max(30, width - 4);
+  const innerWidth = Math.max(1, width - 4);
   return trimToWidth(` ${header}`, innerWidth);
 }
 

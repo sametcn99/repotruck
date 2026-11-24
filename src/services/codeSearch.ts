@@ -1,9 +1,14 @@
+import { createHash } from "node:crypto";
 import type { Stats } from "node:fs";
 import { mkdir, readFile, stat } from "node:fs/promises";
 import path from "node:path";
-import { Language, type Node, Parser } from "web-tree-sitter";
-import { firstErrorLine } from "./cloner.ts";
+import { Language, Parser } from "web-tree-sitter";
 import { type GrammarLang, LANG_ALIASES, type SymbolKind } from "./codeSearchLang.ts";
+import { extractSymbols } from "./codeSearchSymbols.ts";
+
+export { extractSymbols } from "./codeSearchSymbols.ts";
+
+import { BoundedRegex } from "./codeSearchRegex.ts";
 import { walkSourceFiles } from "./codeSearchWalk.ts";
 import type { RepotruckConfig } from "./config.ts";
 import { writeFileAtomic } from "./fsUtils.ts";
@@ -15,6 +20,8 @@ import {
   GrammarUnavailableError,
   resolveGrammar,
 } from "./grammarStore.ts";
+import { withWorkspaceLock } from "./workspaceLock.ts";
+import { workspacePath } from "./workspacePaths.ts";
 
 export type { GrammarLang, SymbolKind } from "./codeSearchLang.ts";
 export { LANG_ALIASES, SYMBOL_KINDS } from "./codeSearchLang.ts";
@@ -53,20 +60,6 @@ const EXTENSION_LANGS: Record<string, GrammarLang> = {
 
 export const GRAMMAR_LANGS: readonly GrammarLang[] = Object.keys(GRAMMAR_FILES) as GrammarLang[];
 
-const SYMBOL_TYPES: Record<string, SymbolKind> = {
-  function_declaration: "function",
-  class_declaration: "class",
-  interface_declaration: "interface",
-  type_alias_declaration: "type",
-  enum_declaration: "enum",
-  method_definition: "method",
-  lexical_declaration: "const",
-  function_definition: "function",
-  function_item: "function",
-  struct_item: "class",
-  impl_item: "class",
-};
-
 export type GrammarResolver = (lang: GrammarLang) => Promise<Uint8Array | null>;
 
 export interface IndexedSymbol {
@@ -81,6 +74,7 @@ export interface IndexedFile {
   repo: string;
   mtimeMs: number;
   size: number;
+  hash?: string;
   symbols: IndexedSymbol[];
 }
 
@@ -174,39 +168,6 @@ async function loadLanguage(
   return loaded;
 }
 
-function nodeName(node: Node): string | null {
-  const direct = node.childForFieldName("name");
-  if (direct !== null) return direct.text;
-  const first = node.namedChildren.find((child): child is Node => child !== null);
-  if (first === undefined) return null;
-  const nested = first.childForFieldName("name");
-  return nested !== null ? nested.text : null;
-}
-
-export function extractSymbols(root: Node): IndexedSymbol[] {
-  const symbols: IndexedSymbol[] = [];
-  const visit = (node: Node): void => {
-    const kind = SYMBOL_TYPES[node.type];
-    if (kind !== undefined) {
-      const name = nodeName(node);
-      if (name !== null && name.length > 0) {
-        symbols.push({
-          kind,
-          name,
-          line: node.startPosition.row + 1,
-          exported: node.parent?.type === "export_statement",
-        });
-      }
-    }
-    for (const child of node.children) {
-      if (child?.isNamed) visit(child);
-    }
-  };
-  visit(root);
-  symbols.sort((a, b) => a.line - b.line || a.name.localeCompare(b.name));
-  return symbols;
-}
-
 function isIndexedFile(value: unknown): value is IndexedFile {
   if (value === null || typeof value !== "object") return false;
   const file = value as Partial<IndexedFile>;
@@ -261,10 +222,19 @@ export interface BuildCodeIndexOptions {
   offline?: boolean;
 }
 
-export async function buildCodeIndex(options: BuildCodeIndexOptions): Promise<{
-  index: CodeIndex;
-  stats: CodeIndexStats;
-}> {
+export async function buildCodeIndex(
+  options: BuildCodeIndexOptions,
+): Promise<{ index: CodeIndex; stats: CodeIndexStats }> {
+  const directory = await workspacePath(options.root, ".repotruck");
+  return withWorkspaceLock(() => buildCodeIndexUnlocked(options), {
+    env: { REPOTRUCK_CONFIG_DIR: directory },
+    lockName: "code-index",
+  });
+}
+
+async function buildCodeIndexUnlocked(
+  options: BuildCodeIndexOptions,
+): Promise<{ index: CodeIndex; stats: CodeIndexStats }> {
   const startedAt = Date.now();
   const resolver =
     options.resolver ??
@@ -290,72 +260,87 @@ export async function buildCodeIndex(options: BuildCodeIndexOptions): Promise<{
     return parser;
   };
 
-  for (const repo of options.config.repos) {
-    const repoDir = path.join(options.root, ...repo.relativePath.split("/"));
-    const walked = await walkSourceFiles(repoDir);
-    for (const walkedFile of walked) {
-      const lang = EXTENSION_LANGS[path.extname(walkedFile.relPath).toLowerCase()];
-      if (lang === undefined) {
-        filesSkippedUnknown += 1;
-        continue;
+  try {
+    for (const repo of options.config.repos) {
+      const repoDir = await workspacePath(options.root, repo.relativePath);
+      const walked = await walkSourceFiles(repoDir);
+      for (const walkedFile of walked) {
+        const lang = EXTENSION_LANGS[path.extname(walkedFile.relPath).toLowerCase()];
+        if (lang === undefined) {
+          filesSkippedUnknown += 1;
+          continue;
+        }
+        let fileStat: Stats;
+        try {
+          fileStat = await stat(walkedFile.absPath);
+        } catch {
+          continue;
+        }
+        if (fileStat.size > MAX_INDEXED_FILE_BYTES) {
+          filesSkippedLarge += 1;
+          continue;
+        }
+        let source: string;
+        let hash: string;
+        try {
+          const bytes = await readFile(walkedFile.absPath);
+          if (bytes.includes(0)) continue;
+          source = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+          hash = createHash("sha256").update(bytes).digest("hex");
+        } catch {
+          continue;
+        }
+        const relPath = `${repo.relativePath}/${walkedFile.relPath}`;
+        const cached = previousByPath.get(relPath);
+        if (
+          cached !== undefined &&
+          cached.mtimeMs === fileStat.mtimeMs &&
+          cached.size === fileStat.size &&
+          cached.hash === hash
+        ) {
+          files.push({ ...cached, path: relPath });
+          grammarsSeen.add(lang);
+          filesReused += 1;
+          continue;
+        }
+        let language = languages.get(lang);
+        if (language === undefined) {
+          const useCache = options.resolver === undefined && options.offline !== true;
+          language = await loadLanguage(lang, resolver, useCache);
+          languages.set(lang, language);
+        }
+        if (language === null) {
+          filesSkippedUnknown += 1;
+          continue;
+        }
+        grammarsSeen.add(lang);
+        let symbols: IndexedSymbol[];
+        try {
+          const activeParser = await parserFor();
+          activeParser.setLanguage(language);
+          const tree = activeParser.parse(source);
+          if (tree === null || tree.rootNode === null) continue;
+          try {
+            symbols = extractSymbols(tree.rootNode);
+          } finally {
+            tree.delete();
+          }
+        } catch {
+          continue;
+        }
+        files.push({
+          path: relPath,
+          repo: `${repo.owner}/${repo.name}`,
+          mtimeMs: fileStat.mtimeMs,
+          size: fileStat.size,
+          hash,
+          symbols,
+        });
+        filesIndexed += 1;
       }
-      let fileStat: Stats;
-      try {
-        fileStat = await stat(walkedFile.absPath);
-      } catch {
-        continue;
-      }
-      if (fileStat.size > MAX_INDEXED_FILE_BYTES) {
-        filesSkippedLarge += 1;
-        continue;
-      }
-      const relPath = `${repo.relativePath}/${walkedFile.relPath}`;
-      const cached = previousByPath.get(relPath);
-      if (
-        cached !== undefined &&
-        cached.mtimeMs === fileStat.mtimeMs &&
-        cached.size === fileStat.size
-      ) {
-        files.push({ ...cached, path: relPath });
-        filesReused += 1;
-        continue;
-      }
-      let language = languages.get(lang);
-      if (language === undefined) {
-        const useCache = options.resolver === undefined && options.offline !== true;
-        language = await loadLanguage(lang, resolver, useCache);
-        languages.set(lang, language);
-      }
-      if (language === null) {
-        filesSkippedUnknown += 1;
-        continue;
-      }
-      grammarsSeen.add(lang);
-      let source: string;
-      try {
-        source = await readFile(walkedFile.absPath, "utf8");
-      } catch {
-        continue;
-      }
-      let symbols: IndexedSymbol[];
-      try {
-        const activeParser = await parserFor();
-        activeParser.setLanguage(language);
-        const tree = activeParser.parse(source);
-        if (tree === null || tree.rootNode === null) continue;
-        symbols = extractSymbols(tree.rootNode);
-      } catch {
-        continue;
-      }
-      files.push({
-        path: relPath,
-        repo: `${repo.owner}/${repo.name}`,
-        mtimeMs: fileStat.mtimeMs,
-        size: fileStat.size,
-        symbols,
-      });
-      filesIndexed += 1;
     }
+  } finally {
+    (parser as Parser | null)?.delete();
   }
 
   const index: CodeIndex = {
@@ -405,75 +390,72 @@ export function formatCodeSearchMatch(match: Omit<CodeSearchMatch, "formatted">)
 
 async function searchCodeText(options: SearchCodeOptions): Promise<CodeSearchResult> {
   const startedAt = Date.now();
-  let matchesLine: (line: string) => boolean;
-  if (options.regex === true) {
-    let matcher: RegExp;
-    try {
-      matcher = new RegExp(options.pattern, "i");
-    } catch (error) {
-      throw new Error(`invalid regex pattern: ${options.pattern} (${firstErrorLine(error)})`);
-    }
-    matchesLine = (line) => matcher.test(line);
-  } else {
-    const needle = options.pattern.toLowerCase();
-    matchesLine = (line) => line.toLowerCase().includes(needle);
-  }
+  const regex = options.regex ? new BoundedRegex(options.pattern) : null;
+  const needle = options.pattern.toLowerCase();
 
   const lang =
     options.lang === undefined ? null : (LANG_ALIASES[options.lang.toLowerCase()] ?? null);
-  const limit = options.limit === undefined ? Infinity : Math.max(1, options.limit);
+  const limit = options.limit === undefined ? Infinity : options.limit;
 
   const matches: CodeSearchMatch[] = [];
   let filesScanned = 0;
   let filesSkippedLarge = 0;
 
-  outer: for (const repo of options.config.repos) {
-    const repoKey = `${repo.owner}/${repo.name}`;
-    const repoDir = path.join(options.root, ...repo.relativePath.split("/"));
-    const walked = await walkSourceFiles(repoDir);
-    for (const walkedFile of walked) {
-      if (lang !== null) {
-        const fileLang = EXTENSION_LANGS[path.extname(walkedFile.relPath).toLowerCase()];
-        if (fileLang !== lang) continue;
-      }
-      let fileStat: Stats;
-      try {
-        fileStat = await stat(walkedFile.absPath);
-      } catch {
-        continue;
-      }
-      if (fileStat.size > MAX_INDEXED_FILE_BYTES) {
-        filesSkippedLarge += 1;
-        continue;
-      }
-      let content: string;
-      try {
-        content = await readFile(walkedFile.absPath, "utf8");
-      } catch {
-        continue;
-      }
-      if (content.includes("\0")) continue;
-      filesScanned += 1;
-      const relPath = `${repo.relativePath}/${walkedFile.relPath}`;
-      const lines = content.split(/\r?\n/);
-      for (let i = 0; i < lines.length; i += 1) {
-        const rawLine = lines[i]!;
-        if (!matchesLine(rawLine)) continue;
-        const snippet = rawLine.trim().slice(0, 180);
-        const partial: Omit<CodeSearchMatch, "formatted"> = {
-          repo: repoKey,
-          path: relPath,
-          line: i + 1,
-          kind: "text",
-          name: snippet,
-          exported: false,
-        };
-        matches.push({ ...partial, formatted: formatCodeSearchMatch(partial) });
-        if (matches.length >= limit) break outer;
+  try {
+    outer: for (const repo of options.config.repos) {
+      const repoKey = `${repo.owner}/${repo.name}`;
+      const repoDir = await workspacePath(options.root, repo.relativePath);
+      const walked = await walkSourceFiles(repoDir);
+      for (const walkedFile of walked) {
+        if (lang !== null) {
+          const fileLang = EXTENSION_LANGS[path.extname(walkedFile.relPath).toLowerCase()];
+          if (fileLang !== lang) continue;
+        }
+        let fileStat: Stats;
+        try {
+          fileStat = await stat(walkedFile.absPath);
+        } catch {
+          continue;
+        }
+        if (fileStat.size > MAX_INDEXED_FILE_BYTES) {
+          filesSkippedLarge += 1;
+          continue;
+        }
+        let content: string;
+        try {
+          content = new TextDecoder("utf-8", { fatal: true }).decode(
+            await readFile(walkedFile.absPath),
+          );
+        } catch {
+          continue;
+        }
+        if (content.includes("\0")) continue;
+        filesScanned += 1;
+        const relPath = `${repo.relativePath}/${walkedFile.relPath}`;
+        const lines = content.split(/\r?\n/);
+        const matched = regex
+          ? await regex.test(lines)
+          : lines.map((line) => line.toLowerCase().includes(needle));
+        for (let i = 0; i < lines.length; i += 1) {
+          const rawLine = lines[i]!;
+          if (!matched[i]) continue;
+          const snippet = rawLine.trim().slice(0, 180);
+          const partial: Omit<CodeSearchMatch, "formatted"> = {
+            repo: repoKey,
+            path: relPath,
+            line: i + 1,
+            kind: "text",
+            name: snippet,
+            exported: false,
+          };
+          matches.push({ ...partial, formatted: formatCodeSearchMatch(partial) });
+          if (matches.length >= limit) break outer;
+        }
       }
     }
+  } finally {
+    await regex?.close();
   }
-
   return {
     matches,
     index: {
@@ -489,6 +471,10 @@ async function searchCodeText(options: SearchCodeOptions): Promise<CodeSearchRes
 }
 
 export async function searchCode(options: SearchCodeOptions): Promise<CodeSearchResult> {
+  if (options.limit !== undefined && (!Number.isSafeInteger(options.limit) || options.limit <= 0))
+    throw new Error("search limit must be a positive integer");
+  if (options.lang !== undefined && LANG_ALIASES[options.lang.toLowerCase()] === undefined)
+    throw new Error(`unsupported language: ${options.lang}`);
   if (options.text === true) {
     return await searchCodeText(options);
   }
@@ -503,51 +489,46 @@ export async function searchCode(options: SearchCodeOptions): Promise<CodeSearch
   const index = built.index;
   const stats = built.stats;
 
-  let matchesSymbol: (name: string) => boolean;
-  if (options.regex === true) {
-    let matcher: RegExp;
-    try {
-      matcher = new RegExp(options.pattern, "i");
-    } catch (error) {
-      throw new Error(`invalid regex pattern: ${options.pattern} (${firstErrorLine(error)})`);
-    }
-    matchesSymbol = (name) => matcher.test(name);
-  } else {
-    const needle = options.pattern.toLowerCase();
-    matchesSymbol = (name) => name.toLowerCase().includes(needle);
-  }
+  const regex = options.regex ? new BoundedRegex(options.pattern) : null;
+  const needle = options.pattern.toLowerCase();
   const kind = options.kind === undefined ? null : options.kind.toLowerCase();
   const lang =
     options.lang === undefined ? null : (LANG_ALIASES[options.lang.toLowerCase()] ?? null);
-  const limit = options.limit === undefined ? Infinity : Math.max(1, options.limit);
+  const limit = options.limit === undefined ? Infinity : options.limit;
 
   const matches: CodeSearchMatch[] = [];
-  outer: for (const file of index.files) {
-    const fileLang = EXTENSION_LANGS[path.extname(file.path).toLowerCase()];
-    if (fileLang === undefined) continue;
-    if (lang !== null && fileLang !== lang) continue;
-    for (const symbol of file.symbols) {
-      if (!matchesSymbol(symbol.name)) continue;
-      if (kind !== null && symbol.kind !== kind) continue;
-      const partial = {
-        repo: file.repo,
-        path: file.path,
-        line: symbol.line,
-        kind: symbol.kind,
-        name: symbol.name,
-        exported: symbol.exported,
-      };
-      matches.push({ ...partial, formatted: formatCodeSearchMatch(partial) });
-      if (matches.length >= limit) break outer;
+  try {
+    outer: for (const file of index.files) {
+      const fileLang = EXTENSION_LANGS[path.extname(file.path).toLowerCase()];
+      if (fileLang === undefined) continue;
+      if (lang !== null && fileLang !== lang) continue;
+      const matched = regex
+        ? await regex.test(file.symbols.map((symbol) => symbol.name))
+        : file.symbols.map((symbol) => symbol.name.toLowerCase().includes(needle));
+      for (const [i, symbol] of file.symbols.entries()) {
+        if (!matched[i]) continue;
+        if (kind !== null && symbol.kind !== kind) continue;
+        const partial = {
+          repo: file.repo,
+          path: file.path,
+          line: symbol.line,
+          kind: symbol.kind,
+          name: symbol.name,
+          exported: symbol.exported,
+        };
+        matches.push({ ...partial, formatted: formatCodeSearchMatch(partial) });
+        if (matches.length >= limit) break outer;
+      }
     }
+  } finally {
+    await regex?.close();
   }
-
   return { matches, index: stats };
 }
 
 /**
  * Refreshes the code index after a sync, but only when the user has built one
- * before - a fresh walk is cheap thanks to mtime-based reuse, and skipping it
+ * before - unchanged content reuses its parsed symbols, and skipping it
  * for never-indexed workspaces keeps sync fast for everyone else.
  */
 export async function refreshCodeIndexIfPresent(

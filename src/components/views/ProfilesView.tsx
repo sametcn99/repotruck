@@ -1,5 +1,5 @@
 import { useKeyboard, useTerminalDimensions } from "@opentui/react";
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useState, useSyncExternalStore } from "react";
 import type { Store } from "../store.ts";
 import { theme } from "../theme.ts";
 import { PaneTabs } from "../ui/PaneTabs.tsx";
@@ -25,23 +25,10 @@ export function ProfilesView({
   const height = heightProp ?? Math.max(8, termHeight - 11);
   const [nameValue, setNameValue] = useState("");
   const [editing, setEditing] = useState(false);
-  const [profiles, setProfiles] = useState<Record<string, string[]>>({});
+  const profiles = snapshot.profiles;
   const [pane, setPane] = useState<"pinned" | "profiles">("pinned");
   const [pinnedCursor, setPinnedCursor] = useState(0);
   const [profileCursor, setProfileCursor] = useState(0);
-
-  useEffect(() => {
-    void (async () => {
-      try {
-        const config = await import("../../services/workspace.ts").then((m) =>
-          m.loadWorkspace(store.root),
-        );
-        setProfiles(config.profiles ?? {});
-      } catch {
-        setProfiles({});
-      }
-    })();
-  }, [store]);
 
   const pinned = [...snapshot.localHealth.entries()]
     .filter(([, health]) => health.pinned)
@@ -92,11 +79,6 @@ export function ProfilesView({
       },
       () => {
         void store.profileDelete(name);
-        setProfiles((current) => {
-          const next = { ...current };
-          delete next[name];
-          return next;
-        });
       },
     );
   };

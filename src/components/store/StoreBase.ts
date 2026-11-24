@@ -1,17 +1,10 @@
-import { AuthError } from "../../services/auth.ts";
 import type { EmitProgress } from "../../services/cloner.ts";
-import { firstErrorLine } from "../../services/cloner.ts";
 import type { RepotruckConfig } from "../../services/config.ts";
 import { diagSnapshot, diagSubscribe, logDiag } from "../../services/diagnostics.ts";
-import { memoizeRepoLookup, type RepoLookup } from "../../services/forkSource.ts";
+import type { RepoLookup } from "../../services/forkSource.ts";
 import type { RepoInfo } from "../../services/github.ts";
-import {
-  DEFAULT_GITHUB_BASE_URL,
-  readCustomPresets,
-  resolveGithubBaseUrl,
-} from "../../services/settings.ts";
+import { readCustomPresets } from "../../services/settings.ts";
 import { loadWorkspace } from "../../services/workspace.ts";
-import { isRegisteredWorkspace } from "../../services/workspaceRegistry.ts";
 import { VIEW_ORDER } from "../views/viewRegistry.ts";
 import { buildInitialSnapshot, buildStoreDeps, type ResolvedStoreDeps } from "./defaults.ts";
 import {
@@ -28,6 +21,8 @@ import {
   loadRepoInspectorDetails,
   loadWorkspaceHealthData,
 } from "./gitHealth.ts";
+import { OperationTracker } from "./operations.ts";
+import { detailLocalFor } from "./repoDetail.ts";
 import {
   type FiltersState,
   FOCUS_ORDER,
@@ -49,11 +44,12 @@ import {
   type UndoAction,
 } from "./types.ts";
 
-export class StoreBase {
+export abstract class StoreBase {
   protected state: StoreSnapshot;
   private readonly listeners = new Set<() => void>();
   protected readonly deps: ResolvedStoreDeps;
   protected rootValue: string;
+  protected readonly operations = new OperationTracker(() => this.rootValue);
   protected dismissedVersionValue: string | null = null;
   protected github: GithubClient | null = null;
   protected lookupForkRepo?: RepoLookup;
@@ -70,6 +66,8 @@ export class StoreBase {
   private healthGen = 0;
 
   private lastDiagId = 0;
+  private disposed = false;
+  private unsubscribeDiagnostics: () => void = () => {};
 
   constructor(root: string, deps: StoreDeps = {}) {
     this.rootValue = root;
@@ -80,7 +78,7 @@ export class StoreBase {
     // are skipped — the status mirror already toasted those.
     const currentDiag = diagSnapshot();
     this.lastDiagId = currentDiag.length > 0 ? (currentDiag[currentDiag.length - 1]?.id ?? 0) : 0;
-    diagSubscribe(() => this.surfaceDiagErrors());
+    this.unsubscribeDiagnostics = diagSubscribe(() => this.surfaceDiagErrors());
   }
 
   private surfaceDiagErrors(): void {
@@ -107,9 +105,41 @@ export class StoreBase {
 
   getSnapshot = (): StoreSnapshot => this.state;
 
+  dispose = (): void => {
+    if (this.disposed) return;
+    this.disposed = true;
+    this.operations.invalidate();
+    this.healthGen++;
+    this.unsubscribeDiagnostics();
+    if (this.toastTimer !== null) clearTimeout(this.toastTimer);
+    for (const task of this.activeTasks.values()) task.cancel?.();
+    this.activeTasks.clear();
+    this.listeners.clear();
+  };
+
   protected set(partial: Partial<StoreSnapshot>): void {
+    if (this.disposed) return;
     this.state = { ...this.state, ...partial };
     for (const listener of this.listeners) listener();
+  }
+
+  protected workspaceOperation(key: string) {
+    const operation = this.operations.start(key);
+    return {
+      ...operation,
+      set: (partial: Partial<StoreSnapshot>) => {
+        if (operation.current()) this.set(partial);
+      },
+      pushStatus: (...args: Parameters<typeof this.pushStatus>) => {
+        if (operation.current()) this.pushStatus(...args);
+      },
+      pushUndo: (...args: Parameters<typeof this.pushUndo>) => {
+        if (operation.current()) this.pushUndo(...args);
+      },
+      endTask: (...args: Parameters<typeof this.endTask>) => {
+        if (operation.current()) this.endTask(...args);
+      },
+    };
   }
 
   get root(): string {
@@ -119,7 +149,11 @@ export class StoreBase {
   setModalError = (modalError: string | null): void => this.set({ modalError });
   openModal = (modal: ModalState): void => this.set({ modal, modalError: null });
   setModal = (modal: ModalState): void => this.set({ modal });
-  closeModal = (): void => this.set({ modal: null, modalError: null, movePrefill: null });
+  closeModal = (): void => {
+    this.operations.cancel("omnibar");
+    this.operations.cancel("detail-local");
+    this.set({ modal: null, modalError: null, movePrefill: null });
+  };
 
   private dialogConfirm: (() => void) | null = null;
 
@@ -138,7 +172,8 @@ export class StoreBase {
     });
   };
 
-  resolveDialog = (confirmed: boolean): void => {
+  resolveDialog = (confirmed: boolean, expected = this.state.dialog): void => {
+    if (expected !== this.state.dialog) return;
     const callback = this.dialogConfirm;
     this.dialogConfirm = null;
     this.set({ dialog: null });
@@ -358,14 +393,38 @@ export class StoreBase {
     fastMap: Map<string, RepoLocalHealth>,
   ): void {
     const gen = ++this.healthGen;
-    void hydrateAsyncGitHealth(this.rootValue, config, fastMap, () => gen !== this.healthGen)
+    const root = this.rootValue;
+    void hydrateAsyncGitHealth(root, config, fastMap, () => gen !== this.healthGen)
       .then((hydrated) => {
-        if (hydrated !== null && gen === this.healthGen) {
+        if (hydrated !== null && gen === this.healthGen && root === this.rootValue) {
           this.recomputeVisible({ localHealth: hydrated });
         }
       })
       .catch(() => {});
   }
+
+  refreshDetailLocal = async (key: string): Promise<void> => {
+    const operation = this.workspaceOperation("detail-local");
+    operation.set({ detailData: { key, local: null } });
+    try {
+      const local = await detailLocalFor(operation.root, key);
+      operation.set({ detailData: { key, local } });
+    } catch {
+      operation.set({
+        detailData: {
+          key,
+          local: {
+            tracked: false,
+            relativePath: null,
+            alias: null,
+            disk: "unable to read repository state",
+          },
+        },
+      });
+    } finally {
+      operation.finish();
+    }
+  };
 
   refreshInspector = async (): Promise<void> => {
     const repo = this.state.filteredRepos[this.state.cursor];
@@ -384,12 +443,17 @@ export class StoreBase {
         details: null,
       },
     });
+    const operation = this.operations.start("refreshInspector");
     try {
-      const config = this.localConfig ?? (await loadWorkspace(this.rootValue));
-      const inspector = await loadRepoInspectorDetails(this.rootValue, config, key);
+      const config = this.localConfig ?? (await loadWorkspace(operation.root));
+      const inspector = await loadRepoInspectorDetails(operation.root, config, key);
+      if (!operation.current()) return;
       const current = this.state.filteredRepos[this.state.cursor];
       if (current !== undefined && repoKey(current) === key) this.set({ inspector });
-    } catch {}
+    } catch {
+    } finally {
+      operation.finish();
+    }
   };
 
   refreshHealthTab = async (): Promise<void> => {
@@ -403,14 +467,20 @@ export class StoreBase {
         checks: prev?.checks ?? [],
       },
     });
+    const operation = this.operations.start("refreshHealthTab");
     try {
-      const config = await loadWorkspace(this.rootValue);
+      const config = await loadWorkspace(operation.root);
+      if (!operation.current()) return;
       this.localConfig = config;
-      this.set({ healthData: await loadWorkspaceHealthData(this.rootValue, config) });
+      const healthData = await loadWorkspaceHealthData(operation.root, config);
+      if (operation.current()) this.set({ healthData });
     } catch {
+      if (!operation.current()) return;
       this.set({
         healthData: { loading: false, stats: null, trashCount: 0, trashBytes: 0, checks: [] },
       });
+    } finally {
+      operation.finish();
     }
   };
 
@@ -429,6 +499,7 @@ export class StoreBase {
         preset: config.preset,
         workspacePreset: config.preset,
         customPresets,
+        profiles: config.profiles ?? {},
       });
       this.scheduleHydrateGitHealth(config, fast.map);
       if (this.state.rightPaneTab === "inspector") void this.refreshInspector();
@@ -444,139 +515,6 @@ export class StoreBase {
     if (!this.initialized) await this.init();
   };
 
-  init = async (): Promise<void> => {
-    this.initialized = true;
-    this.set({ phase: "loading", errorMessage: null, offline: false });
-    void this.runStartupUpdateCheck();
-    if (process.env.REPOTRUCK_OFFLINE === "1") {
-      await this.enterOfflineMode();
-      return;
-    }
-    let hasWorkspace = false;
-    try {
-      const [customPresets, config] = await Promise.all([
-        readCustomPresets(),
-        loadWorkspace(this.rootValue),
-      ]);
-      const hasWorkspaceRepos = config.repos.length > 0;
-      hasWorkspace = hasWorkspaceRepos || (await isRegisteredWorkspace(this.rootValue));
-      const baseUrl = await resolveGithubBaseUrl(process.env);
-      const auth = await this.deps.auth();
-      this.token = auth.token;
-      const github = this.deps.github(
-        auth.token,
-        baseUrl !== DEFAULT_GITHUB_BASE_URL ? baseUrl : undefined,
-      );
-      this.github = github;
-      this.lookupForkRepo = memoizeRepoLookup((owner, name) => github.getRepo(owner, name));
-      const userLogin = await this.github.getUserLogin();
-      const orgs = await this.github.getActiveOrgs();
-      this.userLoginValue = userLogin;
-      this.personalRepos = await this.github.listUserRepos();
-      this.orgReposCache.clear();
-      this.localConfig = config;
-      const fast = buildFastLocalHealthMap(this.rootValue, config);
-      const includePersonal = !hasWorkspaceRepos;
-      const repos = this.composeRepos(new Set<string>(), includePersonal, false, true);
-      this.set({
-        phase: "ready",
-        errorMessage: null,
-        offline: false,
-        authMethod: auth.method,
-        userLogin,
-        includeWorkspace: true,
-        includePersonal,
-        orgs,
-        selectedOrgs: new Set<string>(),
-        selected: new Set<string>(),
-        localHealth: fast.map,
-        pinnedCount: fast.pinnedCount,
-        repos,
-        filteredRepos: this.visibleFrom(
-          repos,
-          this.state.filters,
-          null,
-          "default",
-          false,
-          "all",
-          fast.map,
-        ),
-        preset: config.preset,
-        workspacePreset: config.preset,
-        customPresets,
-        lastSync: config.lastSync,
-        cursor: 0,
-        sortKey: "default",
-        sortDescending: false,
-        sidebarCursor: 0,
-        healthFilter: "all",
-        search: null,
-      });
-      this.scheduleHydrateGitHealth(config, fast.map);
-    } catch (error) {
-      if (hasWorkspace) {
-        await this.enterOfflineMode();
-        this.pushStatus("FAILED", "[github]", firstErrorLine(error));
-        return;
-      }
-      this.set({
-        phase: "error",
-        errorMessage: error instanceof AuthError ? error.message : firstErrorLine(error),
-      });
-    }
-  };
-
-  enterOfflineMode = async (): Promise<void> => {
-    this.github = null;
-    this.lookupForkRepo = undefined;
-    this.token = null;
-    this.userLoginValue = null;
-    try {
-      const [customPresets, config] = await Promise.all([
-        readCustomPresets(),
-        loadWorkspace(this.rootValue),
-      ]);
-      this.localConfig = config;
-      const fast = buildFastLocalHealthMap(this.rootValue, config);
-      const repos = this.composeRepos(new Set<string>(), false, true, true);
-      this.set({
-        phase: "ready",
-        errorMessage: null,
-        offline: true,
-        authMethod: "offline",
-        userLogin: "local",
-        includeWorkspace: true,
-        includePersonal: false,
-        orgs: [],
-        selectedOrgs: new Set<string>(),
-        selected: new Set<string>(),
-        localHealth: fast.map,
-        pinnedCount: fast.pinnedCount,
-        repos,
-        filteredRepos: this.visibleFrom(
-          repos,
-          this.state.filters,
-          null,
-          "default",
-          false,
-          "all",
-          fast.map,
-        ),
-        preset: config.preset,
-        workspacePreset: config.preset,
-        customPresets,
-        lastSync: config.lastSync,
-        cursor: 0,
-        sidebarCursor: 0,
-        sortKey: "default",
-        sortDescending: false,
-        healthFilter: "all",
-        search: null,
-      });
-      this.pushStatus("DONE", "[offline]", `loaded ${repos.length} local tracked repositories`);
-      this.scheduleHydrateGitHealth(config, fast.map);
-    } catch (error) {
-      this.set({ phase: "error", errorMessage: firstErrorLine(error) });
-    }
-  };
+  abstract init: () => Promise<void>;
+  abstract enterOfflineMode: () => Promise<void>;
 }

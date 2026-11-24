@@ -167,7 +167,7 @@ export async function readWorkspaceEntries(
     cached?.file === file &&
     cached.stamp === stamp
   ) {
-    return [...cached.entries];
+    return structuredClone(cached.entries);
   }
   const readFileImpl = deps?.readFile ?? readFile;
   let raw: string | undefined;
@@ -199,7 +199,11 @@ export async function readWorkspaceEntries(
       throw new NewerStoreVersionError(envelope.store.version, LATEST_STORE_VERSION, file, backup);
     }
     const store = applyStoreMigrations(envelope.store);
-    entries.push(...store.workspaces.filter(isWorkspaceEntry));
+    if (!store.workspaces.every(isWorkspaceEntry)) {
+      const backup = await backupStoreFile(file);
+      throw new CorruptStoreError("invalid workspace entry", file, backup);
+    }
+    entries.push(...store.workspaces);
   }
   for (const legacy of await readLegacyManifestEntries(env)) {
     if (!entries.some((entry) => pathsEqual(entry.root, legacy.root))) {
@@ -209,7 +213,7 @@ export async function readWorkspaceEntries(
   // Use the stamp captured before reading so a concurrent replacement cannot
   // make old content look current on the next read.
   if (stamp !== null && cached === storeReadCache) {
-    storeReadCache = { file, stamp, entries: [...entries] };
+    storeReadCache = { file, stamp, entries: structuredClone(entries) };
   }
   return entries;
 }
@@ -334,7 +338,8 @@ export async function restoreWorkspaceSnapshot(
   if (!isRepotruckConfig(parsed)) {
     return { ok: false, message: `snapshot is not a valid workspace config: ${match.file}` };
   }
-  await writeWorkspaceConfig(root, parsed, env);
+  const { updateWorkspace } = await import("./workspace.ts");
+  await updateWorkspace(root, () => ({ config: parsed, result: undefined }), env);
   const restored = await readWorkspaceConfig(root, env);
   if (restored === null) {
     return {

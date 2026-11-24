@@ -2,6 +2,7 @@ import { readFileSync, renameSync, writeFileSync } from "node:fs";
 import { Octokit } from "@octokit/rest";
 import { logDiag, verboseEnabled } from "./diagnostics.ts";
 import { writeFileAtomic } from "./fsUtils.ts";
+import { isProjectStarred, starProject } from "./projectStar.ts";
 import { type RateLimitRetryOptions, withRateLimitRetry } from "./rateLimit.ts";
 
 export interface RepoInfo {
@@ -304,6 +305,7 @@ export function deriveCiStateFromChecks(
 
 export interface GitHubServiceDeps {
   octokit?: Octokit;
+  request?: NonNullable<ConstructorParameters<typeof Octokit>[0]>["request"];
   retry?: RateLimitRetryOptions;
   baseUrl?: string;
   /** Optional etag cache: makes repeated getRepo calls conditional (304 = zero payload). */
@@ -318,7 +320,12 @@ export interface GitHubServiceDeps {
  */
 function quietOctokitLog(level: "warn" | "error"): (...args: unknown[]) => void {
   return (...args: unknown[]) => {
-    logDiag(level, "[octokit]", args.map(String).join(" "));
+    const message = args.map(String).join(" ");
+    // A starring check uses 404 as its ordinary negative answer, not a failure.
+    const diagnosticLevel = /^GET \/user\/starred\/[^/]+\/[^/]+ - 404 /.test(message)
+      ? "info"
+      : level;
+    logDiag(diagnosticLevel, "[octokit]", message);
     if (!verboseEnabled()) return;
     process.stderr.write(`octokit ${level}: ${args.map(String).join(" ")}\n`);
   };
@@ -351,6 +358,7 @@ export class GitHubService implements GitHubRepoReader, GitHubRepoCreator {
       new Octokit({
         auth: token,
         log: OCTOKIT_QUIET_LOG,
+        ...(deps.request !== undefined ? { request: deps.request } : {}),
         ...(deps.baseUrl !== undefined ? { baseUrl: deps.baseUrl } : {}),
       });
     this.retry = deps.retry;
@@ -360,6 +368,12 @@ export class GitHubService implements GitHubRepoReader, GitHubRepoCreator {
   private wrap<T>(fn: () => Promise<T>): Promise<T> {
     return withRateLimitRetry(fn, this.retry);
   }
+
+  isProjectStarred = (signal?: AbortSignal): Promise<boolean> =>
+    isProjectStarred(this.octokit, signal, this.retry);
+
+  starProject = (signal?: AbortSignal): Promise<void> =>
+    starProject(this.octokit, signal, this.retry);
 
   /**
    * Manual pagination with one retry-wrapped request per page, so a transient

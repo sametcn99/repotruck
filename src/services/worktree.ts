@@ -1,5 +1,5 @@
 import type { Dirent } from "node:fs";
-import { existsSync, lstatSync, readFileSync } from "node:fs";
+import { existsSync, lstatSync, readdirSync, readFileSync } from "node:fs";
 import { readdir } from "node:fs/promises";
 import path from "node:path";
 import { simpleGit } from "simple-git";
@@ -44,6 +44,27 @@ export function inspectGitDotEntry(repoDir: string): GitDotInspection {
 
 export function isLinkedWorktree(repoDir: string): boolean {
   return inspectGitDotEntry(repoDir).kind === "worktree";
+}
+
+export function repositoryMoveProblem(repoDir: string): string | null {
+  const inspected = inspectGitDotEntry(repoDir);
+  if (inspected.kind === "worktree")
+    return "linked git worktree must be managed with worktree commands";
+  if (inspected.kind === "repo") {
+    try {
+      if (
+        readdirSync(path.join(repoDir, ".git", "worktrees"), { withFileTypes: true }).some(
+          (entry) => entry.isDirectory(),
+        )
+      ) {
+        return "repository has linked worktrees; remove or relocate them with git worktree before moving or deleting the main checkout";
+      }
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT")
+        return "could not inspect linked worktrees";
+    }
+  }
+  return null;
 }
 
 export interface LinkedWorktreeEntry {
