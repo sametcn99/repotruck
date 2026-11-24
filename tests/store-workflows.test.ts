@@ -34,6 +34,7 @@ import {
 } from "../src/components/store/modalWorkflows.ts";
 import { Store, type StoreDeps } from "../src/components/store.ts";
 import type { RepoInfo } from "../src/services/github.ts";
+import { moveRepository } from "../src/services/mover.ts";
 import { writeWorkspaceConfig } from "../src/services/workspaceRegistry.ts";
 
 const tempDirs: string[] = [];
@@ -560,6 +561,11 @@ describe("lifecycleActions unit tests", () => {
       const cfg = await (await import("../src/services/workspace.ts")).loadWorkspace(root);
 
       // Move undo
+      // A real move updates the inventory before its undo action is applied.
+      // Keep this fixture aligned with that post-move state so the undo guard
+      // can distinguish an actual move from a later workspace-path edit.
+      const moved = await moveRepository(root, cfg, "acme/api", "acme/custom/api");
+      expect(moved.ok).toBe(true);
       await performUndoAction(
         root,
         {

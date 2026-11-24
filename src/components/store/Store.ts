@@ -5,6 +5,7 @@ import { effectiveRoot, validateRootInput } from "../../services/settings.ts";
 import { parseGitUrl } from "../../services/singleCloner.ts";
 import { loadWorkspace, registerWorkspace } from "../../services/workspace.ts";
 import { centralStorePath } from "../../services/workspaceRegistry.ts";
+import { executeContextAction } from "./contextActions.ts";
 import { buildSidebarRows, repoKey } from "./filters.ts";
 import {
   performArchiveRepos,
@@ -15,22 +16,16 @@ import {
 import {
   executeOmnibarCommandById,
   findTrackedEntryInRoot,
-  performCreateWorktree,
-  performOpenWorktreeModal,
-  performRemoveWorktree,
-  performRunOpenApp,
-  performSubmitAlias,
   performSubmitClone,
   performSubmitCreate,
   performSubmitMove,
   performSubmitRoot,
-  resolveCurrentAliasFor,
 } from "./modalWorkflows.ts";
 import { routeMouseEvent } from "./mouse.ts";
-import { StorePages } from "./StorePages.ts";
+import { StoreModals } from "./StoreModals.ts";
 import type { CreateDraft, MouseCallbacks, MouseEventPayload } from "./types.ts";
 
-export class Store extends StorePages {
+export class Store extends StoreModals {
   handleMouse = (
     event: MouseEventPayload,
     width: number,
@@ -93,21 +88,30 @@ export class Store extends StorePages {
   };
 
   openDeleteConfirm = async (key: string, keys?: readonly string[]): Promise<void> => {
+    const operation = this.workspaceOperation("openDeleteConfirm");
+    const { pushStatus } = operation;
+    const openModal: typeof this.openModal = (modal) => {
+      if (operation.current()) this.openModal(modal);
+    };
     try {
-      const entry = await findTrackedEntryInRoot(this.rootValue, key);
-      if (entry === null) {
-        this.pushStatus("FAILED", "[tui]", `not tracked by repotruck: ${key}`);
-        return;
+      try {
+        const entry = await findTrackedEntryInRoot(operation.root, key);
+        if (entry === null) {
+          pushStatus("FAILED", "[tui]", `not tracked by repotruck: ${key}`);
+          return;
+        }
+        const absPath = path.join(operation.root, ...entry.relativePath.split("/"));
+        openModal({
+          type: "confirmDelete",
+          key,
+          absPath,
+          ...(keys !== undefined && keys.length > 1 ? { keys } : {}),
+        });
+      } catch (error) {
+        pushStatus("FAILED", "[tui]", firstErrorLine(error));
       }
-      const absPath = path.join(this.rootValue, ...entry.relativePath.split("/"));
-      this.openModal({
-        type: "confirmDelete",
-        key,
-        absPath,
-        ...(keys !== undefined && keys.length > 1 ? { keys } : {}),
-      });
-    } catch (error) {
-      this.pushStatus("FAILED", "[tui]", firstErrorLine(error));
+    } finally {
+      operation.finish();
     }
   };
 
@@ -117,29 +121,43 @@ export class Store extends StorePages {
   };
 
   confirmPermanentDelete = async (key: string): Promise<void> => {
-    this.closeModal();
+    if (this.operations.has("confirmPermanentDelete")) return;
+    const operation = this.workspaceOperation("confirmPermanentDelete");
+    const { pushStatus } = operation;
     try {
-      const config = await loadWorkspace(this.rootValue);
-      await this.deps.deleteRepo(this.rootValue, config, key, { yes: true });
-      this.pushStatus("DONE", "[delete]", `${key} permanently deleted (delete --yes)`);
-      await this.refreshLocalState();
-    } catch (error) {
-      this.pushStatus("FAILED", "[delete]", firstErrorLine(error));
+      if (operation.current()) this.closeModal();
+      try {
+        const config = await loadWorkspace(operation.root);
+        await this.deps.deleteRepo(operation.root, config, key, { yes: true });
+        pushStatus("DONE", "[delete]", `${key} permanently deleted (delete --yes)`);
+        if (operation.current()) await this.refreshLocalState();
+      } catch (error) {
+        pushStatus("FAILED", "[delete]", firstErrorLine(error));
+      }
+    } finally {
+      operation.finish();
     }
   };
 
   confirmDelete = async (key: string, keys?: readonly string[]): Promise<boolean> => {
-    this.closeModal();
+    if (this.operations.has("confirmDelete")) return false;
+    const operation = this.workspaceOperation("confirmDelete");
+    const { pushStatus, pushUndo } = operation;
     try {
-      const ok = await performDeleteRepos(this.rootValue, keys ?? [key], this.deps.deleteRepo, {
-        pushStatus: this.pushStatus,
-        pushUndo: this.pushUndo,
-      });
-      await this.refreshLocalState();
-      return ok;
-    } catch (error) {
-      this.pushStatus("FAILED", "[tui]", firstErrorLine(error));
-      return false;
+      if (operation.current()) this.closeModal();
+      try {
+        const ok = await performDeleteRepos(operation.root, keys ?? [key], this.deps.deleteRepo, {
+          pushStatus: pushStatus,
+          pushUndo: pushUndo,
+        });
+        if (operation.current()) await this.refreshLocalState();
+        return ok;
+      } catch (error) {
+        pushStatus("FAILED", "[tui]", firstErrorLine(error));
+        return false;
+      }
+    } finally {
+      operation.finish();
     }
   };
 
@@ -157,20 +175,27 @@ export class Store extends StorePages {
   };
 
   confirmArchive = async (key: string, keys?: readonly string[]): Promise<boolean> => {
-    this.closeModal();
+    if (this.operations.has("confirmArchive")) return false;
+    const operation = this.workspaceOperation("confirmArchive");
+    const { pushStatus } = operation;
     try {
-      const ok = await performArchiveRepos(
-        this.rootValue,
-        keys ?? [key],
-        this.github,
-        this.deps.archiveRepoFn,
-        this.pushStatus,
-      );
-      await this.refreshLocalState();
-      return ok;
-    } catch (error) {
-      this.pushStatus("FAILED", "[archive]", firstErrorLine(error));
-      return false;
+      if (operation.current()) this.closeModal();
+      try {
+        const ok = await performArchiveRepos(
+          operation.root,
+          keys ?? [key],
+          this.github,
+          this.deps.archiveRepoFn,
+          pushStatus,
+        );
+        if (operation.current()) await this.refreshLocalState();
+        return ok;
+      } catch (error) {
+        pushStatus("FAILED", "[archive]", firstErrorLine(error));
+        return false;
+      }
+    } finally {
+      operation.finish();
     }
   };
 
@@ -182,107 +207,6 @@ export class Store extends StorePages {
     } catch (error) {
       this.pushStatus("FAILED", "[workspaces]", firstErrorLine(error));
     }
-  };
-
-  openOpenModal = async (key: string): Promise<void> => {
-    this.openModal({ type: "open", key, apps: null });
-    try {
-      const apps = await this.deps.detectAppsFn({ env: process.env });
-      if (this.state.modal?.type === "open") this.set({ modal: { type: "open", key, apps } });
-    } catch (error) {
-      if (this.state.modal?.type === "open") this.set({ modal: { type: "open", key, apps: [] } });
-      this.set({ modalError: firstErrorLine(error) });
-    }
-  };
-
-  currentAliasFor = (key: string): Promise<string | null> =>
-    resolveCurrentAliasFor(this.rootValue, key);
-
-  openAliasModal = async (key: string): Promise<void> => {
-    this.openModal({ type: "alias", key, prefill: (await this.currentAliasFor(key)) ?? "" });
-  };
-
-  submitAlias = async (key: string, alias: string): Promise<boolean> => {
-    const res = await performSubmitAlias(this.rootValue, key, alias);
-    if (!res.ok) {
-      this.set({ modalError: res.error });
-      return false;
-    }
-    await this.refreshLocalState();
-    this.closeModal();
-    return true;
-  };
-
-  openWorktreeModal = async (key: string): Promise<void> => {
-    const pending = { type: "worktree", key, worktrees: [], loading: true, error: null } as const;
-    this.openModal(pending);
-    try {
-      const worktrees = await performOpenWorktreeModal(this.rootValue, key);
-      if (this.state.modal === pending) {
-        this.set({ modal: { type: "worktree", key, worktrees, loading: false, error: null } });
-      }
-    } catch (error) {
-      if (this.state.modal === pending) {
-        this.set({
-          modal: {
-            type: "worktree",
-            key,
-            worktrees: [],
-            loading: false,
-            error: firstErrorLine(error),
-          },
-        });
-      }
-    }
-  };
-
-  createWorktree = async (
-    key: string,
-    branch: string,
-    targetPath?: string,
-    newBranch = false,
-  ): Promise<{ ok: boolean; message: string }> => {
-    const modal = this.state.modal;
-    const res = await performCreateWorktree(this.rootValue, key, branch, targetPath, newBranch);
-    if (res.ok) {
-      if (modal?.type === "worktree" && this.state.modal === modal) {
-        await this.openWorktreeModal(key);
-      }
-      await this.refreshLocalState();
-    }
-    return res;
-  };
-
-  removeWorktree = async (
-    key: string,
-    targetPath: string,
-    force = false,
-  ): Promise<{ ok: boolean; message: string }> => {
-    const modal = this.state.modal;
-    const res = await performRemoveWorktree(this.rootValue, key, targetPath, force);
-    if (res.ok) {
-      if (modal?.type === "worktree" && this.state.modal === modal) {
-        await this.openWorktreeModal(key);
-      }
-      await this.refreshLocalState();
-    }
-    return res;
-  };
-
-  runOpenApp = async (appName: string): Promise<number> => {
-    if (this.state.modal?.type !== "open") return 1;
-    const res = await performRunOpenApp(this.rootValue, this.state.modal.key, appName, this.deps);
-    if (res.error !== undefined) this.set({ modalError: res.error });
-    return res.code;
-  };
-
-  openMoveModal = async (key: string): Promise<void> => {
-    let prefill: string | null = null;
-    try {
-      prefill = (await findTrackedEntryInRoot(this.rootValue, key))?.relativePath ?? null;
-    } catch {}
-    this.set({ movePrefill: prefill });
-    this.openModal({ type: "move", key });
   };
 
   openWorkspacePicker = async (): Promise<void> => {
@@ -309,8 +233,43 @@ export class Store extends StorePages {
   };
 
   switchWorkspace = async (target: string): Promise<void> => {
+    this.operations.invalidate();
+    for (const task of this.activeTasks.values()) task.cancel?.();
+    this.activeTasks.clear();
     this.rootValue = target;
-    this.set({ root: target });
+    this.resolveDialog(false);
+    this.github = null;
+    this.lookupForkRepo = undefined;
+    this.token = null;
+    this.userLoginValue = null;
+    this.set({
+      root: target,
+      phase: "loading",
+      running: false,
+      profiles: {},
+      statuses: [],
+      contextMenu: null,
+      repos: [],
+      filteredRepos: [],
+      selected: new Set(),
+      localHealth: new Map(),
+      inspector: null,
+      detailData: null,
+      healthData: null,
+      statsPage: null,
+      changelogPage: null,
+      scanPage: null,
+      worktreePage: null,
+      orgs: [],
+      selectedOrgs: new Set(),
+      activeTaskCount: 0,
+      syncCenter: null,
+      codeSearchPage: null,
+      statusMatrix: null,
+      discoverPage: null,
+      runConsole: null,
+      trashPage: null,
+    });
     this.closeModal();
     this.personalRepos = [];
     this.orgReposCache.clear();
@@ -366,104 +325,129 @@ export class Store extends StorePages {
   };
 
   submitClone = async (url: string): Promise<boolean> => {
-    if (parseGitUrl(url) === null) {
-      this.set({
-        modalError: "invalid GitHub repository URL (expected owner/repo or a github.com URL)",
-      });
-      return false;
-    }
-    if (this.state.running) return false;
-    if (this.github === null) {
-      this.set({ modalError: "not initialized" });
-      return false;
-    }
-    this.set({ running: true });
+    if (this.operations.has("submitClone")) return false;
+    const operation = this.workspaceOperation("submitClone");
+    const { set: update } = operation;
     try {
-      const res = await performSubmitClone({
-        url,
-        running: false,
-        github: this.github,
-        root: this.rootValue,
-        userLogin: this.userLoginValue ?? "",
-        orgs: [...this.state.selectedOrgs],
-        token: this.token,
-        preset: this.state.preset,
-        emit: this.progressToStatus,
-        cloneSingle: this.deps.cloneSingle,
-      });
-      if (!res.ok) {
-        if (res.error !== undefined) this.set({ modalError: res.error });
+      if (parseGitUrl(url) === null) {
+        update({
+          modalError: "invalid GitHub repository URL (expected owner/repo or a github.com URL)",
+        });
         return false;
       }
-      if (res.repo !== undefined) {
-        this.sessionAddedRepos.set(repoKey(res.repo).toLowerCase(), res.repo);
+      if (this.state.running) return false;
+      if (this.github === null) {
+        update({ modalError: "not initialized" });
+        return false;
       }
-      await this.refreshLocalState();
-      this.closeModal();
-      return true;
-    } catch (error) {
-      this.set({ modalError: firstErrorLine(error) });
-      return false;
+      update({ running: true });
+      try {
+        const res = await performSubmitClone({
+          url,
+          running: false,
+          github: this.github,
+          root: operation.root,
+          userLogin: this.userLoginValue ?? "",
+          orgs: [...this.state.selectedOrgs],
+          token: this.token,
+          preset: this.state.preset,
+          emit: (progress) => {
+            if (operation.current()) this.progressToStatus(progress);
+          },
+          cloneSingle: this.deps.cloneSingle,
+        });
+        if (!res.ok) {
+          if (res.error !== undefined) update({ modalError: res.error });
+          return false;
+        }
+        if (!operation.current()) return false;
+        if (res.repo !== undefined) {
+          this.sessionAddedRepos.set(repoKey(res.repo).toLowerCase(), res.repo);
+        }
+        if (operation.current()) await this.refreshLocalState();
+        if (operation.current()) this.closeModal();
+        return true;
+      } catch (error) {
+        update({ modalError: firstErrorLine(error) });
+        return false;
+      } finally {
+        update({ running: false });
+      }
     } finally {
-      this.set({ running: false });
+      operation.finish();
     }
   };
 
   submitMove = async (dest: string): Promise<boolean> => {
-    const modal = this.state.modal;
-    if (modal === null || modal.type !== "move") return false;
-    this.set({ running: true });
+    if (this.operations.has("submitMove")) return false;
+    const operation = this.workspaceOperation("submitMove");
+    const { set: update, pushStatus, pushUndo } = operation;
     try {
-      const res = await performSubmitMove({
-        root: this.rootValue,
-        key: modal.key,
-        dest,
-        move: this.deps.move,
-        pushStatus: this.pushStatus,
-        pushUndo: this.pushUndo,
-      });
-      if (!res.ok) {
-        this.set({ modalError: res.error });
+      const modal = this.state.modal;
+      if (modal === null || modal.type !== "move") return false;
+      update({ running: true });
+      try {
+        const res = await performSubmitMove({
+          root: operation.root,
+          key: modal.key,
+          dest,
+          move: this.deps.move,
+          pushStatus: pushStatus,
+          pushUndo: pushUndo,
+        });
+        if (!res.ok) {
+          update({ modalError: res.error });
+          return false;
+        }
+        if (operation.current()) await this.refreshLocalState();
+        if (operation.current()) this.closeModal();
+        return true;
+      } catch (error) {
+        update({ modalError: firstErrorLine(error) });
         return false;
+      } finally {
+        update({ running: false });
       }
-      await this.refreshLocalState();
-      this.closeModal();
-      return true;
-    } catch (error) {
-      this.set({ modalError: firstErrorLine(error) });
-      return false;
     } finally {
-      this.set({ running: false });
+      operation.finish();
     }
   };
 
   submitCreate = async (draft: CreateDraft): Promise<boolean> => {
-    this.set({ running: true });
+    if (this.operations.has("submitCreate")) return false;
+    const operation = this.workspaceOperation("submitCreate");
+    const { set: update, pushStatus } = operation;
     try {
-      const res = await performSubmitCreate({
-        draft,
-        github: this.github,
-        root: this.rootValue,
-        token: this.token,
-        userLogin: this.userLoginValue ?? "",
-        orgs: [...this.state.selectedOrgs],
-        create: this.deps.create,
-        now: this.deps.now,
-        pushStatus: this.pushStatus,
-      });
-      if (!res.ok) {
-        this.set({ modalError: res.error });
+      update({ running: true });
+      try {
+        const res = await performSubmitCreate({
+          draft,
+          github: this.github,
+          root: operation.root,
+          token: this.token,
+          userLogin: this.userLoginValue ?? "",
+          orgs: [...this.state.selectedOrgs],
+          create: this.deps.create,
+          now: this.deps.now,
+          pushStatus: pushStatus,
+        });
+        if (!res.ok) {
+          update({ modalError: res.error });
+          return false;
+        }
+        if (!operation.current()) return false;
+        this.sessionAddedRepos.set(repoKey(res.repo).toLowerCase(), res.repo);
+        if (operation.current()) await this.refreshLocalState();
+        if (operation.current()) this.closeModal();
+        return true;
+      } catch (error) {
+        update({ modalError: firstErrorLine(error) });
         return false;
+      } finally {
+        update({ running: false });
       }
-      this.sessionAddedRepos.set(repoKey(res.repo).toLowerCase(), res.repo);
-      await this.refreshLocalState();
-      this.closeModal();
-      return true;
-    } catch (error) {
-      this.set({ modalError: firstErrorLine(error) });
-      return false;
     } finally {
-      this.set({ running: false });
+      operation.finish();
     }
   };
 
@@ -476,60 +460,10 @@ export class Store extends StorePages {
     if (this.state.contextMenu !== null) this.set({ contextMenu: null });
   };
 
-  /** Restrict the selection to the context target so batch confirms hit it. */
-  private focusSelectionOn = (key: string): void => {
-    this.set({ selected: new Set([key]) });
-  };
-
   executeContextAction = (action: string): void => {
     const menu = this.state.contextMenu;
-    this.set({ contextMenu: null });
-    if (menu === null) return;
-    const key = menu.key;
-    switch (action) {
-      case "detail":
-        this.openDetailModal(key);
-        return;
-      case "open":
-        void this.openOpenModal(key);
-        return;
-      case "sync":
-        void this.submitClone(key);
-        return;
-      case "move":
-        void this.openMoveModal(key);
-        return;
-      case "alias":
-        void this.openAliasModal(key);
-        return;
-      case "pin":
-        this.focusSelectionOn(key);
-        void this.togglePinSelection();
-        return;
-      case "worktree":
-        void this.openWorktreeModal(key);
-        return;
-      case "archive":
-        this.focusSelectionOn(key);
-        this.openSelectionArchiveConfirm();
-        return;
-      case "untrack":
-        this.focusSelectionOn(key);
-        this.openSelectionUntrackConfirm();
-        return;
-      case "delete":
-        this.focusSelectionOn(key);
-        void this.openSelectionDeleteConfirm();
-        return;
-      case "delete-permanent":
-        this.openPermanentDeleteConfirm(key);
-        return;
-      case "resolve":
-        this.setView("resolve");
-        this.pushStatus("DONE", "[resolve]", `sync resolve ${key} — guide page arrives with t15`);
-        return;
-      default:
-        return;
-    }
+    this.closeRepoContextMenu();
+    if (menu)
+      executeContextAction(this, menu.key, action, (key) => this.set({ selected: new Set([key]) }));
   };
 }

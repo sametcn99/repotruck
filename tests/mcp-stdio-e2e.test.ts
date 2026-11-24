@@ -98,12 +98,14 @@ describe("repotruck MCP server over a real stdio subprocess", () => {
     expect(parsed.workspaces).toEqual([]);
   }, 30000);
 
-  test("business failures return isError results, not exceptions", async () => {
+  test("business failures return isError results and the connection remains usable", async () => {
     const result = (await client.callTool({
-      name: "repotruck_workspace_status",
-      arguments: { root: path.join(tmpdir()) },
+      name: "repotruck_alias_remove",
+      arguments: { root: path.join(tmpdir()), alias: "missing-alias" },
     })) as { isError?: boolean; content?: Array<{ type: string; text?: string }> };
-    expect(result.isError).toBeUndefined();
+    expect(result.isError).toBe(true);
+    expect(textOf(result).toLowerCase()).toContain("workspace");
+    expect((await client.listTools()).tools.length).toBe(25);
   }, 30000);
 
   test("schema violations come back as isError:true with the validation message", async () => {

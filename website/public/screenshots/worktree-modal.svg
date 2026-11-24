@@ -4,88 +4,99 @@
 <style>text{font-family:ui-monospace,"SF Mono","Cascadia Code",Consolas,"Liberation Mono",Menlo,monospace;font-size:14px;white-space:pre}</style>
 <text x="12.0" y="26" fill="rgb(48,54,61)" textLength="1344.0" lengthAdjust="spacingAndGlyphs">┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐</text>
 <text x="12.0" y="43" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="43" fill="rgb(88,166,255)" textLength="840.0" lengthAdjust="spacingAndGlyphs"> repotruck · devuser (auth: gh-cli) · preset: categorized · root: /tmp/repotruck-shots-ws · 13 repos</text>
-<text x="860.4" y="43" fill="rgb(255,255,255)" textLength="487.2" lengthAdjust="spacingAndGlyphs">                                                          </text>
+<text x="20.4" y="43" fill="rgb(110,118,129)" textLength="92.4" lengthAdjust="spacingAndGlyphs">[F10] Views</text>
+<text x="112.8" y="43" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="121.2" y="43" fill="rgb(110,118,129)" textLength="109.2" lengthAdjust="spacingAndGlyphs"> Workspace ▾ </text>
+<text x="230.4" y="43" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="238.8" y="43" fill="rgb(110,118,129)" textLength="92.4" lengthAdjust="spacingAndGlyphs"> Inspect ▾ </text>
+<text x="331.2" y="43" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="339.6" y="43" fill="rgb(110,118,129)" textLength="100.8" lengthAdjust="spacingAndGlyphs"> Automate ▾ </text>
+<text x="440.4" y="43" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="448.8" y="43" fill="rgb(110,118,129)" textLength="100.8" lengthAdjust="spacingAndGlyphs"> Organize ▾ </text>
+<text x="549.6" y="43" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="558.0" y="43" fill="rgb(110,118,129)" textLength="84.0" lengthAdjust="spacingAndGlyphs"> System ▾ </text>
+<text x="642.0" y="43" fill="rgb(255,255,255)" textLength="705.6" lengthAdjust="spacingAndGlyphs">                                                                                    </text>
 <text x="1347.6" y="43" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="12.0" y="60" fill="rgb(48,54,61)" textLength="1344.0" lengthAdjust="spacingAndGlyphs">└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘</text>
-<text x="12.0" y="77" fill="rgb(88,166,255)" textLength="1344.0" lengthAdjust="spacingAndGlyphs">┌─Worktrees - devuser/primary──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐</text>
-<text x="12.0" y="94" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="94" fill="rgb(255,255,255)" textLength="1327.2" lengthAdjust="spacingAndGlyphs">                                                                                                                                                              </text>
-<text x="1347.6" y="94" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="12.0" y="60" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="60" fill="rgb(88,166,255)" textLength="840.0" lengthAdjust="spacingAndGlyphs"> repotruck · devuser (auth: gh-cli) · preset: categorized · root: /tmp/repotruck-shots-ws · 13 repos</text>
+<text x="860.4" y="60" fill="rgb(255,255,255)" textLength="487.2" lengthAdjust="spacingAndGlyphs">                                                          </text>
+<text x="1347.6" y="60" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="12.0" y="77" fill="rgb(48,54,61)" textLength="1344.0" lengthAdjust="spacingAndGlyphs">└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘</text>
+<text x="12.0" y="94" fill="rgb(88,166,255)" textLength="1344.0" lengthAdjust="spacingAndGlyphs">┌─Worktrees - devuser/primary──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐</text>
 <text x="12.0" y="111" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="111" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="111" fill="rgb(88,166,255)" textLength="226.8" lengthAdjust="spacingAndGlyphs">Worktrees - devuser/primary</text>
-<text x="255.6" y="111" fill="rgb(255,255,255)" textLength="1008.0" lengthAdjust="spacingAndGlyphs">                                                                                                                        </text>
-<text x="1263.6" y="111" fill="rgb(110,118,129)" textLength="75.6" lengthAdjust="spacingAndGlyphs">[× Close]</text>
-<text x="1339.2" y="111" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="20.4" y="111" fill="rgb(255,255,255)" textLength="1327.2" lengthAdjust="spacingAndGlyphs">                                                                                                                                                              </text>
 <text x="1347.6" y="111" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="128" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="128" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="128" fill="rgb(201,209,217)" textLength="176.4" lengthAdjust="spacingAndGlyphs">Active Worktrees (2):</text>
-<text x="205.2" y="128" fill="rgb(255,255,255)" textLength="1142.4" lengthAdjust="spacingAndGlyphs">                                                                                                                                        </text>
+<text x="28.8" y="128" fill="rgb(88,166,255)" textLength="226.8" lengthAdjust="spacingAndGlyphs">Worktrees - devuser/primary</text>
+<text x="255.6" y="128" fill="rgb(255,255,255)" textLength="1008.0" lengthAdjust="spacingAndGlyphs">                                                                                                                        </text>
+<text x="1263.6" y="128" fill="rgb(110,118,129)" textLength="75.6" lengthAdjust="spacingAndGlyphs">[× Close]</text>
+<text x="1339.2" y="128" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
 <text x="1347.6" y="128" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="145" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="145" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="145" fill="rgb(88,166,255)" textLength="520.8" lengthAdjust="spacingAndGlyphs">  /tmp/repotruck-shots-ws/devuser/source/primary [main] (main)</text>
-<text x="549.6" y="145" fill="rgb(255,255,255)" textLength="798.0" lengthAdjust="spacingAndGlyphs">                                                                                               </text>
+<text x="28.8" y="145" fill="rgb(110,118,129)" textLength="344.4" lengthAdjust="spacingAndGlyphs">Tab next · Shift+Tab previous · Esc close</text>
+<text x="373.2" y="145" fill="rgb(255,255,255)" textLength="974.4" lengthAdjust="spacingAndGlyphs">                                                                                                                    </text>
 <text x="1347.6" y="145" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="162" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="162" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="162" fill="rgb(201,209,217)" textLength="621.6" lengthAdjust="spacingAndGlyphs">  /tmp/repotruck-shots-ws/devuser/source/primary+feat-branch [feat-branch]</text>
-<text x="650.4" y="162" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="658.8" y="162" fill="rgb(248,81,73)" textLength="84.0" lengthAdjust="spacingAndGlyphs">[ Remove ]</text>
-<text x="742.8" y="162" fill="rgb(255,255,255)" textLength="604.8" lengthAdjust="spacingAndGlyphs">                                                                        </text>
+<text x="28.8" y="162" fill="rgb(201,209,217)" textLength="176.4" lengthAdjust="spacingAndGlyphs">Active Worktrees (2):</text>
+<text x="205.2" y="162" fill="rgb(255,255,255)" textLength="1142.4" lengthAdjust="spacingAndGlyphs">                                                                                                                                        </text>
 <text x="1347.6" y="162" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="179" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="179" fill="rgb(255,255,255)" textLength="1327.2" lengthAdjust="spacingAndGlyphs">                                                                                                                                                              </text>
+<text x="20.4" y="179" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="28.8" y="179" fill="rgb(88,166,255)" textLength="520.8" lengthAdjust="spacingAndGlyphs">  /tmp/repotruck-shots-ws/devuser/source/primary [main] (main)</text>
+<text x="549.6" y="179" fill="rgb(255,255,255)" textLength="798.0" lengthAdjust="spacingAndGlyphs">                                                                                               </text>
 <text x="1347.6" y="179" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="196" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="196" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="196" fill="rgb(201,209,217)" textLength="142.8" lengthAdjust="spacingAndGlyphs">Add New Worktree:</text>
-<text x="171.6" y="196" fill="rgb(255,255,255)" textLength="1176.0" lengthAdjust="spacingAndGlyphs">                                                                                                                                            </text>
+<text x="28.8" y="196" fill="rgb(201,209,217)" textLength="621.6" lengthAdjust="spacingAndGlyphs">  /tmp/repotruck-shots-ws/devuser/source/primary+feat-branch [feat-branch]</text>
+<text x="650.4" y="196" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="658.8" y="196" fill="rgb(248,81,73)" textLength="100.8" lengthAdjust="spacingAndGlyphs">[Del] Remove</text>
+<text x="759.6" y="196" fill="rgb(255,255,255)" textLength="588.0" lengthAdjust="spacingAndGlyphs">                                                                      </text>
 <text x="1347.6" y="196" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="213" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="213" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="213" fill="rgb(110,118,129)" textLength="100.8" lengthAdjust="spacingAndGlyphs">Branch name:</text>
-<text x="129.6" y="213" fill="rgb(255,255,255)" textLength="1218.0" lengthAdjust="spacingAndGlyphs">                                                                                                                                                 </text>
+<text x="20.4" y="213" fill="rgb(255,255,255)" textLength="1327.2" lengthAdjust="spacingAndGlyphs">                                                                                                                                                              </text>
 <text x="1347.6" y="213" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="230" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="230" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="230" fill="rgb(102,102,102)" textLength="117.6" lengthAdjust="spacingAndGlyphs">e.g. feature-x</text>
-<text x="146.4" y="230" fill="rgb(255,255,255)" textLength="1201.2" lengthAdjust="spacingAndGlyphs">                                                                                                                                               </text>
+<text x="28.8" y="230" fill="rgb(201,209,217)" textLength="142.8" lengthAdjust="spacingAndGlyphs">Add New Worktree:</text>
+<text x="171.6" y="230" fill="rgb(255,255,255)" textLength="1176.0" lengthAdjust="spacingAndGlyphs">                                                                                                                                            </text>
 <text x="1347.6" y="230" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="247" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="247" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="247" fill="rgb(110,118,129)" textLength="478.8" lengthAdjust="spacingAndGlyphs">Custom Path (optional, empty defaults to ../repo+branch):</text>
-<text x="507.6" y="247" fill="rgb(255,255,255)" textLength="840.0" lengthAdjust="spacingAndGlyphs">                                                                                                    </text>
+<text x="28.8" y="247" fill="rgb(110,118,129)" textLength="58.8" lengthAdjust="spacingAndGlyphs">Branch:</text>
+<text x="87.6" y="247" fill="rgb(255,255,255)" textLength="1260.0" lengthAdjust="spacingAndGlyphs">                                                                                                                                                      </text>
 <text x="1347.6" y="247" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="264" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="264" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="264" fill="rgb(102,102,102)" textLength="109.2" lengthAdjust="spacingAndGlyphs">optional path</text>
-<text x="138.0" y="264" fill="rgb(255,255,255)" textLength="1209.6" lengthAdjust="spacingAndGlyphs">                                                                                                                                                </text>
+<text x="28.8" y="264" fill="rgb(102,102,102)" textLength="117.6" lengthAdjust="spacingAndGlyphs">e.g. feature-x</text>
+<text x="146.4" y="264" fill="rgb(255,255,255)" textLength="1201.2" lengthAdjust="spacingAndGlyphs">                                                                                                                                               </text>
 <text x="1347.6" y="264" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="281" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="281" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="281" fill="rgb(110,118,129)" textLength="218.4" lengthAdjust="spacingAndGlyphs">[ ] Create new branch (-b)</text>
-<text x="247.2" y="281" fill="rgb(255,255,255)" textLength="1100.4" lengthAdjust="spacingAndGlyphs">                                                                                                                                   </text>
+<text x="28.8" y="281" fill="rgb(110,118,129)" textLength="428.4" lengthAdjust="spacingAndGlyphs">Custom path (optional, defaults to ../repo+branch):</text>
+<text x="457.2" y="281" fill="rgb(255,255,255)" textLength="890.4" lengthAdjust="spacingAndGlyphs">                                                                                                          </text>
 <text x="1347.6" y="281" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="298" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="298" fill="rgb(255,255,255)" textLength="1327.2" lengthAdjust="spacingAndGlyphs">                                                                                                                                                              </text>
+<text x="20.4" y="298" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="28.8" y="298" fill="rgb(102,102,102)" textLength="109.2" lengthAdjust="spacingAndGlyphs">optional path</text>
+<text x="138.0" y="298" fill="rgb(255,255,255)" textLength="1209.6" lengthAdjust="spacingAndGlyphs">                                                                                                                                                </text>
 <text x="1347.6" y="298" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="315" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="315" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="315" fill="rgb(88,166,255)" textLength="134.4" lengthAdjust="spacingAndGlyphs">[ Add Worktree ]</text>
-<text x="163.2" y="315" fill="rgb(255,255,255)" textLength="16.8" lengthAdjust="spacingAndGlyphs">  </text>
-<text x="180.0" y="315" fill="rgb(110,118,129)" textLength="75.6" lengthAdjust="spacingAndGlyphs">[ Close ]</text>
-<text x="255.6" y="315" fill="rgb(255,255,255)" textLength="1092.0" lengthAdjust="spacingAndGlyphs">                                                                                                                                  </text>
+<text x="28.8" y="315" fill="rgb(110,118,129)" textLength="285.6" lengthAdjust="spacingAndGlyphs">[ ] Create new branch (-b) · Space</text>
+<text x="314.4" y="315" fill="rgb(255,255,255)" textLength="1033.2" lengthAdjust="spacingAndGlyphs">                                                                                                                           </text>
 <text x="1347.6" y="315" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="332" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="332" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="332" fill="rgb(110,118,129)" textLength="117.6" lengthAdjust="spacingAndGlyphs">Escape cancels</text>
-<text x="146.4" y="332" fill="rgb(255,255,255)" textLength="1201.2" lengthAdjust="spacingAndGlyphs">                                                                                                                                               </text>
+<text x="20.4" y="332" fill="rgb(255,255,255)" textLength="1327.2" lengthAdjust="spacingAndGlyphs">                                                                                                                                                              </text>
 <text x="1347.6" y="332" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="349" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="349" fill="rgb(255,255,255)" textLength="1327.2" lengthAdjust="spacingAndGlyphs">                                                                                                                                                              </text>
+<text x="20.4" y="349" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="28.8" y="349" fill="rgb(88,166,255)" textLength="168.0" lengthAdjust="spacingAndGlyphs">[Enter] Add Worktree</text>
+<text x="196.8" y="349" fill="rgb(255,255,255)" textLength="16.8" lengthAdjust="spacingAndGlyphs">  </text>
+<text x="213.6" y="349" fill="rgb(110,118,129)" textLength="75.6" lengthAdjust="spacingAndGlyphs">[ Close ]</text>
+<text x="289.2" y="349" fill="rgb(255,255,255)" textLength="1058.4" lengthAdjust="spacingAndGlyphs">                                                                                                                              </text>
 <text x="1347.6" y="349" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="366" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="366" fill="rgb(255,255,255)" textLength="1327.2" lengthAdjust="spacingAndGlyphs">                                                                                                                                                              </text>
@@ -174,9 +185,10 @@
 <text x="12.0" y="842" fill="rgb(88,166,255)" textLength="1344.0" lengthAdjust="spacingAndGlyphs">└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘</text>
 <text x="12.0" y="859" fill="rgb(48,54,61)" textLength="1344.0" lengthAdjust="spacingAndGlyphs">┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐</text>
 <text x="12.0" y="876" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="876" fill="rgb(110,118,129)" textLength="714.0" lengthAdjust="spacingAndGlyphs"> [Tab] Focus  [Space] Select  [?] Help  [q] Quit  [:] Omnibar  [/] Search  [f] Health</text>
-<text x="734.4" y="876" fill="rgb(255,255,255)" textLength="613.2" lengthAdjust="spacingAndGlyphs">                                                                         </text>
+<text x="20.4" y="876" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="28.8" y="876" fill="rgb(110,118,129)" textLength="92.4" lengthAdjust="spacingAndGlyphs">[Esc] Close</text>
+<text x="121.2" y="876" fill="rgb(255,255,255)" textLength="1226.4" lengthAdjust="spacingAndGlyphs">                                                                                                                                                  </text>
 <text x="1347.6" y="876" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="893" fill="rgb(48,54,61)" textLength="1344.0" lengthAdjust="spacingAndGlyphs">└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘</text>
-<rect x="20.4" y="29.0" width="8.4" height="17" fill="none" stroke="#e6edf3" stroke-opacity="0.55" rx="1"/>
+<rect x="37.2" y="267.0" width="8.4" height="17" fill="none" stroke="#e6edf3" stroke-opacity="0.55" rx="1"/>
 </svg>

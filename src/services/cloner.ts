@@ -1,6 +1,7 @@
 import { execFile } from "node:child_process";
+import { createHash, randomUUID } from "node:crypto";
 import { existsSync } from "node:fs";
-import { mkdir, readdir, readFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, rename, rm } from "node:fs/promises";
 import { homedir } from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
@@ -8,6 +9,7 @@ import pLimit from "p-limit";
 import { simpleGit } from "simple-git";
 import type { EnvLike } from "./config.ts";
 import { warnQuiet } from "./diagnostics.ts";
+import { withWorkspaceLock } from "./workspaceLock.ts";
 
 const execFileAsync = promisify(execFile);
 
@@ -16,7 +18,9 @@ export const DEFAULT_CONCURRENCY = 3;
 export type LimitFunction = ReturnType<typeof pLimit>;
 
 export function createCloneLimiter(concurrency: number): LimitFunction {
-  return pLimit(Math.max(1, concurrency));
+  if (!Number.isSafeInteger(concurrency) || concurrency < 1)
+    throw new Error("concurrency must be a positive integer");
+  return pLimit(concurrency);
 }
 
 export type ClonePhase = "cloning" | "pulling" | "done" | "failed" | "skipped";
@@ -255,8 +259,10 @@ export function firstErrorLine(error: unknown, token?: string | null): string {
   let line = (raw.split(/\r?\n/, 1)[0] ?? raw).trim();
   if (token !== undefined && token !== null && token.length > 0) {
     line = line.split(token).join("***");
+    line = line.split(encodeURIComponent(token)).join("***");
+    line = line.split(Buffer.from(`x-access-token:${token}`).toString("base64")).join("***");
   }
-  return line;
+  return line.replace(/(https?:\/\/)[^\s@/]+@/gi, "$1***@");
 }
 
 export interface CloneOrUpdateOptions {
@@ -300,7 +306,27 @@ async function updateRepository(
 ): Promise<CloneProgress> {
   const { token, stash, divergence = "fail" } = options;
 
+  try {
+    await git.raw(["rev-parse", "--verify", "HEAD"]);
+  } catch {
+    return report("skipped", "empty repository; no commits to update");
+  }
+  try {
+    const branch = await git.raw(["symbolic-ref", "--quiet", "HEAD"]);
+    if (!branch.trim()) return report("failed", "detached HEAD; check out a branch before syncing");
+  } catch {
+    return report("failed", "detached HEAD; check out a branch before syncing");
+  }
+
   await withGitRetry(() => git.raw(["fetch", "--prune"]));
+  try {
+    await git.raw(["rev-parse", "--verify", "@{upstream}"]);
+  } catch {
+    return report(
+      "failed",
+      "upstream branch is missing; choose the current remote branch and set its upstream before syncing",
+    );
+  }
 
   const status = await git.raw(["status", "--porcelain"]);
   const dirty = status.trim().length > 0;
@@ -310,10 +336,12 @@ async function updateRepository(
   if (dirty) {
     await git.raw(["stash", "push", "--include-untracked", "-m", "repotruck-sync"]);
   }
+  let stashPending = dirty;
   const finishStash = async (): Promise<CloneProgress | null> => {
-    if (!dirty) return null;
+    if (!stashPending) return null;
     try {
-      await git.raw(["stash", "pop"]);
+      await git.raw(["stash", "pop", "--index"]);
+      stashPending = false;
       return null;
     } catch (error) {
       return report("failed", `stash pop failed (${firstErrorLine(error, token ?? null)})`);
@@ -321,6 +349,10 @@ async function updateRepository(
   };
 
   try {
+    if (options.sparse !== undefined) {
+      if (options.sparse.length) await git.raw(["sparse-checkout", "set", "--", ...options.sparse]);
+      else await git.raw(["sparse-checkout", "disable"]);
+    }
     const { ahead, behind } = await aheadBehindCount(git);
     if (ahead === 0 && behind === 0) {
       const stashed = await finishStash();
@@ -357,6 +389,8 @@ async function updateRepository(
         } catch {
           /* best effort: leave the repo in whatever state git holds */
         }
+        const stashed = await finishStash();
+        if (stashed !== null) return stashed;
         return report("failed", firstErrorLine(error, token ?? null));
       }
       const stashed = await finishStash();
@@ -368,6 +402,8 @@ async function updateRepository(
     if (stashed !== null) return stashed;
     return report("done", `reset to origin (discarded ${aheadLabel})`);
   } catch (error) {
+    const stashed = await finishStash();
+    if (stashed !== null) return stashed;
     return report("failed", firstErrorLine(error, token ?? null));
   }
 }
@@ -376,6 +412,7 @@ export async function cloneOrUpdate(
   target: CloneTarget,
   options: CloneOrUpdateOptions = {},
   emit?: EmitProgress,
+  deps: { clone?: (git: ReturnType<typeof simpleGit>, args: string[]) => Promise<unknown> } = {},
 ): Promise<CloneProgress> {
   const { token, preferSsh, depth, blobless } = options;
   const report = (phase: ClonePhase, message?: string): CloneProgress => {
@@ -384,62 +421,113 @@ export async function cloneOrUpdate(
     return item;
   };
 
-  try {
-    if (existsSync(target.destDir)) {
-      report("pulling");
-      const git = authedGit(target.destDir, target.httpsUrl, token, preferSsh);
-      let inside: string;
-      try {
-        inside = await git.raw(["rev-parse", "--is-inside-work-tree"]);
-      } catch {
-        return report("failed", "destination exists and is not a Git repository");
-      }
-      if (inside.trim() !== "true") {
-        return report("failed", "destination exists and is not a Git repository");
-      }
-      let originUrl: string | null = null;
-      try {
-        originUrl = (await git.raw(["remote", "get-url", "origin"])).trim();
-      } catch {
-        originUrl = null;
-      }
-      if (originUrl === null || originUrl.length === 0) {
-        return report(
-          "failed",
-          `destination exists but has no origin remote (expected ${target.owner}/${target.name}) — remove it or point origin at the repository`,
-        );
-      }
-      if (!originMatchesTarget(originUrl, target)) {
-        return report(
-          "failed",
-          `destination exists and tracks a different repository (origin: ${originUrl}, expected ${target.owner}/${target.name}) — move it away or repoint origin`,
-        );
-      }
-      return await updateRepository(git, options, report);
-    }
+  if (depth !== undefined && (!Number.isSafeInteger(depth) || depth <= 0))
+    return report("failed", "depth must be a positive integer");
 
-    report("cloning");
-    await mkdir(path.dirname(target.destDir), { recursive: true });
-    const useToken = Boolean(token) && !preferSsh;
-    const sourceUrl = preferSsh ? target.sshUrl : target.httpsUrl;
-    const git = authedGit(undefined, target.httpsUrl, token, preferSsh);
-    const hasSparse = Array.isArray(options.sparse) && options.sparse.length > 0;
-    const cloneArgs = ["clone"];
-    if (depth !== undefined) cloneArgs.push("--depth", String(depth));
-    if (blobless === true) cloneArgs.push("--filter=blob:none");
-    if (hasSparse) cloneArgs.push("--no-checkout");
-    cloneArgs.push(sourceUrl, target.destDir);
-    await withGitRetry(() => git.raw(cloneArgs));
-    if (hasSparse) {
-      const destGit = authedGit(target.destDir, target.httpsUrl, token, preferSsh);
-      await destGit.raw(["sparse-checkout", "set", ...(options.sparse ?? [])]);
-      await destGit.raw(["checkout"]);
-    }
-    if (useToken) {
-      await simpleGit(target.destDir).raw(["remote", "set-url", "origin", target.httpsUrl]);
-    }
-    return report("done", hasSparse ? "cloned (sparse)" : "cloned");
-  } catch (error) {
-    return report("failed", firstErrorLine(error, token ?? null));
-  }
+  const lockName = createHash("sha256")
+    .update(path.resolve(target.destDir).toLowerCase())
+    .digest("hex");
+  return withWorkspaceLock(
+    async () => {
+      try {
+        if (existsSync(target.destDir)) {
+          report("pulling");
+          const git = authedGit(target.destDir, target.httpsUrl, token, preferSsh);
+          let inside: string;
+          try {
+            inside = await git.raw(["rev-parse", "--is-inside-work-tree"]);
+          } catch {
+            return report("failed", "destination exists and is not a Git repository");
+          }
+          if (inside.trim() !== "true") {
+            return report("failed", "destination exists and is not a Git repository");
+          }
+          let originUrl: string | null = null;
+          try {
+            originUrl = (await git.raw(["remote", "get-url", "origin"])).trim();
+          } catch {
+            originUrl = null;
+          }
+          if (originUrl === null || originUrl.length === 0) {
+            return report(
+              "failed",
+              `destination exists but has no origin remote (expected ${target.owner}/${target.name}) — remove it or point origin at the repository`,
+            );
+          }
+          if (!originMatchesTarget(originUrl, target)) {
+            return report(
+              "failed",
+              `destination exists and tracks a different repository (origin: ${originUrl}, expected ${target.owner}/${target.name}) — move it away or repoint origin`,
+            );
+          }
+          return await updateRepository(git, options, report);
+        }
+
+        report("cloning");
+        await mkdir(path.dirname(target.destDir), { recursive: true });
+        const useToken = Boolean(token) && !preferSsh;
+        const sourceUrl = preferSsh ? target.sshUrl : target.httpsUrl;
+        const git = authedGit(undefined, target.httpsUrl, token, preferSsh);
+        let transportWarnings = "";
+        git.outputHandler((_command, _stdout, stderr) => {
+          stderr.on("data", (chunk) => {
+            transportWarnings = (transportWarnings + String(chunk)).slice(-8192);
+          });
+        });
+        const hasSparse = Array.isArray(options.sparse) && options.sparse.length > 0;
+        const cloneArgs = ["clone"];
+        if (depth !== undefined) cloneArgs.push("--depth", String(depth));
+        if (blobless === true) cloneArgs.push("--filter=blob:none");
+        if (hasSparse) cloneArgs.push("--no-checkout");
+        const staging = path.join(
+          path.dirname(target.destDir),
+          `.repotruck-clone-${process.pid}-${randomUUID()}`,
+        );
+        cloneArgs.push(sourceUrl, staging);
+        try {
+          await withGitRetry(async () => {
+            try {
+              return await (deps.clone ? deps.clone(git, cloneArgs) : git.raw(cloneArgs));
+            } catch (error) {
+              await rm(staging, { recursive: true, force: true });
+              throw error;
+            }
+          });
+          if (
+            blobless &&
+            /filtering not recognized|filter.*ignored|does not support filter/i.test(
+              transportWarnings,
+            )
+          )
+            throw new Error(
+              "remote server does not support blobless filtering; retry without --blobless (partial checkout cleaned up)",
+            );
+          if (hasSparse) {
+            const destGit = authedGit(staging, target.httpsUrl, token, preferSsh);
+            await destGit.raw(["sparse-checkout", "set", "--", ...(options.sparse ?? [])]);
+            await destGit.raw(["checkout"]);
+          }
+          if (useToken)
+            await simpleGit(staging).raw(["remote", "set-url", "origin", target.httpsUrl]);
+          if (existsSync(target.destDir))
+            throw new Error("clone destination appeared while cloning; existing files preserved");
+          await rename(staging, target.destDir);
+        } finally {
+          await rm(staging, { recursive: true, force: true });
+        }
+        return report("done", hasSparse ? "cloned (sparse)" : "cloned");
+      } catch (error) {
+        return report("failed", firstErrorLine(error, token ?? null));
+      }
+    },
+    {
+      env: {
+        REPOTRUCK_CONFIG_DIR: path.join(
+          path.dirname(path.resolve(target.destDir)),
+          ".repotruck-locks",
+        ),
+      },
+      lockName,
+    },
+  ).catch((error) => report("failed", firstErrorLine(error, token)));
 }

@@ -4,47 +4,58 @@
 <style>text{font-family:ui-monospace,"SF Mono","Cascadia Code",Consolas,"Liberation Mono",Menlo,monospace;font-size:14px;white-space:pre}</style>
 <text x="12.0" y="26" fill="rgb(48,54,61)" textLength="1344.0" lengthAdjust="spacingAndGlyphs">┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐</text>
 <text x="12.0" y="43" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="43" fill="rgb(88,166,255)" textLength="840.0" lengthAdjust="spacingAndGlyphs"> repotruck · devuser (auth: gh-cli) · preset: categorized · root: /tmp/repotruck-shots-ws · 13 repos</text>
-<text x="860.4" y="43" fill="rgb(255,255,255)" textLength="487.2" lengthAdjust="spacingAndGlyphs">                                                          </text>
+<text x="20.4" y="43" fill="rgb(110,118,129)" textLength="92.4" lengthAdjust="spacingAndGlyphs">[F10] Views</text>
+<text x="112.8" y="43" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="121.2" y="43" fill="rgb(110,118,129)" textLength="109.2" lengthAdjust="spacingAndGlyphs"> Workspace ▾ </text>
+<text x="230.4" y="43" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="238.8" y="43" fill="rgb(110,118,129)" textLength="92.4" lengthAdjust="spacingAndGlyphs"> Inspect ▾ </text>
+<text x="331.2" y="43" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="339.6" y="43" fill="rgb(110,118,129)" textLength="100.8" lengthAdjust="spacingAndGlyphs"> Automate ▾ </text>
+<text x="440.4" y="43" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="448.8" y="43" fill="rgb(110,118,129)" textLength="100.8" lengthAdjust="spacingAndGlyphs"> Organize ▾ </text>
+<text x="549.6" y="43" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="558.0" y="43" fill="rgb(110,118,129)" textLength="84.0" lengthAdjust="spacingAndGlyphs"> System ▾ </text>
+<text x="642.0" y="43" fill="rgb(255,255,255)" textLength="705.6" lengthAdjust="spacingAndGlyphs">                                                                                    </text>
 <text x="1347.6" y="43" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="12.0" y="60" fill="rgb(48,54,61)" textLength="1344.0" lengthAdjust="spacingAndGlyphs">└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘</text>
-<text x="12.0" y="77" fill="rgb(247,129,102)" textLength="1344.0" lengthAdjust="spacingAndGlyphs">┌─Set alias────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐</text>
-<text x="12.0" y="94" fill="rgb(247,129,102)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="94" fill="rgb(255,255,255)" textLength="1327.2" lengthAdjust="spacingAndGlyphs">                                                                                                                                                              </text>
-<text x="1347.6" y="94" fill="rgb(247,129,102)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="12.0" y="60" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="60" fill="rgb(88,166,255)" textLength="840.0" lengthAdjust="spacingAndGlyphs"> repotruck · devuser (auth: gh-cli) · preset: categorized · root: /tmp/repotruck-shots-ws · 13 repos</text>
+<text x="860.4" y="60" fill="rgb(255,255,255)" textLength="487.2" lengthAdjust="spacingAndGlyphs">                                                          </text>
+<text x="1347.6" y="60" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="12.0" y="77" fill="rgb(48,54,61)" textLength="1344.0" lengthAdjust="spacingAndGlyphs">└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘</text>
+<text x="12.0" y="94" fill="rgb(247,129,102)" textLength="1344.0" lengthAdjust="spacingAndGlyphs">┌─Set alias────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐</text>
 <text x="12.0" y="111" fill="rgb(247,129,102)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="111" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="111" fill="rgb(247,129,102)" textLength="75.6" lengthAdjust="spacingAndGlyphs">Set alias</text>
-<text x="104.4" y="111" fill="rgb(255,255,255)" textLength="1159.2" lengthAdjust="spacingAndGlyphs">                                                                                                                                          </text>
-<text x="1263.6" y="111" fill="rgb(110,118,129)" textLength="75.6" lengthAdjust="spacingAndGlyphs">[× Close]</text>
-<text x="1339.2" y="111" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="20.4" y="111" fill="rgb(255,255,255)" textLength="1327.2" lengthAdjust="spacingAndGlyphs">                                                                                                                                                              </text>
 <text x="1347.6" y="111" fill="rgb(247,129,102)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="128" fill="rgb(247,129,102)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="128" fill="rgb(255,255,255)" textLength="1327.2" lengthAdjust="spacingAndGlyphs"> Repository: devuser/primary                                                                                                                                  </text>
+<text x="20.4" y="128" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="28.8" y="128" fill="rgb(247,129,102)" textLength="75.6" lengthAdjust="spacingAndGlyphs">Set alias</text>
+<text x="104.4" y="128" fill="rgb(255,255,255)" textLength="1159.2" lengthAdjust="spacingAndGlyphs">                                                                                                                                          </text>
+<text x="1263.6" y="128" fill="rgb(110,118,129)" textLength="75.6" lengthAdjust="spacingAndGlyphs">[× Close]</text>
+<text x="1339.2" y="128" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
 <text x="1347.6" y="128" fill="rgb(247,129,102)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="145" fill="rgb(247,129,102)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="145" fill="rgb(255,255,255)" textLength="1327.2" lengthAdjust="spacingAndGlyphs"> Alias (letters, digits, dots, dashes, underscores):                                                                                                          </text>
+<text x="20.4" y="145" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="28.8" y="145" fill="rgb(110,118,129)" textLength="235.2" lengthAdjust="spacingAndGlyphs">Enter saves · Escape cancels</text>
+<text x="264.0" y="145" fill="rgb(255,255,255)" textLength="1083.6" lengthAdjust="spacingAndGlyphs">                                                                                                                                 </text>
 <text x="1347.6" y="145" fill="rgb(247,129,102)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="162" fill="rgb(247,129,102)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="162" fill="rgb(255,255,255)" textLength="1327.2" lengthAdjust="spacingAndGlyphs"> main                                                                                                                                                         </text>
+<text x="20.4" y="162" fill="rgb(255,255,255)" textLength="1327.2" lengthAdjust="spacingAndGlyphs"> Repository: devuser/primary                                                                                                                                  </text>
 <text x="1347.6" y="162" fill="rgb(247,129,102)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="179" fill="rgb(247,129,102)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="179" fill="rgb(255,255,255)" textLength="1327.2" lengthAdjust="spacingAndGlyphs">                                                                                                                                                              </text>
+<text x="20.4" y="179" fill="rgb(255,255,255)" textLength="1327.2" lengthAdjust="spacingAndGlyphs"> Alias (letters, digits, dots, dashes, underscores):                                                                                                          </text>
 <text x="1347.6" y="179" fill="rgb(247,129,102)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="196" fill="rgb(247,129,102)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="196" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="196" fill="rgb(247,129,102)" textLength="67.2" lengthAdjust="spacingAndGlyphs">[ Save ]</text>
-<text x="96.0" y="196" fill="rgb(255,255,255)" textLength="16.8" lengthAdjust="spacingAndGlyphs">  </text>
-<text x="112.8" y="196" fill="rgb(110,118,129)" textLength="84.0" lengthAdjust="spacingAndGlyphs">[ Cancel ]</text>
-<text x="196.8" y="196" fill="rgb(255,255,255)" textLength="1150.8" lengthAdjust="spacingAndGlyphs">                                                                                                                                         </text>
+<text x="20.4" y="196" fill="rgb(255,255,255)" textLength="1327.2" lengthAdjust="spacingAndGlyphs"> main                                                                                                                                                         </text>
 <text x="1347.6" y="196" fill="rgb(247,129,102)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="213" fill="rgb(247,129,102)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="213" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="213" fill="rgb(110,118,129)" textLength="235.2" lengthAdjust="spacingAndGlyphs">Enter saves · Escape cancels</text>
-<text x="264.0" y="213" fill="rgb(255,255,255)" textLength="1083.6" lengthAdjust="spacingAndGlyphs">                                                                                                                                 </text>
+<text x="20.4" y="213" fill="rgb(255,255,255)" textLength="1327.2" lengthAdjust="spacingAndGlyphs">                                                                                                                                                              </text>
 <text x="1347.6" y="213" fill="rgb(247,129,102)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="230" fill="rgb(247,129,102)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="230" fill="rgb(255,255,255)" textLength="1327.2" lengthAdjust="spacingAndGlyphs">                                                                                                                                                              </text>
+<text x="20.4" y="230" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="28.8" y="230" fill="rgb(247,129,102)" textLength="67.2" lengthAdjust="spacingAndGlyphs">[ Save ]</text>
+<text x="96.0" y="230" fill="rgb(255,255,255)" textLength="16.8" lengthAdjust="spacingAndGlyphs">  </text>
+<text x="112.8" y="230" fill="rgb(110,118,129)" textLength="84.0" lengthAdjust="spacingAndGlyphs">[ Cancel ]</text>
+<text x="196.8" y="230" fill="rgb(255,255,255)" textLength="1150.8" lengthAdjust="spacingAndGlyphs">                                                                                                                                         </text>
 <text x="1347.6" y="230" fill="rgb(247,129,102)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="247" fill="rgb(247,129,102)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="247" fill="rgb(255,255,255)" textLength="1327.2" lengthAdjust="spacingAndGlyphs">                                                                                                                                                              </text>
@@ -154,9 +165,10 @@
 <text x="12.0" y="842" fill="rgb(247,129,102)" textLength="1344.0" lengthAdjust="spacingAndGlyphs">└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘</text>
 <text x="12.0" y="859" fill="rgb(48,54,61)" textLength="1344.0" lengthAdjust="spacingAndGlyphs">┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐</text>
 <text x="12.0" y="876" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="876" fill="rgb(110,118,129)" textLength="714.0" lengthAdjust="spacingAndGlyphs"> [Tab] Focus  [Space] Select  [?] Help  [q] Quit  [:] Omnibar  [/] Search  [f] Health</text>
-<text x="734.4" y="876" fill="rgb(255,255,255)" textLength="613.2" lengthAdjust="spacingAndGlyphs">                                                                         </text>
+<text x="20.4" y="876" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="28.8" y="876" fill="rgb(110,118,129)" textLength="92.4" lengthAdjust="spacingAndGlyphs">[Esc] Close</text>
+<text x="121.2" y="876" fill="rgb(255,255,255)" textLength="1226.4" lengthAdjust="spacingAndGlyphs">                                                                                                                                                  </text>
 <text x="1347.6" y="876" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="893" fill="rgb(48,54,61)" textLength="1344.0" lengthAdjust="spacingAndGlyphs">└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘</text>
-<rect x="70.8" y="165.0" width="8.4" height="17" fill="none" stroke="#e6edf3" stroke-opacity="0.55" rx="1"/>
+<rect x="70.8" y="199.0" width="8.4" height="17" fill="none" stroke="#e6edf3" stroke-opacity="0.55" rx="1"/>
 </svg>

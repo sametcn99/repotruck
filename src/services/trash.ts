@@ -12,6 +12,7 @@ import {
   updateWorkspace,
   upsertInventory,
 } from "./workspace.ts";
+import { assertWorkspacePath } from "./workspacePaths.ts";
 
 export interface TrashEntry {
   id: string;
@@ -97,6 +98,7 @@ export function parseTrashDirName(
 
 export function listTrashEntries(root: string): TrashEntry[] {
   const trashRoot = workspaceTrashDir(path.resolve(root));
+  assertWorkspacePath(root, trashRoot);
   if (!existsSync(trashRoot)) return [];
 
   let items: Dirent<string>[];
@@ -124,7 +126,11 @@ export function listTrashEntries(root: string): TrashEntry[] {
       absPath,
       owner: parsed.owner,
       name: parsed.name,
-      trashedAt: new Date(parsed.timestampMs).toISOString(),
+      trashedAt: new Date(
+        Number.isFinite(parsed.timestampMs) && Math.abs(parsed.timestampMs) <= 8.64e15
+          ? parsed.timestampMs
+          : mtimeMs,
+      ).toISOString(),
       timestampMs: parsed.timestampMs,
       sizeBytes: computeDirSize(absPath),
     });
@@ -194,6 +200,8 @@ export async function restoreTrashEntry(
   }
 
   const move = options.moveImpl ?? moveDir;
+  assertWorkspacePath(resolvedRoot, match.absPath);
+  assertWorkspacePath(resolvedRoot, targetAbs);
   move(match.absPath, targetAbs);
 
   await updateWorkspace(
@@ -238,6 +246,12 @@ export interface EmptyTrashResult {
 }
 
 export function emptyTrash(root: string, options: EmptyTrashOptions = {}): EmptyTrashResult {
+  if (
+    options.olderThanDays !== undefined &&
+    (!Number.isFinite(options.olderThanDays) || options.olderThanDays < 0)
+  ) {
+    throw new Error("olderThanDays must be a finite non-negative number");
+  }
   const resolvedRoot = path.resolve(root);
   const entries = listTrashEntries(resolvedRoot);
   const now = options.now ?? Date.now();
@@ -255,6 +269,7 @@ export function emptyTrash(root: string, options: EmptyTrashOptions = {}): Empty
       kept.push(entry);
       continue;
     }
+    assertWorkspacePath(resolvedRoot, entry.absPath);
     rm(entry.absPath);
     removed.push(entry);
     freedBytes += entry.sizeBytes;

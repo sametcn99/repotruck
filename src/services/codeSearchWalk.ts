@@ -4,6 +4,7 @@ import { existsSync } from "node:fs";
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
+import { assertWorkspacePath } from "./workspacePaths.ts";
 
 const execFileAsync = promisify(execFile);
 
@@ -26,6 +27,7 @@ function shouldSkipDir(name: string): boolean {
 
 export interface IgnoreRule {
   negated: boolean;
+  base?: string;
   regex: RegExp;
 }
 
@@ -95,7 +97,12 @@ export function isIgnoredByRules(relPath: string, rules: readonly IgnoreRule[]):
   const clean = relPath.replace(/\\/g, "/").replace(/^\/+/, "");
   let ignored = false;
   for (const rule of rules) {
-    if (rule.regex.test(clean)) {
+    const local = rule.base
+      ? clean.startsWith(`${rule.base}/`)
+        ? clean.slice(rule.base.length + 1)
+        : null
+      : clean;
+    if (local !== null && rule.regex.test(local)) {
       ignored = !rule.negated;
     }
   }
@@ -133,6 +140,11 @@ async function tryWalkViaGitLsFiles(repoDir: string): Promise<WalkedFile[] | nul
       if (segments.some((seg) => shouldSkipDir(seg))) continue;
       const absPath = path.join(repoDir, ...segments);
       if (!existsSync(absPath)) continue;
+      try {
+        await assertWorkspacePath(repoDir, absPath);
+      } catch {
+        continue;
+      }
       seen.add(relPath);
       files.push({ absPath, relPath });
     }
@@ -143,13 +155,17 @@ async function tryWalkViaGitLsFiles(repoDir: string): Promise<WalkedFile[] | nul
   }
 }
 
-export async function walkSourceFiles(repoDir: string): Promise<WalkedFile[]> {
-  const fromGit = await tryWalkViaGitLsFiles(repoDir);
+export async function walkSourceFiles(
+  repoDir: string,
+  options: { useGit?: boolean } = {},
+): Promise<WalkedFile[]> {
+  const fromGit = options.useGit === false ? null : await tryWalkViaGitLsFiles(repoDir);
   if (fromGit !== null) return fromGit;
 
   const files: WalkedFile[] = [];
-  const ignoreRules = await readRootGitignore(repoDir);
-  const visit = async (dir: string, prefix: string): Promise<void> => {
+  const visit = async (dir: string, prefix: string, inherited: IgnoreRule[]): Promise<void> => {
+    const localRules = await readRootGitignore(dir);
+    const ignoreRules = [...inherited, ...localRules.map((rule) => ({ ...rule, base: prefix }))];
     let entries: Dirent[];
     try {
       entries = await readdir(dir, { withFileTypes: true });
@@ -167,14 +183,14 @@ export async function walkSourceFiles(repoDir: string): Promise<WalkedFile[]> {
           const hasNegations = ignoreRules.some((r) => r.negated);
           if (!hasNegations) continue;
         }
-        await visit(absPath, relPath);
+        await visit(absPath, relPath, ignoreRules);
       } else if (entry.isFile()) {
         if (ignoreRules.length > 0 && isIgnoredByRules(relPath, ignoreRules)) continue;
         files.push({ absPath, relPath });
       }
     }
   };
-  await visit(repoDir, "");
+  await visit(repoDir, "", []);
   files.sort((a, b) => (a.relPath < b.relPath ? -1 : a.relPath > b.relPath ? 1 : 0));
   return files;
 }

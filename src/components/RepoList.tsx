@@ -3,6 +3,7 @@ import { useState, useSyncExternalStore } from "react";
 import type { Store } from "./store.ts";
 import { theme } from "./theme.ts";
 import {
+  clampBoxLine,
   repoKeyOf,
   repoRowLabel,
   repoViewportRows,
@@ -11,10 +12,7 @@ import {
   visibleSlice,
 } from "./windowing.ts";
 
-function clampRepoLine(raw: string, maxCols: number): string {
-  if (raw.length <= maxCols) return raw;
-  return `${raw.slice(0, Math.max(1, maxCols - 1))}\u2026`;
-}
+const clampRepoLine = clampBoxLine;
 
 export function RepoList({
   store,

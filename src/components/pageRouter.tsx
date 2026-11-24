@@ -17,6 +17,7 @@ import { SearchModal } from "./SearchModal.tsx";
 import { StartPreviewModal } from "./StartPreviewModal.tsx";
 import type { ModalState, StatusPhase, Store, ViewId } from "./store.ts";
 import { PageShell } from "./ui/PageShell.tsx";
+import { AboutView } from "./views/AboutView.tsx";
 import { AgentsView } from "./views/AgentsView.tsx";
 import { CodeSearchView } from "./views/CodeSearchView.tsx";
 import { ConflictResolverView } from "./views/ConflictResolverView.tsx";
@@ -77,6 +78,8 @@ export function renderPage(
     </PageShell>
   );
   switch (view) {
+    case "about":
+      return wrap(<AboutView store={store} />);
     case "status":
       return wrap(<StatusMatrixView store={store} width={innerWidth} height={innerHeight} />);
     case "search":

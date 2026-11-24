@@ -13,10 +13,16 @@ import { moveDir, moveRepository } from "../../services/mover.ts";
 import { reorganizeWorkspace } from "../../services/reorganizer.ts";
 import { runInRepos } from "../../services/runner.ts";
 import { cloneSingleRepository } from "../../services/singleCloner.ts";
+import { restoreTrashEntry } from "../../services/trash.ts";
 import { checkForUpdate, readUpdateState, writeUpdateState } from "../../services/updater.ts";
 import { syncRepos } from "../../services/workspace.ts";
-import { listWorkspaces, removeWorkspace } from "../../services/workspaceRegistry.ts";
+import {
+  listWorkspaces,
+  removeWorkspace,
+  restoreWorkspaceSnapshot,
+} from "../../services/workspaceRegistry.ts";
 import { activeThemeName } from "../theme.ts";
+import { performWorkspaceMaintenanceAction } from "./lifecycleActions.ts";
 import type { RepoLocalHealth, StoreDeps, StoreSnapshot } from "./types.ts";
 
 export type ResolvedStoreDeps = Required<Omit<StoreDeps, "spawnImpl">> &
@@ -24,6 +30,9 @@ export type ResolvedStoreDeps = Required<Omit<StoreDeps, "spawnImpl">> &
 
 export function buildStoreDeps(deps: StoreDeps = {}): ResolvedStoreDeps {
   return {
+    restoreTrashFn: deps.restoreTrashFn ?? restoreTrashEntry,
+    restoreSnapshotFn: deps.restoreSnapshotFn ?? restoreWorkspaceSnapshot,
+    maintenanceFn: deps.maintenanceFn ?? performWorkspaceMaintenanceAction,
     auth: deps.auth ?? (() => getAuthInfo(process.env)),
     github:
       deps.github ??
@@ -85,6 +94,7 @@ export function buildInitialSnapshot(root: string): StoreSnapshot {
     statusScroll: 0,
     rightPaneTab: "activity",
     inspector: null,
+    detailData: null,
     healthData: null,
     statusMatrix: null,
     codeSearchPage: null,
@@ -97,12 +107,14 @@ export function buildInitialSnapshot(root: string): StoreSnapshot {
     changelogPage: null,
     scanPage: null,
     worktreePage: null,
+    projectStar: { status: "idle", message: null },
     omnibarLoading: false,
     omnibarSymbols: [],
     omnibarGithubRepos: [],
     preset: "categorized",
     workspacePreset: "categorized",
     customPresets: [],
+    profiles: {},
     focus: "list",
     navFocused: false,
     navCursor: 0,

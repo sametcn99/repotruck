@@ -228,6 +228,10 @@ describe("cloneOrUpdate against file:// remotes", () => {
 
   test("scenario 11: --blobless sets the partial clone filter", async () => {
     const remote = await makeRemote("rt-git-blobless");
+    await simpleGit({
+      baseDir: remote.remoteDir,
+      allowConfig: ["uploadpack.allowfilter"],
+    }).addConfig("uploadpack.allowfilter", "true");
     const dest = path.join(tempDir("rt-git-dest11-"), "acme", "source", "api");
     const progress = await cloneOrUpdate(targetFor(remote.fileUrl, dest), { blobless: true });
     expect(progress.phase).toBe("done");

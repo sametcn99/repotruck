@@ -156,7 +156,9 @@ describe("cloner edge cases", () => {
 
     expect(isDivergenceStrategy("rebase")).toBe(true);
     expect(isDivergenceStrategy("merge")).toBe(false);
-    expect(typeof createCloneLimiter(0)).toBe("function");
+    for (const value of [0, -1, NaN, Infinity, 0.5])
+      expect(() => createCloneLimiter(value)).toThrow("positive integer");
+    expect(typeof createCloneLimiter(1)).toBe("function");
   });
 
   test("detectSshAvailability covers REPOTRUCK_NO_SSH, key presence, and .ssh/config fallback", async () => {

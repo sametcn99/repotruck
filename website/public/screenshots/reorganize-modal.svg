@@ -4,201 +4,210 @@
 <style>text{font-family:ui-monospace,"SF Mono","Cascadia Code",Consolas,"Liberation Mono",Menlo,monospace;font-size:14px;white-space:pre}</style>
 <text x="12.0" y="26" fill="rgb(48,54,61)" textLength="1344.0" lengthAdjust="spacingAndGlyphs">┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐</text>
 <text x="12.0" y="43" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="43" fill="rgb(88,166,255)" textLength="840.0" lengthAdjust="spacingAndGlyphs"> repotruck · devuser (auth: gh-cli) · preset: categorized · root: /tmp/repotruck-shots-ws · 13 repos</text>
-<text x="860.4" y="43" fill="rgb(255,255,255)" textLength="487.2" lengthAdjust="spacingAndGlyphs">                                                          </text>
+<text x="20.4" y="43" fill="rgb(110,118,129)" textLength="92.4" lengthAdjust="spacingAndGlyphs">[F10] Views</text>
+<text x="112.8" y="43" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="121.2" y="43" fill="rgb(110,118,129)" textLength="109.2" lengthAdjust="spacingAndGlyphs"> Workspace ▾ </text>
+<text x="230.4" y="43" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="238.8" y="43" fill="rgb(110,118,129)" textLength="92.4" lengthAdjust="spacingAndGlyphs"> Inspect ▾ </text>
+<text x="331.2" y="43" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="339.6" y="43" fill="rgb(110,118,129)" textLength="100.8" lengthAdjust="spacingAndGlyphs"> Automate ▾ </text>
+<text x="440.4" y="43" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="448.8" y="43" fill="rgb(110,118,129)" textLength="100.8" lengthAdjust="spacingAndGlyphs"> Organize ▾ </text>
+<text x="549.6" y="43" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="558.0" y="43" fill="rgb(110,118,129)" textLength="84.0" lengthAdjust="spacingAndGlyphs"> System ▾ </text>
+<text x="642.0" y="43" fill="rgb(255,255,255)" textLength="705.6" lengthAdjust="spacingAndGlyphs">                                                                                    </text>
 <text x="1347.6" y="43" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="12.0" y="60" fill="rgb(48,54,61)" textLength="1344.0" lengthAdjust="spacingAndGlyphs">└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘</text>
-<text x="12.0" y="77" fill="rgb(210,168,255)" textLength="1344.0" lengthAdjust="spacingAndGlyphs">┌─Reorganize workspace─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐</text>
-<text x="12.0" y="94" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="94" fill="rgb(255,255,255)" textLength="1327.2" lengthAdjust="spacingAndGlyphs">                                                                                                                                                              </text>
-<text x="1347.6" y="94" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="12.0" y="60" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="60" fill="rgb(88,166,255)" textLength="840.0" lengthAdjust="spacingAndGlyphs"> repotruck · devuser (auth: gh-cli) · preset: categorized · root: /tmp/repotruck-shots-ws · 13 repos</text>
+<text x="860.4" y="60" fill="rgb(255,255,255)" textLength="487.2" lengthAdjust="spacingAndGlyphs">                                                          </text>
+<text x="1347.6" y="60" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="12.0" y="77" fill="rgb(48,54,61)" textLength="1344.0" lengthAdjust="spacingAndGlyphs">└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘</text>
+<text x="12.0" y="94" fill="rgb(210,168,255)" textLength="1344.0" lengthAdjust="spacingAndGlyphs">┌─Reorganize workspace─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐</text>
 <text x="12.0" y="111" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="111" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="111" fill="rgb(210,168,255)" textLength="168.0" lengthAdjust="spacingAndGlyphs">Reorganize workspace</text>
-<text x="196.8" y="111" fill="rgb(255,255,255)" textLength="1066.8" lengthAdjust="spacingAndGlyphs">                                                                                                                               </text>
-<text x="1263.6" y="111" fill="rgb(110,118,129)" textLength="75.6" lengthAdjust="spacingAndGlyphs">[× Close]</text>
-<text x="1339.2" y="111" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="20.4" y="111" fill="rgb(255,255,255)" textLength="1327.2" lengthAdjust="spacingAndGlyphs">                                                                                                                                                              </text>
 <text x="1347.6" y="111" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="128" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="128" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="128" fill="rgb(110,118,129)" textLength="260.4" lengthAdjust="spacingAndGlyphs">Target preset (Up/Down choose):</text>
-<text x="289.2" y="128" fill="rgb(255,255,255)" textLength="1058.4" lengthAdjust="spacingAndGlyphs">                                                                                                                              </text>
+<text x="28.8" y="128" fill="rgb(210,168,255)" textLength="168.0" lengthAdjust="spacingAndGlyphs">Reorganize workspace</text>
+<text x="196.8" y="128" fill="rgb(255,255,255)" textLength="1066.8" lengthAdjust="spacingAndGlyphs">                                                                                                                               </text>
+<text x="1263.6" y="128" fill="rgb(110,118,129)" textLength="75.6" lengthAdjust="spacingAndGlyphs">[× Close]</text>
+<text x="1339.2" y="128" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
 <text x="1347.6" y="128" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="145" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="145" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<rect x="28.8" y="131.0" width="193.2" height="17" fill="rgb(33,38,45)"/>
-<text x="28.8" y="145" fill="rgb(255,255,255)" textLength="193.2" lengthAdjust="spacingAndGlyphs">&gt; categorized (current)</text>
-<text x="222.0" y="145" fill="rgb(255,255,255)" textLength="1125.6" lengthAdjust="spacingAndGlyphs">                                                                                                                                      </text>
+<text x="28.8" y="145" fill="rgb(110,118,129)" textLength="554.4" lengthAdjust="spacingAndGlyphs">↑↓ preset · k keep custom · s scan disk · Enter apply · Esc cancel</text>
+<text x="583.2" y="145" fill="rgb(255,255,255)" textLength="764.4" lengthAdjust="spacingAndGlyphs">                                                                                           </text>
 <text x="1347.6" y="145" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="162" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="162" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="162" fill="rgb(201,209,217)" textLength="126.0" lengthAdjust="spacingAndGlyphs">  flat-by-owner</text>
-<text x="154.8" y="162" fill="rgb(255,255,255)" textLength="1192.8" lengthAdjust="spacingAndGlyphs">                                                                                                                                              </text>
+<text x="28.8" y="162" fill="rgb(110,118,129)" textLength="327.6" lengthAdjust="spacingAndGlyphs">Target layout · /tmp/repotruck-shots-ws</text>
+<text x="356.4" y="162" fill="rgb(255,255,255)" textLength="991.2" lengthAdjust="spacingAndGlyphs">                                                                                                                      </text>
 <text x="1347.6" y="162" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="179" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="179" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="179" fill="rgb(201,209,217)" textLength="126.0" lengthAdjust="spacingAndGlyphs">  topic-focused</text>
-<text x="154.8" y="179" fill="rgb(255,255,255)" textLength="1192.8" lengthAdjust="spacingAndGlyphs">                                                                                                                                              </text>
+<rect x="28.8" y="165.0" width="193.2" height="17" fill="rgb(33,38,45)"/>
+<text x="28.8" y="179" fill="rgb(255,255,255)" textLength="193.2" lengthAdjust="spacingAndGlyphs">&gt; categorized (current)</text>
+<text x="222.0" y="179" fill="rgb(255,255,255)" textLength="1125.6" lengthAdjust="spacingAndGlyphs">                                                                                                                                      </text>
 <text x="1347.6" y="179" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="196" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="196" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="196" fill="rgb(201,209,217)" textLength="134.4" lengthAdjust="spacingAndGlyphs">  language-first</text>
-<text x="163.2" y="196" fill="rgb(255,255,255)" textLength="1184.4" lengthAdjust="spacingAndGlyphs">                                                                                                                                             </text>
+<text x="28.8" y="196" fill="rgb(201,209,217)" textLength="126.0" lengthAdjust="spacingAndGlyphs">  flat-by-owner</text>
+<text x="154.8" y="196" fill="rgb(255,255,255)" textLength="1192.8" lengthAdjust="spacingAndGlyphs">                                                                                                                                              </text>
 <text x="1347.6" y="196" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="213" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="213" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="213" fill="rgb(201,209,217)" textLength="134.4" lengthAdjust="spacingAndGlyphs">  category-first</text>
-<text x="163.2" y="213" fill="rgb(255,255,255)" textLength="1184.4" lengthAdjust="spacingAndGlyphs">                                                                                                                                             </text>
+<text x="28.8" y="213" fill="rgb(201,209,217)" textLength="126.0" lengthAdjust="spacingAndGlyphs">  topic-focused</text>
+<text x="154.8" y="213" fill="rgb(255,255,255)" textLength="1192.8" lengthAdjust="spacingAndGlyphs">                                                                                                                                              </text>
 <text x="1347.6" y="213" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="230" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="230" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="230" fill="rgb(201,209,217)" textLength="184.8" lengthAdjust="spacingAndGlyphs">  language-categorized</text>
-<text x="213.6" y="230" fill="rgb(255,255,255)" textLength="1134.0" lengthAdjust="spacingAndGlyphs">                                                                                                                                       </text>
+<text x="28.8" y="230" fill="rgb(201,209,217)" textLength="134.4" lengthAdjust="spacingAndGlyphs">  language-first</text>
+<text x="163.2" y="230" fill="rgb(255,255,255)" textLength="1184.4" lengthAdjust="spacingAndGlyphs">                                                                                                                                             </text>
 <text x="1347.6" y="230" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="247" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="247" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="247" fill="rgb(201,209,217)" textLength="50.4" lengthAdjust="spacingAndGlyphs">  flat</text>
-<text x="79.2" y="247" fill="rgb(255,255,255)" textLength="1268.4" lengthAdjust="spacingAndGlyphs">                                                                                                                                                       </text>
+<text x="28.8" y="247" fill="rgb(201,209,217)" textLength="134.4" lengthAdjust="spacingAndGlyphs">  category-first</text>
+<text x="163.2" y="247" fill="rgb(255,255,255)" textLength="1184.4" lengthAdjust="spacingAndGlyphs">                                                                                                                                             </text>
 <text x="1347.6" y="247" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="264" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="264" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="264" fill="rgb(201,209,217)" textLength="126.0" lengthAdjust="spacingAndGlyphs">  category-flat</text>
-<text x="154.8" y="264" fill="rgb(255,255,255)" textLength="1192.8" lengthAdjust="spacingAndGlyphs">                                                                                                                                              </text>
+<text x="28.8" y="264" fill="rgb(201,209,217)" textLength="184.8" lengthAdjust="spacingAndGlyphs">  language-categorized</text>
+<text x="213.6" y="264" fill="rgb(255,255,255)" textLength="1134.0" lengthAdjust="spacingAndGlyphs">                                                                                                                                       </text>
 <text x="1347.6" y="264" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="281" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="281" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="281" fill="rgb(201,209,217)" textLength="126.0" lengthAdjust="spacingAndGlyphs">  language-flat</text>
-<text x="154.8" y="281" fill="rgb(255,255,255)" textLength="1192.8" lengthAdjust="spacingAndGlyphs">                                                                                                                                              </text>
+<text x="28.8" y="281" fill="rgb(201,209,217)" textLength="50.4" lengthAdjust="spacingAndGlyphs">  flat</text>
+<text x="79.2" y="281" fill="rgb(255,255,255)" textLength="1268.4" lengthAdjust="spacingAndGlyphs">                                                                                                                                                       </text>
 <text x="1347.6" y="281" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="298" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="298" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="298" fill="rgb(201,209,217)" textLength="159.6" lengthAdjust="spacingAndGlyphs">  category-language</text>
-<text x="188.4" y="298" fill="rgb(255,255,255)" textLength="1159.2" lengthAdjust="spacingAndGlyphs">                                                                                                                                          </text>
+<text x="28.8" y="298" fill="rgb(201,209,217)" textLength="126.0" lengthAdjust="spacingAndGlyphs">  category-flat</text>
+<text x="154.8" y="298" fill="rgb(255,255,255)" textLength="1192.8" lengthAdjust="spacingAndGlyphs">                                                                                                                                              </text>
 <text x="1347.6" y="298" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="315" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="315" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="315" fill="rgb(201,209,217)" textLength="159.6" lengthAdjust="spacingAndGlyphs">  language-category</text>
-<text x="188.4" y="315" fill="rgb(255,255,255)" textLength="1159.2" lengthAdjust="spacingAndGlyphs">                                                                                                                                          </text>
+<text x="28.8" y="315" fill="rgb(201,209,217)" textLength="126.0" lengthAdjust="spacingAndGlyphs">  language-flat</text>
+<text x="154.8" y="315" fill="rgb(255,255,255)" textLength="1192.8" lengthAdjust="spacingAndGlyphs">                                                                                                                                              </text>
 <text x="1347.6" y="315" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="332" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="332" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="332" fill="rgb(201,209,217)" textLength="210.0" lengthAdjust="spacingAndGlyphs">  owner-language-category</text>
-<text x="238.8" y="332" fill="rgb(255,255,255)" textLength="1108.8" lengthAdjust="spacingAndGlyphs">                                                                                                                                    </text>
+<text x="28.8" y="332" fill="rgb(201,209,217)" textLength="159.6" lengthAdjust="spacingAndGlyphs">  category-language</text>
+<text x="188.4" y="332" fill="rgb(255,255,255)" textLength="1159.2" lengthAdjust="spacingAndGlyphs">                                                                                                                                          </text>
 <text x="1347.6" y="332" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="349" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="349" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="349" fill="rgb(201,209,217)" textLength="210.0" lengthAdjust="spacingAndGlyphs">  category-owner-language</text>
-<text x="238.8" y="349" fill="rgb(255,255,255)" textLength="1108.8" lengthAdjust="spacingAndGlyphs">                                                                                                                                    </text>
+<text x="28.8" y="349" fill="rgb(201,209,217)" textLength="159.6" lengthAdjust="spacingAndGlyphs">  language-category</text>
+<text x="188.4" y="349" fill="rgb(255,255,255)" textLength="1159.2" lengthAdjust="spacingAndGlyphs">                                                                                                                                          </text>
 <text x="1347.6" y="349" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="366" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="366" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="366" fill="rgb(201,209,217)" textLength="210.0" lengthAdjust="spacingAndGlyphs">  category-language-owner</text>
+<text x="28.8" y="366" fill="rgb(201,209,217)" textLength="210.0" lengthAdjust="spacingAndGlyphs">  owner-language-category</text>
 <text x="238.8" y="366" fill="rgb(255,255,255)" textLength="1108.8" lengthAdjust="spacingAndGlyphs">                                                                                                                                    </text>
 <text x="1347.6" y="366" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="383" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="383" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="383" fill="rgb(201,209,217)" textLength="210.0" lengthAdjust="spacingAndGlyphs">  language-owner-category</text>
+<text x="28.8" y="383" fill="rgb(201,209,217)" textLength="210.0" lengthAdjust="spacingAndGlyphs">  category-owner-language</text>
 <text x="238.8" y="383" fill="rgb(255,255,255)" textLength="1108.8" lengthAdjust="spacingAndGlyphs">                                                                                                                                    </text>
 <text x="1347.6" y="383" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="400" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="400" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="400" fill="rgb(201,209,217)" textLength="210.0" lengthAdjust="spacingAndGlyphs">  language-category-owner</text>
+<text x="28.8" y="400" fill="rgb(201,209,217)" textLength="210.0" lengthAdjust="spacingAndGlyphs">  category-language-owner</text>
 <text x="238.8" y="400" fill="rgb(255,255,255)" textLength="1108.8" lengthAdjust="spacingAndGlyphs">                                                                                                                                    </text>
 <text x="1347.6" y="400" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="417" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="417" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="417" fill="rgb(201,209,217)" textLength="100.8" lengthAdjust="spacingAndGlyphs">  lang-owner</text>
-<text x="129.6" y="417" fill="rgb(255,255,255)" textLength="1218.0" lengthAdjust="spacingAndGlyphs">                                                                                                                                                 </text>
+<text x="28.8" y="417" fill="rgb(201,209,217)" textLength="210.0" lengthAdjust="spacingAndGlyphs">  language-owner-category</text>
+<text x="238.8" y="417" fill="rgb(255,255,255)" textLength="1108.8" lengthAdjust="spacingAndGlyphs">                                                                                                                                    </text>
 <text x="1347.6" y="417" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="434" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="434" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="434" fill="rgb(63,185,80)" textLength="621.6" lengthAdjust="spacingAndGlyphs">[x] keep custom placements (k toggles; on by default here, unlike the CLI)</text>
-<text x="650.4" y="434" fill="rgb(255,255,255)" textLength="697.2" lengthAdjust="spacingAndGlyphs">                                                                                   </text>
+<text x="28.8" y="434" fill="rgb(201,209,217)" textLength="210.0" lengthAdjust="spacingAndGlyphs">  language-category-owner</text>
+<text x="238.8" y="434" fill="rgb(255,255,255)" textLength="1108.8" lengthAdjust="spacingAndGlyphs">                                                                                                                                    </text>
 <text x="1347.6" y="434" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="451" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="451" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="451" fill="rgb(139,148,158)" textLength="730.8" lengthAdjust="spacingAndGlyphs">acme-labs/dashboard: acme-labs/source/dashboard -&gt; community/acme-labs/source/dashboard</text>
-<text x="759.6" y="451" fill="rgb(255,255,255)" textLength="588.0" lengthAdjust="spacingAndGlyphs">                                                                      </text>
+<text x="28.8" y="451" fill="rgb(201,209,217)" textLength="100.8" lengthAdjust="spacingAndGlyphs">  lang-owner</text>
+<text x="129.6" y="451" fill="rgb(255,255,255)" textLength="1218.0" lengthAdjust="spacingAndGlyphs">                                                                                                                                                 </text>
 <text x="1347.6" y="451" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="468" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="468" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="468" fill="rgb(139,148,158)" textLength="705.6" lengthAdjust="spacingAndGlyphs">acme-labs/core-api: acme-labs/source/core-api -&gt; community/acme-labs/source/core-api</text>
-<text x="734.4" y="468" fill="rgb(255,255,255)" textLength="613.2" lengthAdjust="spacingAndGlyphs">                                                                         </text>
+<text x="28.8" y="468" fill="rgb(63,185,80)" textLength="210.0" lengthAdjust="spacingAndGlyphs">[x] [k] Keep custom paths</text>
+<text x="238.8" y="468" fill="rgb(255,255,255)" textLength="1108.8" lengthAdjust="spacingAndGlyphs">                                                                                                                                    </text>
 <text x="1347.6" y="468" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="485" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="485" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="485" fill="rgb(139,148,158)" textLength="781.2" lengthAdjust="spacingAndGlyphs">vertex-soft/docs-site: vertex-soft/source/docs-site -&gt; community/vertex-soft/source/docs-site</text>
-<text x="810.0" y="485" fill="rgb(255,255,255)" textLength="537.6" lengthAdjust="spacingAndGlyphs">                                                                </text>
+<text x="28.8" y="485" fill="rgb(110,118,129)" textLength="310.8" lengthAdjust="spacingAndGlyphs">[ ] [s] Scan disk for existing clones</text>
+<text x="339.6" y="485" fill="rgb(255,255,255)" textLength="1008.0" lengthAdjust="spacingAndGlyphs">                                                                                                                        </text>
 <text x="1347.6" y="485" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="502" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="502" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="502" fill="rgb(139,148,158)" textLength="537.6" lengthAdjust="spacingAndGlyphs">devuser/forked-lib: forks/forked-lib -&gt; devuser/forks/forked-lib</text>
-<text x="566.4" y="502" fill="rgb(255,255,255)" textLength="781.2" lengthAdjust="spacingAndGlyphs">                                                                                             </text>
+<text x="28.8" y="502" fill="rgb(139,148,158)" textLength="730.8" lengthAdjust="spacingAndGlyphs">acme-labs/dashboard: acme-labs/source/dashboard -&gt; community/acme-labs/source/dashboard</text>
+<text x="759.6" y="502" fill="rgb(255,255,255)" textLength="588.0" lengthAdjust="spacingAndGlyphs">                                                                      </text>
 <text x="1347.6" y="502" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="519" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="519" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="519" fill="rgb(139,148,158)" textLength="537.6" lengthAdjust="spacingAndGlyphs">devuser/mirror-svc: forks/mirror-svc -&gt; devuser/forks/mirror-svc</text>
-<text x="566.4" y="519" fill="rgb(255,255,255)" textLength="781.2" lengthAdjust="spacingAndGlyphs">                                                                                             </text>
+<text x="28.8" y="519" fill="rgb(139,148,158)" textLength="705.6" lengthAdjust="spacingAndGlyphs">acme-labs/core-api: acme-labs/source/core-api -&gt; community/acme-labs/source/core-api</text>
+<text x="734.4" y="519" fill="rgb(255,255,255)" textLength="613.2" lengthAdjust="spacingAndGlyphs">                                                                         </text>
 <text x="1347.6" y="519" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="536" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="536" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="536" fill="rgb(139,148,158)" textLength="705.6" lengthAdjust="spacingAndGlyphs">acme-labs/legacy-php: archived/legacy-php -&gt; community/acme-labs/archived/legacy-php</text>
-<text x="734.4" y="536" fill="rgb(255,255,255)" textLength="613.2" lengthAdjust="spacingAndGlyphs">                                                                         </text>
+<text x="28.8" y="536" fill="rgb(139,148,158)" textLength="781.2" lengthAdjust="spacingAndGlyphs">vertex-soft/docs-site: vertex-soft/source/docs-site -&gt; community/vertex-soft/source/docs-site</text>
+<text x="810.0" y="536" fill="rgb(255,255,255)" textLength="537.6" lengthAdjust="spacingAndGlyphs">                                                                </text>
 <text x="1347.6" y="536" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="553" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="553" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="553" fill="rgb(110,118,129)" textLength="336.0" lengthAdjust="spacingAndGlyphs">skip devuser/primary [already at target]</text>
-<text x="364.8" y="553" fill="rgb(255,255,255)" textLength="982.8" lengthAdjust="spacingAndGlyphs">                                                                                                                     </text>
+<text x="28.8" y="553" fill="rgb(139,148,158)" textLength="705.6" lengthAdjust="spacingAndGlyphs">acme-labs/legacy-php: archived/legacy-php -&gt; community/acme-labs/archived/legacy-php</text>
+<text x="734.4" y="553" fill="rgb(255,255,255)" textLength="613.2" lengthAdjust="spacingAndGlyphs">                                                                         </text>
 <text x="1347.6" y="553" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="570" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="570" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="570" fill="rgb(110,118,129)" textLength="327.6" lengthAdjust="spacingAndGlyphs">skip devuser/worker [already at target]</text>
-<text x="356.4" y="570" fill="rgb(255,255,255)" textLength="991.2" lengthAdjust="spacingAndGlyphs">                                                                                                                      </text>
+<text x="28.8" y="570" fill="rgb(110,118,129)" textLength="394.8" lengthAdjust="spacingAndGlyphs">skip devuser/primary [linked git worktree kept]</text>
+<text x="423.6" y="570" fill="rgb(255,255,255)" textLength="924.0" lengthAdjust="spacingAndGlyphs">                                                                                                              </text>
 <text x="1347.6" y="570" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="587" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="587" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="587" fill="rgb(110,118,129)" textLength="344.4" lengthAdjust="spacingAndGlyphs">skip devuser/tui-tool [already at target]</text>
-<text x="373.2" y="587" fill="rgb(255,255,255)" textLength="974.4" lengthAdjust="spacingAndGlyphs">                                                                                                                    </text>
+<text x="28.8" y="587" fill="rgb(110,118,129)" textLength="327.6" lengthAdjust="spacingAndGlyphs">skip devuser/worker [already at target]</text>
+<text x="356.4" y="587" fill="rgb(255,255,255)" textLength="991.2" lengthAdjust="spacingAndGlyphs">                                                                                                                      </text>
 <text x="1347.6" y="587" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="604" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="604" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="604" fill="rgb(110,118,129)" textLength="336.0" lengthAdjust="spacingAndGlyphs">skip devuser/widgets [already at target]</text>
-<text x="364.8" y="604" fill="rgb(255,255,255)" textLength="982.8" lengthAdjust="spacingAndGlyphs">                                                                                                                     </text>
+<text x="28.8" y="604" fill="rgb(110,118,129)" textLength="344.4" lengthAdjust="spacingAndGlyphs">skip devuser/tui-tool [already at target]</text>
+<text x="373.2" y="604" fill="rgb(255,255,255)" textLength="974.4" lengthAdjust="spacingAndGlyphs">                                                                                                                    </text>
 <text x="1347.6" y="604" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="621" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="621" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="621" fill="rgb(110,118,129)" textLength="310.8" lengthAdjust="spacingAndGlyphs">skip devuser/site [already at target]</text>
-<text x="339.6" y="621" fill="rgb(255,255,255)" textLength="1008.0" lengthAdjust="spacingAndGlyphs">                                                                                                                        </text>
+<text x="28.8" y="621" fill="rgb(110,118,129)" textLength="336.0" lengthAdjust="spacingAndGlyphs">skip devuser/widgets [already at target]</text>
+<text x="364.8" y="621" fill="rgb(255,255,255)" textLength="982.8" lengthAdjust="spacingAndGlyphs">                                                                                                                     </text>
 <text x="1347.6" y="621" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="638" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="638" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="638" fill="rgb(110,118,129)" textLength="361.2" lengthAdjust="spacingAndGlyphs">skip devuser/scripts-py [already at target]</text>
-<text x="390.0" y="638" fill="rgb(255,255,255)" textLength="957.6" lengthAdjust="spacingAndGlyphs">                                                                                                                  </text>
+<text x="28.8" y="638" fill="rgb(110,118,129)" textLength="310.8" lengthAdjust="spacingAndGlyphs">skip devuser/site [already at target]</text>
+<text x="339.6" y="638" fill="rgb(255,255,255)" textLength="1008.0" lengthAdjust="spacingAndGlyphs">                                                                                                                        </text>
 <text x="1347.6" y="638" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="655" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="655" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="655" fill="rgb(248,81,73)" textLength="352.8" lengthAdjust="spacingAndGlyphs">failed acme-labs/retired-docs: not on disk</text>
-<text x="381.6" y="655" fill="rgb(255,255,255)" textLength="966.0" lengthAdjust="spacingAndGlyphs">                                                                                                                   </text>
+<text x="28.8" y="655" fill="rgb(110,118,129)" textLength="361.2" lengthAdjust="spacingAndGlyphs">skip devuser/scripts-py [already at target]</text>
+<text x="390.0" y="655" fill="rgb(255,255,255)" textLength="957.6" lengthAdjust="spacingAndGlyphs">                                                                                                                  </text>
 <text x="1347.6" y="655" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="672" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="672" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="672" fill="rgb(110,118,129)" textLength="285.6" lengthAdjust="spacingAndGlyphs">6 moves · 6 skipped · 0 collisions</text>
-<text x="314.4" y="672" fill="rgb(255,255,255)" textLength="1033.2" lengthAdjust="spacingAndGlyphs">                                                                                                                           </text>
+<text x="28.8" y="672" fill="rgb(248,81,73)" textLength="352.8" lengthAdjust="spacingAndGlyphs">failed acme-labs/retired-docs: not on disk</text>
+<text x="381.6" y="672" fill="rgb(255,255,255)" textLength="966.0" lengthAdjust="spacingAndGlyphs">                                                                                                                   </text>
 <text x="1347.6" y="672" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="689" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="689" fill="rgb(255,255,255)" textLength="1327.2" lengthAdjust="spacingAndGlyphs">                                                                                                                                                              </text>
+<text x="20.4" y="689" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="28.8" y="689" fill="rgb(110,118,129)" textLength="336.0" lengthAdjust="spacingAndGlyphs">4 local moves · 8 skipped · 0 collisions</text>
+<text x="364.8" y="689" fill="rgb(255,255,255)" textLength="982.8" lengthAdjust="spacingAndGlyphs">                                                                                                                     </text>
 <text x="1347.6" y="689" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="706" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="706" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="706" fill="rgb(63,185,80)" textLength="75.6" lengthAdjust="spacingAndGlyphs">[ Apply ]</text>
-<text x="104.4" y="706" fill="rgb(255,255,255)" textLength="16.8" lengthAdjust="spacingAndGlyphs">  </text>
-<text x="121.2" y="706" fill="rgb(110,118,129)" textLength="84.0" lengthAdjust="spacingAndGlyphs">[ Cancel ]</text>
-<text x="205.2" y="706" fill="rgb(255,255,255)" textLength="1142.4" lengthAdjust="spacingAndGlyphs">                                                                                                                                        </text>
+<text x="20.4" y="706" fill="rgb(255,255,255)" textLength="1327.2" lengthAdjust="spacingAndGlyphs">                                                                                                                                                              </text>
 <text x="1347.6" y="706" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="723" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="723" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="723" fill="rgb(110,118,129)" textLength="512.4" lengthAdjust="spacingAndGlyphs">Up/Down preset · k keep-custom · Enter apply · Escape cancels</text>
-<text x="541.2" y="723" fill="rgb(255,255,255)" textLength="806.4" lengthAdjust="spacingAndGlyphs">                                                                                                </text>
+<text x="28.8" y="723" fill="rgb(63,185,80)" textLength="184.8" lengthAdjust="spacingAndGlyphs">[ Enter ] Apply layout</text>
+<text x="213.6" y="723" fill="rgb(255,255,255)" textLength="16.8" lengthAdjust="spacingAndGlyphs">  </text>
+<text x="230.4" y="723" fill="rgb(110,118,129)" textLength="84.0" lengthAdjust="spacingAndGlyphs">[ Cancel ]</text>
+<text x="314.4" y="723" fill="rgb(255,255,255)" textLength="1033.2" lengthAdjust="spacingAndGlyphs">                                                                                                                           </text>
 <text x="1347.6" y="723" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="740" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="740" fill="rgb(255,255,255)" textLength="1327.2" lengthAdjust="spacingAndGlyphs">                                                                                                                                                              </text>
@@ -221,8 +230,9 @@
 <text x="12.0" y="842" fill="rgb(210,168,255)" textLength="1344.0" lengthAdjust="spacingAndGlyphs">└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘</text>
 <text x="12.0" y="859" fill="rgb(48,54,61)" textLength="1344.0" lengthAdjust="spacingAndGlyphs">┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐</text>
 <text x="12.0" y="876" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="876" fill="rgb(110,118,129)" textLength="714.0" lengthAdjust="spacingAndGlyphs"> [Tab] Focus  [Space] Select  [?] Help  [q] Quit  [:] Omnibar  [/] Search  [f] Health</text>
-<text x="734.4" y="876" fill="rgb(255,255,255)" textLength="613.2" lengthAdjust="spacingAndGlyphs">                                                                         </text>
+<text x="20.4" y="876" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="28.8" y="876" fill="rgb(110,118,129)" textLength="92.4" lengthAdjust="spacingAndGlyphs">[Esc] Close</text>
+<text x="121.2" y="876" fill="rgb(255,255,255)" textLength="1226.4" lengthAdjust="spacingAndGlyphs">                                                                                                                                                  </text>
 <text x="1347.6" y="876" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="893" fill="rgb(48,54,61)" textLength="1344.0" lengthAdjust="spacingAndGlyphs">└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘</text>
 <rect x="20.4" y="29.0" width="8.4" height="17" fill="none" stroke="#e6edf3" stroke-opacity="0.55" rx="1"/>

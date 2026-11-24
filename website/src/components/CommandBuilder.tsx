@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { CopyButton } from "./CopyButton.tsx";
 import { COMMAND_GROUPS, type CommandDoc, GLOBAL_FLAGS } from "./commandGroups.generated.ts";
+import { trapDialogFocus } from "./dialogFocus.ts";
 
 /**
  * Command builder mini-app: browse every repotruck command with its
@@ -39,7 +40,7 @@ interface FlagState {
 }
 
 /** "repotruck sync resolve [repo] [options]" → subcommand + positionals. */
-function parseUsageForm(usage: string): UsageForm {
+export function parseUsageForm(usage: string): UsageForm {
   const subcommand: string[] = [];
   const positionals: Positional[] = [];
   for (const token of usage.trim().split(/\s+/)) {
@@ -90,10 +91,46 @@ function parseFlag(flag: string, description: string): FlagSpec {
   };
 }
 
-function quoteValue(value: string): string {
-  const trimmed = value.trim();
-  if (trimmed.length === 0) return '""';
-  return /\s/.test(trimmed) ? `"${trimmed}"` : trimmed;
+export function quoteValue(value: string): string {
+  if (value.length === 0) return '""';
+  return /^[A-Za-z0-9_@%+=:,./-]+$/.test(value) ? value : `"${value.replace(/[\\"$`]/g, "\\$&")}"`;
+}
+
+/** Split the variadic field using shell-style quoting; partial edits stay valid. */
+export function splitArguments(input: string): string[] {
+  const values: string[] = [];
+  let value = "",
+    quote = "",
+    escaped = false,
+    started = false;
+  for (const char of input) {
+    if (escaped) {
+      value += char;
+      escaped = false;
+      started = true;
+    } else if (char === "\\" && quote !== "'") {
+      escaped = true;
+      started = true;
+    } else if (quote) {
+      if (char === quote) quote = "";
+      else value += char;
+    } else if (char === "'" || char === '"') {
+      quote = char;
+      started = true;
+    } else if (/\s/.test(char)) {
+      if (started) {
+        values.push(value);
+        value = "";
+        started = false;
+      }
+    } else {
+      value += char;
+      started = true;
+    }
+  }
+  if (escaped) value += "\\";
+  if (started) values.push(value);
+  return values;
 }
 
 function flagToParts(spec: FlagSpec, state: FlagState): string[] {
@@ -102,7 +139,7 @@ function flagToParts(spec: FlagSpec, state: FlagState): string[] {
   return [spec.label, quoteValue(state.value)];
 }
 
-function buildCommand(
+export function buildCommand(
   form: UsageForm,
   args: readonly string[],
   commandFlags: readonly { spec: FlagSpec; state?: FlagState }[],
@@ -110,10 +147,10 @@ function buildCommand(
 ): string {
   const parts = ["npx", "repotruck", ...form.subcommand];
   form.positionals.forEach((positional, index) => {
-    const value = args[index]?.trim() ?? "";
+    const value = args[index] ?? "";
     if (value.length === 0) return;
     if (positional.variadic) {
-      parts.push(...value.split(/\s+/).map(quoteValue));
+      parts.push(...splitArguments(value).map(quoteValue));
     } else {
       parts.push(quoteValue(value));
     }
@@ -251,6 +288,7 @@ export function CommandBuilder({ open, onClose }: { open: boolean; onClose: () =
   // Chrome swallows Escape inside <input type="search"> (clears the query
   // without firing the dialog's cancel), so close explicitly on Escape.
   const onKeyDown = (event: React.KeyboardEvent<HTMLDialogElement>): void => {
+    trapDialogFocus(event);
     if (event.key === "Escape") dialogRef.current?.close();
   };
 
@@ -362,6 +400,7 @@ export function CommandBuilder({ open, onClose }: { open: boolean; onClose: () =
                       <code className="preview-line">{built}</code>
                       <CopyButton command={built} />
                     </div>
+                    <p>For Bash, zsh and other POSIX shells.</p>
                   </section>
 
                   {command.examples.length > 0 && (

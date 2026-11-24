@@ -37,6 +37,8 @@ export function Screenshots() {
                     src={`${import.meta.env.BASE_URL}screenshots/${shot.slug}.svg`}
                     alt={`${shot.title} — ${shot.caption}`}
                     loading="lazy"
+                    width={1368}
+                    height={908}
                   />
                 </button>
                 <figcaption>

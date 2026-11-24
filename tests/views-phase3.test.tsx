@@ -2,13 +2,13 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { testRender } from "@opentui/react/test-utils";
 import { Dashboard } from "../src/components/Dashboard.tsx";
 import { Store, type StoreDeps } from "../src/components/store.ts";
 import { activateTheme } from "../src/components/theme.ts";
 import type { RepotruckConfig } from "../src/services/config.ts";
 import type { RepoStatusLine } from "../src/services/lifecycle.ts";
 import { writeWorkspaceConfig } from "../src/services/workspaceRegistry.ts";
+import { settleRender, testRender } from "./helpers/render.tsx";
 
 const tempDirs: string[] = [];
 let savedConfigDir: string | undefined;
@@ -225,8 +225,7 @@ function makeStore(wsRoot: string, extra: Partial<StoreDeps> = {}): Store {
 }
 
 async function settle(setup: Awaited<ReturnType<typeof testRender>>): Promise<void> {
-  await new Promise((resolve) => setTimeout(resolve, 60));
-  await setup.flush({ maxPasses: 4 });
+  await settleRender(setup);
 }
 
 async function waitReady(store: Store, setup: Awaited<ReturnType<typeof testRender>>) {

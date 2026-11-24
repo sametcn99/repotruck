@@ -6,6 +6,8 @@ import { firstErrorLine } from "./cloner.ts";
 import type { RepotruckConfig } from "./config.ts";
 import { repoKeyEquals } from "./fsUtils.ts";
 import { updateWorkspace } from "./workspace.ts";
+import { workspacePath } from "./workspacePaths.ts";
+import { repositoryMoveProblem } from "./worktree.ts";
 
 export interface MoveFsDeps {
   renameSync?: typeof renameSync;
@@ -17,12 +19,21 @@ export interface MoveFsDeps {
 }
 
 export function moveDir(src: string, dest: string, deps: MoveFsDeps = {}): void {
+  const relation = path.relative(path.resolve(src), path.resolve(dest));
+  if (
+    relation === "" ||
+    (!relation.startsWith(`..${path.sep}`) && relation !== ".." && !path.isAbsolute(relation))
+  ) {
+    throw new Error("cannot move a directory into itself");
+  }
   const mkdirFn = deps.mkdirSync ?? mkdirSync;
   const renameFn = deps.renameSync ?? renameSync;
   const cpFn = deps.cpSync ?? cpSync;
   const rmFn = deps.rmSync ?? rmSync;
   const existsFn = deps.existsSync ?? existsSync;
   const rmdirFn = deps.rmdirSync ?? rmdirSync;
+
+  if (existsFn(dest)) throw new Error(`destination already exists: ${dest}`);
 
   const destParent = path.dirname(dest);
   mkdirFn(destParent, { recursive: true });
@@ -35,13 +46,14 @@ export function moveDir(src: string, dest: string, deps: MoveFsDeps = {}): void 
       (error as { code?: unknown }).code === "EXDEV"
     ) {
       try {
-        cpFn(src, dest, { recursive: true });
+        cpFn(src, dest, { recursive: true, errorOnExist: true, force: false });
       } catch (copyError) {
         // Never leave a half-copied destination behind; the source is intact.
+        let cleanupProblem: unknown;
         try {
           rmFn(dest, { recursive: true, force: true });
-        } catch {
-          /* best effort cleanup */
+        } catch (error) {
+          cleanupProblem = error;
         }
         // Best-effort cleanup of empty parent directories created for destination
         try {
@@ -59,9 +71,19 @@ export function moveDir(src: string, dest: string, deps: MoveFsDeps = {}): void 
         } catch {
           /* best effort cleanup */
         }
+        if (cleanupProblem !== undefined)
+          throw new Error(
+            `${firstErrorLine(copyError)}; partial copy remains at ${dest}, source preserved at ${src}; cleanup failed: ${firstErrorLine(cleanupProblem)}`,
+          );
         throw copyError;
       }
-      rmFn(src, { recursive: true, force: true });
+      try {
+        rmFn(src, { recursive: true, force: true });
+      } catch (error) {
+        throw new Error(
+          `cross-device copy completed at ${dest}, but source cleanup failed at ${src}; both copies retained (${firstErrorLine(error)})`,
+        );
+      }
       return;
     }
     throw error;
@@ -90,6 +112,7 @@ export interface MoveOptions {
   emit?: (message: string) => void;
   moveDirImpl?: typeof moveDir;
   deps?: MoveFsDeps;
+  updateWorkspaceImpl?: typeof updateWorkspace;
 }
 
 export async function moveRepository(
@@ -134,6 +157,12 @@ export async function moveRepository(
   }
   const destDir = path.join(root, ...segments);
   const destRel = segments.join("/");
+  try {
+    workspacePath(root, entry.relativePath);
+    workspacePath(root, destRel);
+  } catch (error) {
+    return { ok: false, message: firstErrorLine(error) };
+  }
 
   const isExactSame = entry.relativePath === destRel;
   const isCaseOnly = entry.relativePath.toLowerCase() === destRel.toLowerCase() && !isExactSame;
@@ -141,6 +170,8 @@ export async function moveRepository(
   if (isExactSame) {
     return { ok: true, message: "already there" };
   }
+  const worktreeProblem = repositoryMoveProblem(sourceDir);
+  if (worktreeProblem) return { ok: false, message: worktreeProblem };
 
   if (!isCaseOnly) {
     const occupiedByOther = config.repos.some(
@@ -200,19 +231,26 @@ export async function moveRepository(
     }
   }
 
-  await updateWorkspace(root, (current) => {
-    const repos = current.repos.map((item) =>
-      repoKeyEquals(item, entry.owner, entry.name)
-        ? { ...item, relativePath: destRel, custom: true }
-        : item,
-    );
-    const aliases: Record<string, string> = { ...(current.aliases ?? {}) };
-    for (const [alias, target] of Object.entries(aliases)) {
-      if (target.toLowerCase() === entry.relativePath.toLowerCase()) {
-        aliases[alias] = destRel;
+  try {
+    await (options.updateWorkspaceImpl ?? updateWorkspace)(root, (current) => {
+      const repos = current.repos.map((item) =>
+        repoKeyEquals(item, entry.owner, entry.name)
+          ? { ...item, relativePath: destRel, custom: true }
+          : item,
+      );
+      const aliases: Record<string, string> = { ...(current.aliases ?? {}) };
+      for (const [alias, target] of Object.entries(aliases)) {
+        if (target.toLowerCase() === entry.relativePath.toLowerCase()) {
+          aliases[alias] = destRel;
+        }
       }
-    }
-    return { config: { ...current, repos, aliases }, result: undefined };
-  });
+      return { config: { ...current, repos, aliases }, result: undefined };
+    });
+  } catch (error) {
+    return {
+      ok: false,
+      message: `repository moved to ${destRel}, but inventory save failed (${firstErrorLine(error)}); run repotruck doctor --fix to relink the checkout`,
+    };
+  }
   return { ok: true, message: `moved to ${destRel}` };
 }

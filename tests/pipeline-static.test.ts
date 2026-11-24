@@ -25,8 +25,8 @@ describe("Pipeline & Infrastructure Static Verifications (Sprint 3)", () => {
     expect(releaseRaw).toMatch(/publish:\s+needs:\s*ci/m);
   });
 
-  // C3: OIDC Trusted Publishing, id-token: write, no NPM_TOKEN/NODE_AUTH_TOKEN, provenance and setup-node registry-url
-  test("C3: release.yml uses OIDC Trusted Publishing without static secrets", () => {
+  // C3: scoped NPM_TOKEN publishing with provenance and registry setup
+  test("C3: release.yml uses the configured npm secret and requests provenance", () => {
     const releaseRaw = readFileSync(path.join(rootDir, ".github/workflows/release.yml"), "utf8");
 
     // permissions check

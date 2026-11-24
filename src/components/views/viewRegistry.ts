@@ -149,6 +149,14 @@ export const VIEW_SPECS: readonly ViewSpec[] = [
     ticket: "t15",
   },
   {
+    id: "about",
+    title: "About",
+    group: "System",
+    go: "o",
+    summary: "about Repotruck and its GitHub project",
+    ticket: "—",
+  },
+  {
     id: "log",
     title: "Log",
     group: "System",

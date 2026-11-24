@@ -1,6 +1,8 @@
 import { mkdir, readdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import type { RepotruckConfig } from "./config.ts";
+import { withWorkspaceLock } from "./workspaceLock.ts";
+import { assertWorkspacePath } from "./workspacePaths.ts";
 
 export const DEFAULT_BACKUP_GENERATIONS = 5;
 export const WORKSPACE_STATE_DIRNAME = ".repotruck";
@@ -88,48 +90,62 @@ export async function writeWorkspaceSnapshot(
   config: RepotruckConfig,
   options?: WriteWorkspaceSnapshotOptions,
 ): Promise<string> {
-  const generations = Math.max(1, options?.generations ?? DEFAULT_BACKUP_GENERATIONS);
-  const dir = workspaceBackupsDir(root);
-  await mkdir(dir, { recursive: true });
-
-  const base = backupStamp((options?.now ?? (() => new Date()))());
-  let name = `repotruck-${base}.json`;
-  let target = path.join(dir, name);
-  let counter = 0;
-  for (;;) {
-    try {
-      await readFile(target);
-      counter += 1;
-      name = `repotruck-${base}-${counter}.json`;
-      target = path.join(dir, name);
-    } catch {
-      break;
-    }
+  if (
+    options?.generations !== undefined &&
+    (!Number.isSafeInteger(options.generations) || options.generations < 1)
+  ) {
+    throw new Error("backup generations must be a positive integer");
   }
+  const backupDir = workspaceBackupsDir(root);
+  assertWorkspacePath(root, backupDir);
+  return withWorkspaceLock(
+    async () => {
+      const generations = Math.max(1, options?.generations ?? DEFAULT_BACKUP_GENERATIONS);
+      const dir = workspaceBackupsDir(root);
+      await mkdir(dir, { recursive: true });
 
-  backupWriteCounter += 1;
-  const tmp = `${target}.tmp-${process.pid}-${backupWriteCounter}`;
-  try {
-    await writeFile(tmp, `${JSON.stringify(config, null, 2)}\n`, "utf8");
-    await rename(tmp, target);
-  } catch (error) {
-    try {
-      await rm(tmp, { force: true });
-    } catch {
-      /* best effort cleanup */
-    }
-    throw error;
-  }
+      const base = backupStamp((options?.now ?? (() => new Date()))());
+      let name = `repotruck-${base}.json`;
+      let target = path.join(dir, name);
+      let counter = 0;
+      for (;;) {
+        try {
+          await readFile(target);
+          counter += 1;
+          name = `repotruck-${base}-${counter}.json`;
+          target = path.join(dir, name);
+        } catch (error) {
+          if ((error as NodeJS.ErrnoException).code === "ENOENT") break;
+          throw error;
+        }
+      }
 
-  const existing = (await readdir(dir)).filter(isBackupFilename).sort(compareBackupFilenames);
-  const excess = existing.length - generations;
-  for (let i = 0; i < excess; i += 1) {
-    try {
-      await rm(path.join(dir, existing[i]!), { force: true });
-    } catch {
-      /* a stale backup lingering is harmless */
-    }
-  }
+      backupWriteCounter += 1;
+      const tmp = `${target}.tmp-${process.pid}-${backupWriteCounter}`;
+      try {
+        await writeFile(tmp, `${JSON.stringify(config, null, 2)}\n`, "utf8");
+        await rename(tmp, target);
+      } catch (error) {
+        try {
+          await rm(tmp, { force: true });
+        } catch {
+          /* best effort cleanup */
+        }
+        throw error;
+      }
 
-  return target;
+      const existing = (await readdir(dir)).filter(isBackupFilename).sort(compareBackupFilenames);
+      const excess = existing.length - generations;
+      for (let i = 0; i < excess; i += 1) {
+        try {
+          await rm(path.join(dir, existing[i]!), { force: true });
+        } catch {
+          /* a stale backup lingering is harmless */
+        }
+      }
+
+      return target;
+    },
+    { env: { REPOTRUCK_CONFIG_DIR: backupDir }, lockName: "snapshots" },
+  );
 }

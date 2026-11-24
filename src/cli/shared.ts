@@ -101,7 +101,7 @@ export function parseIntStrict(
     exitFail(`invalid ${label}: ${value} (expected a positive integer)`, json, command);
   }
   const parsed = Number.parseInt(trimmed, 10);
-  if (parsed <= 0) {
+  if (!Number.isSafeInteger(parsed) || parsed <= 0) {
     exitFail(`invalid ${label}: ${value} (expected a positive integer)`, json, command);
   }
   return parsed;

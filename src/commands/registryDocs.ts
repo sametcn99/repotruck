@@ -103,6 +103,7 @@ const VARIADIC_ARGS = new Set(["command", "segments", "repos"]);
 
 /** Curated examples per top-level command (illustrative, not parity data). */
 export const DOC_EXAMPLES: Record<string, readonly string[]> = {
+  about: ["repotruck --about", "repotruck about"],
   sync: [
     "repotruck sync",
     "repotruck sync --scope all",

@@ -19,6 +19,7 @@ import {
 } from "@modelcontextprotocol/server";
 import { firstErrorLine } from "../services/cloner.ts";
 import type { EnvLike } from "../services/config.ts";
+import { closeProcessScope } from "../services/processScope.ts";
 import { readVersion } from "../services/version.ts";
 import { registerAliasesTools } from "./tools/aliases.ts";
 import { registerGithubTools } from "./tools/github.ts";
@@ -29,6 +30,7 @@ import { registerSearchTools } from "./tools/search.ts";
 import { registerSyncTools } from "./tools/sync.ts";
 
 export interface McpServerOptions {
+  signal?: AbortSignal;
   env?: EnvLike;
   cwd?: string;
   version?: string;
@@ -89,6 +91,7 @@ export function validateHttpBindOptions(
   if (effectiveHost.length === 0) {
     return "--host cannot be empty";
   }
+  if (token !== undefined && token.trim().length === 0) return "--token cannot be empty";
   if (token === undefined && !isLocalHostname(effectiveHost)) {
     return `--host ${effectiveHost} is not a localhost address — binding beyond localhost requires --token <value>`;
   }
@@ -119,11 +122,17 @@ export function createRepotruckHttpHandler(
   options: McpHttpServerOptions = {},
 ): RepotruckHttpMcpHandler {
   const token = options.token;
-  const handler = createMcpHandler(() => createRepotruckMcpServer(options), {
-    onerror: (error) => {
-      process.stderr.write(`mcp http: ${firstErrorLine(error)}\n`);
+  const problem = validateHttpBindOptions(options.host, token);
+  if (problem) throw new Error(problem);
+  const controller = new AbortController();
+  const handler = createMcpHandler(
+    () => createRepotruckMcpServer({ ...options, signal: controller.signal }),
+    {
+      onerror: (error) => {
+        process.stderr.write(`mcp http: ${firstErrorLine(error)}\n`);
+      },
     },
-  });
+  );
   const guardedFetch = async (
     request: Request,
     fetchOptions?: Parameters<typeof handler.fetch>[1],
@@ -144,51 +153,103 @@ export function createRepotruckHttpHandler(
     }
     return handler.fetch(request, fetchOptions);
   };
-  return { fetch: guardedFetch, close: () => handler.close() };
+  return {
+    fetch: guardedFetch,
+    close: async () => {
+      controller.abort();
+      await closeProcessScope(controller.signal);
+      await handler.close();
+    },
+  };
 }
 
-export async function runRepotruckMcpHttpServer(options: McpHttpServerOptions = {}): Promise<void> {
-  const host = options.host ?? MCP_HTTP_DEFAULT_HOST;
+export const MAX_MCP_HTTP_BODY_BYTES = 1024 * 1024;
+
+/** Programmatic listener with bounded, idempotent shutdown for socket tests. */
+export async function startRepotruckMcpHttpServer(options: McpHttpServerOptions = {}) {
+  const host = (options.host ?? MCP_HTTP_DEFAULT_HOST).trim();
   const port = options.port ?? MCP_HTTP_DEFAULT_PORT;
-  const bindProblem = validateHttpBindOptions(host, options.token);
-  if (bindProblem !== null) {
-    throw new Error(bindProblem);
-  }
+  const problem = validateHttpBindOptions(host, options.token);
+  if (problem) throw new Error(problem);
+  if (!Number.isInteger(port) || port < 0 || port > 65535)
+    throw new Error("HTTP port must be an integer between 0 and 65535");
   const handler = createRepotruckHttpHandler(options);
   const nodeHandler = toNodeHandler({ fetch: handler.fetch });
-  const httpServer = createServer((req, res) => {
-    void nodeHandler(req, res).catch((error: unknown) => {
-      process.stderr.write(`mcp http: ${firstErrorLine(error)}\n`);
-      if (!res.headersSent) {
-        res.statusCode = 500;
+  const server = createServer((req, res) => {
+    if (Number(req.headers["content-length"] ?? 0) > MAX_MCP_HTTP_BODY_BYTES) {
+      res.writeHead(413);
+      res.end("request body too large");
+      req.resume();
+      return;
+    }
+    let bytes = 0;
+    const count = (chunk: Buffer) => {
+      bytes += chunk.length;
+      if (bytes > MAX_MCP_HTTP_BODY_BYTES && !res.writableEnded) {
+        res.writeHead(413);
+        res.end("request body too large");
+        res.once("finish", () => req.destroy());
       }
+    };
+    req.on("data", count);
+    res.once("finish", () => req.off("data", count));
+    void nodeHandler(req, res).catch((error: unknown) => {
+      if (res.writableEnded) return;
+      process.stderr.write(`mcp http: ${firstErrorLine(error)}\n`);
+      if (!res.headersSent) res.statusCode = 500;
       res.end();
     });
   });
   await new Promise<void>((resolve, reject) => {
-    const onListenError = (error: NodeJS.ErrnoException): void => reject(error);
-    httpServer.once("error", onListenError);
-    httpServer.listen(port, host, () => {
-      httpServer.removeListener("error", onListenError);
-      httpServer.on("error", (error) => {
-        process.stderr.write(`mcp http: ${firstErrorLine(error)}\n`);
-      });
+    server.once("error", reject);
+    server.listen(port, host, () => {
+      server.off("error", reject);
       resolve();
     });
+  }).catch(async (error) => {
+    await handler.close();
+    throw error;
   });
-  process.stdout.write(`repotruck MCP server (HTTP) listening on http://${host}:${port}\n`);
+  server.on("error", (error) => process.stderr.write(`mcp http: ${firstErrorLine(error)}\n`));
+  const address = server.address();
+  const actualPort = typeof address === "object" && address ? address.port : port;
+  const url = `http://${host.includes(":") ? `[${host.replace(/^\[|\]$/g, "")}]` : host}:${actualPort}`;
+  let closing: Promise<void> | null = null;
+  const close = (): Promise<void> => {
+    if (closing) return closing;
+    closing = (async () => {
+      const drained = new Promise<void>((resolve) => server.close(() => resolve()));
+      const force = setTimeout(() => server.closeAllConnections(), 250);
+      let handlerTimer: ReturnType<typeof setTimeout> | undefined;
+      try {
+        await Promise.race([
+          handler.close().catch(() => {}),
+          new Promise<void>((resolve) => {
+            handlerTimer = setTimeout(resolve, 200);
+          }),
+        ]);
+        server.closeAllConnections();
+        await drained;
+      } finally {
+        clearTimeout(force);
+        clearTimeout(handlerTimer);
+      }
+    })();
+    return closing;
+  };
+  return { url, close };
+}
+
+export async function runRepotruckMcpHttpServer(options: McpHttpServerOptions = {}): Promise<void> {
+  const listener = await startRepotruckMcpHttpServer(options);
+  process.stdout.write(`repotruck MCP server (HTTP) listening on ${listener.url}\n`);
   let closed = false;
-  const shutdown = (): void => {
+  const shutdown = () => {
     if (closed) return;
     closed = true;
-    void handler.close().finally(() => {
-      httpServer.close(() => {
-        // Documented process.exit exception: shutdown signal handler for the
-        // long-running MCP server; nothing else may keep the process alive here.
-        process.exit(0);
-      });
-    });
+    // Signal-only process exit: bounded close terminates persistent clients.
+    void listener.close().finally(() => process.exit(0));
   };
-  process.on("SIGINT", shutdown);
-  process.on("SIGTERM", shutdown);
+  process.once("SIGINT", shutdown);
+  process.once("SIGTERM", shutdown);
 }

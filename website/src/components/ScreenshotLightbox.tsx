@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { trapDialogFocus } from "./dialogFocus.ts";
 import type { ScreenshotEntry } from "./screenshotsManifest.generated.ts";
 
 /**
@@ -253,6 +254,7 @@ export function ScreenshotLightbox({
   };
 
   const onKeyDown = (event: React.KeyboardEvent<HTMLDialogElement>) => {
+    trapDialogFocus(event);
     if (event.key === "+" || event.key === "=") zoomCenter(STEP);
     else if (event.key === "-" || event.key === "_") zoomCenter(1 / STEP);
     else if (event.key === "0") setT(RESET);
@@ -311,7 +313,7 @@ export function ScreenshotLightbox({
               <button
                 type="button"
                 aria-label="Reset zoom"
-                disabled={t.scale === 1}
+                aria-disabled={t.scale === 1}
                 onClick={() => setT(RESET)}
               >
                 1:1

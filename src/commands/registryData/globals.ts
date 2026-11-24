@@ -14,6 +14,7 @@ export const GLOBAL_COMMANDS: readonly CommandSpec[] = [
     surface: { kind: "view", view: "settings" },
     requires: [],
     flags: [
+      f("--about", "bool", "application description and GitHub link", "About page"),
       f("--dir", "path", "workspace root override", "workspace switcher (w)", { short: "-d" }),
       f("--concurrency", "int", "global concurrency limit", "task steppers + settings", {
         short: "-c",

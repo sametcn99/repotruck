@@ -4,6 +4,12 @@ import type { HelpRow } from "./helpData.ts";
 const LIST_MOVEMENT: HelpRow = ["↑ / ↓, j / k", "Move through rows"];
 
 export const PAGE_SHORTCUTS: Record<Exclude<ViewId, "cockpit">, readonly HelpRow[]> = {
+  about: [
+    ["s / Enter", "Give the project a GitHub star when not already starred"],
+    ["r", "Refresh GitHub star status"],
+    ["Esc", "Return to Cockpit"],
+    ["repotruck --about", "Show application information in the CLI"],
+  ],
   sync: [
     ["e / x", "Start / stop sync"],
     ["V", "Preview the cockpit selection"],

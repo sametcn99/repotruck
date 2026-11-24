@@ -1,10 +1,11 @@
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
-import path from "node:path";
 import { createCloneLimiter, DEFAULT_CONCURRENCY, firstErrorLine } from "./cloner.ts";
 import type { RepoInventoryEntry, RepotruckConfig } from "./config.ts";
 import { resolveRepoRef } from "./launcher.ts";
-import { isCmdShim, quoteForShell } from "./shellQuote.ts";
+import { trackChild } from "./processScope.ts";
+import { isCmdShim, quoteForShell, resolveWindowsCommand } from "./shellQuote.ts";
+import { workspacePath } from "./workspacePaths.ts";
 
 /** Caps buffered per-repo output so runaway commands cannot exhaust memory. */
 export const MAX_CAPTURED_OUTPUT_CHARS = 200_000;
@@ -13,6 +14,7 @@ export interface RunCommandRequest {
   command: string;
   args: readonly string[];
   cwd: string;
+  signal?: AbortSignal;
 }
 
 export interface RunCommandOutcome {
@@ -25,34 +27,48 @@ export interface RunCommandOutcome {
 export type RunCommandImpl = (request: RunCommandRequest) => Promise<RunCommandOutcome>;
 
 export function defaultRunCommandImpl(request: RunCommandRequest): Promise<RunCommandOutcome> {
+  const executable = resolveWindowsCommand(request.command, request.cwd);
   const run = (useShell: boolean): Promise<RunCommandOutcome> =>
     new Promise((resolve, reject) => {
       const command = useShell
-        ? quoteForShell(request.command, request.args, { cmdShim: isCmdShim(request.command) })
-        : request.command;
+        ? quoteForShell(executable, request.args, { cmdShim: isCmdShim(executable) })
+        : executable;
       const args = useShell ? [] : [...request.args];
       const child = spawn(command, args, {
         cwd: request.cwd,
         shell: useShell,
         windowsHide: true,
+        detached: process.platform !== "win32",
       });
+      trackChild(child, request.signal);
       let stdout = "";
       let stderr = "";
-      child.stdout?.on("data", (chunk: Buffer) => {
-        if (stdout.length < MAX_CAPTURED_OUTPUT_CHARS) stdout += chunk.toString("utf8");
+      child.stdout?.setEncoding("utf8");
+      child.stderr?.setEncoding("utf8");
+      child.stdout?.on("data", (chunk: string) => {
+        stdout += chunk.slice(0, Math.max(0, MAX_CAPTURED_OUTPUT_CHARS - stdout.length));
       });
-      child.stderr?.on("data", (chunk: Buffer) => {
-        if (stderr.length < MAX_CAPTURED_OUTPUT_CHARS) stderr += chunk.toString("utf8");
+      child.stderr?.on("data", (chunk: string) => {
+        stderr += chunk.slice(0, Math.max(0, MAX_CAPTURED_OUTPUT_CHARS - stderr.length));
       });
       child.on("error", reject);
-      child.on("exit", (code) => resolve({ exitCode: code, stdout, stderr }));
+      child.on("close", (code, signal) =>
+        resolve({
+          exitCode: code,
+          stdout,
+          stderr,
+          ...(signal ? { message: `terminated by ${signal}` } : {}),
+        }),
+      );
     });
-  return run(false).catch(async (error: NodeJS.ErrnoException) => {
-    if (error.code === "ENOENT") {
-      return run(true);
-    }
-    throw error;
-  });
+  return run(process.platform === "win32" && isCmdShim(executable)).catch(
+    async (error: NodeJS.ErrnoException) => {
+      if (error.code === "ENOENT") {
+        return run(true);
+      }
+      throw error;
+    },
+  );
 }
 
 export interface RunInReposOptions {
@@ -64,6 +80,7 @@ export interface RunInReposOptions {
   concurrency?: number;
   runImpl?: RunCommandImpl;
   exists?: (dir: string) => boolean;
+  signal?: AbortSignal;
 }
 
 export interface RunRepoResult {
@@ -114,14 +131,26 @@ export async function runInRepos(options: RunInReposOptions): Promise<RunInRepos
     entries.map((entry) =>
       limit(async () => {
         const key = `${entry.owner}/${entry.name}`;
-        const repoDir = path.join(options.root, ...entry.relativePath.split("/"));
+        let repoDir: string;
+        try {
+          repoDir = workspacePath(options.root, entry.relativePath);
+        } catch (error) {
+          skipped.push({ key, message: firstErrorLine(error) });
+          return;
+        }
         if (!exists(repoDir)) {
           skipped.push({ key, message: `${entry.relativePath} is not on disk` });
           return;
         }
         const startedAt = Date.now();
         try {
-          const outcome = await runImpl({ command: options.command, args, cwd: repoDir });
+          options.signal?.throwIfAborted();
+          const outcome = await runImpl({
+            command: options.command,
+            args,
+            cwd: repoDir,
+            ...(options.signal ? { signal: options.signal } : {}),
+          });
           results.push({
             key,
             relativePath: entry.relativePath,
