@@ -172,9 +172,17 @@ describe("production process launch paths", () => {
           },
         ]),
       );
-      const runtime = process.env.REPOTRUCK_TUI_TEST_RUNTIME
-        ? Bun.which(process.env.REPOTRUCK_TUI_TEST_RUNTIME)!
-        : process.execPath;
+      const runtimeName = process.env.REPOTRUCK_TUI_TEST_RUNTIME;
+      const runtime = runtimeName ? Bun.which(runtimeName)! : process.execPath;
+      const runtimeVersion = (
+        await exec(runtime, ["--version"], {
+          cwd: path.join(import.meta.dir, ".."),
+          timeout: 10_000,
+        })
+      ).stdout.trim();
+      console.info(`[E62] target runtime=${runtimeName ?? "current"} version=${runtimeVersion}`);
+      const expectedRuntimeVersion = process.env.REPOTRUCK_TUI_TEST_EXPECTED_VERSION;
+      if (expectedRuntimeVersion) expect(runtimeVersion).toBe(expectedRuntimeVersion);
       const entry = path.resolve(process.env.REPOTRUCK_TUI_TEST_ENTRY ?? "src/cli.ts");
       const movedRepoDir = path.join(f.root, "acme", "moved", "api");
       const configFile = path.join(f.configDir, "repotruck.json");
@@ -384,7 +392,8 @@ describe("production process launch paths", () => {
   test("[E57] actual Node subprocess terminates a pathological regex with a controlled error", async () => {
     const f = fixture();
     writeFileSync(path.join(f.repoDir, "attack.txt"), `${"a".repeat(100000)}!`);
-    const code = `import {searchCode} from ${JSON.stringify(path.resolve("src/services/codeSearch.ts"))}; let responsive=false;setTimeout(()=>responsive=true,20);try{await searchCode(${JSON.stringify({ root: f.root, config: f.config, text: true, regex: true, pattern: "(a+)+$" })});throw new Error('unexpected success');}catch(error){if(!error.message.includes('execution limit'))throw error; console.log(JSON.stringify({bounded:true,responsive}));}`;
+    const searchCodeUrl = pathToFileURL(path.resolve("src/services/codeSearch.ts")).href;
+    const code = `import {searchCode} from ${JSON.stringify(searchCodeUrl)}; let responsive=false;setTimeout(()=>responsive=true,20);try{await searchCode(${JSON.stringify({ root: f.root, config: f.config, text: true, regex: true, pattern: "(a+)+$" })});throw new Error('unexpected success');}catch(error){if(!error.message.includes('execution limit'))throw error; console.log(JSON.stringify({bounded:true,responsive}));}`;
     const result = await exec(Bun.which("node")!, ["--input-type=module", "--eval", code], {
       timeout: 6000,
     });

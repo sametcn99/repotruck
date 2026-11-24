@@ -266,35 +266,85 @@ describe("SDK, protocol and process boundaries", () => {
     const f = fixture();
     const child = spawn(process.execPath, ["src/cli.ts", "mcp", "--http", "--port", "0"], {
       cwd: path.join(import.meta.dir, ".."),
-      env: { ...process.env, ...f.env },
+      env: { ...process.env, ...f.env, REPOTRUCK_MCP_DEBUG_SHUTDOWN: "1" },
       stdio: ["ignore", "pipe", "pipe"],
     });
+    console.info(`[E48] test runtime=bun ${Bun.version}`);
     let output = "";
     child.stdout.on("data", (chunk) => {
       output += chunk;
     });
+    child.stderr.on("data", (chunk) => console.info(`[E48 child] ${String(chunk).trim()}`));
+    console.info("[E48] stage=wait-listening");
     let socket: ReturnType<typeof connect> | undefined;
     const exited = new Promise<void>((resolve) => child.once("close", () => resolve()));
     try {
       await waitUntil(() => output.includes("listening on"), 10000);
+      console.info("[E48] stage=listening");
       const url = new URL(output.match(/http:\/\/[^\s]+/)![0]);
       await new Promise((resolve) => setTimeout(resolve, 2200));
+      console.info("[E48] stage=uptime-confirmed");
       expect(child.exitCode).toBeNull();
       socket = connect(Number(url.port), url.hostname);
-      await new Promise<void>((resolve) => socket!.once("connect", resolve));
       socket.on("error", () => {});
+      let connectDeadline: ReturnType<typeof setTimeout> | undefined;
+      const connected = await Promise.race([
+        new Promise<boolean>((resolve) => socket!.once("connect", () => resolve(true))),
+        new Promise<boolean>((resolve) => {
+          connectDeadline = setTimeout(() => resolve(false), 1000);
+        }),
+      ]);
+      clearTimeout(connectDeadline);
+      expect(connected).toBe(true);
+      console.info("[E48] stage=socket-connected");
       socket.write(
         `POST / HTTP/1.1\r\nHost: ${url.host}\r\nContent-Length: 100000\r\nContent-Type: application/json\r\n\r\n{`,
       );
+      console.info("[E48] stage=partial-request-sent");
       const start = Date.now();
       child.kill("SIGTERM");
-      await exited;
+      console.info("[E48] stage=sigterm-sent");
+      let exitDeadline: ReturnType<typeof setTimeout> | undefined;
+      const exitedInBound = await Promise.race([
+        exited.then(() => true),
+        new Promise<boolean>((resolve) => {
+          exitDeadline = setTimeout(() => resolve(false), 1500);
+        }),
+      ]);
+      clearTimeout(exitDeadline);
+      expect(exitedInBound).toBe(true);
+      console.info(`[E48] stage=child-closed elapsed=${Date.now() - start}ms`);
       expect(Date.now() - start).toBeLessThan(1500);
-      await expect(fetch(url)).rejects.toThrow();
+      console.info("[E48] stage=port-refusal-check");
+      const portRefused = await new Promise<boolean>((resolve) => {
+        const probe = connect(Number(url.port), url.hostname);
+        const timer = setTimeout(() => {
+          probe.destroy();
+          resolve(false);
+        }, 1000);
+        probe.once("connect", () => {
+          clearTimeout(timer);
+          probe.destroy();
+          resolve(false);
+        });
+        probe.once("error", (error: NodeJS.ErrnoException) => {
+          clearTimeout(timer);
+          resolve(error.code === "ECONNREFUSED");
+        });
+      });
+      expect(portRefused).toBe(true);
+      console.info("[E48] stage=port-refused");
     } finally {
       socket?.destroy();
       child.kill("SIGKILL");
-      await exited;
+      let cleanupDeadline: ReturnType<typeof setTimeout> | undefined;
+      await Promise.race([
+        exited,
+        new Promise((resolve) => {
+          cleanupDeadline = setTimeout(resolve, 2000);
+        }),
+      ]);
+      clearTimeout(cleanupDeadline);
     }
   }, 20000);
 

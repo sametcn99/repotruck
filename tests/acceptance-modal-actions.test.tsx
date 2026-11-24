@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { existsSync, writeFileSync } from "node:fs";
+import { existsSync, realpathSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { simpleGit } from "simple-git";
 import { CreateModal } from "../src/components/CreateModal.tsx";
@@ -34,6 +34,19 @@ function makeStore(f: ReturnType<typeof fixture>, extra: Parameters<typeof store
 
 async function settle(setup: RendererSetup) {
   await settleRender(setup);
+}
+
+function canonicalRealPath(value: string): string {
+  let resolved = realpathSync.native(value).replaceAll("\\", "/");
+  if (resolved.startsWith("//?/")) resolved = resolved.slice(4);
+  return resolved.replace(/\/+$/, "").toLocaleLowerCase("en-US");
+}
+
+function porcelainWorktreePaths(output: string): string[] {
+  return output
+    .split(/\r?\n/)
+    .filter((line) => line.startsWith("worktree "))
+    .map((line) => line.slice("worktree ".length));
 }
 
 async function clickText(setup: RendererSetup, text: string) {
@@ -175,7 +188,9 @@ describe("acceptance: modal actions through native terminal input", () => {
       await settle(setup);
       const worktrees = await git.raw(["worktree", "list", "--porcelain"]);
       expect(worktrees).toContain("branch refs/heads/feature-k05");
-      expect(worktrees).toContain(path.join(f.base, "feature-k05"));
+      expect(porcelainWorktreePaths(worktrees).map(canonicalRealPath)).toContain(
+        canonicalRealPath(path.join(f.base, "feature-k05")),
+      );
       expect(norm(setup.captureCharFrame())).toContain("created worktree at");
 
       setup.mockInput.pressTab({ shift: true });
@@ -184,10 +199,12 @@ describe("acceptance: modal actions through native terminal input", () => {
       await clickText(setup, "[Del] Remove");
       await new Promise((resolve) => setTimeout(resolve, 100));
       await settle(setup);
-      expect(await git.raw(["worktree", "list", "--porcelain"])).not.toContain("feature-k05");
-      expect(await git.raw(["worktree", "list", "--porcelain"])).toContain(
-        "branch refs/heads/main",
-      );
+      const afterRemoval = await git.raw(["worktree", "list", "--porcelain"]);
+      expect(afterRemoval).not.toContain("branch refs/heads/feature-k05");
+      expect(afterRemoval).toContain("branch refs/heads/main");
+      expect(porcelainWorktreePaths(afterRemoval).map(canonicalRealPath)).toEqual([
+        canonicalRealPath(repoDir),
+      ]);
     } finally {
       await setup.dispose();
     }

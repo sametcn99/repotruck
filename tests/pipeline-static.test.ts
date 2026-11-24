@@ -2,12 +2,37 @@ import { describe, expect, test } from "bun:test";
 import { execSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import path from "node:path";
+import { parse, stringify } from "yaml";
+import { checkMinimumTuiPolicy } from "../scripts/lib/workflowPolicy.ts";
 
 const rootDir = path.resolve(__dirname, "..");
 const repoPackageJson = JSON.parse(readFileSync(path.join(rootDir, "package.json"), "utf8"));
 const currentVersion: string = repoPackageJson.version;
 
 describe("Pipeline & Infrastructure Static Verifications (Sprint 3)", () => {
+  test("minimum-tui installs with compatible Bun before asserting actual minimum runtimes", () => {
+    const ciRaw = readFileSync(path.join(rootDir, ".github/workflows/ci.yml"), "utf8");
+    expect(checkMinimumTuiPolicy(ciRaw)).toEqual([]);
+
+    const oldInstaller = parse(ciRaw);
+    const setup = oldInstaller.jobs["minimum-tui"].steps.find(
+      (step: { with?: Record<string, string> }) => step.with?.["bun-version"] === "1.4.2",
+    );
+    setup.with["bun-version"] = "1.3.14";
+    expect(checkMinimumTuiPolicy(stringify(oldInstaller))).toContain(
+      "minimum-tui must select Bun 1.4.2 before dependency installation",
+    );
+
+    const missingVersionAssertion = parse(ciRaw);
+    const e62 = missingVersionAssertion.jobs["minimum-tui"].steps.find(
+      (step: { run?: string }) => step.run === "bun test tests/hardening-processes.test.ts -t E62",
+    );
+    delete e62.env.REPOTRUCK_TUI_TEST_EXPECTED_VERSION;
+    expect(checkMinimumTuiPolicy(stringify(missingVersionAssertion))).toContain(
+      "minimum-tui E62 must pass the selected runtime version assertion",
+    );
+  });
+
   // C1: ci.yml valid structure & on.workflow_call
   test("C1: .github/workflows/ci.yml defines workflow_call and valid triggers", () => {
     const ciRaw = readFileSync(path.join(rootDir, ".github/workflows/ci.yml"), "utf8");

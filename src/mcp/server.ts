@@ -1,4 +1,5 @@
 import { createServer } from "node:http";
+import type { Socket } from "node:net";
 import { StdioServerTransport } from "@modelcontextprotocol/server/stdio";
 import { createToolContext, type ToolContext } from "./toolContext.ts";
 
@@ -200,6 +201,22 @@ export async function startRepotruckMcpHttpServer(options: McpHttpServerOptions 
       res.end();
     });
   });
+  const sockets = new Set<Socket>();
+  const traceShutdown = (event: string) => {
+    if (process.env.REPOTRUCK_MCP_DEBUG_SHUTDOWN === "1")
+      process.stderr.write(`[mcp shutdown] ${event}\n`);
+  };
+  const destroyTrackedSockets = (): number => {
+    const active = [...sockets];
+    for (const socket of active) socket.destroy();
+    return active.length;
+  };
+  // Track raw connections so incomplete request bodies can be destroyed even
+  // on older Bun runtimes where closeAllConnections alone may leave them open.
+  server.on("connection", (socket: Socket) => {
+    sockets.add(socket);
+    socket.once("close", () => sockets.delete(socket));
+  });
   await new Promise<void>((resolve, reject) => {
     server.once("error", reject);
     server.listen(port, host, () => {
@@ -218,21 +235,60 @@ export async function startRepotruckMcpHttpServer(options: McpHttpServerOptions 
   const close = (): Promise<void> => {
     if (closing) return closing;
     closing = (async () => {
-      const drained = new Promise<void>((resolve) => server.close(() => resolve()));
-      const force = setTimeout(() => server.closeAllConnections(), 250);
+      traceShutdown("close-start");
+      const drained = new Promise<void>((resolve) =>
+        server.close(() => {
+          traceShutdown("server-close-callback");
+          resolve();
+        }),
+      );
+      traceShutdown("server-close-requested");
+      const force = setTimeout(() => {
+        traceShutdown("forced-socket-destroy");
+        server.closeAllConnections();
+        const count = destroyTrackedSockets();
+        traceShutdown(`forced-socket-destroy-requested count=${count}`);
+      }, 250);
       let handlerTimer: ReturnType<typeof setTimeout> | undefined;
+      let drainTimer: ReturnType<typeof setTimeout> | undefined;
       try {
+        traceShutdown("handler-close-start");
         await Promise.race([
-          handler.close().catch(() => {}),
+          handler.close().then(
+            () => traceShutdown("handler-close-resolved"),
+            () => traceShutdown("handler-close-rejected"),
+          ),
           new Promise<void>((resolve) => {
-            handlerTimer = setTimeout(resolve, 200);
+            handlerTimer = setTimeout(() => {
+              traceShutdown("handler-close-timeout");
+              resolve();
+            }, 200);
           }),
         ]);
+        if (handlerTimer) clearTimeout(handlerTimer);
+        handlerTimer = undefined;
+        traceShutdown("server-close-all-connections");
         server.closeAllConnections();
-        await drained;
+        // Node's close callback can stay pending until every client socket ends.
+        const count = destroyTrackedSockets();
+        traceShutdown(`tracked-socket-destroy-requested count=${count}`);
+        let drainedInTime = false;
+        await Promise.race([
+          drained.then(() => {
+            drainedInTime = true;
+          }),
+          new Promise<void>((resolve) => {
+            drainTimer = setTimeout(() => {
+              traceShutdown("server-drain-deadline");
+              resolve();
+            }, 500);
+          }),
+        ]);
+        traceShutdown(drainedInTime ? "server-drained" : "server-drain-deadline-hit");
       } finally {
         clearTimeout(force);
         clearTimeout(handlerTimer);
+        clearTimeout(drainTimer);
       }
     })();
     return closing;

@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import type { StoreDeps } from "../../src/components/store.ts";
@@ -7,7 +7,7 @@ import type { RepoInfo } from "../../src/services/github.ts";
 import { writeWorkspaceConfig } from "../../src/services/workspaceRegistry.ts";
 
 export function workspaceFixture() {
-  const base = mkdtempSync(path.join(tmpdir(), "rt-hardening-"));
+  const base = realpathSync(mkdtempSync(path.join(tmpdir(), "rt-hardening-")));
   const root = path.join(base, "workspace with spaces");
   const configDir = path.join(base, "config");
   mkdirSync(root, { recursive: true });
