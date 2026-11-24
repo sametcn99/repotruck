@@ -130,6 +130,16 @@ async function settle(setup: Awaited<ReturnType<typeof testRender>>): Promise<vo
   await settleRender(setup);
 }
 
+async function waitForReady(
+  setup: Awaited<ReturnType<typeof testRender>>,
+  store: Store,
+): Promise<void> {
+  for (let attempt = 0; attempt < 40 && store.getSnapshot().phase !== "ready"; attempt += 1) {
+    await settle(setup);
+  }
+  expect(store.getSnapshot().phase).toBe("ready");
+}
+
 function norm(frame: string): string {
   return frame.replace(
     /[\u2500\u2502\u250c\u2510\u2514\u2518\u251c\u2524\u252c\u2534\u253c]/g,
@@ -156,9 +166,7 @@ describe("t10 settings page", () => {
       <Dashboard store={store} onQuit={() => {}} onSuspendAndRun={async () => {}} />,
       { width: 120, height: 40, exitOnCtrlC: false },
     );
-    for (let i = 0; i < 40 && store.getSnapshot().phase !== "ready"; i += 1) {
-      await new Promise((resolve) => setTimeout(resolve, 25));
-    }
+    await waitForReady(setup, store);
     await settle(setup);
 
     store.setView("settings");
@@ -182,6 +190,33 @@ describe("t10 settings page", () => {
     expect(store.getSnapshot().settingsPage?.settings?.sync?.concurrency).toBeUndefined();
     await setup.dispose();
   });
+
+  test("slow initialization advances WorkspaceSkeleton through the renderer act boundary", async () => {
+    const root = makeWorkspace("rt-settings-slow-init-");
+    const auth = Promise.withResolvers<{ token: string; method: "gh-cli" }>();
+    const store = makeStore(root, { auth: () => auth.promise });
+    const setup = await testRender(
+      <Dashboard store={store} onQuit={() => {}} onSuspendAndRun={async () => {}} />,
+      { width: 120, height: 40, exitOnCtrlC: false },
+    );
+    try {
+      await settle(setup);
+      const initial = norm(setup.captureCharFrame());
+      expect(store.getSnapshot().phase).toBe("loading");
+      expect(initial).toContain("Loading workspace");
+      await settle(setup);
+      await settle(setup);
+      await settle(setup);
+      const advanced = norm(setup.captureCharFrame());
+      expect(advanced).toContain("Loading workspace");
+      expect(advanced).not.toBe(initial);
+      auth.resolve({ token: "slow", method: "gh-cli" });
+      await waitForReady(setup, store);
+    } finally {
+      auth.resolve({ token: "slow", method: "gh-cli" });
+      await setup.dispose();
+    }
+  });
 });
 
 describe("t11 presets page", () => {
@@ -192,9 +227,7 @@ describe("t11 presets page", () => {
       <Dashboard store={store} onQuit={() => {}} onSuspendAndRun={async () => {}} />,
       { width: 140, height: 40, exitOnCtrlC: false },
     );
-    for (let i = 0; i < 40 && store.getSnapshot().phase !== "ready"; i += 1) {
-      await new Promise((resolve) => setTimeout(resolve, 25));
-    }
+    await waitForReady(setup, store);
     await settle(setup);
 
     store.setView("presets");
@@ -224,9 +257,7 @@ describe("t11 profiles page", () => {
       <Dashboard store={store} onQuit={() => {}} onSuspendAndRun={async () => {}} />,
       { width: 120, height: 40, exitOnCtrlC: false },
     );
-    for (let i = 0; i < 40 && store.getSnapshot().phase !== "ready"; i += 1) {
-      await new Promise((resolve) => setTimeout(resolve, 25));
-    }
+    await waitForReady(setup, store);
     await settle(setup);
 
     store.setView("profiles");
@@ -258,9 +289,7 @@ describe("t12 agents page", () => {
       <Dashboard store={store} onQuit={() => {}} onSuspendAndRun={async () => {}} />,
       { width: 120, height: 40, exitOnCtrlC: false },
     );
-    for (let i = 0; i < 40 && store.getSnapshot().phase !== "ready"; i += 1) {
-      await new Promise((resolve) => setTimeout(resolve, 25));
-    }
+    await waitForReady(setup, store);
     await settle(setup);
 
     store.setView("agents");
@@ -292,9 +321,7 @@ describe("t13 context menu", () => {
       <Dashboard store={store} onQuit={() => {}} onSuspendAndRun={async () => {}} />,
       { width: 120, height: 40, exitOnCtrlC: false },
     );
-    for (let i = 0; i < 40 && store.getSnapshot().phase !== "ready"; i += 1) {
-      await new Promise((resolve) => setTimeout(resolve, 25));
-    }
+    await waitForReady(setup, store);
     await settle(setup);
 
     store.openRepoContextMenu("acme/api");
@@ -457,9 +484,7 @@ describe("device-flow + permanent-delete rendering", () => {
       <Dashboard store={store} onQuit={() => {}} onSuspendAndRun={async () => {}} />,
       { width: 120, height: 40, exitOnCtrlC: false },
     );
-    for (let i = 0; i < 40 && store.getSnapshot().phase !== "ready"; i += 1) {
-      await new Promise((resolve) => setTimeout(resolve, 25));
-    }
+    await waitForReady(setup, store);
     await settle(setup);
 
     void store.startDeviceFlow();

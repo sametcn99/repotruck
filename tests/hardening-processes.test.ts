@@ -24,6 +24,22 @@ function fixture() {
   fixtures.push(f);
   return f;
 }
+async function runInReposWithDeadline(
+  request: Parameters<typeof runInRepos>[0],
+  stage: string,
+): ReturnType<typeof runInRepos> {
+  const controller = new AbortController();
+  const deadline = setTimeout(() => {
+    console.error(`[E66] runner process deadline fired during ${stage}; aborting child tree`);
+    controller.abort();
+  }, 12_000);
+  try {
+    return await runInRepos({ ...request, signal: controller.signal });
+  } finally {
+    clearTimeout(deadline);
+    controller.abort();
+  }
+}
 afterEach(() => {
   for (const f of fixtures.splice(0)) f.cleanup();
 });
@@ -462,13 +478,16 @@ describe("production process launch paths", () => {
         await defaultSpawnImpl({ command: shim, args: [output, ...args], cwd: f.repoDir }),
       ).toBe(0);
       expect(JSON.parse(readFileSync(output, "utf8")).args).toEqual(args);
-      const result = await runInRepos({
-        root: f.root,
-        config: f.config,
-        refs: ["acme/api"],
-        command: shim,
-        args: [output, ...args],
-      });
+      const result = await runInReposWithDeadline(
+        {
+          root: f.root,
+          config: f.config,
+          refs: ["acme/api"],
+          command: shim,
+          args: [output, ...args],
+        },
+        "absolute .cmd path",
+      );
       expect(result.results[0]?.ok).toBe(true);
       expect(JSON.parse(readFileSync(output, "utf8")).args).toEqual(args);
       const oldPath = process.env.PATH;
@@ -478,13 +497,16 @@ describe("production process launch paths", () => {
           await defaultSpawnImpl({ command: "tool", args: [output, ...args], cwd: f.repoDir }),
         ).toBe(0);
         expect(JSON.parse(readFileSync(output, "utf8")).args).toEqual(args);
-        const result = await runInRepos({
-          root: f.root,
-          config: f.config,
-          refs: [],
-          command: "tool",
-          args: [output, ...args],
-        });
+        const result = await runInReposWithDeadline(
+          {
+            root: f.root,
+            config: f.config,
+            refs: [],
+            command: "tool",
+            args: [output, ...args],
+          },
+          "PATH-resolved .cmd",
+        );
         expect(result.results[0]?.ok).toBe(true);
         await expect(
           defaultSpawnImpl({ command: shim, args: [output, "line\nvalue"], cwd: f.repoDir }),
@@ -494,5 +516,6 @@ describe("production process launch paths", () => {
         else process.env.PATH = oldPath;
       }
     },
+    15_000,
   );
 });
