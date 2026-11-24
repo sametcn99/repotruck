@@ -41,6 +41,7 @@ jobs:
         with:
           name: ${{ steps.artifact-name.outputs.name }}
           path: website/dist
+          include-hidden-files: true
 
   deploy:
     needs: build
