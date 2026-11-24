@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+import { afterAll, afterEach, beforeAll, describe, expect, test } from "bun:test";
 import { existsSync, mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -35,9 +35,12 @@ import {
 import { Store, type StoreDeps } from "../src/components/store.ts";
 import type { RepoInfo } from "../src/services/github.ts";
 import { moveRepository } from "../src/services/mover.ts";
+import { readSettings, settingsPath } from "../src/services/settings.ts";
 import { writeWorkspaceConfig } from "../src/services/workspaceRegistry.ts";
 
 const tempDirs: string[] = [];
+const stores: Store[] = [];
+const pendingFixtureWrites = new Set<Promise<unknown>>();
 let savedConfigDir: string | undefined;
 
 function tmp(prefix: string): string {
@@ -50,7 +53,9 @@ beforeAll(() => {
   savedConfigDir = process.env.REPOTRUCK_CONFIG_DIR;
 });
 
-afterAll(() => {
+afterAll(async () => {
+  for (const store of stores.splice(0)) store.dispose();
+  await settleFixtureWrites();
   if (savedConfigDir === undefined) {
     delete process.env.REPOTRUCK_CONFIG_DIR;
   } else {
@@ -60,6 +65,54 @@ afterAll(() => {
     rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   }
 });
+
+function captureFixtureWrites(store: Store): Store {
+  return new Proxy(store, {
+    get(target, property) {
+      const value = Reflect.get(target, property, target) as unknown;
+      if (typeof value !== "function") return value;
+      return (...args: unknown[]) => {
+        const result = Reflect.apply(value, target, args) as unknown;
+        if (
+          (property === "cycleTheme" || property === "togglePinSelection") &&
+          result !== null &&
+          typeof result === "object" &&
+          "then" in result &&
+          typeof result.then === "function"
+        ) {
+          const pending = Promise.resolve(result);
+          pendingFixtureWrites.add(pending);
+          void pending.then(
+            () => pendingFixtureWrites.delete(pending),
+            () => pendingFixtureWrites.delete(pending),
+          );
+        }
+        return result;
+      };
+    },
+  });
+}
+
+async function settleFixtureWrites(): Promise<void> {
+  while (pendingFixtureWrites.size > 0) {
+    await Promise.allSettled([...pendingFixtureWrites]);
+  }
+}
+
+async function retireStores(): Promise<void> {
+  // Palette dispatch tests start fire-and-forget operations; retire each Store
+  // before the next fixture changes the process-wide config directory. These
+  // two dispatched writers do not use Store operation cancellation.
+  const retiring = stores.splice(0);
+  for (const store of retiring) {
+    store.resolveDialog(false);
+    store.closeModal();
+    store.dispose();
+  }
+  await settleFixtureWrites();
+}
+
+afterEach(retireStores);
 
 function makeRepo(owner: string, name: string, extra: Partial<RepoInfo> = {}): RepoInfo {
   return {
@@ -206,7 +259,9 @@ function makeStore(root: string, extraDeps: Partial<StoreDeps> = {}): Store {
     listWorkspacesFn: async () => [],
     ...extraDeps,
   };
-  return new Store(root, deps);
+  const store = new Store(root, deps);
+  stores.push(store);
+  return store;
 }
 
 describe("modalWorkflows pure helpers", () => {
@@ -442,18 +497,19 @@ describe("modalWorkflows pure helpers", () => {
   test("executeRegistryCommand & executeOmnibarCommandById dispatch across every registry entry and omnibar ID", async () => {
     const { root } = await setupWorkspace();
     const store = makeStore(root);
+    const dispatchStore = captureFixtureWrites(store);
 
     // Execute without repos first (exercises "no repository highlighted" paths)
     for (const spec of REGISTRY) {
-      executeRegistryCommand(store, spec.id, false);
+      executeRegistryCommand(dispatchStore, spec.id, false);
     }
-    executeRegistryCommand(store, "unknown-id", true);
+    executeRegistryCommand(dispatchStore, "unknown-id", true);
 
     await store.ensureInit();
     // Execute with repos ready & highlighted (both preferForm=true and false)
     for (const spec of REGISTRY) {
-      executeRegistryCommand(store, spec.id, true);
-      executeRegistryCommand(store, spec.id, false);
+      executeRegistryCommand(dispatchStore, spec.id, true);
+      executeRegistryCommand(dispatchStore, spec.id, false);
     }
     store.closeModal();
     store.resolveDialog(false);
@@ -524,12 +580,54 @@ describe("modalWorkflows pure helpers", () => {
       "nonexistent-id",
     ];
     for (const id of omnibarIds) {
-      executeOmnibarCommandById(store, id);
+      executeOmnibarCommandById(dispatchStore, id);
       store.resolveDialog(false);
     }
-    await new Promise((r) => setTimeout(r, 150));
     store.closeModal();
     expect(store.getSnapshot().statuses.length).toBeGreaterThan(0);
+  });
+
+  test("fixture teardown waits for the dispatched theme writer before config changes", async () => {
+    const { root, cfg: configDir } = await setupWorkspace("rt-swf-theme-");
+    const store = makeStore(root);
+    let releaseWriter!: () => void;
+    const writerGate = new Promise<void>((resolve) => {
+      releaseWriter = resolve;
+    });
+    let writerStarted = false;
+    const cycleTheme = store.cycleTheme;
+    store.cycleTheme = async () => {
+      writerStarted = true;
+      await writerGate;
+      await cycleTheme();
+    };
+
+    executeOmnibarCommandById(captureFixtureWrites(store), "theme");
+    expect(writerStarted).toBe(true);
+
+    let teardownFinished = false;
+    const teardown = retireStores().then(() => {
+      teardownFinished = true;
+    });
+    try {
+      await Promise.resolve();
+      expect(teardownFinished).toBe(false);
+      expect(process.env.REPOTRUCK_CONFIG_DIR).toBe(configDir);
+    } finally {
+      releaseWriter();
+    }
+
+    await teardown;
+    expect(process.env.REPOTRUCK_CONFIG_DIR).toBe(configDir);
+    const persisted = await readSettings({
+      ...process.env,
+      REPOTRUCK_CONFIG_DIR: configDir,
+    });
+    expect(persisted.theme).toBeDefined();
+
+    const nextFixture = await setupWorkspace("rt-swf-next-");
+    expect(process.env.REPOTRUCK_CONFIG_DIR).toBe(nextFixture.cfg);
+    expect(existsSync(settingsPath(process.env))).toBe(false);
   });
 });
 
@@ -559,21 +657,25 @@ describe("lifecycleActions unit tests", () => {
 
       const moveCalls: Array<[string, string]> = [];
       expect(root).toBe(realpathSync(root));
+      expect(configDir).toBe(realpathSync(configDir));
       expect(process.env.REPOTRUCK_CONFIG_DIR).toBe(configDir);
       const cfg = await (await import("../src/services/workspace.ts")).loadWorkspace(root);
+      expect(cfg.root).toBe(root);
+      expect(cfg.repos.find((repo) => repo.name === "api")?.relativePath).toBe("acme/source/api");
+      expect(existsSync(path.join(root, "acme/source/api"))).toBe(true);
+      expect(existsSync(path.join(root, "acme/custom/api"))).toBe(false);
 
       // Move undo
       // A real move updates the inventory before its undo action is applied.
       // Keep this fixture aligned with that post-move state so the undo guard
       // can distinguish an actual move from a later workspace-path edit.
-      process.env.REPOTRUCK_CONFIG_DIR = configDir;
       const moved = await moveRepository(root, cfg, "acme/api", "acme/custom/api");
+      if (!moved.ok) throw new Error(`moveRepository failed: ${moved.message}`);
       expect(moved.ok).toBe(true);
       const movedConfig = await (await import("../src/services/workspace.ts")).loadWorkspace(root);
       expect(movedConfig.repos.find((repo) => repo.name === "api")?.relativePath).toBe(
         "acme/custom/api",
       );
-      process.env.REPOTRUCK_CONFIG_DIR = configDir;
       await performUndoAction(
         root,
         {

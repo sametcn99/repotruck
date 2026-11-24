@@ -5,6 +5,7 @@ import { Store } from "../src/components/store.ts";
 import { activateTheme } from "../src/components/theme.ts";
 import { terminalWidth } from "../src/components/windowing.ts";
 import { SETTINGS_FILENAME } from "../src/services/settings.ts";
+import { readWorkspaceConfig } from "../src/services/workspaceRegistry.ts";
 import { storeDeps, waitUntil, workspaceFixture } from "./helpers/hardening.ts";
 import { settleRender, testRender } from "./helpers/render.tsx";
 
@@ -353,10 +354,34 @@ describe("acceptance: page callbacks through TUI input", () => {
       store.setView("profiles");
       await settle(setup);
       setup.mockInput.pressKey("n");
+      const editorFrame = await setup.waitForFrame((frame) =>
+        frame.includes("Enter save profile · Esc actions · F1 help"),
+      );
+      expect(editorFrame).toContain("Enter save profile · Esc actions · F1 help");
       await setup.mockInput.typeText("acceptance-profile");
+      await setup.flush();
+      const inputLine = setup
+        .captureCharFrame()
+        .split("\n")
+        .find((line) => line.includes("name:"));
+      expect(inputLine).toContain("profile");
       setup.mockInput.pressEnter();
-      await settle(setup);
+      await waitUntil(() => {
+        const snapshot = store.getSnapshot();
+        return (
+          snapshot.profiles["acceptance-profile"]?.[0] === "acme/api" &&
+          snapshot.statuses.some(
+            (status) =>
+              status.key === "[profile]" &&
+              status.phase === "DONE" &&
+              status.message?.includes("acceptance-profile saved (1 repositories)"),
+          )
+        );
+      });
       expect(store.getSnapshot().profiles["acceptance-profile"]).toEqual(["acme/api"]);
+      expect((await readWorkspaceConfig(f.root, f.env))?.profiles?.["acceptance-profile"]).toEqual([
+        "acme/api",
+      ]);
       await clickText(setup, "acceptance-profile · 1 repos");
       setup.mockInput.pressKey("s");
       expect(store.getSnapshot().view).toBe("sync");

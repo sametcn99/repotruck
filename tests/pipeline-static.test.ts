@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { execSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { parse, stringify } from "yaml";
 import { checkMinimumTuiPolicy } from "../scripts/lib/workflowPolicy.ts";
@@ -8,6 +8,8 @@ import { checkMinimumTuiPolicy } from "../scripts/lib/workflowPolicy.ts";
 const rootDir = path.resolve(__dirname, "..");
 const repoPackageJson = JSON.parse(readFileSync(path.join(rootDir, "package.json"), "utf8"));
 const currentVersion: string = repoPackageJson.version;
+const uploadPagesArtifactV5 =
+  "actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9";
 
 describe("Pipeline & Infrastructure Static Verifications (Sprint 3)", () => {
   test("minimum-tui installs with compatible Bun before asserting actual minimum runtimes", () => {
@@ -31,6 +33,51 @@ describe("Pipeline & Infrastructure Static Verifications (Sprint 3)", () => {
     expect(checkMinimumTuiPolicy(stringify(missingVersionAssertion))).toContain(
       "minimum-tui E62 must pass the selected runtime version assertion",
     );
+  });
+
+  test("Pages uploads the public .well-known discovery assets as hidden files", () => {
+    const pagesPath = path.join(rootDir, ".github/workflows/pages.yml");
+    const pagesRaw = readFileSync(pagesPath, "utf8");
+    const publicWellKnown = path.join(rootDir, "website/public/.well-known");
+    const requiredAssets = [
+      "agent-skills/index.json",
+      "agent-skills/repotruck-mcp/SKILL.md",
+      "agent-skills/repotruck-workspace/SKILL.md",
+      "ai-catalog.json",
+      "ard.json",
+      "mcp.json",
+      "mcp/server-card.json",
+      "mcp/server-cards.json",
+      "skills/index.json",
+    ];
+    const hasHiddenAssets = (source: string) => {
+      const pages = parse(source);
+      const steps = pages.jobs.build.steps as Array<{
+        uses?: string;
+        with?: Record<string, unknown>;
+      }>;
+      const upload = steps.find((step) => step.uses === uploadPagesArtifactV5);
+      return upload?.with?.["include-hidden-files"] === true;
+    };
+
+    expect(requiredAssets.every((asset) => existsSync(path.join(publicWellKnown, asset)))).toBe(
+      true,
+    );
+    expect(hasHiddenAssets(pagesRaw)).toBe(true);
+
+    const missingHiddenInput = parse(pagesRaw);
+    const upload = missingHiddenInput.jobs.build.steps.find((step: { uses?: string }) =>
+      step.uses?.startsWith("actions/upload-pages-artifact@"),
+    );
+    delete upload.with["include-hidden-files"];
+    expect(hasHiddenAssets(stringify(missingHiddenInput))).toBe(false);
+
+    const legacyAction = parse(pagesRaw);
+    const legacyUpload = legacyAction.jobs.build.steps.find(
+      (step: { uses?: string }) => step.uses === uploadPagesArtifactV5,
+    );
+    legacyUpload.uses = "actions/upload-pages-artifact@v3";
+    expect(hasHiddenAssets(stringify(legacyAction))).toBe(false);
   });
 
   // C1: ci.yml valid structure & on.workflow_call
