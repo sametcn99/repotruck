@@ -1,21 +1,20 @@
 import { randomUUID } from "node:crypto";
-import {
-  existsSync,
-  mkdirSync,
-  readFileSync,
-  renameSync,
-  rmdirSync,
-  unlinkSync,
-  writeFileSync,
-} from "node:fs";
+import { existsSync, rmdirSync } from "node:fs";
 import path from "node:path";
 import type { CustomPreset, PresetRef } from "../presets/index.ts";
-import { targetSegmentsForPreset } from "../presets/index.ts";
+import { isPresetId, targetSegmentsForPreset } from "../presets/index.ts";
 import { firstErrorLine } from "./cloner.ts";
-import type { EnvLike, RepoInventoryEntry } from "./config.ts";
+import type { EnvLike } from "./config.ts";
 import type { RepoLookup } from "./forkSource.ts";
 import { getActualCasingOnDisk, repoKeyEquals } from "./fsUtils.ts";
 import { moveDir } from "./mover.ts";
+import {
+  deleteReorganizeJournal,
+  type ReorganizeJournal,
+  readReorganizeJournal,
+  reorganizeJournalPath,
+  writeReorganizeJournalAtomically,
+} from "./reorganizeJournal.ts";
 import {
   adoptedEntry,
   buildPlanEntries,
@@ -23,70 +22,24 @@ import {
   type PlanEntry,
   resolveCategorizedForks,
 } from "./reorganizePlan.ts";
+import {
+  directoryIdentity,
+  isRecordedDestination,
+  sameDirectoryIdentity,
+} from "./reorganizeRecovery.ts";
 import { scanForRepos } from "./scanner.ts";
 import { loadWorkspace, updateWorkspace } from "./workspace.ts";
-import { isLinkedWorktree } from "./worktree.ts";
+import { workspacePath } from "./workspacePaths.ts";
+import { repositoryMoveProblem } from "./worktree.ts";
 
-export interface ReorganizeJournalMove {
-  key: string;
-  from: string;
-  to: string;
-  status: "pending" | "done";
-  tmpPath?: string;
-  forkSourceOwner?: string;
-  adopted?: RepoInventoryEntry;
-}
-
-export interface ReorganizeJournal {
-  version: 1;
-  preset: PresetRef;
-  timestamp: string;
-  moves: ReorganizeJournalMove[];
-}
-
-export function reorganizeJournalPath(root: string): string {
-  return path.join(root, ".repotruck", "reorganize-journal.json");
-}
-
-export function writeReorganizeJournalAtomically(root: string, journal: ReorganizeJournal): void {
-  const dir = path.join(root, ".repotruck");
-  mkdirSync(dir, { recursive: true });
-  const journalPath = reorganizeJournalPath(root);
-  const tmpPath = path.join(dir, `reorganize-journal.json.tmp-${randomUUID()}`);
-  writeFileSync(tmpPath, JSON.stringify(journal, null, 2), "utf8");
-  renameSync(tmpPath, journalPath);
-}
-
-export function readReorganizeJournal(root: string): ReorganizeJournal | null {
-  const journalPath = reorganizeJournalPath(root);
-  if (!existsSync(journalPath)) return null;
-  const raw = readFileSync(journalPath, "utf8");
-  try {
-    const parsed = JSON.parse(raw);
-    if (parsed && parsed.version === 1 && Array.isArray(parsed.moves)) {
-      return parsed as ReorganizeJournal;
-    }
-    throw new Error(`corrupt reorganize journal; inspect or delete ${journalPath}`);
-  } catch (err) {
-    if (err instanceof Error && err.message.startsWith("corrupt reorganize journal")) {
-      throw err;
-    }
-    throw new Error(
-      `corrupt reorganize journal; inspect or delete ${journalPath} (${firstErrorLine(err)})`,
-    );
-  }
-}
-
-export function deleteReorganizeJournal(root: string): void {
-  const journalPath = reorganizeJournalPath(root);
-  if (existsSync(journalPath)) {
-    try {
-      unlinkSync(journalPath);
-    } catch {
-      /* best effort */
-    }
-  }
-}
+export {
+  deleteReorganizeJournal,
+  type ReorganizeJournal,
+  type ReorganizeJournalMove,
+  readReorganizeJournal,
+  reorganizeJournalPath,
+  writeReorganizeJournalAtomically,
+} from "./reorganizeJournal.ts";
 
 export interface ReorganizeOptions {
   scan?: boolean;
@@ -141,6 +94,13 @@ function restoreStagedMove(
   move(temp, source);
 }
 
+function addOccupiedTargetCollision(
+  result: ReorganizeResult,
+  move: ReorganizeJournal["moves"][number],
+) {
+  result.collisions.push({ key: move.key, target: move.to, occupiedBy: "(on disk)" });
+}
+
 async function resumeReorganize(
   root: string,
   options: ReorganizeOptions,
@@ -151,6 +111,14 @@ async function resumeReorganize(
   if (journal === null) {
     throw new Error(`no unfinished reorganize journal found in ${root}`);
   }
+
+  if (
+    !isPresetId(journal.preset) &&
+    !options.customPresets?.some((preset) => preset.id === journal.preset)
+  )
+    throw new Error(
+      `unknown preset in reorganize journal: ${journal.preset}; restore the preset definition before resuming`,
+    );
 
   const result: ReorganizeResult = { moved: [], skipped: [], failed: [], collisions: [] };
   const successfulMoves: Array<{ key: string; from: string; to: string }> = [];
@@ -177,26 +145,42 @@ async function resumeReorganize(
 
     if (isCaseOnly) {
       const actual = getActualCasingOnDisk(root, move.to, undefined, existsFn);
-      if (actual === move.to) {
+      const fromAbs = path.join(root, ...move.from.split("/"));
+      const toAbs = path.join(root, ...move.to.split("/"));
+      const bothDistinctPathsExist =
+        existsFn(fromAbs) && existsFn(toAbs) && !sameDirectoryIdentity(fromAbs, toAbs);
+      if (bothDistinctPathsExist) {
+        addOccupiedTargetCollision(result, move);
+      } else if (actual === move.to && isRecordedDestination(move, toAbs)) {
         successfulMoves.push({ key: move.key, from: move.from, to: move.to });
         result.moved.push({ key: move.key, from: move.from, to: move.to });
       } else if (actual === move.from) {
         result.skipped.push({ key: move.key, reason: "pending move left at source" });
+      } else if (actual === move.to) {
+        addOccupiedTargetCollision(result, move);
       } else {
         result.failed.push({ key: move.key, message: "source and destination both missing" });
       }
       continue;
     }
 
+    const srcAbs = path.join(root, ...move.from.split("/"));
     const destAbs = path.join(root, ...move.to.split("/"));
-    if (existsFn(destAbs)) {
+    const sourceExists = existsFn(srcAbs);
+    const destinationExists = existsFn(destAbs);
+    if (sourceExists && destinationExists) {
+      addOccupiedTargetCollision(result, move);
+      continue;
+    }
+    if (destinationExists && !sourceExists && isRecordedDestination(move, destAbs)) {
       successfulMoves.push({ key: move.key, from: move.from, to: move.to });
       result.moved.push({ key: move.key, from: move.from, to: move.to });
       continue;
     }
 
-    const srcAbs = path.join(root, ...move.from.split("/"));
-    if (existsFn(srcAbs)) {
+    if (destinationExists) {
+      addOccupiedTargetCollision(result, move);
+    } else if (sourceExists) {
       result.skipped.push({ key: move.key, reason: "pending move left at source" });
     } else {
       result.failed.push({ key: move.key, message: "source and destination both missing" });
@@ -260,7 +244,14 @@ async function resumeReorganize(
     const tmpAbs = path.join(root, ...m.tmpPath.split("/"));
     return existsFn(tmpAbs);
   });
-  if (!hasUnrecoveredTmp) {
+  const journalMoveKeys = new Set(journal.moves.map((move) => move.key.toLowerCase()));
+  const hasFailedJournalMove = result.failed.some((failure) =>
+    journalMoveKeys.has(failure.key.toLowerCase()),
+  );
+  const hasCollidingJournalMove = result.collisions.some((collision) =>
+    journalMoveKeys.has(collision.key.toLowerCase()),
+  );
+  if (!hasUnrecoveredTmp && !hasFailedJournalMove && !hasCollidingJournalMove) {
     deleteReorganizeJournal(root);
   }
   return result;
@@ -309,6 +300,7 @@ export async function reorganizeWorkspace(
   }
 
   const plannedMoves: PlannedMove[] = [];
+  const reservedTargets = new Map<string, string>();
   const settled = new Map<string, string>();
 
   for (const entry of entries) {
@@ -338,8 +330,15 @@ export async function reorganizeWorkspace(
     );
     const targetRel = segments.join("/");
     const destAbs = path.join(root, ...segments);
+    try {
+      workspacePath(root, entry.relativePath);
+      workspacePath(root, targetRel);
+    } catch (error) {
+      result.failed.push({ key: entry.key, message: firstErrorLine(error) });
+      continue;
+    }
 
-    if (options.existsSyncImpl === undefined && isLinkedWorktree(srcAbs)) {
+    if (options.existsSyncImpl === undefined && repositoryMoveProblem(srcAbs)) {
       result.skipped.push({ key: entry.key, reason: "linked git worktree kept" });
       continue;
     }
@@ -371,6 +370,12 @@ export async function reorganizeWorkspace(
     }
 
     const belowSource = targetRel.toLowerCase().startsWith(`${entry.relativePath.toLowerCase()}/`);
+    const reserved = reservedTargets.get(targetRel.toLowerCase());
+    if (reserved !== undefined) {
+      result.collisions.push({ key: entry.key, target: targetRel, occupiedBy: reserved });
+      continue;
+    }
+    reservedTargets.set(targetRel.toLowerCase(), entry.key);
     plannedMoves.push({ entry, targetRel, srcAbs, destAbs, needsTemp: isCaseOnly || belowSource });
   }
 
@@ -414,6 +419,7 @@ export async function reorganizeWorkspace(
       from: p.entry.relativePath,
       to: p.targetRel,
       status: "pending",
+      sourceIdentity: directoryIdentity(p.srcAbs) ?? undefined,
       ...(p.entry.forkSourceOwner ? { forkSourceOwner: p.entry.forkSourceOwner } : {}),
       ...(!p.entry.tracked ? { adopted: adoptedEntry(p.entry, p.targetRel) } : {}),
     })),
@@ -549,7 +555,14 @@ export async function reorganizeWorkspace(
     const tmpAbs = path.join(root, ...m.tmpPath.split("/"));
     return existsFn(tmpAbs);
   });
-  if (!hasUnrecoveredTmp) {
+  const journalMoveKeys = new Set(journal.moves.map((move) => move.key.toLowerCase()));
+  const hasFailedJournalMove = result.failed.some((failure) =>
+    journalMoveKeys.has(failure.key.toLowerCase()),
+  );
+  const hasCollidingJournalMove = result.collisions.some((collision) =>
+    journalMoveKeys.has(collision.key.toLowerCase()),
+  );
+  if (!hasUnrecoveredTmp && !hasFailedJournalMove && !hasCollidingJournalMove) {
     deleteReorganizeJournal(root);
   }
   return result;

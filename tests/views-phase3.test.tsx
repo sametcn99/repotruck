@@ -2,13 +2,14 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { testRender } from "@opentui/react/test-utils";
 import { Dashboard } from "../src/components/Dashboard.tsx";
 import { Store, type StoreDeps } from "../src/components/store.ts";
 import { activateTheme } from "../src/components/theme.ts";
 import type { RepotruckConfig } from "../src/services/config.ts";
 import type { RepoStatusLine } from "../src/services/lifecycle.ts";
+import { readSettings } from "../src/services/settings.ts";
 import { writeWorkspaceConfig } from "../src/services/workspaceRegistry.ts";
+import { settleRender, testRender } from "./helpers/render.tsx";
 
 const tempDirs: string[] = [];
 let savedConfigDir: string | undefined;
@@ -225,8 +226,7 @@ function makeStore(wsRoot: string, extra: Partial<StoreDeps> = {}): Store {
 }
 
 async function settle(setup: Awaited<ReturnType<typeof testRender>>): Promise<void> {
-  await new Promise((resolve) => setTimeout(resolve, 60));
-  await setup.flush({ maxPasses: 4 });
+  await settleRender(setup);
 }
 
 async function waitReady(store: Store, setup: Awaited<ReturnType<typeof testRender>>) {
@@ -234,6 +234,14 @@ async function waitReady(store: Store, setup: Awaited<ReturnType<typeof testRend
     await new Promise((resolve) => setTimeout(resolve, 25));
   }
   await settle(setup);
+}
+
+async function waitForState(predicate: () => boolean, description: string, timeoutMs = 3000) {
+  const deadline = Date.now() + timeoutMs;
+  while (!predicate()) {
+    if (Date.now() >= deadline) throw new Error(`timed out waiting for ${description}`);
+    await new Promise((resolve) => setTimeout(resolve, 10));
+  }
 }
 
 function norm(frame: string): string {
@@ -503,15 +511,25 @@ describe("Phase 3 interactive view coverage", () => {
     // SettingsView: j moves to sync.blobless (index 2), Enter toggles it via setSetting
     store.setView("settings");
     await store.refreshSettingsPage();
+    await waitForState(
+      () => store.getSnapshot().settingsPage?.settings != null,
+      "settings page settings to load",
+    );
     await settle(setup);
+    expect(await capture(setup)).toContain("sync blobless");
     setup.mockInput.pressKey("j");
     setup.mockInput.pressKey("j");
     await settle(setup);
+    expect(await capture(setup)).toContain(">sync blobless");
     setup.mockInput.pressEnter();
-    await settle(setup);
-    expect(
-      (store.getSnapshot().settingsPage?.settings?.sync as { blobless?: boolean })?.blobless,
-    ).toBe(true);
+    await waitForState(
+      () =>
+        (store.getSnapshot().settingsPage?.settings?.sync as { blobless?: boolean } | undefined)
+          ?.blobless === true,
+      "sync.blobless update to persist and refresh into Store state",
+    );
+    const persistedSettings = await readSettings(process.env);
+    expect(persistedSettings.sync?.blobless).toBe(true);
 
     // AgentsView: p cycles port, Enter applies first template
     store.setView("agents");

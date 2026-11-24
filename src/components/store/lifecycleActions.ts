@@ -91,14 +91,34 @@ export async function performUndoAction(
   if (action.type === "move") {
     const fromAbs = path.join(root, ...action.to.split("/"));
     const backAbs = path.join(root, ...action.from.split("/"));
+    const beforeUndo = await loadWorkspace(root);
+    const movedRepo = beforeUndo.repos.find((r) => `${r.owner}/${r.name}` === action.key);
+    if (movedRepo?.relativePath.toLowerCase() !== action.to.toLowerCase()) {
+      throw new Error(`cannot undo move for ${action.key}; its workspace path changed`);
+    }
     moveDirImpl(fromAbs, backAbs);
     await updateWorkspace(root, (currentConfig) => {
       const index = currentConfig.repos.findIndex((r) => `${r.owner}/${r.name}` === action.key);
       if (index < 0) return { config: currentConfig, result: undefined };
+      const currentRepo = currentConfig.repos[index]!;
+      if (currentRepo.relativePath.toLowerCase() !== action.to.toLowerCase()) {
+        return { config: currentConfig, result: undefined };
+      }
       const repos = currentConfig.repos.map((r, i) =>
         i === index ? { ...r, relativePath: action.from } : r,
       );
-      return { config: { ...currentConfig, repos }, result: undefined };
+      const aliases: Record<string, string> = { ...(currentConfig.aliases ?? {}) };
+      const originalAliases = action.config.aliases ?? {};
+      for (const [alias, originalTarget] of Object.entries(originalAliases)) {
+        const currentTarget = aliases[alias];
+        if (
+          originalTarget.toLowerCase() === action.from.toLowerCase() &&
+          currentTarget?.toLowerCase() === action.to.toLowerCase()
+        ) {
+          aliases[alias] = originalTarget;
+        }
+      }
+      return { config: { ...currentConfig, repos, aliases }, result: undefined };
     });
     pushStatus("DONE", "[undo]", `moved ${action.key} back to ${action.from}`);
   } else {
@@ -262,6 +282,7 @@ export async function performWorkspaceMaintenanceAction(
   root: string,
   kind: WorkspaceMaintenanceKind,
   pushStatus: (phase: StatusPhase, key: string, message?: string) => void,
+  options: { olderThanDays?: number } = {},
 ): Promise<void> {
   try {
     if (kind === "scan") {
@@ -306,7 +327,7 @@ export async function performWorkspaceMaintenanceAction(
       return;
     }
     if (kind === "trash-empty") {
-      const emptied = emptyTrash(root);
+      const emptied = emptyTrash(root, options);
       pushStatus(
         "DONE",
         "[trash]",

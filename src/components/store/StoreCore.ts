@@ -8,7 +8,7 @@ import { nextViewId, VIEW_ORDER } from "../views/viewRegistry.ts";
 import { buildSidebarRows, repoKey } from "./filters.ts";
 import { performBulkCommandRun, performUndoAction } from "./lifecycleActions.ts";
 import { cycleOmnibarMode, runOmnibarGithubSearch, runOmnibarSymbolSearch } from "./omnibar.ts";
-import { StoreBase } from "./StoreBase.ts";
+import { StoreInitialization } from "./StoreInitialization.ts";
 import {
   type FiltersState,
   HEALTH_FILTERS,
@@ -21,7 +21,7 @@ import {
   type ViewId,
 } from "./types.ts";
 
-export class StoreCore extends StoreBase {
+export class StoreCore extends StoreInitialization {
   private startupUpdatePending = false;
 
   protected override async runStartupUpdateCheck(): Promise<void> {
@@ -49,20 +49,28 @@ export class StoreCore extends StoreBase {
   };
 
   toggleOrg = async (org: string): Promise<void> => {
-    const selected = new Set(this.state.selectedOrgs);
+    const selected = new Set(this.state.selectedOrgs),
+      requestKey = `org:${org}`;
     if (selected.has(org)) {
       selected.delete(org);
+      this.operations.cancel(requestKey);
       this.recomputeVisible({ selectedOrgs: selected });
       return;
     }
     selected.add(org);
     this.recomputeVisible({ selectedOrgs: selected });
-    if (!this.orgReposCache.has(org) && this.github !== null) {
+    const github = this.github;
+    if (!this.orgReposCache.has(org) && github !== null) {
+      const operation = this.workspaceOperation(requestKey);
       try {
-        this.orgReposCache.set(org, await this.github.listOrgRepos(org));
+        const repos = await github.listOrgRepos(org);
+        if (!operation.current()) return;
+        this.orgReposCache.set(org, repos);
         this.recomputeVisible();
       } catch (error) {
-        this.pushStatus("FAILED", `org:${org}`, firstErrorLine(error));
+        operation.pushStatus("FAILED", `org:${org}`, firstErrorLine(error));
+      } finally {
+        operation.finish();
       }
     }
   };
@@ -146,6 +154,7 @@ export class StoreCore extends StoreBase {
   };
 
   openOmnibar = (mode: OmnibarMode = "commands", initialQuery = ""): void => {
+    this.operations.cancel("omnibar");
     this.set({
       omnibarLoading: false,
       omnibarSymbols: [],
@@ -157,6 +166,7 @@ export class StoreCore extends StoreBase {
 
   cycleOmnibarTab = (direction: 1 | -1 = 1): void => {
     if (this.state.modal?.type !== "omnibar") return;
+    this.operations.cancel("omnibar");
     const mode = cycleOmnibarMode(this.state.modal.mode, direction);
     this.set({
       modal: { type: "omnibar", mode, query: "" },
@@ -167,63 +177,81 @@ export class StoreCore extends StoreBase {
   };
 
   updateOmnibarQuery = async (query: string): Promise<void> => {
-    if (this.state.modal?.type !== "omnibar") return;
-    const mode = this.state.modal.mode;
-    this.set({ modal: { type: "omnibar", mode, query }, modalError: null });
-    if (mode === "symbols") {
-      this.set({ omnibarLoading: true });
-      try {
-        const config = this.localConfig ?? (await loadWorkspace(this.rootValue));
-        const matches = await runOmnibarSymbolSearch(
-          this.rootValue,
-          config,
-          query,
-          this.deps.searchCodeFn,
-        );
-        if (this.state.modal?.type === "omnibar" && this.state.modal.query === query) {
-          this.set({ omnibarSymbols: matches, omnibarLoading: false });
+    const operation = this.workspaceOperation("omnibar");
+    const { set: update } = operation;
+    try {
+      if (this.state.modal?.type !== "omnibar") return;
+      const mode = this.state.modal.mode;
+      update({ modal: { type: "omnibar", mode, query }, modalError: null });
+      if (mode === "symbols") {
+        update({ omnibarLoading: true });
+        try {
+          const config = this.localConfig ?? (await loadWorkspace(operation.root));
+          const matches = await runOmnibarSymbolSearch(
+            operation.root,
+            config,
+            query,
+            this.deps.searchCodeFn,
+          );
+          if (this.state.modal?.type === "omnibar" && this.state.modal.query === query) {
+            update({ omnibarSymbols: matches, omnibarLoading: false });
+          }
+        } catch (error) {
+          update({ omnibarLoading: false, modalError: firstErrorLine(error) });
         }
-      } catch (error) {
-        this.set({ omnibarLoading: false, modalError: firstErrorLine(error) });
-      }
-    } else if (mode === "github") {
-      this.set({ omnibarLoading: true });
-      try {
-        const found = await runOmnibarGithubSearch(this.github, query);
-        if (this.state.modal?.type === "omnibar" && this.state.modal.query === query) {
-          this.set({ omnibarGithubRepos: found, omnibarLoading: false });
+      } else if (mode === "github") {
+        update({ omnibarLoading: true });
+        try {
+          const found = await runOmnibarGithubSearch(this.github, query);
+          if (this.state.modal?.type === "omnibar" && this.state.modal.query === query) {
+            update({ omnibarGithubRepos: found, omnibarLoading: false });
+          }
+        } catch (error) {
+          update({ omnibarLoading: false, modalError: firstErrorLine(error) });
         }
-      } catch (error) {
-        this.set({ omnibarLoading: false, modalError: firstErrorLine(error) });
       }
+    } finally {
+      operation.finish();
     }
   };
 
   submitOmnibarRunner = async (commandLine: string): Promise<void> => {
-    this.closeModal();
+    const operation = this.workspaceOperation("submitOmnibarRunner");
+    const { pushStatus } = operation;
     try {
-      await performBulkCommandRun(
-        this.rootValue,
-        commandLine,
-        [...this.state.selected],
-        this.deps.runInReposFn,
-        this.pushStatus,
-      );
-      await this.refreshLocalState();
-    } catch (error) {
-      this.pushStatus("FAILED", "[run]", firstErrorLine(error));
+      this.closeModal();
+      try {
+        await performBulkCommandRun(
+          operation.root,
+          commandLine,
+          [...this.state.selected],
+          this.deps.runInReposFn,
+          pushStatus,
+        );
+        if (operation.current()) await this.refreshLocalState();
+      } catch (error) {
+        pushStatus("FAILED", "[run]", firstErrorLine(error));
+      }
+    } finally {
+      operation.finish();
     }
   };
 
   undoLast = async (): Promise<void> => {
-    const action = this.undoStack.pop();
-    this.set({ canUndo: this.undoStack.length > 0 });
-    if (action === undefined) return this.pushStatus("FAILED", "[undo]", "nothing to undo");
+    const operation = this.workspaceOperation("undoLast");
+    const { set: update, pushStatus } = operation;
     try {
-      await performUndoAction(this.rootValue, action, this.deps.moveDirImpl, this.pushStatus);
-      await this.refreshLocalState();
-    } catch (error) {
-      this.pushStatus("FAILED", "[undo]", firstErrorLine(error));
+      const action = this.undoStack.pop();
+      update({ canUndo: this.undoStack.length > 0 });
+      if (action === undefined) return pushStatus("FAILED", "[undo]", "nothing to undo");
+      try {
+        await performUndoAction(operation.root, action, this.deps.moveDirImpl, pushStatus);
+        if (operation.current()) await this.refreshLocalState();
+      } catch (error) {
+        pushStatus("FAILED", "[undo]", firstErrorLine(error));
+      }
+    } finally {
+      operation.finish();
     }
   };
 

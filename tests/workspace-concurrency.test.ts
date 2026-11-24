@@ -65,6 +65,8 @@ describe("workspace concurrency (Sprint 1 PR 1b)", () => {
       env,
     );
 
+    let completed = 0;
+    const started = Date.now();
     const tasks = Array.from({ length: 50 }, (_, i) =>
       updateWorkspace(
         root,
@@ -74,10 +76,17 @@ describe("workspace concurrency (Sprint 1 PR 1b)", () => {
           return { config: { ...current, aliases }, result: undefined };
         },
         env,
-      ),
+      ).then((result) => {
+        completed++;
+        if (completed % 10 === 0)
+          console.info(`[C14] completed=${completed}/50 elapsed=${Date.now() - started}ms`);
+        return result;
+      }),
     );
 
-    await Promise.all(tasks);
+    const outcomes = await Promise.allSettled(tasks);
+    expect(outcomes.filter((outcome) => outcome.status === "rejected")).toEqual([]);
+    console.info(`[C14] all 50 mutations settled in ${Date.now() - started}ms`);
 
     const finalConfig = await readWorkspaceConfig(root, env);
     expect(finalConfig).not.toBeNull();
@@ -86,7 +95,7 @@ describe("workspace concurrency (Sprint 1 PR 1b)", () => {
     for (let i = 0; i < 50; i++) {
       expect(aliases[`alias_${i}`]).toBe("acme/source/core");
     }
-  });
+  }, 25_000);
 
   test("two spawned processes each adding 25 aliases persist all 50 aliases (C15)", async () => {
     const { root, configDir, env } = makeInitialWorkspace("rt-c15");
@@ -119,31 +128,60 @@ describe("workspace concurrency (Sprint 1 PR 1b)", () => {
       const env = { REPOTRUCK_CONFIG_DIR: ${JSON.stringify(configDir)} };
       const root = ${JSON.stringify(root)};
 
+      let completed = 0;
       const tasks = Array.from({ length: ${count} }, (_, i) => {
         const aliasName = "proc_alias_" + (${startIdx} + i);
         return updateWorkspace(root, (current) => {
           const aliases = { ...(current.aliases ?? {}) };
           aliases[aliasName] = "acme/source/core";
           return { config: { ...current, aliases }, result: undefined };
-        }, env);
+        }, env).then((result) => {
+          completed++;
+          if (completed % 5 === 0) process.stderr.write("worker=${startIdx}: " + completed + "/25\\n");
+          return result;
+        });
       });
 
       await Promise.all(tasks);
-      process.exit(0);
     `;
 
+    const started = Date.now();
     const proc1 = Bun.spawn(["bun", "-e", makeWorkerScript(0, 25)], {
       cwd: process.cwd(),
-      stderr: "pipe",
+      stderr: "inherit",
     });
     const proc2 = Bun.spawn(["bun", "-e", makeWorkerScript(25, 25)], {
       cwd: process.cwd(),
-      stderr: "pipe",
+      stderr: "inherit",
     });
 
-    const [exit1, exit2] = await Promise.all([proc1.exited, proc2.exited]);
-    expect(exit1).toBe(0);
-    expect(exit2).toBe(0);
+    let exits: [number, number] | undefined;
+    let deadline: ReturnType<typeof setTimeout> | undefined;
+    try {
+      exits = await Promise.race([
+        Promise.all([proc1.exited, proc2.exited]),
+        new Promise<undefined>((resolve) => {
+          deadline = setTimeout(() => resolve(undefined), 20_000);
+        }),
+      ]);
+      clearTimeout(deadline);
+      expect(exits).not.toBeUndefined();
+      expect(exits?.[0]).toBe(0);
+      expect(exits?.[1]).toBe(0);
+      console.info(`[C15] child processes settled in ${Date.now() - started}ms`);
+    } finally {
+      clearTimeout(deadline);
+      if (exits === undefined) {
+        proc1.kill("SIGKILL");
+        proc2.kill("SIGKILL");
+      }
+      if (proc1.exitCode === null) proc1.kill("SIGKILL");
+      if (proc2.exitCode === null) proc2.kill("SIGKILL");
+      await Promise.race([
+        Promise.all([proc1.exited, proc2.exited]),
+        new Promise((resolve) => setTimeout(resolve, 2000)),
+      ]);
+    }
 
     const finalConfig = await readWorkspaceConfig(root, env);
     expect(finalConfig).not.toBeNull();
@@ -152,7 +190,7 @@ describe("workspace concurrency (Sprint 1 PR 1b)", () => {
     for (let i = 0; i < 50; i++) {
       expect(aliases[`proc_alias_${i}`]).toBe("acme/source/core");
     }
-  });
+  }, 25_000);
 
   test("concurrent alias set during slow sync does not lose alias (C16)", async () => {
     const { root, env } = makeInitialWorkspace("rt-c16");

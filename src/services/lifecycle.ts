@@ -9,8 +9,9 @@ import { collectDetailedGitStatus, type DetailedGitStatus } from "./gitState.ts"
 import { resolveRepoRef } from "./launcher.ts";
 import { moveDir } from "./mover.ts";
 import { targetDirFor, toPosixRelative, updateWorkspace } from "./workspace.ts";
+import { assertWorkspacePath, workspacePath } from "./workspacePaths.ts";
 import { centralStorePath } from "./workspaceRegistry.ts";
-import { isLinkedWorktree } from "./worktree.ts";
+import { isLinkedWorktree, repositoryMoveProblem } from "./worktree.ts";
 
 function notTrackedMessage(ref: string, env?: EnvLike): string {
   return `not tracked by repotruck: ${ref} (records: ${centralStorePath(env)})`;
@@ -245,15 +246,32 @@ export async function deleteRepository(
       message: `delete requires --yes (this permanently removes ${absDir} from disk)`,
     };
   }
+  try {
+    workspacePath(resolvedRoot, entry.relativePath);
+  } catch (error) {
+    return { ok: false, message: firstErrorLine(error) };
+  }
   const onDisk = existsSync(absDir);
+  const worktreeProblem = onDisk ? repositoryMoveProblem(absDir) : null;
+  if (worktreeProblem) return { ok: false, message: worktreeProblem };
   let trashPath: string | undefined;
   if (onDisk) {
     try {
       if (options.trash === true) {
+        let stamp = Date.now();
         trashPath = path.join(
           workspaceTrashDir(resolvedRoot),
-          `${entry.owner}-${entry.name}-${Date.now()}`,
+          `${entry.owner}-${entry.name}-${stamp}`,
         );
+        while (existsSync(trashPath)) {
+          stamp += 1;
+          trashPath = path.join(
+            workspaceTrashDir(resolvedRoot),
+            `${entry.owner}-${entry.name}-${stamp}`,
+          );
+        }
+        assertWorkspacePath(resolvedRoot, trashPath);
+        workspacePath(resolvedRoot, entry.relativePath);
         moveDir(absDir, trashPath);
       } else {
         const rm =
@@ -303,7 +321,14 @@ export async function archiveRepository(
     return { ok: false, message: notTrackedMessage(ref, env) };
   }
   const entry = match.entry;
+  try {
+    workspacePath(root, entry.relativePath);
+  } catch (error) {
+    return { ok: false, message: firstErrorLine(error) };
+  }
   let info: RepoInfo;
+  const worktreeProblem = repositoryMoveProblem(path.join(root, entry.relativePath));
+  if (worktreeProblem) return { ok: false, message: worktreeProblem };
   try {
     info = await github.archiveRepo(entry.owner, entry.name);
   } catch (error) {
@@ -337,6 +362,8 @@ export async function archiveRepository(
     if (existsSync(currentDir)) {
       const move = options.moveImpl ?? moveDir;
       try {
+        workspacePath(root, entry.relativePath);
+        assertWorkspacePath(root, targetDir);
         move(currentDir, targetDir);
       } catch (error) {
         await updateWorkspace(

@@ -14,9 +14,9 @@ export function DialogBox({ store }: { store: Store }) {
 
   useKeyboard((key) => {
     if (dialog === null) return;
-    if (key.name === "y") store.resolveDialog(true);
-    else if (key.name === "n" || key.name === "escape") store.resolveDialog(false);
-    else if (key.name === "return") store.resolveDialog(true);
+    if (key.name === "y") store.resolveDialog(true, dialog);
+    else if (key.name === "n" || key.name === "escape") store.resolveDialog(false, dialog);
+    else if (key.name === "return") store.resolveDialog(true, dialog);
   });
 
   if (dialog === null) return null;
@@ -34,7 +34,7 @@ export function DialogBox({ store }: { store: Store }) {
             fg={confirmColor}
             onMouseDown={(event) => {
               event.stopPropagation?.();
-              store.resolveDialog(true);
+              store.resolveDialog(true, dialog);
             }}
           >
             {`[y] ${dialog.confirmLabel}`}
@@ -43,7 +43,7 @@ export function DialogBox({ store }: { store: Store }) {
             fg={theme.dim()}
             onMouseDown={(event) => {
               event.stopPropagation?.();
-              store.resolveDialog(false);
+              store.resolveDialog(false, dialog);
             }}
           >
             {"[n] Cancel"}

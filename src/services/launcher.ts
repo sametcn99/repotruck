@@ -5,7 +5,8 @@ import { migrateAppData } from "./appDataMigration.ts";
 import { firstErrorLine } from "./cloner.ts";
 import type { RepoInventoryEntry, RepotruckConfig } from "./config.ts";
 import { appConfigDir, type EnvLike } from "./config.ts";
-import { isCmdShim, quoteForShell } from "./shellQuote.ts";
+import { isCmdShim, quoteForShell, resolveWindowsCommand } from "./shellQuote.ts";
+import { workspacePath } from "./workspacePaths.ts";
 
 export const APPS_FILENAME = "apps.json";
 const REPO_DIR_ARG = "{repoDir}";
@@ -284,11 +285,12 @@ export interface SpawnRequest {
 export type SpawnImpl = (request: SpawnRequest) => Promise<number>;
 
 export function defaultSpawnImpl(request: SpawnRequest): Promise<number> {
+  const executable = resolveWindowsCommand(request.command, request.cwd);
   const attempt = (useShell: boolean): Promise<number> =>
     new Promise((resolve, reject) => {
       const command = useShell
-        ? quoteForShell(request.command, request.args, { cmdShim: isCmdShim(request.command) })
-        : request.command;
+        ? quoteForShell(executable, request.args, { cmdShim: isCmdShim(executable) })
+        : executable;
       const args = useShell ? [] : request.args;
       const child = spawn(command, args, {
         cwd: request.cwd,
@@ -299,12 +301,14 @@ export function defaultSpawnImpl(request: SpawnRequest): Promise<number> {
       child.on("error", reject);
       child.on("exit", (code) => resolve(code ?? 1));
     });
-  return attempt(false).catch(async (error: NodeJS.ErrnoException) => {
-    if (error.code === "ENOENT") {
-      return attempt(true);
-    }
-    throw error;
-  });
+  return attempt(process.platform === "win32" && isCmdShim(executable)).catch(
+    async (error: NodeJS.ErrnoException) => {
+      if (error.code === "ENOENT") {
+        return attempt(true);
+      }
+      throw error;
+    },
+  );
 }
 
 export interface RunAppInRepoResult {
@@ -323,7 +327,12 @@ export async function runAppInRepo(
   if (match === null) {
     return { ok: false, code: 1, message: `repository not found: ${input.ref}` };
   }
-  const repoDir = path.resolve(path.join(input.root, ...match.dir.split("/")));
+  let repoDir: string;
+  try {
+    repoDir = await workspacePath(input.root, match.dir);
+  } catch (error) {
+    return { ok: false, code: 1, message: firstErrorLine(error) };
+  }
   if (!existsSync(repoDir)) {
     return { ok: false, code: 1, dir: match.dir, message: `${match.dir} is not on disk` };
   }

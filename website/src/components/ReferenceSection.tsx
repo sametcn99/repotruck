@@ -418,9 +418,9 @@ export function ReferenceSection() {
         <h3>Terminal compatibility</h3>
         <p>
           The dashboard renders best in modern terminals such as{" "}
-          <a href="https://aka.ms/terminal">Windows Terminal</a>. It requires Node.js &gt;= 26.4 or
-          Bun &gt;= 1.3.14; on older Node versions use the headless commands or run via{" "}
-          <code>bunx repotruck</code>.
+          <a href="https://aka.ms/terminal">Windows Terminal</a>. It requires Node.js &gt;= 26.4
+          with <code>--experimental-ffi</code> or Bun &gt;= 1.3.14; on older Node versions use the
+          headless commands or run via <code>bunx repotruck</code>.
         </p>
       </div>
     </section>

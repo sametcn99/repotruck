@@ -2,7 +2,6 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { testRender } from "@opentui/react/test-utils";
 import { Dashboard } from "../src/components/Dashboard.tsx";
 import { clampPanelLine, StatusPanel } from "../src/components/StatusPanel.tsx";
 import {
@@ -15,6 +14,7 @@ import { activateTheme } from "../src/components/theme.ts";
 import { repoRowLabel } from "../src/components/windowing.ts";
 import type { DoctorCheck } from "../src/services/doctor.ts";
 import type { RepoInfo } from "../src/services/github.ts";
+import { testRender } from "./helpers/render.tsx";
 
 type RendererSetup = Awaited<ReturnType<typeof testRender>>;
 

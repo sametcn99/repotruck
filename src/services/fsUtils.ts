@@ -1,5 +1,5 @@
 import { existsSync, readdirSync } from "node:fs";
-import { rename, rm, writeFile } from "node:fs/promises";
+import { open, rename, rm } from "node:fs/promises";
 import path from "node:path";
 
 let atomicWriteCounter = 0;
@@ -12,15 +12,22 @@ export async function writeFileAtomic(
   file: string,
   content: string | Uint8Array,
   mode?: number,
+  deps: { open?: typeof open; rename?: typeof rename; rm?: typeof rm } = {},
 ): Promise<void> {
   atomicWriteCounter += 1;
   const tmp = `${file}.tmp-${process.pid}-${atomicWriteCounter}`;
   try {
-    await writeFile(tmp, content, { encoding: "utf8", mode });
-    await rename(tmp, file);
+    const handle = await (deps.open ?? open)(tmp, "wx", mode);
+    try {
+      await handle.writeFile(content, "utf8");
+      await handle.sync();
+    } finally {
+      await handle.close();
+    }
+    await (deps.rename ?? rename)(tmp, file);
   } catch (error) {
     try {
-      await rm(tmp, { force: true });
+      await (deps.rm ?? rm)(tmp, { force: true });
     } catch {
       /* best effort cleanup */
     }

@@ -41,12 +41,7 @@ jobs:
       - run: bun run build
       - name: Pack and smoke-test the tarball
         run: |
-          npm pack
-          tarball=$(ls repotruck-*.tgz)
-          mkdir smoke-dir && cd smoke-dir
-          npm init -y >/dev/null
-          npm install "../$tarball"
-          npx --yes repotruck --version
+          bun scripts/pack-smoke.ts
       - name: Publish to npm with provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

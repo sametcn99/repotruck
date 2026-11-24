@@ -4,56 +4,71 @@
 <style>text{font-family:ui-monospace,"SF Mono","Cascadia Code",Consolas,"Liberation Mono",Menlo,monospace;font-size:14px;white-space:pre}</style>
 <text x="12.0" y="26" fill="rgb(48,54,61)" textLength="1344.0" lengthAdjust="spacingAndGlyphs">┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐</text>
 <text x="12.0" y="43" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="43" fill="rgb(88,166,255)" textLength="840.0" lengthAdjust="spacingAndGlyphs"> repotruck · devuser (auth: gh-cli) · preset: categorized · root: /tmp/repotruck-shots-ws · 13 repos</text>
-<text x="860.4" y="43" fill="rgb(255,255,255)" textLength="487.2" lengthAdjust="spacingAndGlyphs">                                                          </text>
+<text x="20.4" y="43" fill="rgb(110,118,129)" textLength="92.4" lengthAdjust="spacingAndGlyphs">[F10] Views</text>
+<text x="112.8" y="43" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="121.2" y="43" fill="rgb(110,118,129)" textLength="109.2" lengthAdjust="spacingAndGlyphs"> Workspace ▾ </text>
+<text x="230.4" y="43" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="238.8" y="43" fill="rgb(110,118,129)" textLength="92.4" lengthAdjust="spacingAndGlyphs"> Inspect ▾ </text>
+<text x="331.2" y="43" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="339.6" y="43" fill="rgb(110,118,129)" textLength="100.8" lengthAdjust="spacingAndGlyphs"> Automate ▾ </text>
+<text x="440.4" y="43" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="448.8" y="43" fill="rgb(110,118,129)" textLength="100.8" lengthAdjust="spacingAndGlyphs"> Organize ▾ </text>
+<text x="549.6" y="43" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="558.0" y="43" fill="rgb(110,118,129)" textLength="84.0" lengthAdjust="spacingAndGlyphs"> System ▾ </text>
+<text x="642.0" y="43" fill="rgb(255,255,255)" textLength="705.6" lengthAdjust="spacingAndGlyphs">                                                                                    </text>
 <text x="1347.6" y="43" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="12.0" y="60" fill="rgb(48,54,61)" textLength="1344.0" lengthAdjust="spacingAndGlyphs">└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘</text>
-<text x="12.0" y="77" fill="rgb(210,168,255)" textLength="1344.0" lengthAdjust="spacingAndGlyphs">┌─Workspaces───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐</text>
-<text x="12.0" y="94" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="94" fill="rgb(255,255,255)" textLength="1327.2" lengthAdjust="spacingAndGlyphs">                                                                                                                                                              </text>
-<text x="1347.6" y="94" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="12.0" y="60" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="20.4" y="60" fill="rgb(88,166,255)" textLength="840.0" lengthAdjust="spacingAndGlyphs"> repotruck · devuser (auth: gh-cli) · preset: categorized · root: /tmp/repotruck-shots-ws · 13 repos</text>
+<text x="860.4" y="60" fill="rgb(255,255,255)" textLength="487.2" lengthAdjust="spacingAndGlyphs">                                                          </text>
+<text x="1347.6" y="60" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
+<text x="12.0" y="77" fill="rgb(48,54,61)" textLength="1344.0" lengthAdjust="spacingAndGlyphs">└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘</text>
+<text x="12.0" y="94" fill="rgb(210,168,255)" textLength="1344.0" lengthAdjust="spacingAndGlyphs">┌─Workspaces───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐</text>
 <text x="12.0" y="111" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="111" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="111" fill="rgb(210,168,255)" textLength="84.0" lengthAdjust="spacingAndGlyphs">Workspaces</text>
-<text x="112.8" y="111" fill="rgb(255,255,255)" textLength="1150.8" lengthAdjust="spacingAndGlyphs">                                                                                                                                         </text>
-<text x="1263.6" y="111" fill="rgb(110,118,129)" textLength="75.6" lengthAdjust="spacingAndGlyphs">[× Close]</text>
-<text x="1339.2" y="111" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="20.4" y="111" fill="rgb(255,255,255)" textLength="1327.2" lengthAdjust="spacingAndGlyphs">                                                                                                                                                              </text>
 <text x="1347.6" y="111" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="128" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="128" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="128" fill="rgb(110,118,129)" textLength="462.0" lengthAdjust="spacingAndGlyphs">records: /tmp/repotruck-shots-ws/.config/repotruck.json</text>
-<text x="490.8" y="128" fill="rgb(255,255,255)" textLength="856.8" lengthAdjust="spacingAndGlyphs">                                                                                                      </text>
+<text x="28.8" y="128" fill="rgb(210,168,255)" textLength="84.0" lengthAdjust="spacingAndGlyphs">Workspaces</text>
+<text x="112.8" y="128" fill="rgb(255,255,255)" textLength="1150.8" lengthAdjust="spacingAndGlyphs">                                                                                                                                         </text>
+<text x="1263.6" y="128" fill="rgb(110,118,129)" textLength="75.6" lengthAdjust="spacingAndGlyphs">[× Close]</text>
+<text x="1339.2" y="128" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
 <text x="1347.6" y="128" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="145" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="145" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<rect x="28.8" y="131.0" width="646.8" height="17" fill="rgb(33,38,45)"/>
-<text x="28.8" y="145" fill="rgb(255,255,255)" textLength="646.8" lengthAdjust="spacingAndGlyphs">&gt; /tmp/repotruck-shots-ws · categorized · 13 repos · 2026-11-19T08:00:00.000Z</text>
-<text x="675.6" y="145" fill="rgb(255,255,255)" textLength="672.0" lengthAdjust="spacingAndGlyphs">                                                                                </text>
+<text x="28.8" y="145" fill="rgb(110,118,129)" textLength="604.8" lengthAdjust="spacingAndGlyphs">↑↓ Choose · Enter Switch · n New · d Set default · x Remove · Esc Cancel</text>
+<text x="633.6" y="145" fill="rgb(255,255,255)" textLength="714.0" lengthAdjust="spacingAndGlyphs">                                                                                     </text>
 <text x="1347.6" y="145" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="162" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="162" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="162" fill="rgb(110,118,129)" textLength="848.4" lengthAdjust="spacingAndGlyphs">  /mnt/data/projects · language-first · 23 repos · 2026-10-02T08:00:00.000Z (missing, not switchable)</text>
-<text x="877.2" y="162" fill="rgb(255,255,255)" textLength="470.4" lengthAdjust="spacingAndGlyphs">                                                        </text>
+<text x="28.8" y="162" fill="rgb(110,118,129)" textLength="462.0" lengthAdjust="spacingAndGlyphs">records: /tmp/repotruck-shots-ws/.config/repotruck.json</text>
+<text x="490.8" y="162" fill="rgb(255,255,255)" textLength="856.8" lengthAdjust="spacingAndGlyphs">                                                                                                      </text>
 <text x="1347.6" y="162" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="179" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="179" fill="rgb(255,255,255)" textLength="1327.2" lengthAdjust="spacingAndGlyphs">                                                                                                                                                              </text>
+<text x="20.4" y="179" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<rect x="28.8" y="165.0" width="646.8" height="17" fill="rgb(33,38,45)"/>
+<text x="28.8" y="179" fill="rgb(255,255,255)" textLength="646.8" lengthAdjust="spacingAndGlyphs">&gt; /tmp/repotruck-shots-ws · categorized · 13 repos · 2026-11-19T08:00:00.000Z</text>
+<text x="675.6" y="179" fill="rgb(255,255,255)" textLength="672.0" lengthAdjust="spacingAndGlyphs">                                                                                </text>
 <text x="1347.6" y="179" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="196" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="196" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="196" fill="rgb(63,185,80)" textLength="84.0" lengthAdjust="spacingAndGlyphs">[ Switch ]</text>
-<text x="112.8" y="196" fill="rgb(255,255,255)" textLength="16.8" lengthAdjust="spacingAndGlyphs">  </text>
-<text x="129.6" y="196" fill="rgb(248,81,73)" textLength="84.0" lengthAdjust="spacingAndGlyphs">[ Remove ]</text>
-<text x="213.6" y="196" fill="rgb(255,255,255)" textLength="16.8" lengthAdjust="spacingAndGlyphs">  </text>
-<text x="230.4" y="196" fill="rgb(110,118,129)" textLength="84.0" lengthAdjust="spacingAndGlyphs">[ Cancel ]</text>
-<text x="314.4" y="196" fill="rgb(255,255,255)" textLength="1033.2" lengthAdjust="spacingAndGlyphs">                                                                                                                           </text>
+<text x="28.8" y="196" fill="rgb(110,118,129)" textLength="848.4" lengthAdjust="spacingAndGlyphs">  /mnt/data/projects · language-first · 23 repos · 2026-10-02T08:00:00.000Z (missing, not switchable)</text>
+<text x="877.2" y="196" fill="rgb(255,255,255)" textLength="470.4" lengthAdjust="spacingAndGlyphs">                                                        </text>
 <text x="1347.6" y="196" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="213" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="213" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="213" fill="rgb(110,118,129)" textLength="638.4" lengthAdjust="spacingAndGlyphs">Up/Down choose · Enter switch · x removes from the registry · Escape cancels</text>
-<text x="667.2" y="213" fill="rgb(255,255,255)" textLength="680.4" lengthAdjust="spacingAndGlyphs">                                                                                 </text>
+<text x="20.4" y="213" fill="rgb(255,255,255)" textLength="1327.2" lengthAdjust="spacingAndGlyphs">                                                                                                                                                              </text>
 <text x="1347.6" y="213" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="230" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="230" fill="rgb(255,255,255)" textLength="1327.2" lengthAdjust="spacingAndGlyphs">                                                                                                                                                              </text>
+<text x="20.4" y="230" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="28.8" y="230" fill="rgb(63,185,80)" textLength="84.0" lengthAdjust="spacingAndGlyphs">[ Switch ]</text>
+<text x="112.8" y="230" fill="rgb(255,255,255)" textLength="16.8" lengthAdjust="spacingAndGlyphs">  </text>
+<text x="129.6" y="230" fill="rgb(63,185,80)" textLength="58.8" lengthAdjust="spacingAndGlyphs">[n] New</text>
+<text x="188.4" y="230" fill="rgb(255,255,255)" textLength="16.8" lengthAdjust="spacingAndGlyphs">  </text>
+<text x="205.2" y="230" fill="rgb(63,185,80)" textLength="126.0" lengthAdjust="spacingAndGlyphs">[d] Set default</text>
+<text x="331.2" y="230" fill="rgb(255,255,255)" textLength="16.8" lengthAdjust="spacingAndGlyphs">  </text>
+<text x="348.0" y="230" fill="rgb(248,81,73)" textLength="84.0" lengthAdjust="spacingAndGlyphs">[ Remove ]</text>
+<text x="432.0" y="230" fill="rgb(255,255,255)" textLength="16.8" lengthAdjust="spacingAndGlyphs">  </text>
+<text x="448.8" y="230" fill="rgb(110,118,129)" textLength="84.0" lengthAdjust="spacingAndGlyphs">[ Cancel ]</text>
+<text x="532.8" y="230" fill="rgb(255,255,255)" textLength="814.8" lengthAdjust="spacingAndGlyphs">                                                                                                 </text>
 <text x="1347.6" y="230" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="247" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="247" fill="rgb(255,255,255)" textLength="1327.2" lengthAdjust="spacingAndGlyphs">                                                                                                                                                              </text>
@@ -163,8 +178,9 @@
 <text x="12.0" y="842" fill="rgb(210,168,255)" textLength="1344.0" lengthAdjust="spacingAndGlyphs">└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘</text>
 <text x="12.0" y="859" fill="rgb(48,54,61)" textLength="1344.0" lengthAdjust="spacingAndGlyphs">┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐</text>
 <text x="12.0" y="876" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="876" fill="rgb(110,118,129)" textLength="714.0" lengthAdjust="spacingAndGlyphs"> [Tab] Focus  [Space] Select  [?] Help  [q] Quit  [:] Omnibar  [/] Search  [f] Health</text>
-<text x="734.4" y="876" fill="rgb(255,255,255)" textLength="613.2" lengthAdjust="spacingAndGlyphs">                                                                         </text>
+<text x="20.4" y="876" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="28.8" y="876" fill="rgb(110,118,129)" textLength="92.4" lengthAdjust="spacingAndGlyphs">[Esc] Close</text>
+<text x="121.2" y="876" fill="rgb(255,255,255)" textLength="1226.4" lengthAdjust="spacingAndGlyphs">                                                                                                                                                  </text>
 <text x="1347.6" y="876" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="893" fill="rgb(48,54,61)" textLength="1344.0" lengthAdjust="spacingAndGlyphs">└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘</text>
 <rect x="20.4" y="29.0" width="8.4" height="17" fill="none" stroke="#e6edf3" stroke-opacity="0.55" rx="1"/>

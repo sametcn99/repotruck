@@ -27,7 +27,7 @@ const ITEMS: readonly { question: string; answer: string }[] = [
   {
     question: "What are the requirements?",
     answer:
-      "The interactive dashboard needs Node.js >= 26.4 or Bun >= 1.3.14. The headless CLI commands run on Node.js >= 20. git must be on your PATH; the GitHub CLI is optional but is the easiest authentication path.",
+      "The interactive dashboard needs Node.js >= 26.4 with FFI enabled (--experimental-ffi on Node 26.4), or Bun >= 1.3.14. The headless CLI commands run on Node.js >= 20. git must be on your PATH; the GitHub CLI is optional but is the easiest authentication path.",
   },
 ];
 

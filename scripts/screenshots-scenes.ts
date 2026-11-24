@@ -159,6 +159,12 @@ export const SCENES: readonly SceneSpec[] = [
     group: "Pages",
   },
   {
+    slug: "about",
+    title: "About",
+    caption: "v o — Repotruck description and GitHub project",
+    group: "Pages",
+  },
+  {
     slug: "settings",
     title: "Settings",
     caption: "v a — configuration, auth, update and completions",

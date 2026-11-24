@@ -2,13 +2,13 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { testRender } from "@opentui/react/test-utils";
 import { simpleGit } from "simple-git";
 import { Dashboard } from "../src/components/Dashboard.tsx";
 import { Store, type StoreDeps } from "../src/components/store.ts";
 import type { RepoInfo } from "../src/services/github.ts";
 import { readSettings } from "../src/services/settings.ts";
 import { listWorkspaces } from "../src/services/workspaceRegistry.ts";
+import { testRender } from "./helpers/render.tsx";
 
 type RendererSetup = Awaited<ReturnType<typeof testRender>>;
 

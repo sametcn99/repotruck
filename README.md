@@ -9,6 +9,10 @@ repotruck mirrors your GitHub into a predictable local workspace: every reposito
 
 > **[Read the full documentation](https://sametcn99.github.io/repotruck/)** — every command and flag, the 16 built-in presets, MCP tools, settings, keyboard shortcuts and the reference.
 
+The **About** page is available from the TUI's System menu or `v` then `o`. Run
+`repotruck --about` (or `repotruck about`) for the same description and GitHub link without opening the TUI.
+The TUI checks your current GitHub session and shows **Give star** only when you have not starred the project. Click it once (or press `s` / Enter); the button disappears after GitHub confirms the star. Press `r` to retry a failed status check.
+
 ## The dashboard
 
 Run `repotruck` with no arguments and the interactive terminal UI takes over:
@@ -31,7 +35,7 @@ Three panes share the screen. **Scope** opens on the active workspace when it ha
 | `/` `s` `S` `a`   | Search, cycle sort, flip sort direction, select all                                                                                           |
 | `Tab` / `?` / `q` | Cycle pane focus / full shortcut list / quit (double-`q` while a sync runs)                                                                   |
 
-The mouse works too — the wheel scrolls, a click focuses and moves the cursor. Themes: `default`, `light` and `contrast`. The dashboard needs Node.js >= 26.4 or Bun >= 1.3.14; everything below runs headless on Node.js >= 20.
+The mouse works too — the wheel scrolls, a click focuses and moves the cursor. Themes: `default`, `light` and `contrast`. The dashboard needs Node.js >= 26.4 with `--experimental-ffi` or Bun >= 1.3.14; everything below runs headless on Node.js >= 20.
 
 The `categorized` preset groups forks by the GitHub account they were forked from, for example `sametcn99/forks/meta/react`. To move existing checkouts into these folders, open the layout preview with `R` or run `repotruck reorganize categorized --keep-custom --dry-run`. Review the plan, then run the command without `--dry-run` to apply it. Add `--scan` to include checkouts outside the workspace inventory. Repotruck uses GitHub to resolve source owners for older forks.
 
@@ -68,6 +72,7 @@ The `categorized` preset groups forks by the GitHub account they were forked fro
     <p><sub><b>Trash & backups</b> — v b — soft-deleted repos and snapshot generations</sub><br /><img src="website/public/screenshots/trash-backups.svg" alt="Trash & backups — v b — soft-deleted repos and snapshot generations" width="880" /></p>
     <p><sub><b>Worktrees</b> — v w — workspace-wide linked worktree browser</sub><br /><img src="website/public/screenshots/worktrees.svg" alt="Worktrees — v w — workspace-wide linked worktree browser" width="880" /></p>
     <p><sub><b>Agents & MCP</b> — v g — AGENTS.md templates, exports and the MCP server</sub><br /><img src="website/public/screenshots/agents.svg" alt="Agents & MCP — v g — AGENTS.md templates, exports and the MCP server" width="880" /></p>
+    <p><sub><b>About</b> — v o — Repotruck description and GitHub project</sub><br /><img src="website/public/screenshots/about.svg" alt="About — v o — Repotruck description and GitHub project" width="880" /></p>
     <p><sub><b>Settings</b> — v a — configuration, auth, update and completions</sub><br /><img src="website/public/screenshots/settings.svg" alt="Settings — v a — configuration, auth, update and completions" width="880" /></p>
 
   <h4>Modals & dialogs</h4>
@@ -99,7 +104,7 @@ npm i -g repotruck     # or try it first: npx repotruck (bunx repotruck on Bun)
 | Surface | Runtime requirement |
 | --- | --- |
 | Headless CLI (`sync`, `clone`, `status`, `move`, `reorganize`, `create`, `workspaces`, `search-code`, `mcp`, ...) and the MCP server | Node.js >= 20 or any recent Bun |
-| Interactive dashboard (running `repotruck` with no arguments) | Node.js >= 26.4 or Bun >= 1.3.14 |
+| Interactive dashboard (running `repotruck` with no arguments) | Node.js >= 26.4 with `--experimental-ffi` or Bun >= 1.3.14 |
 
 If the dashboard runtime is missing, every headless subcommand still works; `repotruck doctor` reports the dashboard runtime status as a warning.
 

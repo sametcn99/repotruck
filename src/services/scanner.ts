@@ -10,6 +10,7 @@ import { repoKeyEquals } from "./fsUtils.ts";
 import { moveDir } from "./mover.ts";
 import { GITHUB_HOST, parseGitUrl } from "./singleCloner.ts";
 import { targetDirFor, toPosixRelative, updateWorkspace } from "./workspace.ts";
+import { assertWorkspacePath } from "./workspacePaths.ts";
 import { inspectGitDotEntry } from "./worktree.ts";
 
 export interface DiscoveredRepo {
@@ -211,6 +212,8 @@ export async function adoptUnregisteredRepos(
     }
 
     try {
+      assertWorkspacePath(root, plan.repo.absolutePath);
+      assertWorkspacePath(root, plan.targetPath);
       if (plan.needsMove) {
         if (existsSync(plan.targetPath)) {
           errors.push({

@@ -1,5 +1,6 @@
 import { Command, program } from "commander";
 import { readVersion } from "../services/version.ts";
+import { register as registerAbout } from "./commands/about.ts";
 import { register as registerAlias } from "./commands/alias.ts";
 import { register as registerAuth } from "./commands/auth.ts";
 import { register as registerBackup } from "./commands/backup.ts";
@@ -57,6 +58,7 @@ export async function buildCliProgram(
     }
   });
 
+  registerAbout(cmd);
   registerClone(cmd, ctx);
   registerCreate(cmd, ctx);
   registerDiscover(cmd, ctx);

@@ -2,7 +2,6 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { testRender } from "@opentui/react/test-utils";
 import { simpleGit } from "simple-git";
 import { AliasModal } from "../src/components/AliasModal.tsx";
 import { CloneModal } from "../src/components/CloneModal.tsx";
@@ -24,6 +23,7 @@ import { activateTheme } from "../src/components/theme.ts";
 import { VIEW_SPECS } from "../src/components/views/viewRegistry.ts";
 import { WorktreeModal } from "../src/components/WorktreeModal.tsx";
 import type { RepoInfo } from "../src/services/github.ts";
+import { testRender } from "./helpers/render.tsx";
 
 type RendererSetup = Awaited<ReturnType<typeof testRender>>;
 

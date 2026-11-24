@@ -2,7 +2,6 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { testRender } from "@opentui/react/test-utils";
 import { Dashboard } from "../src/components/Dashboard.tsx";
 import { buildCommandPaletteItems, Store, type StoreDeps } from "../src/components/store.ts";
 import { activateTheme } from "../src/components/theme.ts";
@@ -17,6 +16,7 @@ import {
   warnQuiet,
 } from "../src/services/diagnostics.ts";
 import type { RepoInfo } from "../src/services/github.ts";
+import { settleRender, testRender } from "./helpers/render.tsx";
 
 const tempDirs: string[] = [];
 let savedConfigDir: string | undefined;
@@ -111,8 +111,7 @@ function makeStore(wsRoot: string): Store {
 }
 
 async function settle(setup: Awaited<ReturnType<typeof testRender>>): Promise<void> {
-  await new Promise((resolve) => setTimeout(resolve, 60));
-  await setup.flush({ maxPasses: 4 });
+  await settleRender(setup);
 }
 
 function norm(frame: string): string {

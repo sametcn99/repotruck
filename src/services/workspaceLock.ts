@@ -26,6 +26,8 @@ export interface WorkspaceLockDeps {
   heartbeatMs?: number;
   now?: () => number;
   sleep?: (ms: number) => Promise<void>;
+  /** Testable boundary between stale observation and the recovery claim. */
+  afterStaleObservation?: () => Promise<void>;
 }
 
 const reentrancyStorage = new AsyncLocalStorage<Set<string>>();
@@ -72,12 +74,44 @@ async function tryAcquire(
   token: string,
   now: () => number,
   staleLockMs: number,
+  afterStaleObservation?: () => Promise<void>,
 ): Promise<boolean> {
+  const recoveryPath = `${lockPath}.recovery`;
+  try {
+    const recovery = await stat(recoveryPath);
+    if (now() - recovery.mtimeMs <= staleLockMs) return false;
+    const content = await readFile(recoveryPath, "utf8");
+    const pid = Number(content.split(" ")[0]);
+    let alive = false;
+    if (Number.isSafeInteger(pid) && pid > 0) {
+      try {
+        process.kill(pid, 0);
+        alive = true;
+      } catch (error) {
+        alive = (error as NodeJS.ErrnoException).code === "EPERM";
+      }
+    }
+    if (alive) return false;
+    if ((await readFile(recoveryPath, "utf8")) === content) await unlink(recoveryPath);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT") return false;
+  }
   try {
     await mkdir(path.dirname(lockPath), { recursive: true });
     const handle = await open(lockPath, "wx");
-    await handle.write(token);
-    await handle.close();
+    try {
+      await handle.write(token);
+    } finally {
+      await handle.close();
+    }
+    // A stale recovery that began concurrently gets exclusive priority.
+    try {
+      await stat(recoveryPath);
+      if ((await readFile(lockPath, "utf8")) === token) await unlink(lockPath);
+      return false;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+    }
     return true;
   } catch (error) {
     const code = (error as { code?: unknown }).code;
@@ -90,10 +124,46 @@ async function tryAcquire(
       return false;
     }
     if (ageMs > staleLockMs) {
+      await afterStaleObservation?.();
+      let claim: Awaited<ReturnType<typeof open>>;
       try {
-        await unlink(lockPath);
+        claim = await open(recoveryPath, "wx");
       } catch {
-        /* someone else removed it first - retry normally */
+        return false;
+      }
+      try {
+        await claim.write(token);
+        const before = await readFile(lockPath, "utf8");
+        const fresh = await stat(lockPath);
+        const [pidText, ownerToken = ""] = before.split(" ");
+        const ownerPid = Number(pidText);
+        let ownerAlive = false;
+        if (Number.isSafeInteger(ownerPid) && ownerPid > 0 && /^[\da-f]{8}-/i.test(ownerToken)) {
+          try {
+            process.kill(ownerPid, 0);
+            ownerAlive = true;
+          } catch (error) {
+            ownerAlive = (error as NodeJS.ErrnoException).code === "EPERM";
+          }
+        }
+        // Recheck under the recovery claim: an earlier stat must never evict
+        // a new owner. Ordinary acquirers also check this claim after open.
+        if (
+          !ownerAlive &&
+          now() - fresh.mtimeMs > staleLockMs &&
+          (await readFile(lockPath, "utf8")) === before
+        ) {
+          await unlink(lockPath);
+        }
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+      } finally {
+        await claim.close();
+        try {
+          if ((await readFile(recoveryPath, "utf8")) === token) await unlink(recoveryPath);
+        } catch {
+          /* already reclaimed */
+        }
       }
       return false;
     }
@@ -124,7 +194,7 @@ export async function withWorkspaceLock<T>(
     const deadline = now() + waitMs;
 
     for (;;) {
-      if (await tryAcquire(lockPath, token, now, staleLockMs)) break;
+      if (await tryAcquire(lockPath, token, now, staleLockMs, deps.afterStaleObservation)) break;
       if (now() >= deadline) {
         let ageSeconds = 0;
         try {

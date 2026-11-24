@@ -1,99 +1,84 @@
-// Aggregate coverage gate for CI.
-//
-// bun's `coverageThreshold` in bunfig.toml is enforced PER FILE (any file below
-// the threshold fails the run), which does not match this repo's intent: the
-// maturity plan sets AGGREGATE thresholds (lines >= 85%, functions >= 75%).
-//
-// This script runs the full suite with coverage, parses the lcov report, and
-// enforces the aggregate thresholds over the in-process instrumentable layers.
-//
-// Documented scope exclusion (Sapma #3): the CLI adapter layer (`src/cli.ts`,
-// `src/cli/**`) is exercised end-to-end by `tests/cli-runtime.test.ts` and
-// `tests/cli-exit.test.ts`, which spawn the CLI as a SUBPROCESS — bun's
-// coverage cannot instrument child processes, so those files would count as
-// uncovered despite passing black-box tests. They are excluded from the
-// aggregate; every other layer under src/ is included.
-
-import { mkdtempSync, rmSync } from "node:fs";
+// Validate source inventory and counters before enforcing aggregate 85/75.
+// CLI coverage is reported separately; index.tsx has real PTY acceptance tests.
+// Preserve first-run failures instead of automatically retrying the full suite.
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import {
+  aggregateCoverage,
+  assertCoveragePolicy,
+  parseCoverage,
+  sourceInventory,
+} from "./lib/coverage.ts";
 
-const LINES_THRESHOLD = 0.85;
-const FUNCS_THRESHOLD = 0.75;
-
-const covDir = mkdtempSync(path.join(tmpdir(), "rt-cov-"));
-try {
-  // Known-flaky timing tests (updater throttle window, dashboard render smoke)
-  // fail intermittently under the slower coverage run while passing in plain
-  // runs; a single retry separates that flakiness from real failures.
-  let result: ReturnType<typeof Bun.spawnSync>;
-  for (let attempt = 1; attempt <= 2; attempt++) {
-    // Serialized files: many CLI tests spawn bun subprocesses, and running
-    // them from parallel workers races the OS pipes on slower CI runners
-    // (macOS/Windows see exit-0 children with empty stdout).
-    result = Bun.spawnSync(
-      [
-        "bun",
-        "test",
-        "--parallel=1",
-        "--coverage",
-        "--coverage-reporter=lcov",
-        "--coverage-dir",
-        covDir,
-      ],
-      { stdout: "inherit", stderr: "inherit" },
+const covDir = process.env.REPOTRUCK_TEST_RESULTS_DIR
+  ? path.resolve(process.env.REPOTRUCK_TEST_RESULTS_DIR)
+  : mkdtempSync(path.join(tmpdir(), "rt-cov-"));
+const testConfigDir = mkdtempSync(path.join(tmpdir(), "repotruck-test-config-"));
+mkdirSync(covDir, { recursive: true });
+console.log(`check-coverage: evidence retained in ${covDir}`);
+const result = Bun.spawnSync(
+  [
+    process.execPath,
+    "test",
+    "--parallel=1",
+    "--coverage",
+    "--coverage-reporter=lcov",
+    "--coverage-dir",
+    covDir,
+    "--reporter=junit",
+    "--reporter-outfile",
+    path.join(covDir, "tests.xml"),
+  ],
+  {
+    stdout: "pipe",
+    stderr: "pipe",
+    env: {
+      ...process.env,
+      REPOTRUCK_CONFIG_DIR: testConfigDir,
+      REPOTRUCK_TEST_CONFIG_DIR: testConfigDir,
+    },
+  },
+);
+rmSync(testConfigDir, { recursive: true, force: true });
+const runnerLog = result.stdout.toString() + result.stderr.toString();
+writeFileSync(path.join(covDir, "runner.log"), runnerLog);
+process.stdout.write(result.stdout);
+process.stderr.write(result.stderr);
+if (result.exitCode !== 0) {
+  console.error("check-coverage: test run failed; the first failure is preserved, no retry");
+  process.exitCode = result.exitCode ?? 1;
+} else {
+  try {
+    const report = aggregateCoverage(
+      parseCoverage(await Bun.file(path.join(covDir, "lcov.info")).text()),
+      sourceInventory(process.cwd()),
     );
-    if (result.exitCode === 0) break;
-    if (attempt === 2) {
-      console.error(`check-coverage: test run failed twice (exit code ${result.exitCode})`);
-      process.exit(result.exitCode ?? 1);
-    }
-    console.error("check-coverage: test run failed once — retrying (known flaky timing tests)");
+    writeFileSync(path.join(covDir, "summary.json"), `${JSON.stringify(report, null, 2)}\n`);
+    console.log(
+      `check-coverage: aggregate funcs ${report.aggregate.functions.toFixed(2)}% (>= 75%), lines ${report.aggregate.lines.toFixed(2)}% (>= 85%)`,
+    );
+    if (report.cli)
+      console.log(
+        `check-coverage: CLI funcs ${report.cli.functions.toFixed(2)}%, lines ${report.cli.lines.toFixed(2)}% (subprocess coverage additional)`,
+      );
+    console.log(
+      `check-coverage: TUI funcs ${report.tui.functions.toFixed(2)}% (>= 80%), lines ${report.tui.lines.toFixed(2)}% (reported)`,
+    );
+    assertCoveragePolicy(report);
+    if (
+      /not wrapped in act|act.*was not awaited|overlapping act|flushSync was called inside/i.test(
+        runnerLog,
+      )
+    )
+      throw new Error(
+        "unexpected React test warnings; fix the act boundary before accepting coverage",
+      );
+    console.log("check-coverage: PASS");
+  } catch (error) {
+    console.error(
+      `check-coverage: FAIL — ${error instanceof Error ? error.message : String(error)}`,
+    );
+    process.exitCode = 1;
   }
-
-  const lcovPath = path.join(covDir, "lcov.info");
-  const lcov = await Bun.file(lcovPath).text();
-
-  let totalLines = 0;
-  let coveredLines = 0;
-  let totalFuncs = 0;
-  let coveredFuncs = 0;
-  let currentFile = "";
-  let excludedFile = false;
-  let excludedLines = 0;
-
-  for (const line of lcov.split("\n")) {
-    if (line.startsWith("SF:")) {
-      currentFile = line.slice(3).replace(/\\/g, "/");
-      const rel = currentFile.replace(/^.*?((?:^|\/)src\/)/, "src/");
-      excludedFile = /^src\/cli\.ts$/.test(rel) || rel.startsWith("src/cli/");
-    } else if (line.startsWith("LF:")) {
-      if (excludedFile) excludedLines += Number(line.slice(3));
-      else totalLines += Number(line.slice(3));
-    } else if (line.startsWith("LH:")) {
-      if (!excludedFile) coveredLines += Number(line.slice(3));
-    } else if (line.startsWith("FNF:")) {
-      if (!excludedFile) totalFuncs += Number(line.slice(4));
-    } else if (line.startsWith("FNH:")) {
-      if (!excludedFile) coveredFuncs += Number(line.slice(4));
-    }
-  }
-
-  const linesPct = totalLines > 0 ? (coveredLines / totalLines) * 100 : 100;
-  const funcsPct = totalFuncs > 0 ? (coveredFuncs / totalFuncs) * 100 : 100;
-
-  console.log(
-    `check-coverage: aggregate (excl. CLI adapter layer, ${excludedLines} subprocess-tested lines) ` +
-      `funcs ${funcsPct.toFixed(2)}% (>= ${(FUNCS_THRESHOLD * 100).toFixed(0)}%), ` +
-      `lines ${linesPct.toFixed(2)}% (>= ${(LINES_THRESHOLD * 100).toFixed(0)}%)`,
-  );
-
-  if (linesPct < LINES_THRESHOLD * 100 || funcsPct < FUNCS_THRESHOLD * 100) {
-    console.error("check-coverage: FAIL — aggregate coverage below threshold");
-    process.exit(1);
-  }
-
-  console.log("check-coverage: PASS");
-} finally {
-  rmSync(covDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 }

@@ -2,7 +2,6 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { testRender } from "@opentui/react/test-utils";
 import { act, useState } from "react";
 import type { FlagSpec } from "../src/commands/registry.ts";
 import { Store, type StoreDeps } from "../src/components/store.ts";
@@ -17,6 +16,7 @@ import {
 import { copyJson, copyText } from "../src/components/ui/JsonCopy.ts";
 import { renderMarkdownLines } from "../src/components/ui/MarkdownPane.tsx";
 import { TableView } from "../src/components/ui/TableView.tsx";
+import { testRender } from "./helpers/render.tsx";
 
 const tempDirs: string[] = [];
 let savedConfigDir: string | undefined;
@@ -208,11 +208,11 @@ describe("FieldGroup helpers & component", () => {
 describe("MarkdownPane", () => {
   test("headings accent, code dims, bullets survive", () => {
     const lines = renderMarkdownLines("## Title\n- bullet item\n```\ncode line\n```\nplain", 60);
-    expect(lines[0]?.fg).toBeDefined();
+    expect(lines[0]?.fg).toBe(process.env.NO_COLOR ? undefined : "#58a6ff");
     expect(lines[0]?.text).toContain("Title");
     expect(lines[1]?.text).toContain("- bullet item");
-    expect(lines[3]?.fg).toBeDefined();
-    expect(lines[4]?.fg).toBeDefined();
+    expect(lines[3]?.fg === undefined).toBe(Boolean(process.env.NO_COLOR));
+    expect(lines[4]?.fg === undefined).toBe(Boolean(process.env.NO_COLOR));
     expect(lines[5]?.text).toBe("plain");
   });
 });

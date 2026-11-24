@@ -75,6 +75,30 @@ describe("error classification", () => {
     });
     expect(isTransientNetworkError(wrapped)).toBe(true);
   });
+
+  test("SDK-wrapped transport status is transient only without an HTTP response", () => {
+    const transport = networkError("ECONNRESET");
+    const sdkWrapped = Object.assign(new Error("fetch failed"), {
+      status: 500,
+      cause: transport,
+    });
+    const httpResponse = new Response("server error", { status: 500 });
+    const responseWrapped = Object.assign(new Error("HTTP 500"), {
+      status: 500,
+      response: httpResponse,
+      cause: transport,
+    });
+    const unknownCause = Object.assign(new Error("fetch failed"), {
+      status: 500,
+      cause: networkError("EACCES"),
+    });
+
+    expect(isTransientNetworkError(sdkWrapped)).toBe(true);
+    expect(isTransientNetworkError(responseWrapped)).toBe(false);
+    expect(isTransientNetworkError(rateLimitError(500))).toBe(false);
+    expect(isTransientNetworkError(unknownCause)).toBe(false);
+    expect(isTransientNetworkError(rateLimitError(403))).toBe(false);
+  });
 });
 
 describe("withRateLimitRetry", () => {

@@ -3,6 +3,17 @@ import { f, jsonFlag } from "../registryTypes.ts";
 
 /** Registry section: platform. Split out of registry.ts for the size budget. */
 export const PLATFORM_COMMANDS: readonly CommandSpec[] = [
+  {
+    id: "about",
+    path: "about",
+    title: "About",
+    group: "Platform",
+    summary: "Application description and GitHub project link",
+    args: [],
+    surface: { kind: "view", view: "about" },
+    requires: [],
+    flags: [],
+  },
   // ---- platform -----------------------------------------------------------
   {
     id: "auth.login",

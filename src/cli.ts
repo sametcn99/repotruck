@@ -8,9 +8,14 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { program } from "./cli/index.ts";
 import { CliExit } from "./cli/shared.ts";
 import { detectTuiRuntimeError } from "./cliSupport.ts";
+import { formatAbout } from "./services/about.ts";
 import { firstErrorLine } from "./services/cloner.ts";
 
 program.action(async () => {
+  if (program.opts<{ about?: boolean }>().about) {
+    process.stdout.write(formatAbout());
+    return;
+  }
   if (process.stdin.isTTY !== true || process.stdout.isTTY !== true) {
     process.stderr.write(
       "the interactive interface requires a TTY; run repotruck inside an interactive terminal, or use a subcommand such as sync, clone, move, reorganize, create, or workspaces\n",
@@ -64,9 +69,6 @@ if (process.env.REPOTRUCK_NO_PARSE !== "1") {
       throw error;
     }
   }
-  // Safety net: once the command has finished, force the exit if some stray
-  // handle would otherwise keep the process alive; the 2s window leaves time
-  // for stdout to flush. unref() keeps the timer from holding the process open
-  // on its own.
-  setTimeout(() => process.exit(process.exitCode ?? 0), 2000).unref();
+  // Let stdio drain naturally. Long-lived MCP/watch commands retain their own
+  // handles and must never be terminated by a command-wide exit timer.
 }
