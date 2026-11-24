@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { spawn } from "node:child_process";
+import { type ChildProcess, spawn } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { connect } from "node:net";
 import path from "node:path";
@@ -385,7 +385,32 @@ describe("SDK, protocol and process boundaries", () => {
     const f = fixture();
     await f.save();
     const marker = path.join(f.base, "run-child.pid");
-    const server = await startRepotruckMcpHttpServer({ port: 0, env: f.env });
+    let releaseTaskkill!: () => void;
+    let announceTaskkill!: () => void;
+    let announceChildClose!: () => void;
+    const simulateWindowsTreeKiller = process.platform !== "win32";
+    const taskkillPending = new Promise<void>((resolve) => (releaseTaskkill = resolve));
+    const taskkillStarted = new Promise<void>((resolve) => (announceTaskkill = resolve));
+    const childClosed = new Promise<void>((resolve) => (announceChildClose = resolve));
+    const server = await startRepotruckMcpHttpServer({
+      port: 0,
+      env: f.env,
+      ...(simulateWindowsTreeKiller
+        ? {
+            processScopeCloseOptions: {
+              // On non-Windows hosts, model taskkill completion around a real
+              // child close to verify the outer HTTP close waits for both.
+              platform: "win32" as const,
+              terminate: async (child: ChildProcess) => {
+                child.once("close", announceChildClose);
+                announceTaskkill();
+                child.kill("SIGKILL");
+                await taskkillPending;
+              },
+            },
+          }
+        : {}),
+    });
     let pid: number | undefined;
     const request = fetch(server.url, {
       method: "POST",
@@ -414,16 +439,24 @@ describe("SDK, protocol and process boundaries", () => {
       await waitUntil(() => existsSync(marker), 5000);
       pid = Number(readFileSync(marker, "utf8"));
       const started = Date.now();
-      await server.close();
+      let closeResolved = false;
+      const closing = server.close().then(() => {
+        closeResolved = true;
+      });
+      if (simulateWindowsTreeKiller) {
+        await taskkillStarted;
+        await childClosed;
+        const returnedBeforeReap = await Promise.race([
+          closing.then(() => true),
+          new Promise<boolean>((resolve) => setTimeout(() => resolve(false), 250)),
+        ]);
+        expect(returnedBeforeReap).toBe(false);
+        expect(closeResolved).toBe(false);
+        releaseTaskkill();
+      }
+      await closing;
+      expect(closeResolved).toBe(true);
       expect(Date.now() - started).toBeLessThan(1000);
-      await waitUntil(() => {
-        try {
-          process.kill(pid!, 0);
-          return false;
-        } catch {
-          return true;
-        }
-      }, 2000);
       await request;
     } finally {
       if (pid) {
@@ -431,6 +464,7 @@ describe("SDK, protocol and process boundaries", () => {
           process.kill(pid, "SIGKILL");
         } catch {}
       }
+      releaseTaskkill();
       await server.close();
     }
   }, 12000);

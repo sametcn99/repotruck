@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { simpleGit } from "simple-git";
@@ -41,7 +41,7 @@ const tempDirs: string[] = [];
 let savedConfigDir: string | undefined;
 
 function tmp(prefix: string): string {
-  const dir = mkdtempSync(path.join(tmpdir(), prefix));
+  const dir = realpathSync(mkdtempSync(path.join(tmpdir(), prefix)));
   tempDirs.push(dir);
   return dir;
 }
@@ -552,20 +552,28 @@ describe("lifecycleActions unit tests", () => {
   (process.platform === "win32" ? test.skip : test)(
     "performUndoAction, performDeleteRepos, performUntrackRepos, performArchiveRepos, performTogglePin, maintenance & bulk run",
     async () => {
-      const { root } = await setupWorkspace();
+      const { root, cfg: configDir } = await setupWorkspace();
       const statuses: string[] = [];
       const pushStatus = (_p: string, k: string, m?: string) => statuses.push(`${k}:${m ?? ""}`);
       const undos: Parameters<typeof performUndoAction>[1][] = [];
 
       const moveCalls: Array<[string, string]> = [];
+      expect(root).toBe(realpathSync(root));
+      expect(process.env.REPOTRUCK_CONFIG_DIR).toBe(configDir);
       const cfg = await (await import("../src/services/workspace.ts")).loadWorkspace(root);
 
       // Move undo
       // A real move updates the inventory before its undo action is applied.
       // Keep this fixture aligned with that post-move state so the undo guard
       // can distinguish an actual move from a later workspace-path edit.
+      process.env.REPOTRUCK_CONFIG_DIR = configDir;
       const moved = await moveRepository(root, cfg, "acme/api", "acme/custom/api");
       expect(moved.ok).toBe(true);
+      const movedConfig = await (await import("../src/services/workspace.ts")).loadWorkspace(root);
+      expect(movedConfig.repos.find((repo) => repo.name === "api")?.relativePath).toBe(
+        "acme/custom/api",
+      );
+      process.env.REPOTRUCK_CONFIG_DIR = configDir;
       await performUndoAction(
         root,
         {

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, realpathSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { act } from "react";
 import { simpleGit } from "simple-git";
@@ -55,6 +55,21 @@ async function clickText(setup: Awaited<ReturnType<typeof mount>>, text: string)
   const x = [...rowPrefix].reduce((sum, char) => sum + (char.codePointAt(0)! > 0xff ? 2 : 1), 0);
   await setup.mockMouse.click(x, y);
   await settle(setup);
+}
+
+function samePhysicalDirectory(left: string, right: string): boolean {
+  const leftStats = statSync(left);
+  const rightStats = statSync(right);
+  if (leftStats.ino !== 0 && rightStats.ino !== 0) {
+    return leftStats.dev === rightStats.dev && leftStats.ino === rightStats.ino;
+  }
+
+  const canonical = (value: string) => {
+    let resolved = realpathSync.native(value).replaceAll("\\", "/");
+    if (resolved.startsWith("//?/")) resolved = resolved.slice(4);
+    return resolved.replace(/\/+$/, "").toLocaleLowerCase("en-US");
+  };
+  return canonical(left) === canonical(right);
 }
 
 afterEach(() => {
@@ -260,11 +275,14 @@ describe("acceptance: page workflows through actual terminal events", () => {
       store.setView("worktree");
       await settle(setup);
       await clickText(setup, "[s] scan workspace worktrees");
-      expect(store.getSnapshot().worktreePage?.rows).toContainEqual({
-        repo: "acme/api",
-        branch: "acceptance-worktree",
-        path: linkedPath,
-      });
+      const linkedRow = store
+        .getSnapshot()
+        .worktreePage?.rows.find(
+          (row) => row.repo === "acme/api" && row.branch === "acceptance-worktree",
+        );
+      expect(linkedRow).toBeDefined();
+      expect(samePhysicalDirectory(linkedRow!.path, linkedPath)).toBe(true);
+      expect(samePhysicalDirectory(linkedRow!.path, f.repoDir)).toBe(false);
       await setup.mockMouse.scroll(90, 20, "down");
       await settle(setup);
       setup.mockInput.pressKey("HOME");

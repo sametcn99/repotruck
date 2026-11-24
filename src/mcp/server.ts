@@ -20,7 +20,7 @@ import {
 } from "@modelcontextprotocol/server";
 import { firstErrorLine } from "../services/cloner.ts";
 import type { EnvLike } from "../services/config.ts";
-import { closeProcessScope } from "../services/processScope.ts";
+import { closeProcessScope, type ProcessScopeCloseOptions } from "../services/processScope.ts";
 import { readVersion } from "../services/version.ts";
 import { registerAliasesTools } from "./tools/aliases.ts";
 import { registerGithubTools } from "./tools/github.ts";
@@ -73,6 +73,8 @@ export interface McpHttpServerOptions extends McpServerOptions {
   host?: string;
   port?: number;
   token?: string;
+  /** @internal Deterministic process-tree shutdown tests. */
+  processScopeCloseOptions?: ProcessScopeCloseOptions;
 }
 
 export const MCP_HTTP_DEFAULT_HOST = "127.0.0.1";
@@ -101,6 +103,7 @@ export function validateHttpBindOptions(
 
 export interface RepotruckHttpMcpHandler {
   fetch: (request: Request) => Promise<Response>;
+  closeChildren: () => Promise<void>;
   close: () => Promise<void>;
 }
 
@@ -154,13 +157,20 @@ export function createRepotruckHttpHandler(
     }
     return handler.fetch(request, fetchOptions);
   };
+  let childrenClosing: Promise<void> | null = null;
+  const closeChildren = (): Promise<void> => {
+    if (childrenClosing) return childrenClosing;
+    childrenClosing = closeProcessScope(controller.signal, options.processScopeCloseOptions);
+    controller.abort();
+    return childrenClosing;
+  };
   return {
     fetch: guardedFetch,
     close: async () => {
-      controller.abort();
-      await closeProcessScope(controller.signal);
+      await closeChildren();
       await handler.close();
     },
+    closeChildren,
   };
 }
 
@@ -251,13 +261,18 @@ export async function startRepotruckMcpHttpServer(options: McpHttpServerOptions 
       }, 250);
       let handlerTimer: ReturnType<typeof setTimeout> | undefined;
       let drainTimer: ReturnType<typeof setTimeout> | undefined;
+      const childCleanup = handler.closeChildren();
+      const handlerClosing = handler.close().then(
+        () => ({ ok: true as const }),
+        (error: unknown) => ({ ok: false as const, error }),
+      );
       try {
         traceShutdown("handler-close-start");
-        await Promise.race([
-          handler.close().then(
-            () => traceShutdown("handler-close-resolved"),
-            () => traceShutdown("handler-close-rejected"),
-          ),
+        const handlerResult = await Promise.race([
+          handlerClosing.then((result) => {
+            traceShutdown(result.ok ? "handler-close-resolved" : "handler-close-rejected");
+            return result;
+          }),
           new Promise<void>((resolve) => {
             handlerTimer = setTimeout(() => {
               traceShutdown("handler-close-timeout");
@@ -265,6 +280,15 @@ export async function startRepotruckMcpHttpServer(options: McpHttpServerOptions 
             }, 200);
           }),
         ]);
+        // SDK close may outlast its bound, but owned child process trees and
+        // their stdio handles must be reaped before programmatic close succeeds.
+        let cleanupError: unknown;
+        try {
+          await childCleanup;
+        } catch (error) {
+          cleanupError = error;
+        }
+        if (handlerResult && !handlerResult.ok) cleanupError ??= handlerResult.error;
         if (handlerTimer) clearTimeout(handlerTimer);
         handlerTimer = undefined;
         traceShutdown("server-close-all-connections");
@@ -285,6 +309,7 @@ export async function startRepotruckMcpHttpServer(options: McpHttpServerOptions 
           }),
         ]);
         traceShutdown(drainedInTime ? "server-drained" : "server-drain-deadline-hit");
+        if (cleanupError !== undefined) throw cleanupError;
       } finally {
         clearTimeout(force);
         clearTimeout(handlerTimer);
@@ -304,7 +329,13 @@ export async function runRepotruckMcpHttpServer(options: McpHttpServerOptions = 
     if (closed) return;
     closed = true;
     // Signal-only process exit: bounded close terminates persistent clients.
-    void listener.close().finally(() => process.exit(0));
+    void listener.close().then(
+      () => process.exit(0),
+      (error: unknown) => {
+        process.stderr.write(`mcp http shutdown failed: ${firstErrorLine(error)}\n`);
+        process.exit(1);
+      },
+    );
   };
   process.once("SIGINT", shutdown);
   process.once("SIGTERM", shutdown);
