@@ -113,6 +113,17 @@ async function settle(setup: Awaited<ReturnType<typeof testRender>>): Promise<vo
   await settleRender(setup);
 }
 
+async function waitForPhase(
+  setup: Awaited<ReturnType<typeof testRender>>,
+  store: Store,
+  phase: "loading" | "ready" | "error",
+): Promise<void> {
+  for (let attempt = 0; attempt < 40 && store.getSnapshot().phase !== phase; attempt += 1) {
+    await settle(setup);
+  }
+  expect(store.getSnapshot().phase).toBe(phase);
+}
+
 describe("Dashboard helpers and full keyboard surface", () => {
   test("buildHeaderLine and buildRunningSummary", () => {
     expect(buildHeaderLine(40, "a".repeat(80)).endsWith("…")).toBe(true);
@@ -141,9 +152,7 @@ describe("Dashboard helpers and full keyboard surface", () => {
         { width, height, exitOnCtrlC: false },
       );
       try {
-        for (let i = 0; i < 40 && store.getSnapshot().phase !== "ready"; i += 1) {
-          await new Promise((resolve) => setTimeout(resolve, 20));
-        }
+        await waitForPhase(setup, store, "ready");
         expect(store.getSnapshot().phase).toBe("ready");
         expect(store.getSnapshot().updateToast).toBeNull();
 
@@ -166,6 +175,32 @@ describe("Dashboard helpers and full keyboard surface", () => {
     },
   );
 
+  test("slow initialization advances the loading skeleton inside an act boundary", async () => {
+    const ws = makeWorkspace("rt-dash-slow-init-");
+    const auth = Promise.withResolvers<{ token: string; method: "gh-cli" }>();
+    const store = makeStore(ws, false, { auth: () => auth.promise });
+    const setup = await testRender(
+      <Dashboard store={store} onQuit={() => {}} onSuspendAndRun={async () => {}} />,
+      { width: 120, height: 36, exitOnCtrlC: false },
+    );
+    try {
+      await settle(setup);
+      const initial = setup.captureCharFrame();
+      expect(initial).toContain("Loading workspace");
+      await settle(setup);
+      await settle(setup);
+      await settle(setup);
+      const advanced = setup.captureCharFrame();
+      expect(advanced).toContain("Loading workspace");
+      expect(advanced).not.toBe(initial);
+      auth.resolve({ token: "t", method: "gh-cli" });
+      await waitForPhase(setup, store, "ready");
+      expect(store.getSnapshot().phase).toBe("ready");
+    } finally {
+      await setup.dispose();
+    }
+  });
+
   test("error phase supports r retry, o offline, and q quit", async () => {
     const ws = makeWorkspace("rt-dash-err-", false);
     rmSync(path.join(ws, "repotruck.json"));
@@ -181,25 +216,25 @@ describe("Dashboard helpers and full keyboard surface", () => {
       />,
       { width: 120, height: 36, exitOnCtrlC: false },
     );
-    for (let i = 0; i < 40 && store.getSnapshot().phase === "loading"; i += 1) {
-      await new Promise((r) => setTimeout(r, 20));
-    }
-    await settle(setup);
-    expect(store.getSnapshot().phase).toBe("error");
+    try {
+      await waitForPhase(setup, store, "error");
+      await settle(setup);
+      expect(store.getSnapshot().phase).toBe("error");
 
-    setup.mockInput.pressKey("q");
-    await settle(setup);
-    expect(quitCount).toBe(1);
+      setup.mockInput.pressKey("q");
+      await settle(setup);
+      expect(quitCount).toBe(1);
 
-    setup.mockInput.pressKey("r");
-    await settle(setup);
-    setup.mockInput.pressKey("o");
-    for (let i = 0; i < 30 && store.getSnapshot().phase !== "ready"; i += 1) {
-      await new Promise((r) => setTimeout(r, 20));
+      setup.mockInput.pressKey("r");
+      await waitForPhase(setup, store, "error");
+      await settle(setup);
+      setup.mockInput.pressKey("o");
+      await waitForPhase(setup, store, "ready");
+      await settle(setup);
+      expect(store.getSnapshot().offline).toBe(true);
+    } finally {
+      await setup.dispose();
     }
-    await settle(setup);
-    expect(store.getSnapshot().offline).toBe(true);
-    await setup.dispose();
   });
 
   test("cockpit shortcuts, view prefix (v+key, [, ]), modals, tabs, and double-q quit while running", async () => {
@@ -216,119 +251,120 @@ describe("Dashboard helpers and full keyboard surface", () => {
       />,
       { width: 140, height: 42, exitOnCtrlC: false },
     );
-    for (let i = 0; i < 40 && store.getSnapshot().phase !== "ready"; i += 1) {
-      await new Promise((r) => setTimeout(r, 20));
-    }
-    await settle(setup);
-
-    // Dismiss update toast with x, cycle tabs 1/2/3, focus cycle
-    setup.mockInput.pressKey("x");
-    await settle(setup);
-    expect(store.getSnapshot().updateToast).toBeNull();
-
-    setup.mockInput.pressKey("2");
-    setup.mockInput.pressKey("3");
-    setup.mockInput.pressKey("1");
-    await settle(setup);
-    expect(store.getSnapshot().rightPaneTab).toBe("activity");
-
-    // View cycling [ / ] and v-prefix navigation
-    setup.mockInput.pressKey("]");
-    await settle(setup);
-    expect(store.getSnapshot().view).not.toBe("cockpit");
-    setup.mockInput.pressEscape();
-    await settle(setup);
-    expect(store.getSnapshot().view).toBe("cockpit");
-
-    setup.mockInput.pressKey("[");
-    await settle(setup);
-    setup.mockInput.pressEscape();
-    await settle(setup);
-
-    setup.mockInput.pressKey("v");
-    setup.mockInput.pressKey("c");
-    await settle(setup);
-    expect(store.getSnapshot().view).toBe("changelog");
-    setup.mockInput.pressEscape();
-    await settle(setup);
-
-    // Omnibar triggers (:, @, #, !) + Escape close
-    for (const trigger of [":", "@", "#", "!"]) {
-      setup.mockInput.pressKey(trigger);
+    try {
+      await waitForPhase(setup, store, "ready");
       await settle(setup);
-      expect(store.getSnapshot().modal?.type).toBe("omnibar");
+
+      // Dismiss update toast with x, cycle tabs 1/2/3, focus cycle
+      setup.mockInput.pressKey("x");
+      await settle(setup);
+      expect(store.getSnapshot().updateToast).toBeNull();
+
+      setup.mockInput.pressKey("2");
+      setup.mockInput.pressKey("3");
+      setup.mockInput.pressKey("1");
+      await settle(setup);
+      expect(store.getSnapshot().rightPaneTab).toBe("activity");
+
+      // View cycling [ / ] and v-prefix navigation
+      setup.mockInput.pressKey("]");
+      await settle(setup);
+      expect(store.getSnapshot().view).not.toBe("cockpit");
       setup.mockInput.pressEscape();
       await settle(setup);
-      expect(store.getSnapshot().modal).toBeNull();
-    }
+      expect(store.getSnapshot().view).toBe("cockpit");
 
-    // Search & Help modal + Escape
-    setup.mockInput.pressKey("/");
-    await settle(setup);
-    expect(store.getSnapshot().modal?.type).toBe("search");
-    setup.mockInput.pressEscape();
-    await settle(setup);
-
-    setup.mockInput.pressKey("?");
-    await settle(setup);
-    expect(store.getSnapshot().modal?.type).toBe("help");
-    setup.mockInput.pressEscape();
-    await settle(setup);
-
-    // List navigation & Shift shortcuts (G, g, j, k, Space, a, right -> ContextMenu -> Escape, i, r, m, o, u, D, A, W)
-    setup.mockInput.pressKey("G");
-    setup.mockInput.pressKey("g");
-    setup.mockInput.pressKey("j");
-    setup.mockInput.pressKey("k");
-    setup.mockInput.pressKey(" ");
-    setup.mockInput.pressKey("a");
-    await settle(setup);
-
-    setup.mockInput.pressArrow("right");
-    await settle(setup);
-    expect(store.getSnapshot().contextMenu).not.toBeNull();
-    setup.mockInput.pressEscape();
-    await settle(setup);
-
-    setup.mockInput.pressKey("S");
-    setup.mockInput.pressKey("P");
-    setup.mockInput.pressKey("s");
-    setup.mockInput.pressKey("f");
-    setup.mockInput.pressKey("t");
-    await settle(setup);
-
-    for (const k of ["i", "c", "n", "d", "w", "m", "r", "o", "R", "W"]) {
-      setup.mockInput.pressKey(k);
+      setup.mockInput.pressKey("[");
       await settle(setup);
       setup.mockInput.pressEscape();
       await settle(setup);
-    }
 
-    // Confirm dialogs from D, A, u
-    for (const k of ["D", "A", "u"]) {
-      setup.mockInput.pressKey(k);
+      setup.mockInput.pressKey("v");
+      setup.mockInput.pressKey("c");
       await settle(setup);
+      expect(store.getSnapshot().view).toBe("changelog");
       setup.mockInput.pressEscape();
-      store.resolveDialog(false);
-      store.closeModal();
       await settle(setup);
+
+      // Omnibar triggers (:, @, #, !) + Escape close
+      for (const trigger of [":", "@", "#", "!"]) {
+        setup.mockInput.pressKey(trigger);
+        await settle(setup);
+        expect(store.getSnapshot().modal?.type).toBe("omnibar");
+        setup.mockInput.pressEscape();
+        await settle(setup);
+        expect(store.getSnapshot().modal).toBeNull();
+      }
+
+      // Search & Help modal + Escape
+      setup.mockInput.pressKey("/");
+      await settle(setup);
+      expect(store.getSnapshot().modal?.type).toBe("search");
+      setup.mockInput.pressEscape();
+      await settle(setup);
+
+      setup.mockInput.pressKey("?");
+      await settle(setup);
+      expect(store.getSnapshot().modal?.type).toBe("help");
+      setup.mockInput.pressEscape();
+      await settle(setup);
+
+      // List navigation & Shift shortcuts (G, g, j, k, Space, a, right -> ContextMenu -> Escape, i, r, m, o, u, D, A, W)
+      setup.mockInput.pressKey("G");
+      setup.mockInput.pressKey("g");
+      setup.mockInput.pressKey("j");
+      setup.mockInput.pressKey("k");
+      setup.mockInput.pressKey(" ");
+      setup.mockInput.pressKey("a");
+      await settle(setup);
+
+      setup.mockInput.pressArrow("right");
+      await settle(setup);
+      expect(store.getSnapshot().contextMenu).not.toBeNull();
+      setup.mockInput.pressEscape();
+      await settle(setup);
+
+      setup.mockInput.pressKey("S");
+      setup.mockInput.pressKey("P");
+      setup.mockInput.pressKey("s");
+      setup.mockInput.pressKey("f");
+      setup.mockInput.pressKey("t");
+      await settle(setup);
+
+      for (const k of ["i", "c", "n", "d", "w", "m", "r", "o", "R", "W"]) {
+        setup.mockInput.pressKey(k);
+        await settle(setup);
+        setup.mockInput.pressEscape();
+        await settle(setup);
+      }
+
+      // Confirm dialogs from D, A, u
+      for (const k of ["D", "A", "u"]) {
+        setup.mockInput.pressKey(k);
+        await settle(setup);
+        setup.mockInput.pressEscape();
+        store.resolveDialog(false);
+        store.closeModal();
+        await settle(setup);
+      }
+
+      // Tab focus to status & sidebar
+      setup.mockInput.pressKey("\t");
+      await settle(setup);
+      setup.mockInput.pressKey("j");
+      setup.mockInput.pressKey("k");
+      setup.mockInput.pressKey("\t");
+      await settle(setup);
+      setup.mockInput.pressKey("j");
+      setup.mockInput.pressKey(" ");
+      await settle(setup);
+
+      // Normal q quits once not running
+      setup.mockInput.pressKey("q");
+      await settle(setup);
+      expect(quitCount).toBe(1);
+    } finally {
+      await setup.dispose();
     }
-
-    // Tab focus to status & sidebar
-    setup.mockInput.pressKey("\t");
-    await settle(setup);
-    setup.mockInput.pressKey("j");
-    setup.mockInput.pressKey("k");
-    setup.mockInput.pressKey("\t");
-    await settle(setup);
-    setup.mockInput.pressKey("j");
-    setup.mockInput.pressKey(" ");
-    await settle(setup);
-
-    // Normal q quits once not running
-    setup.mockInput.pressKey("q");
-    await settle(setup);
-    expect(quitCount).toBe(1);
-    await setup.dispose();
   });
 });
