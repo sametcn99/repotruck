@@ -1,12 +1,13 @@
 // Runs with the target Node runtime against an installed package, from a clean cwd.
 import assert from "node:assert/strict";
 import { execFileSync, spawn } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
 const packageDir = path.resolve(process.argv[2]);
-const base = mkdtempSync(path.join(tmpdir(), "repotruck-installed-"));
+const temporaryBase = mkdtempSync(path.join(tmpdir(), "repotruck-installed-"));
+const base = realpathSync.native(temporaryBase);
 const root = path.join(base, "workspace with spaces"),
   configDir = path.join(base, "config"),
   relativePath = "acme/source/fixture";
