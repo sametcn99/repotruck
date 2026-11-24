@@ -11,8 +11,69 @@ import { settleRender, testRender } from "./helpers/render.tsx";
 
 const fixtures: ReturnType<typeof workspaceFixture>[] = [];
 const stores: Store[] = [];
+const pendingWriters = new WeakMap<Store, Set<Promise<unknown>>>();
+const writerFailures = new WeakMap<Store, unknown[]>();
 const priorConfigDir = process.env.REPOTRUCK_CONFIG_DIR;
 activateTheme("default");
+
+const asyncWriterMethods = [
+  "cycleTheme",
+  "setSetting",
+  "unsetSetting",
+  "addCustomPreset",
+  "removeCustomPreset",
+  "profileSaveFromSelection",
+  "profileDelete",
+  "togglePinSelection",
+  "applyAgentsTemplate",
+  "exportInstructions",
+  "backupSnapshotNow",
+  "trashRestoreEntry",
+  "restoreBackupSnapshot",
+  "runWorkspaceMaintenance",
+  "discoverCloneSelected",
+] as const;
+
+function trackPendingWriter<T>(store: Store, promise: Promise<T>): Promise<T> {
+  const pending = pendingWriters.get(store);
+  if (pending === undefined) throw new Error("writer tracking is not initialized for this store");
+  pending.add(promise);
+  void promise.then(
+    () => pending.delete(promise),
+    (error: unknown) => {
+      writerFailures.get(store)?.push(error);
+      pending.delete(promise);
+    },
+  );
+  return promise;
+}
+
+function trackAsyncWriters(store: Store): void {
+  pendingWriters.set(store, new Set());
+  writerFailures.set(store, []);
+  const target = store as unknown as Record<string, unknown>;
+  for (const name of asyncWriterMethods) {
+    const original = target[name];
+    if (typeof original !== "function") continue;
+    target[name] = (...args: unknown[]) => {
+      const result = original.apply(store, args);
+      if (
+        result !== null &&
+        typeof result === "object" &&
+        typeof (result as { then?: unknown }).then === "function"
+      ) {
+        trackPendingWriter(store, Promise.resolve(result));
+      }
+      return result;
+    };
+  }
+}
+
+async function drainPendingWriters(store: Store): Promise<void> {
+  const pending = pendingWriters.get(store);
+  if (pending === undefined) return;
+  while (pending.size > 0) await Promise.allSettled([...pending]);
+}
 
 function fixture() {
   const value = workspaceFixture();
@@ -24,6 +85,7 @@ function fixture() {
 function makeStore(f: ReturnType<typeof fixture>, extra: Parameters<typeof storeDeps>[0] = {}) {
   const value = new Store(f.root, storeDeps(extra));
   stores.push(value);
+  trackAsyncWriters(value);
   return value;
 }
 
@@ -61,11 +123,21 @@ async function clickText(setup: Awaited<ReturnType<typeof mount>>, text: string,
   await settle(setup);
 }
 
-afterEach(() => {
-  for (const store of stores.splice(0)) store.dispose();
-  if (priorConfigDir === undefined) delete process.env.REPOTRUCK_CONFIG_DIR;
-  else process.env.REPOTRUCK_CONFIG_DIR = priorConfigDir;
-  for (const f of fixtures.splice(0)) f.cleanup();
+afterEach(async () => {
+  const testStores = stores.splice(0);
+  const testFixtures = fixtures.splice(0);
+  try {
+    await Promise.all(testStores.map(drainPendingWriters));
+  } finally {
+    for (const store of testStores) store.dispose();
+    if (priorConfigDir === undefined) delete process.env.REPOTRUCK_CONFIG_DIR;
+    else process.env.REPOTRUCK_CONFIG_DIR = priorConfigDir;
+    for (const f of testFixtures) f.cleanup();
+  }
+  const failure = testStores.flatMap((store) => writerFailures.get(store) ?? [])[0];
+  if (failure !== undefined) {
+    throw failure instanceof Error ? failure : new Error(String(failure));
+  }
 });
 
 describe("acceptance: page callbacks through TUI input", () => {
@@ -86,7 +158,9 @@ describe("acceptance: page callbacks through TUI input", () => {
       await clickText(setup, "[1] owner");
       await clickText(setup, "[4] name");
       await clickText(setup, "[s] Add");
-      await settle(setup);
+      await waitUntil(() =>
+        store.getSnapshot().customPresets.some((entry) => entry.id === "acceptance-layout"),
+      );
       expect(store.getSnapshot().customPresets).toContainEqual({
         id: "acceptance-layout",
         segments: ["owner", "name"],
@@ -151,7 +225,9 @@ describe("acceptance: page callbacks through TUI input", () => {
       setup.mockInput.pressKey("1");
       setup.mockInput.pressKey("4");
       setup.mockInput.pressKey("s");
-      await settle(setup);
+      await waitUntil(() =>
+        store.getSnapshot().customPresets.some((entry) => entry.id === "acceptance-keys"),
+      );
       expect(store.getSnapshot().customPresets).toContainEqual({
         id: "acceptance-keys",
         segments: ["owner", "name"],
@@ -174,7 +250,11 @@ describe("acceptance: page callbacks through TUI input", () => {
       setup.mockInput.pressKey("j");
       setup.mockInput.pressKey("j");
       setup.mockInput.pressEnter();
-      await settle(setup);
+      await waitUntil(
+        () =>
+          (store.getSnapshot().settingsPage?.settings?.sync as { blobless?: boolean } | undefined)
+            ?.blobless === true,
+      );
       expect(
         (store.getSnapshot().settingsPage?.settings?.sync as { blobless?: boolean } | undefined)
           ?.blobless,
@@ -187,23 +267,44 @@ describe("acceptance: page callbacks through TUI input", () => {
           ?.concurrency,
       ).toBe(5);
       await clickText(setup, "[u] Unset");
+      await waitUntil(
+        () =>
+          (store.getSnapshot().settingsPage?.settings?.sync as { concurrency?: number } | undefined)
+            ?.concurrency === undefined,
+      );
       const unsetConfig = JSON.parse(readFileSync(`${f.configDir}/${SETTINGS_FILENAME}`, "utf8"));
       expect(unsetConfig.sync?.concurrency).toBeUndefined();
       await clickText(setup, "sync clone depth");
       setup.mockInput.pressEnter();
-      await settle(setup);
+      await waitUntil(
+        () =>
+          (store.getSnapshot().settingsPage?.settings?.sync as { depth?: number } | undefined)
+            ?.depth === 1 &&
+          JSON.parse(readFileSync(`${f.configDir}/${SETTINGS_FILENAME}`, "utf8")).sync.depth === 1,
+      );
       expect(
         JSON.parse(readFileSync(`${f.configDir}/${SETTINGS_FILENAME}`, "utf8")).sync.depth,
       ).toBe(1);
       await clickText(setup, "sync divergence");
       setup.mockInput.pressEnter();
-      await settle(setup);
+      await waitUntil(
+        () =>
+          (store.getSnapshot().settingsPage?.settings?.sync as { divergence?: string } | undefined)
+            ?.divergence === "rebase" &&
+          JSON.parse(readFileSync(`${f.configDir}/${SETTINGS_FILENAME}`, "utf8")).sync
+            .divergence === "rebase",
+      );
       expect(
         JSON.parse(readFileSync(`${f.configDir}/${SETTINGS_FILENAME}`, "utf8")).sync.divergence,
       ).toBe("rebase");
       await clickText(setup, "sync stash");
       setup.mockInput.pressEnter();
-      await settle(setup);
+      await waitUntil(
+        () =>
+          (store.getSnapshot().settingsPage?.settings?.sync as { stash?: boolean } | undefined)
+            ?.stash === true &&
+          JSON.parse(readFileSync(`${f.configDir}/${SETTINGS_FILENAME}`, "utf8")).sync.stash,
+      );
       expect(
         JSON.parse(readFileSync(`${f.configDir}/${SETTINGS_FILENAME}`, "utf8")).sync.stash,
       ).toBe(true);
@@ -240,7 +341,16 @@ describe("acceptance: page callbacks through TUI input", () => {
       for (let index = 0; index < 40; index++) setup.mockInput.pressKey("BACKSPACE");
       await setup.mockInput.typeText("http://invalid.example");
       setup.mockInput.pressEnter();
-      await settle(setup);
+      await waitUntil(() =>
+        store
+          .getSnapshot()
+          .statuses.some(
+            (status) =>
+              status.phase === "FAILED" &&
+              status.key === "[config]" &&
+              status.message?.includes("expected an https URL"),
+          ),
+      );
       expect(
         store
           .getSnapshot()
@@ -293,7 +403,16 @@ describe("acceptance: page callbacks through TUI input", () => {
       for (let index = 0; index < 200; index++) setup.mockInput.pressKey("BACKSPACE");
       await setup.mockInput.typeText("relative-root");
       setup.mockInput.pressEnter();
-      await settle(setup);
+      await waitUntil(() =>
+        store
+          .getSnapshot()
+          .statuses.some(
+            (status) =>
+              status.phase === "FAILED" &&
+              status.key === "[config]" &&
+              status.message?.includes("path must be absolute"),
+          ),
+      );
       expect(
         store
           .getSnapshot()
@@ -389,7 +508,15 @@ describe("acceptance: page callbacks through TUI input", () => {
       await settle(setup);
 
       await clickText(setup, "[p] pin/unpin cockpit selection");
+      await waitUntil(
+        () =>
+          store.getSnapshot().localHealth.get("acme/api")?.pinned === true &&
+          store
+            .getSnapshot()
+            .statuses.some((status) => status.key === "[pin]" && status.phase === "DONE"),
+      );
       expect(store.getSnapshot().localHealth.get("acme/api")?.pinned).toBe(true);
+      expect((await readWorkspaceConfig(f.root, f.env))?.pinned).toContain("acme/api");
       await clickText(setup, "★ acme/api");
       expect(store.getSnapshot().modal?.type).toBe("detail");
       await clickText(setup, "[Esc] Close");
@@ -419,13 +546,81 @@ describe("acceptance: page callbacks through TUI input", () => {
       await clickText(setup, "[Enter] Confirm");
       await waitUntil(() => store.getSnapshot().profiles["acceptance-profile"] === undefined);
       expect(store.getSnapshot().profiles["acceptance-profile"]).toBeUndefined();
+      expect(
+        (await readWorkspaceConfig(f.root, f.env))?.profiles?.["acceptance-profile"],
+      ).toBeUndefined();
 
       await clickText(setup, "[n] save profile");
+      await setup.waitForFrame((frame) =>
+        frame.includes("Enter save profile · Esc actions · F1 help"),
+      );
       await setup.mockInput.typeText("mouse-profile");
       await clickText(setup, "from: selection");
-      await waitUntil(() => store.getSnapshot().profiles["mouse-profile"] !== undefined);
+      await waitUntil(
+        () =>
+          store.getSnapshot().profiles["mouse-profile"] !== undefined &&
+          store
+            .getSnapshot()
+            .statuses.some(
+              (status) =>
+                status.key === "[profile]" &&
+                status.phase === "DONE" &&
+                status.message?.includes("mouse-profile saved (1 repositories)"),
+            ),
+      );
       expect(store.getSnapshot().profiles["mouse-profile"]).toEqual(["acme/api"]);
+      expect((await readWorkspaceConfig(f.root, f.env))?.profiles?.["mouse-profile"]).toEqual([
+        "acme/api",
+      ]);
     } finally {
+      await setup.dispose();
+    }
+  });
+
+  test("fixture cleanup drain holds a pending rendered pin write until persistence finishes", async () => {
+    const f = fixture();
+    await f.save();
+    const store = makeStore(f);
+    await store.init();
+    store.toggleRepoAt(0);
+    const originalTogglePin = store.togglePinSelection;
+    let releasePin!: () => void;
+    let notifyPinStarted!: () => void;
+    const pinGate = new Promise<void>((resolve) => {
+      releasePin = resolve;
+    });
+    const pinStarted = new Promise<void>((resolve) => {
+      notifyPinStarted = resolve;
+    });
+    store.togglePinSelection = () =>
+      trackPendingWriter(
+        store,
+        (async () => {
+          notifyPinStarted();
+          await pinGate;
+          await originalTogglePin();
+        })(),
+      );
+    const setup = await mount(store);
+    try {
+      store.setView("profiles");
+      await clickText(setup, "[p] pin/unpin cockpit selection");
+      await pinStarted;
+
+      let drained = false;
+      const draining = drainPendingWriters(store).then(() => {
+        drained = true;
+      });
+      await Promise.resolve();
+      expect(drained).toBe(false);
+      expect(existsSync(f.base)).toBe(true);
+
+      releasePin();
+      await draining;
+      expect(store.getSnapshot().localHealth.get("acme/api")?.pinned).toBe(true);
+      expect((await readWorkspaceConfig(f.root, f.env))?.pinned).toContain("acme/api");
+    } finally {
+      releasePin();
       await setup.dispose();
     }
   });
@@ -449,11 +644,13 @@ describe("acceptance: page callbacks through TUI input", () => {
       expect(store.getSnapshot().focus).toBe("status");
 
       store.setView("profiles");
-      await settle(setup);
       setup.mockInput.pressTab();
-      await settle(setup);
+      const profileFrame = await setup.waitForFrame(
+        (frame) => frame.includes("compact-profile") && frame.includes("[▶ r:run]"),
+      );
+      expect(profileFrame).toContain("compact-profile");
       setup.mockInput.pressKey("r");
-      await settle(setup);
+      await waitUntil(() => store.getSnapshot().view === "run");
       expect(store.getSnapshot().view).toBe("run");
       expect(store.getSnapshot().runConsole).toMatchObject({
         scope: "profile",
@@ -517,14 +714,29 @@ describe("acceptance: page callbacks through TUI input", () => {
       const templateName = frame.match(/\s([a-z][a-z0-9-]*) — /)?.[1];
       expect(templateName).toBeTruthy();
       setup.mockInput.pressEnter();
-      await settle(setup);
       const instructionFile = `${f.root}/AGENTS.md`;
-      expect(existsSync(instructionFile)).toBe(true);
+      await waitUntil(
+        () =>
+          existsSync(instructionFile) &&
+          store
+            .getSnapshot()
+            .statuses.some(
+              (status) =>
+                status.key === "[instructions]" &&
+                status.phase === "DONE" &&
+                status.message?.includes(`applied template "${templateName}"`),
+            ),
+      );
       expect(readFileSync(instructionFile, "utf8").length).toBeGreaterThan(30);
       await clickText(setup, "[Enter] Apply");
 
       // Exercise mouse clear on the rendered row and verify the generated template is removed.
       await clickText(setup, "[x:clear]");
+      await waitUntil(() =>
+        store
+          .getSnapshot()
+          .statuses.some((status) => status.message?.includes("removed the instructions template")),
+      );
       expect(
         store
           .getSnapshot()
@@ -532,6 +744,20 @@ describe("acceptance: page callbacks through TUI input", () => {
       ).toBe(true);
       await clickText(setup, "[f] format:");
       await clickText(setup, "[e] export");
+      await waitUntil(() =>
+        store
+          .getSnapshot()
+          .statuses.some(
+            (status) => status.key === "[instructions]" && status.message?.includes("exported"),
+          ),
+      );
+      const exportMessage = store
+        .getSnapshot()
+        .statuses.filter((status) => status.key === "[instructions]")
+        .at(-1)?.message;
+      const exportPath = exportMessage?.match(/exported \w+ -> (.+)/)?.[1];
+      expect(exportPath).toBeTruthy();
+      expect(existsSync(exportPath!)).toBe(true);
       expect(
         store
           .getSnapshot()
@@ -549,11 +775,16 @@ describe("acceptance: page callbacks through TUI input", () => {
       await clickText(setup, "[s] stop");
       expect(stopped).toBe(1);
       await clickText(setup, "[r] regenerate map");
-      expect(
+      await waitUntil(() =>
         store
           .getSnapshot()
-          .statuses.some((status) => status.message?.includes("regenerating AGENTS.md map")),
-      ).toBe(true);
+          .statuses.some(
+            (status) =>
+              status.key === "[instructions]" &&
+              status.phase === "DONE" &&
+              status.message?.includes("regenerated AGENTS.md ("),
+          ),
+      );
     } finally {
       await setup.dispose();
     }
@@ -571,8 +802,13 @@ describe("acceptance: page callbacks through TUI input", () => {
       await store.refreshTrashPage();
       await settle(setup);
       await clickText(setup, "[b] snapshot now");
-      await settle(setup);
-      expect(store.getSnapshot().trashPage?.backups.length).toBeGreaterThan(0);
+      await waitUntil(
+        () =>
+          (store.getSnapshot().trashPage?.backups.length ?? 0) > 0 &&
+          store
+            .getSnapshot()
+            .statuses.some((status) => status.key === "[backup]" && status.phase === "DONE"),
+      );
       await clickText(setup, "Backups · 5 generations");
       await setup.mockMouse.scroll(90, 20, "down");
       await settle(setup);
@@ -589,10 +825,12 @@ describe("acceptance: page callbacks through TUI input", () => {
       await settle(setup);
       await clickText(setup, "[restore --yes]");
       await clickText(setup, "[Enter] Confirm");
-      await waitUntil(() =>
-        store
-          .getSnapshot()
-          .statuses.some((status) => status.key === "[backup]" && status.phase === "DONE"),
+      await waitUntil(
+        () =>
+          store
+            .getSnapshot()
+            .statuses.some((status) => status.key === "[backup]" && status.phase === "DONE") &&
+          (store.getSnapshot().trashPage?.backups.length ?? 0) > 0,
       );
       expect(store.getSnapshot().trashPage?.backups.length).toBeGreaterThan(0);
 
@@ -633,8 +871,9 @@ describe("acceptance: page callbacks through TUI input", () => {
       await clickText(setup, "[restore]");
       expect(store.getSnapshot().dialog?.title).toBe("Restore");
       await clickText(setup, "[Enter] Confirm");
-      await waitUntil(() => existsSync(f.repoDir));
-      await settle(setup);
+      await waitUntil(
+        () => existsSync(f.repoDir) && store.getSnapshot().trashPage?.trash.length === 0,
+      );
       expect(readFileSync(`${f.repoDir}/sentinel.txt`, "utf8")).toBe("user data\n");
       expect(store.getSnapshot().trashPage?.trash).toHaveLength(0);
     } finally {
@@ -659,7 +898,14 @@ describe("acceptance: page callbacks through TUI input", () => {
       await clickText(setup, "[E] empty trash --yes");
       expect(store.getSnapshot().dialog?.title).toBe("Empty trash");
       await clickText(setup, "[Enter] Confirm");
-      await waitUntil(() => store.getSnapshot().trashPage?.trash.length === 0);
+      await waitUntil(
+        () =>
+          store.getSnapshot().trashPage?.trash.length === 0 &&
+          !existsSync(f.repoDir) &&
+          store
+            .getSnapshot()
+            .statuses.some((status) => status.key === "[trash]" && status.phase === "DONE"),
+      );
       expect(store.getSnapshot().trashPage?.trash).toHaveLength(0);
       expect(existsSync(f.repoDir)).toBe(false);
     } finally {
@@ -739,7 +985,11 @@ describe("acceptance: page callbacks through TUI input", () => {
       await settle(setup);
       await setup.mockInput.typeText("sample");
       setup.mockInput.pressEnter();
-      await settle(setup);
+      await waitUntil(
+        () =>
+          store.getSnapshot().discoverPage?.loading === false &&
+          store.getSnapshot().discoverPage?.results.length === 2,
+      );
       expect(store.getSnapshot().discoverPage?.results).toHaveLength(2);
       await clickText(setup, "[l] limit: 20");
       expect(store.getSnapshot().discoverPage?.limit).toBe(50);
@@ -753,7 +1003,9 @@ describe("acceptance: page callbacks through TUI input", () => {
       await clickText(setup, "[a] select all");
       expect(store.getSnapshot().discoverPage?.selected.size).toBe(2);
       await clickText(setup, "[c] clone selected");
-      await settle(setup);
+      await waitUntil(() =>
+        store.getSnapshot().statuses.some((status) => status.message?.includes("1 failed")),
+      );
       expect(
         store.getSnapshot().statuses.some((status) => status.message?.includes("1 failed")),
       ).toBe(true);
