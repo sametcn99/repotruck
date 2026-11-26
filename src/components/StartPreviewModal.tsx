@@ -39,6 +39,8 @@ export function StartPreviewModal({ store }: { store: Store }) {
       setCursor(Math.max(0, lines.length - 1));
     } else if (key.name === "return") {
       void store.confirmStartPreview();
+    } else if (key.name === "g") {
+      store.togglePreviewGists();
     } else if (key.name === "p") {
       void store.cyclePreset();
     }
@@ -101,6 +103,17 @@ export function StartPreviewModal({ store }: { store: Store }) {
         >
           {"[p] Change Preset"}
         </text>
+        {store.hasGistSession() ? (
+          <text
+            fg={accentColor}
+            onMouseDown={(event) => {
+              event.stopPropagation();
+              store.togglePreviewGists();
+            }}
+          >
+            {`[g] Include Gists: ${modal?.type === "preview" && modal.includeGists ? "on" : "off"}`}
+          </text>
+        ) : null}
         <text
           fg={dimFg}
           onMouseDown={(e) => {

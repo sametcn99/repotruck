@@ -4,6 +4,7 @@ import { collectScopeRepos, describeSyncScope, parseSyncScope } from "../../cliS
 import type { DivergenceStrategy } from "../../services/cloner.ts";
 import { createRepository } from "../../services/creator.ts";
 import { filterReposByKey } from "../../services/filters.ts";
+import { autoGistsEnabled, gistSyncSummary, syncWorkspaceGists } from "../../services/gists.ts";
 import { createProgressHub } from "../../services/progressHub.ts";
 import { cloneSingleRepository, parseGitUrl } from "../../services/singleCloner.ts";
 import { loadWorkspace, syncRepos, toPosixRelative } from "../../services/workspace.ts";
@@ -25,7 +26,7 @@ export function registerSyncTools(server: McpServer, ctx: ToolContext): void {
     {
       title: "Sync workspace",
       description:
-        "Clone or fast-forward-update repositories in bulk into the workspace layout, exactly like `repotruck sync`. Scope: user (your repositories), org:<name>, or all (your repositories plus every active organization). Creates the workspace (a record in the central repotruck.json + AGENTS.md) when missing. Requires GitHub authentication (GitHub CLI token or cached device-flow token). Emits notifications/progress updates when the client sends a progress token.",
+        "Clone or fast-forward-update repositories in bulk into the workspace layout, exactly like `repotruck sync`. Scope: user (your repositories), org:<name>, or all (your repositories plus every active organization). Personal and all scopes also sync account Gists by default. Creates the workspace (a record in the central repotruck.json + AGENTS.md) when missing. Requires GitHub authentication (GitHub CLI token or cached device-flow token). Emits notifications/progress updates when the client sends a progress token.",
       annotations: { idempotentHint: true, openWorldHint: true },
       inputSchema: z.object({
         root: rootParam,
@@ -41,6 +42,10 @@ export function registerSyncTools(server: McpServer, ctx: ToolContext): void {
           .min(1)
           .optional()
           .describe('Organization name (required when scope is "org")'),
+        includeGists: z
+          .boolean()
+          .optional()
+          .describe("Include account Gists in unrestricted personal and all syncs (default true)"),
         limit: z
           .number()
           .int()
@@ -93,6 +98,7 @@ export function registerSyncTools(server: McpServer, ctx: ToolContext): void {
         preset,
         scope,
         org,
+        includeGists,
         limit,
         include,
         exclude,
@@ -125,7 +131,13 @@ export function registerSyncTools(server: McpServer, ctx: ToolContext): void {
           repos = filterReposByKey(repos, include ?? [], exclude ?? []);
         }
         if (limit !== undefined) repos = repos.slice(0, limit);
-        if (repos.length === 0) {
+        const syncGists =
+          autoGistsEnabled({
+            includeGists,
+            scope: scopeValue,
+            targeted: limit !== undefined || Boolean(include?.length || exclude?.length),
+          }) && github.gists !== undefined;
+        if (repos.length === 0 && !syncGists) {
           return ok({
             root,
             preset: presetOverride ?? "unchanged",
@@ -163,12 +175,16 @@ export function registerSyncTools(server: McpServer, ctx: ToolContext): void {
           },
           ...(hub !== undefined ? { hub } : {}),
         });
+        const gists = syncGists
+          ? await syncWorkspaceGists({ root, github, login: userLogin, token, env, concurrency })
+          : undefined;
         return {
           ...ok({
             root,
             preset: config.preset,
             scope: describeSyncScope(parsedScope),
-            summary: `${result.done.length} synced, ${result.failed.length} failed`,
+            summary: `${result.done.length} synced, ${result.failed.length} failed${gists ? `; ${gistSyncSummary(gists)}` : ""}`,
+            ...(gists ? { gists } : {}),
             synced: result.done.map((entry) => ({
               key: entry.key,
               relativePath: entry.relativePath,
@@ -177,7 +193,7 @@ export function registerSyncTools(server: McpServer, ctx: ToolContext): void {
             failed: result.failed,
             progress: progressLines,
           }),
-          ...(result.failed.length > 0 ? { isError: true } : {}),
+          ...(result.failed.length > 0 || (gists?.failed ?? 0) > 0 ? { isError: true } : {}),
         };
       }),
   );

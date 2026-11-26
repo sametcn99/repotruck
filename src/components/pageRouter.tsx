@@ -23,6 +23,7 @@ import { CodeSearchView } from "./views/CodeSearchView.tsx";
 import { ConflictResolverView } from "./views/ConflictResolverView.tsx";
 import { DiscoverView } from "./views/DiscoverView.tsx";
 import { ChangelogView, ScanAdoptView, WorktreesView } from "./views/FlowViews.tsx";
+import { GistsView } from "./views/GistsView.tsx";
 import { LogView } from "./views/LogView.tsx";
 import { PlaceholderView } from "./views/PlaceholderView.tsx";
 import { PresetsView } from "./views/PresetsView.tsx";
@@ -102,6 +103,19 @@ export function renderPage(
       return wrap(<LogView store={store} width={innerWidth} height={innerHeight} />);
     case "sync":
       return wrap(<SyncCenterView store={store} width={innerWidth} />);
+    case "gists":
+      return wrap(
+        <GistsView
+          key={JSON.stringify([
+            store.getSnapshot().root,
+            store.getSnapshot().userLogin,
+            store.hasGistSession(),
+          ])}
+          store={store}
+          width={innerWidth}
+          height={innerHeight}
+        />,
+      );
     case "discover":
       return wrap(<DiscoverView store={store} width={innerWidth} height={innerHeight} />);
     case "resolve":

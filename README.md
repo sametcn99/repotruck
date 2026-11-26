@@ -13,6 +13,21 @@ The **About** page is available from the TUI's System menu or `v` then `o`. Run
 `repotruck --about` (or `repotruck about`) for the same description and GitHub link without opening the TUI.
 The TUI checks your current GitHub session and shows **Give star** only when you have not starred the project. Click it once (or press `s` / Enter); the button disappears after GitHub confirms the star. Press `r` to retry a failed status check.
 
+## GitHub Gists
+
+Open **Gists** with `v j` in the dashboard and use `?` for shortcuts. Personal and all workspace syncs clone your public and secret Gists under `.repotruck/gists/<id>`. Use `repotruck sync --no-gists` to sync repositories only. Secret Gists are accessible to anyone who has their link.
+
+```bash
+repotruck gist list
+repotruck gist clone <gist-url>
+repotruck gist open <gist-id> vscode
+repotruck gist create --file notes.md
+repotruck gist edit <gist-id> --file notes.md --description "Updated notes"
+repotruck gist push <gist-id>
+```
+
+`gist sync` with no IDs includes account and tracked Gists. Stage and commit local changes with Git before using `gist push`. `gist delete <gist-id> --yes` deletes the Gist on GitHub and keeps the local checkout. Set `--public` to create a public Gist. To create, edit, push, or delete, use a GitHub token with the `gist` scope or Gists write permission. Renew an older Repotruck device login with `repotruck auth logout` and `repotruck auth login`. MCP exposes the same operations under `repotruck_gist_*`.
+
 ## The dashboard
 
 Run `repotruck` with no arguments and the interactive terminal UI takes over:

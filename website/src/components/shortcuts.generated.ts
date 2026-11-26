@@ -200,6 +200,10 @@ export const SHORTCUT_ROWS: readonly ShortcutRow[] = [
     action: "Sync Center — bulk sync with every flag plus watch mode",
   },
   {
+    key: "v j",
+    action: "Gists — browse, sync and manage GitHub Gists",
+  },
+  {
     key: "v d",
     action: "Discover — qualified GitHub search and bulk clone",
   },

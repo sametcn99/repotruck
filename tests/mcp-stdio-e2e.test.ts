@@ -35,6 +35,15 @@ afterAll(async () => {
 });
 
 const EXPECTED_TOOLS: readonly string[] = [
+  "repotruck_gist_list",
+  "repotruck_gist_show",
+  "repotruck_gist_clone",
+  "repotruck_gist_sync",
+  "repotruck_gist_open",
+  "repotruck_gist_create",
+  "repotruck_gist_edit",
+  "repotruck_gist_push",
+  "repotruck_gist_delete",
   "repotruck_list_workspaces",
   "repotruck_workspace_status",
   "repotruck_list_repos",
@@ -105,7 +114,7 @@ describe("repotruck MCP server over a real stdio subprocess", () => {
     })) as { isError?: boolean; content?: Array<{ type: string; text?: string }> };
     expect(result.isError).toBe(true);
     expect(textOf(result).toLowerCase()).toContain("workspace");
-    expect((await client.listTools()).tools.length).toBe(25);
+    expect((await client.listTools()).tools.length).toBe(EXPECTED_TOOLS.length);
   }, 30000);
 
   test("schema violations come back as isError:true with the validation message", async () => {

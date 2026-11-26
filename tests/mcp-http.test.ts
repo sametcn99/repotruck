@@ -189,7 +189,8 @@ describe("HTTP handler serves tools over the stateless leg", () => {
     );
     expect(status).toBe(200);
     const names = (json?.result?.tools ?? []).map((tool) => tool.name);
-    expect(names.length).toBe(25);
+    expect(names.length).toBe(34);
+    expect(names).toContain("repotruck_gist_edit");
     expect(names).toContain("repotruck_forget");
     expect(names).toContain("repotruck_open");
     expect(names).toContain("repotruck_search_code");

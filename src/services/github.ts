@@ -2,6 +2,7 @@ import { readFileSync, renameSync, writeFileSync } from "node:fs";
 import { Octokit } from "@octokit/rest";
 import { logDiag, verboseEnabled } from "./diagnostics.ts";
 import { writeFileAtomic } from "./fsUtils.ts";
+import { GistApi } from "./gistApi.ts";
 import { isProjectStarred, starProject } from "./projectStar.ts";
 import { type RateLimitRetryOptions, withRateLimitRetry } from "./rateLimit.ts";
 
@@ -321,6 +322,8 @@ export interface GitHubServiceDeps {
 function quietOctokitLog(level: "warn" | "error"): (...args: unknown[]) => void {
   return (...args: unknown[]) => {
     const message = args.map(String).join(" ");
+    // Gist operations report sanitized errors on their own surfaces.
+    if (/\/gists(?:[/?\s]|$)/i.test(message)) return;
     // A starring check uses 404 as its ordinary negative answer, not a failure.
     const diagnosticLevel = /^GET \/user\/starred\/[^/]+\/[^/]+ - 404 /.test(message)
       ? "info"
@@ -349,6 +352,7 @@ function etagOf(headers: unknown): string | null {
 
 export class GitHubService implements GitHubRepoReader, GitHubRepoCreator {
   private readonly octokit: Octokit;
+  readonly gists?: GistApi;
   private readonly retry: RateLimitRetryOptions | undefined;
   private readonly etagCache: EtagCacheStore | undefined;
 
@@ -362,6 +366,9 @@ export class GitHubService implements GitHubRepoReader, GitHubRepoCreator {
         ...(deps.baseUrl !== undefined ? { baseUrl: deps.baseUrl } : {}),
       });
     this.retry = deps.retry;
+    if (deps.baseUrl === undefined || deps.baseUrl === "https://api.github.com") {
+      this.gists = new GistApi(this.octokit.request, deps.retry);
+    }
     this.etagCache = deps.etagCache;
   }
 

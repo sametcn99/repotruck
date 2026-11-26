@@ -19,6 +19,7 @@ export type {
   TuiBinding,
 } from "./registryTypes.ts";
 
+import { GIST_COMMANDS } from "./registryData/gists.ts";
 import { GLOBAL_COMMANDS } from "./registryData/globals.ts";
 import { HUB_COMMANDS } from "./registryData/hubs.ts";
 import { LIFECYCLE_COMMANDS } from "./registryData/lifecycle.ts";
@@ -33,6 +34,7 @@ export const REGISTRY: readonly CommandSpec[] = [
   ...SYNC_COMMANDS,
   ...LIFECYCLE_COMMANDS,
   ...WORKSPACE_COMMANDS,
+  ...GIST_COMMANDS,
   ...SEARCH_COMMANDS,
   ...PLATFORM_COMMANDS,
   ...SETTINGS_COMMANDS,

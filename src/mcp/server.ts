@@ -23,6 +23,7 @@ import type { EnvLike } from "../services/config.ts";
 import { closeProcessScope, type ProcessScopeCloseOptions } from "../services/processScope.ts";
 import { readVersion } from "../services/version.ts";
 import { registerAliasesTools } from "./tools/aliases.ts";
+import { registerGistTools } from "./tools/gists.ts";
 import { registerGithubTools } from "./tools/github.ts";
 import { registerLifecycleTools } from "./tools/lifecycle.ts";
 import { registerPrompts } from "./tools/prompts.ts";
@@ -57,6 +58,7 @@ export async function createRepotruckMcpServer(options: McpServerOptions = {}): 
   registerLifecycleTools(server, ctx);
   registerAliasesTools(server, ctx);
   registerGithubTools(server, ctx);
+  registerGistTools(server, ctx);
   registerSearchTools(server, ctx);
   registerPrompts(server, ctx);
   registerWorkspaceResources(server, ctx);

@@ -1,4 +1,3 @@
-import { spawn } from "node:child_process";
 import { type Dirent, existsSync } from "node:fs";
 import { readdir } from "node:fs/promises";
 import path from "node:path";
@@ -8,9 +7,10 @@ import { type CustomPreset, isPresetId, PRESET_IDS, type PresetRef } from "../pr
 import { AuthError } from "../services/auth.ts";
 import { firstErrorLine } from "../services/cloner.ts";
 import type { RepoInventoryEntry, RepotruckConfig } from "../services/config.ts";
-import type { SpawnRequest } from "../services/launcher.ts";
+
+export { detachedSpawnImpl } from "../services/launcher.ts";
+
 import { type createProgressHub, isRepoProgressEvent } from "../services/progressHub.ts";
-import { quoteForShell } from "../services/shellQuote.ts";
 
 const ROOT_PARAM_DESCRIPTION =
   "Workspace root directory. Defaults to the configured root in the user config.json, then the OS default. The central repotruck.json tracks registered workspaces.";
@@ -141,37 +141,6 @@ export function bridgeHubToSink(
   });
 }
 
-export function detachedSpawnImpl(request: SpawnRequest): Promise<number> {
-  const attempt = (useShell: boolean): Promise<number> =>
-    new Promise((resolve, reject) => {
-      const child = useShell
-        ? spawn(quoteForShell(request.command, request.args), {
-            cwd: request.cwd,
-            stdio: "ignore",
-            detached: true,
-            shell: true,
-            windowsHide: false,
-          })
-        : spawn(request.command, request.args, {
-            cwd: request.cwd,
-            stdio: "ignore",
-            detached: true,
-            windowsHide: false,
-          });
-      child.once("error", reject);
-      child.once("spawn", () => {
-        child.unref();
-        resolve(0);
-      });
-    });
-  return attempt(false).catch((error: NodeJS.ErrnoException) => {
-    if (error.code === "ENOENT") {
-      return attempt(true);
-    }
-    throw error;
-  });
-}
-
 export function workspaceTreeText(root: string): Promise<string> {
   const MAX_DEPTH = 3;
   const MAX_ENTRIES = 200;
@@ -184,7 +153,12 @@ export function workspaceTreeText(root: string): Promise<string> {
       return ["(unreadable directory)"];
     }
     const visible = entries
-      .filter((item) => item.name !== ".git" && item.name !== "node_modules")
+      .filter(
+        (item) =>
+          item.name !== ".git" &&
+          item.name !== "node_modules" &&
+          !(dir === path.join(root, ".repotruck") && item.name === "gists"),
+      )
       .sort((a, b) => {
         if (a.isDirectory() !== b.isDirectory()) return a.isDirectory() ? -1 : 1;
         return a.name.localeCompare(b.name);

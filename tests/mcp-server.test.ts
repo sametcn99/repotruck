@@ -119,6 +119,15 @@ afterAll(() => {
 });
 
 const EXPECTED_TOOLS: readonly string[] = [
+  "repotruck_gist_list",
+  "repotruck_gist_show",
+  "repotruck_gist_clone",
+  "repotruck_gist_sync",
+  "repotruck_gist_open",
+  "repotruck_gist_create",
+  "repotruck_gist_edit",
+  "repotruck_gist_push",
+  "repotruck_gist_delete",
   "repotruck_list_workspaces",
   "repotruck_workspace_status",
   "repotruck_list_repos",

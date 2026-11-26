@@ -3,7 +3,7 @@ export interface McpToolDoc {
   readonly action: string;
 }
 
-// 25 tools matching the committed MCP server.
+// Tool reference for the Repotruck MCP server.
 export const MCP_TOOL_ROWS: readonly McpToolDoc[] = [
   { tool: "repotruck_list_workspaces", action: "discover every registered workspace" },
   { tool: "repotruck_workspace_status", action: "preset, counts, aliases, last sync" },
@@ -22,6 +22,18 @@ export const MCP_TOOL_ROWS: readonly McpToolDoc[] = [
     tool: "repotruck_sync",
     action:
       "bulk clone / fast-forward update with the CLI's scope, limit, include/exclude, depth, blobless, stash, divergence and concurrency knobs",
+  },
+  { tool: "repotruck_gist_list", action: "list account and tracked Gists" },
+  { tool: "repotruck_gist_show", action: "read Gist metadata and text files" },
+  { tool: "repotruck_gist_clone", action: "clone a Gist by ID or URL" },
+  { tool: "repotruck_gist_sync", action: "sync selected or all account and tracked Gists" },
+  { tool: "repotruck_gist_open", action: "open a local Gist in an editor or agent" },
+  { tool: "repotruck_gist_create", action: "create and clone a public or secret Gist" },
+  { tool: "repotruck_gist_edit", action: "edit the Gist description and remote files" },
+  { tool: "repotruck_gist_push", action: "push local commits to the Gist upstream" },
+  {
+    tool: "repotruck_gist_delete",
+    action: "confirm remote deletion while keeping local Gist files",
   },
   { tool: "repotruck_clone", action: "clone or update a single repository" },
   { tool: "repotruck_create", action: "create a GitHub repo, optionally from a local dir" },

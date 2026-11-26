@@ -67,6 +67,11 @@ try {
   }
   assert.equal(JSON.parse(run("workspaces", "--json")).workspaces.length, 1);
   assert.equal(JSON.parse(run("status", "--dir", root, "--json")).repos.length, 1);
+  assert.deepEqual(
+    JSON.parse(run("gist", "list", "--tracked", "--dir", root, "--json")).result,
+    [],
+  );
+  assert.match(run("gist", "edit", "--help"), /--expect-version/);
   const sources = {
     "fixture.ts": "export function fixture_ts() {}",
     "fixture.tsx": "export function fixture_tsx() {return <div/>}",
@@ -132,7 +137,10 @@ try {
       `${JSON.stringify({ jsonrpc: "2.0", method: "notifications/initialized" })}\n`,
     );
     child.stdin.write(`${JSON.stringify({ jsonrpc: "2.0", id: 2, method: "tools/list" })}\n`);
-    assert.equal((await done).result.tools.length, 25);
+    const { tools } = (await done).result;
+    assert.equal(tools.length, 34);
+    assert.ok(tools.some((tool) => tool.name === "repotruck_gist_sync"));
+    assert.ok(tools.some((tool) => tool.name === "repotruck_gist_edit"));
   } finally {
     child.stdin.end();
     child.kill();
@@ -146,7 +154,7 @@ try {
       status: true,
       offlineGrammars: 6,
       regex: true,
-      mcpTools: 25,
+      mcpTools: 34,
     }),
   );
 } finally {
