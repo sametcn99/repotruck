@@ -11,7 +11,7 @@ import { PlaceholderView } from "../src/components/views/PlaceholderView.tsx";
 import { VIEW_SPECS } from "../src/components/views/viewRegistry.ts";
 import type { RepoInfo } from "../src/services/github.ts";
 import type { RunInReposResult } from "../src/services/runner.ts";
-import { settleRender, testRender } from "./helpers/render.tsx";
+import { settleRender, testRender, waitForDashboardReady } from "./helpers/render.tsx";
 
 const tempDirs: string[] = [];
 let savedConfigDir: string | undefined;
@@ -126,12 +126,6 @@ async function settle(setup: Awaited<ReturnType<typeof testRender>>): Promise<vo
   await settleRender(setup);
 }
 
-async function waitReady(store: Store): Promise<void> {
-  for (let i = 0; i < 40 && store.getSnapshot().phase !== "ready"; i += 1) {
-    await new Promise((resolve) => setTimeout(resolve, 25));
-  }
-}
-
 async function waitUntil(
   predicate: () => boolean,
   setup: Awaited<ReturnType<typeof testRender>>,
@@ -196,8 +190,7 @@ describe("t14 sync center", () => {
       <Dashboard store={store} onQuit={() => {}} onSuspendAndRun={async () => {}} />,
       { width: 120, height: 40, exitOnCtrlC: false },
     );
-    await waitReady(store);
-    await settle(setup);
+    await waitForDashboardReady(setup, store);
     store.setView("sync");
     await settle(setup);
     const frame = norm(await capture(setup));
@@ -233,8 +226,7 @@ describe("t16 discover", () => {
       <Dashboard store={store} onQuit={() => {}} onSuspendAndRun={async () => {}} />,
       { width: 140, height: 40, exitOnCtrlC: false },
     );
-    await waitReady(store);
-    await settle(setup);
+    await waitForDashboardReady(setup, store);
 
     store.setView("discover");
     await settle(setup);
@@ -326,8 +318,7 @@ describe("t17 changelog + scan + prune guard", () => {
       <Dashboard store={store} onQuit={() => {}} onSuspendAndRun={async () => {}} />,
       { width: 130, height: 42, exitOnCtrlC: false },
     );
-    await waitReady(store);
-    await settle(setup);
+    await waitForDashboardReady(setup, store);
 
     store.setView("changelog");
     await waitUntil(() => store.getSnapshot().changelogPage !== null, setup);
@@ -357,8 +348,7 @@ describe("t17 changelog + scan + prune guard", () => {
       <Dashboard store={store} onQuit={() => {}} onSuspendAndRun={async () => {}} />,
       { width: 130, height: 40, exitOnCtrlC: false },
     );
-    await waitReady(store);
-    await settle(setup);
+    await waitForDashboardReady(setup, store);
 
     store.setView("scan");
     await settle(setup);
@@ -413,8 +403,7 @@ describe("t18 worktree scan + resolve + placeholder", () => {
       <Dashboard store={store} onQuit={() => {}} onSuspendAndRun={async () => {}} />,
       { width: 130, height: 40, exitOnCtrlC: false },
     );
-    await waitReady(store);
-    await settle(setup);
+    await waitForDashboardReady(setup, store);
 
     store.setView("worktree");
     await waitUntil(() => (store.getSnapshot().worktreePage?.rows.length ?? 0) > 0, setup);
@@ -446,8 +435,7 @@ describe("t18 worktree scan + resolve + placeholder", () => {
       <Dashboard store={store} onQuit={() => {}} onSuspendAndRun={async () => {}} />,
       { width: 130, height: 40, exitOnCtrlC: false },
     );
-    await waitReady(store);
-    await settle(setup);
+    await waitForDashboardReady(setup, store);
 
     // First render cleanly with zero failures
     store.setView("resolve");

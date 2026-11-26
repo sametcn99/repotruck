@@ -10,7 +10,7 @@ import { terminalWidth } from "../src/components/windowing.ts";
 import type { CodeSearchMatch } from "../src/services/codeSearch.ts";
 import type { RepoStatusLine } from "../src/services/lifecycle.ts";
 import { storeDeps, waitUntil, workspaceFixture } from "./helpers/hardening.ts";
-import { settleRender, testRender } from "./helpers/render.tsx";
+import { settleRender, testRender, waitForDashboardReady } from "./helpers/render.tsx";
 
 const fixtures: ReturnType<typeof workspaceFixture>[] = [];
 const stores: Store[] = [];
@@ -88,8 +88,7 @@ async function mount(store: Store, width = 130, height = 44, onQuit = () => {}) 
     <Dashboard store={store} onQuit={onQuit} onSuspendAndRun={async () => {}} />,
     { width, height, exitOnCtrlC: false },
   );
-  await waitUntil(() => store.getSnapshot().phase === "ready");
-  await settleRender(setup);
+  await waitForDashboardReady(setup, store);
   return setup;
 }
 

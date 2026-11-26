@@ -13,7 +13,7 @@ import {
   VIEW_SPECS,
 } from "../src/components/views/viewRegistry.ts";
 import type { RepoInfo } from "../src/services/github.ts";
-import { settleRender, testRender } from "./helpers/render.tsx";
+import { settleRender, testRender, waitForDashboardReady } from "./helpers/render.tsx";
 
 const tempDirs: string[] = [];
 let savedConfigDir: string | undefined;
@@ -169,11 +169,7 @@ describe("t01 view layer — dashboard render", () => {
       <Dashboard store={store} onQuit={() => {}} onSuspendAndRun={async () => {}} />,
       { width: 140, height: 40, exitOnCtrlC: false },
     );
-    for (let i = 0; i < 40 && store.getSnapshot().phase !== "ready"; i += 1) {
-      await new Promise((resolve) => setTimeout(resolve, 25));
-    }
-    expect(store.getSnapshot().phase).toBe("ready");
-    await settle(setup);
+    await waitForDashboardReady(setup, store);
 
     let frame = norm(setup.captureCharFrame());
     expect(frame).toContain("[F10] Views");
@@ -203,10 +199,7 @@ describe("t01 view layer — dashboard render", () => {
       <Dashboard store={store} onQuit={() => {}} onSuspendAndRun={async () => {}} />,
       { width: 140, height: 40, exitOnCtrlC: false },
     );
-    for (let i = 0; i < 40 && store.getSnapshot().phase !== "ready"; i += 1) {
-      await new Promise((resolve) => setTimeout(resolve, 25));
-    }
-    await settle(setup);
+    await waitForDashboardReady(setup, store);
 
     setup.mockInput.pressKey("v");
     await settle(setup);
@@ -609,10 +602,7 @@ describe("t01 view layer — dashboard render", () => {
       <Dashboard store={store} onQuit={() => {}} onSuspendAndRun={async () => {}} />,
       { width: 58, height: 18, exitOnCtrlC: false },
     );
-    for (let i = 0; i < 40 && store.getSnapshot().phase !== "ready"; i += 1) {
-      await new Promise((resolve) => setTimeout(resolve, 25));
-    }
-    await settle(setup);
+    await waitForDashboardReady(setup, store);
 
     // In single-pane mode (width=58 < 64), compact pane switcher strip is shown
     let frame = norm(setup.captureCharFrame());

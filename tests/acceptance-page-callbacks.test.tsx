@@ -7,7 +7,7 @@ import { terminalWidth } from "../src/components/windowing.ts";
 import { SETTINGS_FILENAME } from "../src/services/settings.ts";
 import { readWorkspaceConfig } from "../src/services/workspaceRegistry.ts";
 import { storeDeps, waitUntil, workspaceFixture } from "./helpers/hardening.ts";
-import { settleRender, testRender } from "./helpers/render.tsx";
+import { settleRender, testRender, waitForDashboardReady } from "./helpers/render.tsx";
 
 const fixtures: ReturnType<typeof workspaceFixture>[] = [];
 const stores: Store[] = [];
@@ -94,8 +94,7 @@ async function mount(store: Store, width = 120, height = 42) {
     <Dashboard store={store} onQuit={() => {}} onSuspendAndRun={async () => {}} />,
     { width, height, exitOnCtrlC: false },
   );
-  await waitUntil(() => store.getSnapshot().phase === "ready");
-  await settleRender(setup);
+  await waitForDashboardReady(setup, store);
   return setup;
 }
 

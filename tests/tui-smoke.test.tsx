@@ -8,7 +8,7 @@ import { Store, type StoreDeps } from "../src/components/store.ts";
 import type { RepoInfo } from "../src/services/github.ts";
 import { readSettings } from "../src/services/settings.ts";
 import { listWorkspaces } from "../src/services/workspaceRegistry.ts";
-import { testRender } from "./helpers/render.tsx";
+import { testRender, waitForDashboardReady } from "./helpers/render.tsx";
 
 type RendererSetup = Awaited<ReturnType<typeof testRender>>;
 
@@ -200,11 +200,7 @@ async function renderDashboard(
     <Dashboard store={store} onQuit={() => {}} onSuspendAndRun={async () => {}} />,
     { width: 120, height: 40, exitOnCtrlC: false },
   );
-  for (let i = 0; i < 40 && store.getSnapshot().phase !== "ready"; i += 1) {
-    await new Promise((resolve) => setTimeout(resolve, 25));
-  }
-  expect(store.getSnapshot().phase).toBe("ready");
-  await settle(setup);
+  await waitForDashboardReady(setup, store);
   return { setup, store };
 }
 
@@ -570,11 +566,7 @@ describe("dashboard render smoke", () => {
       <Dashboard store={store} onQuit={() => quits.push(1)} onSuspendAndRun={async () => {}} />,
       { width: 120, height: 40, exitOnCtrlC: false },
     );
-    for (let i = 0; i < 40 && store.getSnapshot().phase !== "ready"; i += 1) {
-      await new Promise((resolve) => setTimeout(resolve, 25));
-    }
-    expect(store.getSnapshot().phase).toBe("ready");
-    await settle(setup);
+    await waitForDashboardReady(setup, store);
     try {
       setup.mockInput.pressKey(" ");
       await settle(setup);

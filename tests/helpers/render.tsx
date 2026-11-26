@@ -133,3 +133,18 @@ export async function settleRender(setup: Awaited<ReturnType<typeof testRender>>
     await setup.flush({ maxPasses: 4 });
   });
 }
+
+// Keep loading animations and the transition to the ready dashboard inside act.
+export async function waitForDashboardReady(
+  setup: Awaited<ReturnType<typeof testRender>>,
+  store: StoreBase,
+): Promise<void> {
+  const deadline = performance.now() + 2500;
+  do {
+    await settleRender(setup);
+    const { phase, errorMessage } = store.getSnapshot();
+    if (phase === "ready") return;
+    if (phase === "error") throw new Error(errorMessage ?? "Dashboard initialization failed");
+  } while (performance.now() < deadline);
+  throw new Error("Timed out waiting for the dashboard to become ready");
+}

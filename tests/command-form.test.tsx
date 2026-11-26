@@ -8,7 +8,7 @@ import { executeRegistryCommand } from "../src/components/store/modalWorkflows.t
 import { Store, type StoreDeps, type StoreSnapshot } from "../src/components/store.ts";
 import { activateTheme } from "../src/components/theme.ts";
 import { buildCliArguments, defaultFieldValues } from "../src/components/ui/FieldGroup.tsx";
-import { settleRender, testRender } from "./helpers/render.tsx";
+import { settleRender, testRender, waitForDashboardReady } from "./helpers/render.tsx";
 
 const tempDirs: string[] = [];
 let savedConfigDir: string | undefined;
@@ -123,10 +123,7 @@ describe("t04 command form", () => {
       <Dashboard store={store} onQuit={() => {}} onSuspendAndRun={async () => {}} />,
       { width: 120, height: 44, exitOnCtrlC: false },
     );
-    for (let i = 0; i < 40 && store.getSnapshot().phase !== "ready"; i += 1) {
-      await new Promise((resolve) => setTimeout(resolve, 25));
-    }
-    await settle(setup);
+    await waitForDashboardReady(setup, store);
 
     store.openCommandForm("sync");
     await settle(setup);

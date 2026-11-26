@@ -9,7 +9,7 @@ import type { RepotruckConfig } from "../src/services/config.ts";
 import type { RepoStatusLine } from "../src/services/lifecycle.ts";
 import { readSettings } from "../src/services/settings.ts";
 import { writeWorkspaceConfig } from "../src/services/workspaceRegistry.ts";
-import { settleRender, testRender } from "./helpers/render.tsx";
+import { settleRender, testRender, waitForDashboardReady } from "./helpers/render.tsx";
 
 const tempDirs: string[] = [];
 let savedConfigDir: string | undefined;
@@ -229,13 +229,6 @@ async function settle(setup: Awaited<ReturnType<typeof testRender>>): Promise<vo
   await settleRender(setup);
 }
 
-async function waitReady(store: Store, setup: Awaited<ReturnType<typeof testRender>>) {
-  for (let i = 0; i < 40 && store.getSnapshot().phase !== "ready"; i += 1) {
-    await new Promise((resolve) => setTimeout(resolve, 25));
-  }
-  await settle(setup);
-}
-
 async function waitForState(predicate: () => boolean, description: string, timeoutMs = 3000) {
   const deadline = Date.now() + timeoutMs;
   while (!predicate()) {
@@ -268,7 +261,7 @@ describe("Phase 3 interactive view coverage", () => {
       <Dashboard store={store} onQuit={() => {}} onSuspendAndRun={async () => {}} />,
       { width: 120, height: 40, exitOnCtrlC: false },
     );
-    await waitReady(store, setup);
+    await waitForDashboardReady(setup, store);
 
     store.setView("status");
     await settle(setup);
@@ -309,7 +302,7 @@ describe("Phase 3 interactive view coverage", () => {
       <Dashboard store={store} onQuit={() => {}} onSuspendAndRun={async () => {}} />,
       { width: 120, height: 40, exitOnCtrlC: false },
     );
-    await waitReady(store, setup);
+    await waitForDashboardReady(setup, store);
 
     store.setView("run");
     await settle(setup);
@@ -378,7 +371,7 @@ describe("Phase 3 interactive view coverage", () => {
       <Dashboard store={store} onQuit={() => {}} onSuspendAndRun={async () => {}} />,
       { width: 130, height: 60, exitOnCtrlC: false },
     );
-    await waitReady(store, setup);
+    await waitForDashboardReady(setup, store);
 
     // PresetsView: press 'a' to open builder, type id, Enter, then 'a' + Escape
     store.setView("presets");
@@ -473,7 +466,7 @@ describe("Phase 3 interactive view coverage", () => {
       <Dashboard store={store} onQuit={() => {}} onSuspendAndRun={async () => {}} />,
       { width: 140, height: 42, exitOnCtrlC: false },
     );
-    await waitReady(store, setup);
+    await waitForDashboardReady(setup, store);
 
     // DiscoverView: search then move cursor down & Space to select second repo
     store.setView("discover");

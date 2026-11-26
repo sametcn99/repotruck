@@ -7,7 +7,7 @@ import { Store, type StoreDeps } from "../src/components/store.ts";
 import { activateTheme } from "../src/components/theme.ts";
 import type { CodeSearchMatch } from "../src/services/codeSearch.ts";
 import type { RunInReposResult } from "../src/services/runner.ts";
-import { settleRender, testRender } from "./helpers/render.tsx";
+import { settleRender, testRender, waitForDashboardReady } from "./helpers/render.tsx";
 
 const tempDirs: string[] = [];
 let savedConfigDir: string | undefined;
@@ -155,10 +155,7 @@ describe("t06 code search page", () => {
       <Dashboard store={store} onQuit={() => {}} onSuspendAndRun={async () => {}} />,
       { width: 120, height: 40, exitOnCtrlC: false },
     );
-    for (let i = 0; i < 40 && store.getSnapshot().phase !== "ready"; i += 1) {
-      await new Promise((resolve) => setTimeout(resolve, 25));
-    }
-    await settle(setup);
+    await waitForDashboardReady(setup, store);
 
     store.setView("search");
     await settle(setup);
@@ -182,10 +179,7 @@ describe("t07 run console page", () => {
       <Dashboard store={store} onQuit={() => {}} onSuspendAndRun={async () => {}} />,
       { width: 120, height: 40, exitOnCtrlC: false },
     );
-    for (let i = 0; i < 40 && store.getSnapshot().phase !== "ready"; i += 1) {
-      await new Promise((resolve) => setTimeout(resolve, 25));
-    }
-    await settle(setup);
+    await waitForDashboardReady(setup, store);
 
     store.setView("run");
     await settle(setup);
@@ -212,10 +206,7 @@ describe("t08 stats page", () => {
       <Dashboard store={store} onQuit={() => {}} onSuspendAndRun={async () => {}} />,
       { width: 120, height: 40, exitOnCtrlC: false },
     );
-    for (let i = 0; i < 40 && store.getSnapshot().phase !== "ready"; i += 1) {
-      await new Promise((resolve) => setTimeout(resolve, 25));
-    }
-    await settle(setup);
+    await waitForDashboardReady(setup, store);
 
     store.setView("stats");
     await store.refreshStatsPage();
@@ -244,10 +235,7 @@ describe("t09 trash & backups page", () => {
       <Dashboard store={store} onQuit={() => {}} onSuspendAndRun={async () => {}} />,
       { width: 120, height: 40, exitOnCtrlC: false },
     );
-    for (let i = 0; i < 40 && store.getSnapshot().phase !== "ready"; i += 1) {
-      await new Promise((resolve) => setTimeout(resolve, 25));
-    }
-    await settle(setup);
+    await waitForDashboardReady(setup, store);
 
     store.setView("trash");
     await store.refreshTrashPage();

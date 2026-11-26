@@ -6,7 +6,7 @@ import { Dashboard } from "../src/components/Dashboard.tsx";
 import { Store, type StoreDeps } from "../src/components/store.ts";
 import { activateTheme } from "../src/components/theme.ts";
 import type { RepoStatusLine } from "../src/services/lifecycle.ts";
-import { settleRender, testRender } from "./helpers/render.tsx";
+import { settleRender, testRender, waitForDashboardReady } from "./helpers/render.tsx";
 
 const tempDirs: string[] = [];
 let savedConfigDir: string | undefined;
@@ -134,10 +134,7 @@ describe("t05 status matrix", () => {
       <Dashboard store={store} onQuit={() => {}} onSuspendAndRun={async () => {}} />,
       { width: 120, height: 40, exitOnCtrlC: false },
     );
-    for (let i = 0; i < 40 && store.getSnapshot().phase !== "ready"; i += 1) {
-      await new Promise((resolve) => setTimeout(resolve, 25));
-    }
-    await settle(setup);
+    await waitForDashboardReady(setup, store);
 
     store.setView("status");
     await settle(setup);
