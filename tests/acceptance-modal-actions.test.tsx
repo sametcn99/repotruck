@@ -281,12 +281,20 @@ describe("acceptance: modal actions through native terminal input", () => {
           },
         ] as never,
     });
+    const submitRoot = store.submitRoot;
+    let saving: Promise<boolean> | undefined;
+    store.submitRoot = (root) => {
+      saving = submitRoot(root);
+      return saving;
+    };
     await store.init();
     await store.openWorkspacePicker();
     const setup = await testRender(<WorkspacePicker store={store} />, { width: 100, height: 32 });
     try {
       await settle(setup);
       setup.mockInput.pressKey("d");
+      expect(saving).toBeDefined();
+      expect(await saving).toBe(true);
       await settle(setup);
       expect(store.getSnapshot().modal).toBeNull();
       expect((await readSettings(process.env)).defaultRoot).toBe(f.root);
@@ -295,6 +303,7 @@ describe("acceptance: modal actions through native terminal input", () => {
       await settle(setup);
       expect(store.getSnapshot().modal).toMatchObject({ type: "workspaceAdd" });
     } finally {
+      await saving?.catch(() => undefined);
       await setup.dispose();
     }
   });
@@ -330,6 +339,12 @@ describe("acceptance: modal actions through native terminal input", () => {
           },
         ] as never,
     });
+    const switchWorkspace = store.switchWorkspace;
+    let switching: Promise<void> | undefined;
+    store.switchWorkspace = (root) => {
+      switching = switchWorkspace(root);
+      return switching;
+    };
     await store.init();
     await store.openWorkspacePicker();
     const setup = await testRender(<WorkspacePicker store={store} />, { width: 100, height: 32 });
@@ -337,11 +352,14 @@ describe("acceptance: modal actions through native terminal input", () => {
       await settle(setup);
       setup.mockInput.pressArrow("down");
       setup.mockInput.pressEnter();
+      expect(switching).toBeDefined();
+      await switching;
       await settle(setup);
       expect(store.getSnapshot().root).toBe(other.root);
       expect(store.getSnapshot().phase).toBe("ready");
       expect(store.getSnapshot().modal).toBeNull();
     } finally {
+      await switching?.catch(() => undefined);
       await setup.dispose();
     }
   });
