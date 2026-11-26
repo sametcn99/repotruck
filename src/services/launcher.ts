@@ -311,6 +311,49 @@ export function defaultSpawnImpl(request: SpawnRequest): Promise<number> {
   );
 }
 
+export async function launchAppInDirectory(
+  directory: string,
+  app: ResolvedApp,
+  spawnImpl: SpawnImpl = defaultSpawnImpl,
+): Promise<number> {
+  return spawnImpl({
+    command: app.command,
+    args: (app.args ?? []).map((arg) => (arg === REPO_DIR_ARG ? directory : arg)),
+    cwd: directory,
+  });
+}
+
+export function detachedSpawnImpl(request: SpawnRequest): Promise<number> {
+  const attempt = (useShell: boolean): Promise<number> =>
+    new Promise((resolve, reject) => {
+      const child = useShell
+        ? spawn(quoteForShell(request.command, request.args), {
+            cwd: request.cwd,
+            stdio: "ignore",
+            detached: true,
+            shell: true,
+            windowsHide: false,
+          })
+        : spawn(request.command, request.args, {
+            cwd: request.cwd,
+            stdio: "ignore",
+            detached: true,
+            windowsHide: false,
+          });
+      child.once("error", reject);
+      child.once("spawn", () => {
+        child.unref();
+        resolve(0);
+      });
+    });
+  return attempt(false).catch((error: NodeJS.ErrnoException) => {
+    if (error.code === "ENOENT") {
+      return attempt(true);
+    }
+    throw error;
+  });
+}
+
 export interface RunAppInRepoResult {
   ok: boolean;
   code: number | null;
@@ -322,7 +365,6 @@ export async function runAppInRepo(
   input: RunAppInRepoInput,
   options: { spawnImpl?: SpawnImpl } = {},
 ): Promise<RunAppInRepoResult> {
-  const spawnImpl = options.spawnImpl ?? defaultSpawnImpl;
   const match = resolveRepoRef(input.config, input.ref);
   if (match === null) {
     return { ok: false, code: 1, message: `repository not found: ${input.ref}` };
@@ -337,11 +379,7 @@ export async function runAppInRepo(
     return { ok: false, code: 1, dir: match.dir, message: `${match.dir} is not on disk` };
   }
   try {
-    const code = await spawnImpl({
-      command: input.app.command,
-      args: (input.app.args ?? []).map((arg) => (arg === REPO_DIR_ARG ? repoDir : arg)),
-      cwd: repoDir,
-    });
+    const code = await launchAppInDirectory(repoDir, input.app, options.spawnImpl);
     if (input.mode === "attached-resume") {
       input.onBeforeResume?.();
     }

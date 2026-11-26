@@ -10,6 +10,7 @@ import {
 } from "../../services/cloner.ts";
 import { refreshCodeIndexIfPresent } from "../../services/codeSearch.ts";
 import { filterReposByKey, parseFilterFlags } from "../../services/filters.ts";
+import { autoGistsEnabled, gistSyncSummary, syncWorkspaceGists } from "../../services/gists.ts";
 import type { RepoInfo } from "../../services/github.ts";
 import { resolveRepoRef } from "../../services/launcher.ts";
 import { resolveProfileKeys } from "../../services/profiles.ts";
@@ -47,6 +48,7 @@ export function register(program: Command, ctx: CliContext): void {
       'repositories to sync: "user" (your own repositories), "org:<name>" (a single organization), or "all" (your repositories plus every active organization)',
       "user",
     )
+    .option("--no-gists", "exclude account Gists from workspace sync")
     .option("--pinned", "sync only repositories pinned in the workspace")
     .option("--profile <name>", "sync only repositories in the named workspace profile")
     .option(
@@ -102,6 +104,7 @@ export function register(program: Command, ctx: CliContext): void {
         dir?: string;
         preset?: string;
         scope: string;
+        gists?: boolean;
         pinned?: boolean;
         profile?: string;
         limit?: string;
@@ -280,15 +283,35 @@ export function register(program: Command, ctx: CliContext): void {
                 customPresets,
                 emit,
               });
-              await refreshCodeIndexIfPresent(
-                root,
-                await loadWorkspace(root, presetOverride, process.env),
-              );
+              const gists = autoGistsEnabled({
+                includeGists: options.gists,
+                scope: options.scope,
+                targeted:
+                  options.pinned ||
+                  options.profile !== undefined ||
+                  limit !== undefined ||
+                  includes.length + excludes.length > 0,
+              })
+                ? await syncWorkspaceGists({
+                    root,
+                    github,
+                    login: userLogin,
+                    token: auth.token,
+                    concurrency: syncSettings.concurrency,
+                  })
+                : undefined;
+              if (repos.length > 0) {
+                await refreshCodeIndexIfPresent(
+                  root,
+                  await loadWorkspace(root, presetOverride, process.env),
+                );
+              }
+              const failed = result.failed.length > 0 || (gists?.failed ?? 0) > 0;
 
               if (options.json) {
                 const payload = {
                   command: "sync",
-                  ok: result.failed.length === 0,
+                  ok: !failed,
                   root,
                   scope: scopeLabel,
                   synced: result.done.map((entry) => ({
@@ -298,6 +321,7 @@ export function register(program: Command, ctx: CliContext): void {
                   })),
                   skipped: result.skipped.map((s) => ({ key: s.key, message: s.message })),
                   failed: result.failed.map((f) => ({ key: f.key, message: f.message })),
+                  ...(gists ? { gists } : {}),
                   summary: {
                     synced: result.done.length,
                     skipped: result.skipped.length,
@@ -305,20 +329,21 @@ export function register(program: Command, ctx: CliContext): void {
                   },
                 };
                 process.stdout.write(`${JSON.stringify(payload)}\n`);
-                if (result.failed.length > 0 && !watching) {
+                if (failed && !watching) {
                   process.exitCode = 1;
                   return;
                 }
                 return;
               }
 
+              if (gists) process.stdout.write(`${gistSyncSummary(gists)}\n`);
               for (const skip of result.skipped) {
                 process.stdout.write(`[skipped] ${skip.key} (${skip.message})\n`);
               }
               process.stdout.write(
                 `summary: ${result.done.length} synced, ${result.skipped.length} skipped, ${result.failed.length} failed (scope: ${scopeLabel}${limit !== undefined ? `, limit ${limit}` : ""})\n`,
               );
-              if (result.failed.length > 0 && !watching) {
+              if (failed && !watching) {
                 process.exitCode = 1;
                 return;
               }

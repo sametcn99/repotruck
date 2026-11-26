@@ -203,7 +203,11 @@ export async function loadWorkspace(
             ? currentCentral
             : { ...currentCentral, preset: presetOverride };
         }
-        const imported: RepotruckConfig = { ...legacy, root };
+        const imported: RepotruckConfig = {
+          ...legacy,
+          ...(currentCentral?.gists ? { gists: currentCentral.gists } : {}),
+          root,
+        };
         await writeWorkspaceConfig(root, imported, env);
         await deleteLegacyWorkspaceConfig(root);
         return presetOverride === undefined ? imported : { ...imported, preset: presetOverride };
@@ -276,7 +280,8 @@ export interface SyncReposResult {
 
 export async function syncRepos(options: SyncReposOptions): Promise<SyncReposResult> {
   const { root, config, repos, userLogin, orgs, token } = options;
-  const preferSsh = options.preferSsh ?? (token ? await detectSshAvailability() : false);
+  const preferSsh =
+    options.preferSsh ?? (token && repos.length > 0 ? await detectSshAvailability() : false);
   const limit = createCloneLimiter(options.concurrency ?? DEFAULT_CONCURRENCY);
   const done: SyncedEntry[] = [];
   const failed: SyncReposResult["failed"] = [];

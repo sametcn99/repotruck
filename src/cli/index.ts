@@ -11,6 +11,7 @@ import { register as registerConfig } from "./commands/config.ts";
 import { register as registerCreate } from "./commands/create.ts";
 import { register as registerDiscover } from "./commands/discover.ts";
 import { register as registerDoctor } from "./commands/doctor.ts";
+import { register as registerGist } from "./commands/gist.ts";
 import { register as registerInstructions } from "./commands/instructions.ts";
 import { register as registerLifecycle } from "./commands/lifecycle.ts";
 import { register as registerMcp } from "./commands/mcp.ts";
@@ -62,6 +63,7 @@ export async function buildCliProgram(
   registerClone(cmd, ctx);
   registerCreate(cmd, ctx);
   registerDiscover(cmd, ctx);
+  registerGist(cmd, ctx);
   registerSync(cmd, ctx);
   registerReorganize(cmd, ctx);
   registerLifecycle(cmd, ctx);

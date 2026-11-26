@@ -30,9 +30,10 @@ suite("McpSection", () => {
     }
   });
 
-  test("documents all 25 tools including the newest additions", () => {
-    expect(MCP_TOOL_ROWS.length).toBe(25);
+  test("documents all 34 tools including the newest additions", () => {
+    expect(MCP_TOOL_ROWS.length).toBe(34);
     for (const tool of [
+      "repotruck_gist_edit",
       "repotruck_run",
       "repotruck_stats",
       "repotruck_delete",

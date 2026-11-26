@@ -37,6 +37,14 @@ export const VIEW_SPECS: readonly ViewSpec[] = [
     ticket: "t14",
   },
   {
+    id: "gists",
+    title: "Gists",
+    group: "Workspace",
+    go: "j",
+    summary: "browse, sync and manage GitHub Gists",
+    ticket: "—",
+  },
+  {
     id: "discover",
     title: "Discover",
     group: "Workspace",

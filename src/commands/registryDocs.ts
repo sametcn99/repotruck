@@ -99,7 +99,7 @@ const ARG_OVERRIDES: Record<string, string> = {
 };
 
 /** Args rendered as variadic in usage lines. */
-const VARIADIC_ARGS = new Set(["command", "segments", "repos"]);
+const VARIADIC_ARGS = new Set(["command", "segments", "repos", "refs"]);
 
 /** Curated examples per top-level command (illustrative, not parity data). */
 export const DOC_EXAMPLES: Record<string, readonly string[]> = {
@@ -107,6 +107,7 @@ export const DOC_EXAMPLES: Record<string, readonly string[]> = {
   sync: [
     "repotruck sync",
     "repotruck sync --scope all",
+    "repotruck sync --no-gists",
     "repotruck sync --pinned",
     "repotruck sync --profile backend",
     "repotruck sync --scope org:acme --limit 20",
@@ -116,6 +117,17 @@ export const DOC_EXAMPLES: Record<string, readonly string[]> = {
     "repotruck sync --watch 60",
     "repotruck sync resolve monalisa/api",
     "repotruck sync resolve monalisa/api --action continue",
+  ],
+  gist: [
+    "repotruck gist list --tracked",
+    "repotruck gist show <gist-id> --file notes.md",
+    "repotruck gist clone <gist-url>",
+    "repotruck gist sync",
+    "repotruck gist open <gist-id> vscode",
+    "repotruck gist create --file notes.md draft.md",
+    "repotruck gist edit <gist-id> --file draft.md",
+    "repotruck gist push <gist-id>",
+    "repotruck gist delete <gist-id> --yes",
   ],
   clone: [
     "repotruck clone monalisa/api",

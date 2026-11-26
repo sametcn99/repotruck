@@ -16,7 +16,18 @@ export const PAGE_SHORTCUTS: Record<Exclude<ViewId, "cockpit">, readonly HelpRow
     ["s / d", "Cycle scope / divergence strategy"],
     ["l / c / p", "Cycle limit / concurrency / clone depth"],
     ["b / t", "Toggle blobless clones / stash"],
+    ["g", "Toggle Include Gists"],
     ["i / E", "Edit include / exclude filters"],
+  ],
+  gists: [
+    LIST_MOVEMENT,
+    ["/ / Space", "Search / select a Gist"],
+    ["s / a / c", "Sync selection / sync all / add a Gist by link"],
+    ["Enter / n / e", "Details / create / edit on GitHub"],
+    ["o / p / d / r", "Open locally / push commits / confirm deletion / refresh"],
+    ["Tab / Ctrl+↑↓", "Move editor focus / switch files"],
+    ["Ctrl+N / Ctrl+D / Ctrl+P / Ctrl+S", "Add file / remove file / toggle visibility / save"],
+    ["Esc", "Close the current Gist form or return to Cockpit"],
   ],
   discover: [
     ["Enter", "Edit query / submit while editing"],

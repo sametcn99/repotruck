@@ -56,7 +56,7 @@ async function writeCachedAuth(env: EnvLike, token: string): Promise<void> {
 }
 
 /** Scopes requested from the device flow; `workflow` lets created repos push GitHub Actions files. */
-const DEVICE_FLOW_SCOPES = ["repo", "read:org", "workflow"];
+const DEVICE_FLOW_SCOPES = ["repo", "read:org", "workflow", "gist"];
 
 async function deviceFlowAuth(
   env: EnvLike,

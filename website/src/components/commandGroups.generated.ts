@@ -29,6 +29,7 @@ export const COMMAND_GROUPS: readonly CommandGroup[] = [
         examples: [
           "repotruck sync",
           "repotruck sync --scope all",
+          "repotruck sync --no-gists",
           "repotruck sync --pinned",
           "repotruck sync --profile backend",
           "repotruck sync --scope org:acme --limit 20",
@@ -97,6 +98,10 @@ export const COMMAND_GROUPS: readonly CommandGroup[] = [
           {
             flag: "-p, --preset <id>",
             description: "target layout preset",
+          },
+          {
+            flag: "--no-gists",
+            description: "exclude Gists from workspace sync",
           },
           {
             flag: "--json",
@@ -582,6 +587,61 @@ export const COMMAND_GROUPS: readonly CommandGroup[] = [
           {
             flag: "-f, --force",
             description: "force removal with untracked changes",
+          },
+        ],
+      },
+      {
+        name: "gist",
+        summary: "Browse, clone, and manage GitHub Gists",
+        usage:
+          "repotruck gist [options] | repotruck gist list [options] | repotruck gist show <ref> [options] | repotruck gist clone <ref> [options] | repotruck gist sync [refs...] [options] | repotruck gist open <ref> <app> [options] | repotruck gist create [options] | repotruck gist edit <ref> [options] | repotruck gist push <ref> [options] | repotruck gist delete <ref> [options]",
+        examples: [
+          "repotruck gist list --tracked",
+          "repotruck gist show <gist-id> --file notes.md",
+          "repotruck gist clone <gist-url>",
+          "repotruck gist sync",
+          "repotruck gist open <gist-id> vscode",
+          "repotruck gist create --file notes.md draft.md",
+          "repotruck gist edit <gist-id> --file draft.md",
+          "repotruck gist push <gist-id>",
+          "repotruck gist delete <gist-id> --yes",
+        ],
+        flags: [
+          {
+            flag: "--tracked",
+            description: "list the tracked inventory offline",
+          },
+          {
+            flag: "--json",
+            description: "machine-readable JSON output",
+          },
+          {
+            flag: "--file <file>",
+            description: "print one text file",
+          },
+          {
+            flag: "--description <text>",
+            description: "Gist description",
+          },
+          {
+            flag: "--public",
+            description: "publish publicly (default: secret)",
+          },
+          {
+            flag: "--rename <rename>",
+            description: "rename files using old=new pairs",
+          },
+          {
+            flag: "--remove <remove>",
+            description: "remove files by name",
+          },
+          {
+            flag: "--expect-version <expect-version>",
+            description: "require a version from gist show",
+          },
+          {
+            flag: "--yes",
+            description: "confirm remote deletion and keep local files",
           },
         ],
       },

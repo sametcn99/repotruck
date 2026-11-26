@@ -196,7 +196,7 @@ export function registerWorkspaceResources(server: McpServer, ctx: ToolContext):
           `not a repotruck workspace (no record for it in the central repotruck.json): ${root}`,
         );
       }
-      const config = await loadWorkspace(root, undefined, env);
+      const { gists: _gists, ...config } = await loadWorkspace(root, undefined, env);
       return {
         contents: [
           { uri: uri.href, mimeType: "application/json", text: JSON.stringify(config, null, 2) },
@@ -262,7 +262,7 @@ export function registerWorkspaceResources(server: McpServer, ctx: ToolContext):
       if (!registered) {
         throw new Error(`not a repotruck workspace: ${root}`);
       }
-      const config = await loadWorkspace(root, undefined, env);
+      const { gists: _gists, ...config } = await loadWorkspace(root, undefined, env);
       return {
         contents: [
           { uri: uri.href, mimeType: "application/json", text: JSON.stringify(config, null, 2) },

@@ -1,4 +1,4 @@
-import { InputRenderable, type KeyEvent } from "@opentui/core";
+import { InputRenderable, type KeyEvent, TextareaRenderable } from "@opentui/core";
 import { useRenderer } from "@opentui/react";
 import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
 import type { Store } from "./store.ts";
@@ -76,7 +76,9 @@ export function useDashboardKeys(
   const handleKey = useEffectEvent((key: KeyEvent) => {
     const current = store.getSnapshot();
     if (current.dialog !== null || current.contextMenu !== null) return;
-    const editing = renderer.currentFocusedRenderable instanceof InputRenderable;
+    const editing =
+      renderer.currentFocusedRenderable instanceof InputRenderable ||
+      renderer.currentFocusedRenderable instanceof TextareaRenderable;
     if (current.modal !== null) {
       if (key.name === "escape" && !(current.modal.type === "commandForm" && editing)) {
         key.stopPropagation();
@@ -140,6 +142,7 @@ export function useDashboardKeys(
     }
     if (editing) return;
 
+    if (key.name === "escape" && current.view === "gists") return;
     if (key.name === "escape" && current.view !== "cockpit") {
       key.stopPropagation();
       viewPrefixRef.current = 0;

@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.6] - 2026-11-27
+
+### Added
+
+- Manage GitHub Gists from the Gists dashboard page, the `repotruck gist` command group, and nine MCP tools.
+- Sync public and secret account Gists by default during personal and all workspace syncs. Use `repotruck sync --no-gists` for a repository-only run.
+- Clone Gists by link, open local checkouts in editors, and push committed changes to their upstream branches.
+- Create public or secret multi-file Gists, edit descriptions and remote text files, and confirm deletion from GitHub while keeping tracked local clones.
+
 ## [1.0.5] - 2026-11-24
 
 ### Added

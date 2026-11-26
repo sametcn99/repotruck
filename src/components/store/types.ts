@@ -95,6 +95,7 @@ export type RightPaneTab = "activity" | "inspector" | "health";
 export type ViewId =
   | "cockpit"
   | "sync"
+  | "gists"
   | "resolve"
   | "discover"
   | "scan"
@@ -209,7 +210,7 @@ export type ModalState =
   | { type: "create"; step: CreateStep; draft: CreateDraft }
   | { type: "open"; key: string; apps: AppEntry[] | null }
   | { type: "alias"; key: string; prefill: string }
-  | { type: "preview"; entries: readonly PreviewTreeEntry[] }
+  | { type: "preview"; entries: readonly PreviewTreeEntry[]; includeGists?: boolean }
   | { type: "root"; effective: string; fromOverride: boolean }
   | { type: "search"; initial: string }
   | { type: "help" }
@@ -320,13 +321,14 @@ export interface StoreSnapshot {
 }
 
 import type { WorkspaceBackupEntry } from "../../services/backups.ts";
+import type { GistSession } from "../../services/gists.ts";
 import type { RemoteRepoHealth } from "../../services/github.ts";
 import type { HealthScoreResult } from "../../services/healthScore.ts";
 import type { RepoStatusLine } from "../../services/lifecycle.ts";
 import type { RunRepoResult } from "../../services/runner.ts";
 import type { TrashEntry } from "../../services/trash.ts";
 
-export interface GithubClient extends GitHubRepoReader {
+export interface GithubClient extends GitHubRepoReader, GistSession {
   getUserLogin(): Promise<string>;
   getActiveOrgs(): Promise<string[]>;
   listUserRepos(): Promise<RepoInfo[]>;
@@ -374,6 +376,7 @@ export interface StatsPageState {
 
 export interface SyncCenterState {
   scope: string;
+  includeGists?: boolean;
   limit: number;
   concurrency: number;
   depth: number;

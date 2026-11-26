@@ -2,7 +2,14 @@ import { PRESET_IDS, type PresetRef } from "../../presets/index.ts";
 import { createCloneLimiter, firstErrorLine } from "../../services/cloner.ts";
 import { refreshCodeIndexIfPresent } from "../../services/codeSearch.ts";
 import { filterReposByKey, parseFilterFlags } from "../../services/filters.ts";
+import {
+  autoGistsEnabled,
+  GistService,
+  gistSyncSummary,
+  syncWorkspaceGists,
+} from "../../services/gists.ts";
 import type { RepoInfo } from "../../services/github.ts";
+import { detachedSpawnImpl, launchAppInDirectory } from "../../services/launcher.ts";
 import { readSettings, resolveSyncSettings } from "../../services/settings.ts";
 import { loadWorkspace } from "../../services/workspace.ts";
 import { repoKey } from "./filters.ts";
@@ -15,6 +22,29 @@ import { StoreInsightsPages } from "./StoreInsightsPages.ts";
  * split out of StoreCore for the file-size budget. Behavior is unchanged.
  */
 export class StoreWorkspacePages extends StoreInsightsPages {
+  hasGistSession = (): boolean => !this.state.offline && Boolean(this.github?.gists);
+
+  gistService = (): GistService =>
+    new GistService({
+      root: this.rootValue,
+      github: this.hasGistSession() ? this.github : null,
+      token: this.token,
+      login: this.userLoginValue,
+      env: process.env,
+    });
+
+  openGistInApp = async (ref: string, appName: string): Promise<void> => {
+    const directory = await this.gistService().localPath(ref);
+    const app = await this.deps.resolveAppFn(appName);
+    if (app === null) throw new Error("Editor or agent app not found");
+    const code = await launchAppInDirectory(
+      directory,
+      app,
+      this.deps.spawnImpl ?? detachedSpawnImpl,
+    );
+    if (code !== 0) throw new Error(`The app exited with code ${code}`);
+  };
+
   private async syncRepoMetadata(repos: readonly RepoInfo[]): Promise<RepoInfo[]> {
     const github = this.github;
     if (this.state.offline || github === null) return [...repos];
@@ -92,7 +122,9 @@ export class StoreWorkspacePages extends StoreInsightsPages {
         parseFilterFlags(state.exclude),
       );
       if (state.limit > 0) chosen = chosen.slice(0, state.limit);
-      if (!chosen.length) throw new Error("nothing to sync (0 repositories in selection)");
+      const includeGists = this.hasGistSession() && syncCenterIncludesGists(state);
+      if (!chosen.length && !includeGists)
+        throw new Error("nothing to sync (0 repositories in selection)");
       const config = await loadWorkspace(operation.root, this.state.preset);
       const repos = await this.syncRepoMetadata(chosen);
       if (!operation.current()) return;
@@ -115,7 +147,21 @@ export class StoreWorkspacePages extends StoreInsightsPages {
         divergence: state.divergence,
       });
       if (!operation.current()) return;
-      this.endTask("sync-center", `${syncCenterCliLine(state)} — done`);
+      const gists = includeGists
+        ? await syncWorkspaceGists({
+            root: operation.root,
+            github: this.github,
+            login: this.userLoginValue,
+            token: this.token,
+            concurrency: state.concurrency,
+          })
+        : undefined;
+      if (!operation.current()) return;
+      this.endTask(
+        "sync-center",
+        gists ? gistSyncSummary(gists) : `${syncCenterCliLine(state)} — done`,
+        Boolean(gists?.failed),
+      );
       await this.refreshLocalState();
     } catch (error) {
       if (operation.current()) this.endTask("sync-center", firstErrorLine(error), true);
@@ -307,14 +353,15 @@ export class StoreWorkspacePages extends StoreInsightsPages {
     }
   };
 
-  start = async (): Promise<void> => {
+  start = async (includeGists = this.hasGistSession()): Promise<void> => {
     if (this.operations.has("start")) return;
     const operation = this.workspaceOperation("start");
     const { set: update, pushStatus } = operation;
     try {
       if (this.state.running) return;
       const chosen = this.state.repos.filter((repo) => this.state.selected.has(repoKey(repo)));
-      if (chosen.length === 0) return pushStatus("FAILED", "sync", "nothing selected");
+      if (chosen.length === 0 && !includeGists)
+        return pushStatus("FAILED", "sync", "nothing selected");
       if (this.github === null && !this.state.offline) {
         return pushStatus("FAILED", "sync", "not initialized");
       }
@@ -339,7 +386,19 @@ export class StoreWorkspacePages extends StoreInsightsPages {
           ...syncCfg,
         });
         if (!operation.current()) return;
-        await refreshCodeIndexIfPresent(operation.root, await loadWorkspace(operation.root));
+        const gists = includeGists
+          ? await syncWorkspaceGists({
+              root: operation.root,
+              github: this.github,
+              login: this.userLoginValue,
+              token: this.token,
+              concurrency: syncCfg.concurrency,
+            })
+          : undefined;
+        if (!operation.current()) return;
+        if (gists) pushStatus(gists.failed ? "FAILED" : "DONE", "Gists", gistSyncSummary(gists));
+        if (repos.length > 0)
+          await refreshCodeIndexIfPresent(operation.root, await loadWorkspace(operation.root));
         if (operation.current()) await this.refreshLocalState();
       } catch (error) {
         pushStatus("FAILED", "sync", firstErrorLine(error));
@@ -354,27 +413,39 @@ export class StoreWorkspacePages extends StoreInsightsPages {
   openStartPreview = async (): Promise<void> => {
     if (this.state.running) return;
     const chosen = this.state.repos.filter((repo) => this.state.selected.has(repoKey(repo)));
-    if (chosen.length === 0) return this.pushStatus("FAILED", "sync", "nothing selected");
+    const includeGists = this.hasGistSession();
+    if (chosen.length === 0 && !includeGists)
+      return this.pushStatus("FAILED", "sync", "nothing selected");
     if (this.github === null && !this.state.offline) {
       return this.pushStatus("FAILED", "sync", "not initialized");
     }
-    this.openModal({ type: "preview", entries: [] });
+    this.openModal({ type: "preview", entries: [], includeGists });
     await this.refreshStartPreviewModal(this.state.preset);
   };
 
-  confirmStartPreview = async (): Promise<void> => {
-    if (this.state.modal?.type !== "preview" || this.state.modal.entries.length === 0) return;
-    this.closeModal();
-    await this.start();
+  togglePreviewGists = (): void => {
+    const modal = this.state.modal;
+    if (modal?.type === "preview" && this.hasGistSession()) {
+      this.setModal({ ...modal, includeGists: !modal.includeGists });
+    }
   };
+
+  confirmStartPreview = async (): Promise<void> => {
+    const modal = this.state.modal;
+    if (modal?.type !== "preview") return;
+    if (modal.entries.length === 0 && (this.state.selected.size > 0 || !modal.includeGists)) return;
+    this.closeModal();
+    await this.start(modal.includeGists);
+  };
+
   protected refreshStartPreviewModal = async (preset: PresetRef): Promise<void> => {
     if (this.state.modal?.type !== "preview") return;
-    const pending = { type: "preview", entries: [] } as const;
-    this.setModal(pending);
+    const operation = this.operations.start("start-preview");
+    this.setModal({ ...this.state.modal, entries: [] });
     const chosen = this.state.repos.filter((repo) => this.state.selected.has(repoKey(repo)));
     try {
       const entries = await buildPreviewEntries({
-        root: this.rootValue,
+        root: operation.root,
         chosen,
         preset,
         getRepo: this.lookupForkRepo,
@@ -382,9 +453,14 @@ export class StoreWorkspacePages extends StoreInsightsPages {
         userLogin: this.userLoginValue ?? "",
         customPresets: this.state.customPresets,
       });
-      if (this.state.modal === pending) this.setModal({ type: "preview", entries });
+      if (operation.current() && this.state.modal?.type === "preview") {
+        this.setModal({ ...this.state.modal, entries });
+      }
     } catch (error) {
-      if (this.state.modal === pending) this.setModalError(firstErrorLine(error));
+      if (operation.current() && this.state.modal?.type === "preview")
+        this.setModalError(firstErrorLine(error));
+    } finally {
+      operation.finish();
     }
   };
 }
@@ -404,9 +480,20 @@ export function defaultSyncCenterState(): import("./types.ts").SyncCenterState {
     running: false,
   };
 }
+export function syncCenterIncludesGists(state: import("./types.ts").SyncCenterState): boolean {
+  return (
+    state.includeGists ??
+    autoGistsEnabled({
+      scope: state.scope,
+      targeted: state.limit > 0 || Boolean(state.include.trim() || state.exclude.trim()),
+    })
+  );
+}
+
 export function syncCenterCliLine(state: import("./types.ts").SyncCenterState): string {
   const parts = ["repotruck sync"];
   if (state.scope !== "user") parts.push(`--scope ${state.scope}`);
+  if (state.includeGists === false) parts.push("--no-gists");
   if (state.limit > 0) parts.push(`--limit ${state.limit}`);
   if (state.concurrency !== 3) parts.push(`-c ${state.concurrency}`);
   if (state.depth > 0) parts.push(`--depth ${state.depth}`);

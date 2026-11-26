@@ -1,6 +1,6 @@
 import { useKeyboard } from "@opentui/react";
 import { useEffect, useState, useSyncExternalStore } from "react";
-import { syncCenterCliLine } from "../store/StoreWorkspacePages.ts";
+import { syncCenterCliLine, syncCenterIncludesGists } from "../store/StoreWorkspacePages.ts";
 import type { Store } from "../store.ts";
 import { theme } from "../theme.ts";
 import { clampBoxLine } from "../windowing.ts";
@@ -53,6 +53,8 @@ export function SyncCenterView({ store, width }: { store: Store; width: number }
       store.stopSyncCenter();
     } else if (key.name === "s") {
       store.updateSyncCenter({ scope: nextScope(state?.scope ?? "selection", snap.orgs) });
+    } else if (key.name === "g" && state && store.hasGistSession()) {
+      store.updateSyncCenter({ includeGists: !syncCenterIncludesGists(state) });
     } else if (key.name === "d") {
       store.updateSyncCenter({ divergence: nextDivergence(state?.divergence ?? "fail") });
     } else if (key.name === "b") {
@@ -122,6 +124,16 @@ export function SyncCenterView({ store, width }: { store: Store; width: number }
         </text>
       </box>
       <box flexDirection="row" gap={1} flexWrap="wrap" flexShrink={0}>
+        {store.hasGistSession() ? (
+          <text
+            fg={theme.accent()}
+            flexShrink={0}
+            onMouseDown={(event) => {
+              event.stopPropagation();
+              store.updateSyncCenter({ includeGists: !syncCenterIncludesGists(state) });
+            }}
+          >{`[g] Include Gists: ${syncCenterIncludesGists(state) ? "on" : "off"}`}</text>
+        ) : null}
         <text fg={theme.accent()} flexShrink={0}>{`[s] scope: ${state.scope}`}</text>
         <text
           fg={theme.normal()}

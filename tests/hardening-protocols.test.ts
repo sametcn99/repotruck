@@ -252,7 +252,7 @@ describe("SDK, protocol and process boundaries", () => {
         .trim()
         .split("\n")
         .map((line) => JSON.parse(line));
-      expect(messages.find((message) => message.id === 2).result.tools.length).toBe(25);
+      expect(messages.find((message) => message.id === 2).result.tools.length).toBe(34);
       expect(stdout).not.toContain("listening");
     } finally {
       child.stdin.end();

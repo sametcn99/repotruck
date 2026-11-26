@@ -20,6 +20,58 @@ export interface McpPromptDoc {
 
 export const MCP_TOOL_CATALOG: readonly McpToolDoc[] = [
   {
+    name: "repotruck_gist_list",
+    title: "List Gists",
+    description:
+      "List account and workspace Gists. Set trackedOnly to read the local inventory offline.",
+  },
+  {
+    name: "repotruck_gist_show",
+    title: "Show Gist",
+    description:
+      "Read remote Gist metadata and available UTF-8 file contents. Use version as expectedVersion when editing.",
+  },
+  {
+    name: "repotruck_gist_clone",
+    title: "Clone Gist",
+    description: "Clone or fast-forward-update a Gist by ID or URL.",
+  },
+  {
+    name: "repotruck_gist_sync",
+    title: "Sync Gists",
+    description:
+      "Sync selected Gist IDs or URLs. With no selection, sync account and tracked Gists.",
+  },
+  {
+    name: "repotruck_gist_open",
+    title: "Open Gist in an app",
+    description: "Launch an editor or agent app in a local Gist checkout.",
+  },
+  {
+    name: "repotruck_gist_create",
+    title: "Create Gist",
+    description:
+      "Create a GitHub Gist from UTF-8 files, then clone it. Visibility defaults to secret.",
+  },
+  {
+    name: "repotruck_gist_edit",
+    title: "Edit Gist on GitHub",
+    description:
+      "Update a Gist description, upsert named text files, rename files or remove them on GitHub.",
+  },
+  {
+    name: "repotruck_gist_push",
+    title: "Push Gist commits",
+    description:
+      "Push committed changes from a local Gist checkout to its verified upstream branch.",
+  },
+  {
+    name: "repotruck_gist_delete",
+    title: "Delete Gist from GitHub",
+    description:
+      "Permanently delete a Gist from GitHub and keep the local clone. Requires confirm: yes.",
+  },
+  {
     name: "repotruck_list_workspaces",
     title: "List workspaces",
     description:
@@ -65,7 +117,7 @@ export const MCP_TOOL_CATALOG: readonly McpToolDoc[] = [
     name: "repotruck_sync",
     title: "Sync workspace",
     description:
-      "Clone or fast-forward-update repositories in bulk into the workspace layout, exactly like `repotruck sync`. Scope: user (your repositories), org:<name>, or all (your repositories plus every active organization). Creates the workspace (a record in the central repotruck.json + AGENTS.md) when missing. Requires GitHub authentication (GitHub CLI token or cached device-flow token). Emits notifications/progress updates when the client sends a progress token.",
+      "Clone or fast-forward-update repositories in bulk into the workspace layout, exactly like `repotruck sync`. Scope: user (your repositories), org:<name>, or all (your repositories plus every active organization). Personal and all scopes also sync account Gists by default. Creates the workspace (a record in the central repotruck.json + AGENTS.md) when missing. Requires GitHub authentication (GitHub CLI token or cached device-flow token). Emits notifications/progress updates when the client sends a progress token.",
   },
   {
     name: "repotruck_clone",

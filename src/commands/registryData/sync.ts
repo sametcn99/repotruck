@@ -50,6 +50,7 @@ export const SYNC_COMMANDS: readonly CommandSpec[] = [
         short: "-p",
         complete: "presets",
       }),
+      f("--no-gists", "bool", "exclude Gists from workspace sync", "Include Gists toggle"),
       jsonFlag("copy-as-JSON on summary"),
     ],
   },

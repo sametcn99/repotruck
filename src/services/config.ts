@@ -11,6 +11,7 @@ import {
   generateAgentsMd,
 } from "./agentsMd.ts";
 import { writeFileAtomic } from "./fsUtils.ts";
+import { GIST_ID_PATTERN } from "./gistApi.ts";
 
 export const CONFIG_FILENAME = "repotruck.json";
 export const AGENTS_MD_FILENAME = "AGENTS.md";
@@ -30,12 +31,17 @@ export interface RepoInventoryEntry {
   sparse?: string[];
 }
 
+export interface GistInventoryEntry {
+  id: string;
+}
+
 export interface RepotruckConfig {
   version: 1;
   root: string;
   preset: PresetRef;
   lastSync: string | null;
   repos: RepoInventoryEntry[];
+  gists?: GistInventoryEntry[];
   aliases?: Record<string, string>;
   pinned?: string[];
   profiles?: Record<string, string[]>;
@@ -137,6 +143,11 @@ export function isRepotruckConfig(value: unknown): value is RepotruckConfig {
     (config.lastSync === null || typeof config.lastSync === "string") &&
     Array.isArray(config.repos) &&
     config.repos.every(isRepoInventoryEntry) &&
+    (config.gists === undefined ||
+      (Array.isArray(config.gists) &&
+        config.gists.every(
+          (item) => typeof item?.id === "string" && GIST_ID_PATTERN.test(item.id),
+        ))) &&
     aliasesValid &&
     pinnedValid &&
     profilesValid
