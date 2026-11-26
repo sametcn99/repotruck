@@ -1,7 +1,8 @@
-import { existsSync, realpathSync } from "node:fs";
+import { existsSync } from "node:fs";
 import path from "node:path";
 import { cloneOrUpdate, firstErrorLine, gitWithTokenAuth } from "./cloner.ts";
 import { gistId } from "./gistApi.ts";
+import { sameDirectoryIdentity } from "./reorganizeRecovery.ts";
 import { withWorkspaceLock } from "./workspaceLock.ts";
 import { workspacePath } from "./workspacePaths.ts";
 import { inspectGitDotEntry } from "./worktree.ts";
@@ -57,7 +58,7 @@ export class GistGit {
     const url = this.remoteUrl(id);
     const git = gitWithTokenAuth(directory, url, this.token);
     const root = (await git.raw(["rev-parse", "--show-toplevel"])).trim();
-    if (realpathSync(root) !== realpathSync(directory)) {
+    if (!sameDirectoryIdentity(root, directory)) {
       throw new Error("Gist destination is occupied by an unrelated checkout");
     }
     const remote = (await git.raw(["remote", "get-url", "--all", "origin"])).trim();
