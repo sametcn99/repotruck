@@ -1,0 +1,20 @@
+{
+  "version": "1.0.7",
+  "description": "Organize and sync GitHub repositories and Gists",
+  "homepage": "https://sametcn99.github.io/repotruck/",
+  "license": "MIT",
+  "architecture": {
+    "64bit": {
+      "url": "https://github.com/sametcn99/repotruck/releases/download/v1.0.7/repotruck-1.0.7-windows-x64.zip",
+      "hash": "d7a41ebc60d37e8ab36732e4bf7e44df25dce03b77a51f70e4105549518bf51d",
+      "extract_dir": "repotruck-1.0.7-windows-x64"
+    },
+    "arm64": {
+      "url": "https://github.com/sametcn99/repotruck/releases/download/v1.0.7/repotruck-1.0.7-windows-arm64.zip",
+      "hash": "bdd67c43345ee4e0234bd30b9bf86b638b4527417c97f02f97059b51d368cea1",
+      "extract_dir": "repotruck-1.0.7-windows-arm64"
+    }
+  },
+  "bin": "repotruck.exe",
+  "post_install": "Set-Content -LiteralPath \"$dir\\install-channel\" -Value scoop -Encoding ascii"
+}
