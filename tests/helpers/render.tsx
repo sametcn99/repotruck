@@ -126,9 +126,13 @@ export async function testRender(node: ReactNode, options: TestRendererOptions) 
   };
   return setup;
 }
-export async function settleRender(setup: Awaited<ReturnType<typeof testRender>>): Promise<void> {
+export async function settleRender(
+  setup: Awaited<ReturnType<typeof testRender>>,
+  action?: () => Promise<void>,
+): Promise<void> {
   await drainActs();
   await runAct(async () => {
+    await action?.();
     await new Promise((resolve) => setTimeout(resolve, 60));
     await setup.flush({ maxPasses: 4 });
   });

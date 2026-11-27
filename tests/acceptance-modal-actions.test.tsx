@@ -166,6 +166,10 @@ describe("acceptance: modal actions through native terminal input", () => {
     const store = makeStore(f);
     await store.init();
     await store.openWorktreeModal("acme/api");
+    const { createWorktree, removeWorktree } = store;
+    let worktreeAction: ReturnType<Store["createWorktree"]> | undefined;
+    store.createWorktree = (...args) => (worktreeAction = createWorktree(...args));
+    store.removeWorktree = (...args) => (worktreeAction = removeWorktree(...args));
     const setup = await testRender(<WorktreeModal store={store} />, { width: 100, height: 32 });
     try {
       await settle(setup);
@@ -175,6 +179,7 @@ describe("acceptance: modal actions through native terminal input", () => {
       setup.mockInput.pressEnter();
       await settle(setup);
       expect((store.getSnapshot().modal as { type: string }).type).toBe("worktree");
+      expect(worktreeAction).toBeUndefined();
       expect(await git.raw(["worktree", "list", "--porcelain"])).not.toContain("feature-k05");
 
       await setup.mockInput.typeText("feature-k05");
@@ -183,9 +188,10 @@ describe("acceptance: modal actions through native terminal input", () => {
       setup.mockInput.pressTab();
       setup.mockInput.pressKey(" ");
       setup.mockInput.pressTab();
-      setup.mockInput.pressEnter();
-      await new Promise((resolve) => setTimeout(resolve, 120));
-      await settle(setup);
+      await settleRender(setup, async () => {
+        setup.mockInput.pressEnter();
+        expect(await worktreeAction).toMatchObject({ ok: true });
+      });
       const worktrees = await git.raw(["worktree", "list", "--porcelain"]);
       expect(worktrees).toContain("branch refs/heads/feature-k05");
       expect(porcelainWorktreePaths(worktrees).map(canonicalRealPath)).toContain(
@@ -196,9 +202,11 @@ describe("acceptance: modal actions through native terminal input", () => {
       setup.mockInput.pressTab({ shift: true });
       setup.mockInput.pressTab({ shift: true });
       setup.mockInput.pressTab({ shift: true });
-      await clickText(setup, "[Del] Remove");
-      await new Promise((resolve) => setTimeout(resolve, 100));
-      await settle(setup);
+      worktreeAction = undefined;
+      await settleRender(setup, async () => {
+        await clickText(setup, "[Del] Remove");
+        expect(await worktreeAction).toMatchObject({ ok: true });
+      });
       const afterRemoval = await git.raw(["worktree", "list", "--porcelain"]);
       expect(afterRemoval).not.toContain("branch refs/heads/feature-k05");
       expect(afterRemoval).toContain("branch refs/heads/main");
