@@ -135,8 +135,14 @@ def windows(executable):
         check(update(attributes, 0, 0x20016, console, c.sizeof(console), None, None))
         startup.cb = c.sizeof(Startup)
         startup.attribute_list = c.addressof(attributes)
-        command = c.create_unicode_buffer(subprocess.list2cmdline([str(executable)]))
-        check(launch(str(executable), command, None, None, False, 0x80000,
+        # The Actions process has redirected stdio. Open the attached console
+        # devices explicitly so the application receives real console handles.
+        shell = os.environ["ComSpec"]
+        os.environ["REPOTRUCK_SMOKE_EXECUTABLE"] = str(executable)
+        command = c.create_unicode_buffer(
+            f'"{shell}" /d /v:off /s /c ""%REPOTRUCK_SMOKE_EXECUTABLE%" <CONIN$ >CONOUT$ 2>&1"'
+        )
+        check(launch(shell, command, None, None, False, 0x80000,
                      None, None, c.byref(startup), c.byref(process)))
 
         def read():
