@@ -156,7 +156,7 @@ try:
             print(checked(["node", repository / "scripts" / "smoke-installed.mjs",
                            "--binary", binary, version]))
             print("Opening the installed TUI in a pseudoterminal")
-            print(checked([sys.executable, repository / "scripts" / "smoke-standalone-tui.py", binary]))
+            print(checked(["bun", repository / "scripts" / "smoke-standalone-tui.ts", binary]))
         finally:
             if os.name == "nt":
                 checked(["powershell.exe", "-NoProfile", "-Command",
