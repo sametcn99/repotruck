@@ -77,7 +77,7 @@ def user_path():
 
 
 def verify_path(binary):
-    expected = os.path.normcase(str(binary.parent))
+    expected = os.path.normcase(str(binary.parent.resolve()))
     entries = user_path().split(";")
     matches = [entry for entry in entries if os.path.normcase(entry.rstrip("\\")) == expected]
     assert len(matches) == 1, f"Expected one user PATH entry for {expected}. Found {entries!r}"
@@ -89,7 +89,7 @@ if not public:
     Thread(target=server.serve_forever, daemon=True).start()
 try:
     with tempfile.TemporaryDirectory(prefix="rt native install ") as tmp:
-        base = Path(tmp)
+        base = Path(tmp).resolve()
         install_root = base / "app"
         install_bin = base / ".local" / "bin"
         profile = base / ".profile"
