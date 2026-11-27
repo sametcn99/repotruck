@@ -18,8 +18,8 @@
 <text x="642.0" y="43" fill="rgb(255,255,255)" textLength="705.6" lengthAdjust="spacingAndGlyphs">                                                                                    </text>
 <text x="1347.6" y="43" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="60" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="60" fill="rgb(88,166,255)" textLength="1008.0" lengthAdjust="spacingAndGlyphs"> repotruck · devuser (auth: gh-cli) · preset: categorized · root: /tmp/repotruck-shots-ws · 13 repos · view: Sync Center</text>
-<text x="1028.4" y="60" fill="rgb(255,255,255)" textLength="319.2" lengthAdjust="spacingAndGlyphs">                                      </text>
+<text x="20.4" y="60" fill="rgb(88,166,255)" textLength="1041.6" lengthAdjust="spacingAndGlyphs"> repotruck · devuser (auth: gh-cli) · preset: categorized · root: /var/tmp/repotruck-shots-ws · 13 repos · view: Sync Center</text>
+<text x="1062.0" y="60" fill="rgb(255,255,255)" textLength="285.6" lengthAdjust="spacingAndGlyphs">                                  </text>
 <text x="1347.6" y="60" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="77" fill="rgb(48,54,61)" textLength="1344.0" lengthAdjust="spacingAndGlyphs">└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘</text>
 <text x="12.0" y="94" fill="rgb(210,168,255)" textLength="1344.0" lengthAdjust="spacingAndGlyphs">┌─Sync Center (v s)────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐</text>
@@ -42,20 +42,22 @@
 <text x="1347.6" y="145" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="162" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="162" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="162" fill="rgb(88,166,255)" textLength="117.6" lengthAdjust="spacingAndGlyphs">[s] scope: all</text>
-<text x="146.4" y="162" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="154.8" y="162" fill="rgb(201,209,217)" textLength="117.6" lengthAdjust="spacingAndGlyphs">[l] limit: off</text>
-<text x="272.4" y="162" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="280.8" y="162" fill="rgb(201,209,217)" textLength="67.2" lengthAdjust="spacingAndGlyphs">[c] -c 5</text>
-<text x="348.0" y="162" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="356.4" y="162" fill="rgb(201,209,217)" textLength="100.8" lengthAdjust="spacingAndGlyphs">[p] depth: 1</text>
-<text x="457.2" y="162" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="465.6" y="162" fill="rgb(201,209,217)" textLength="142.8" lengthAdjust="spacingAndGlyphs">[b] blobless: off</text>
-<text x="608.4" y="162" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="616.8" y="162" fill="rgb(88,166,255)" textLength="109.2" lengthAdjust="spacingAndGlyphs">[t] stash: on</text>
-<text x="726.0" y="162" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="734.4" y="162" fill="rgb(201,209,217)" textLength="184.8" lengthAdjust="spacingAndGlyphs">[d] divergence: rebase</text>
-<text x="919.2" y="162" fill="rgb(255,255,255)" textLength="428.4" lengthAdjust="spacingAndGlyphs">                                                   </text>
+<text x="28.8" y="162" fill="rgb(88,166,255)" textLength="184.8" lengthAdjust="spacingAndGlyphs">[g] Include Gists: off</text>
+<text x="213.6" y="162" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="222.0" y="162" fill="rgb(88,166,255)" textLength="117.6" lengthAdjust="spacingAndGlyphs">[s] scope: all</text>
+<text x="339.6" y="162" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="348.0" y="162" fill="rgb(201,209,217)" textLength="117.6" lengthAdjust="spacingAndGlyphs">[l] limit: off</text>
+<text x="465.6" y="162" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="474.0" y="162" fill="rgb(201,209,217)" textLength="67.2" lengthAdjust="spacingAndGlyphs">[c] -c 5</text>
+<text x="541.2" y="162" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="549.6" y="162" fill="rgb(201,209,217)" textLength="100.8" lengthAdjust="spacingAndGlyphs">[p] depth: 1</text>
+<text x="650.4" y="162" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="658.8" y="162" fill="rgb(201,209,217)" textLength="142.8" lengthAdjust="spacingAndGlyphs">[b] blobless: off</text>
+<text x="801.6" y="162" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="810.0" y="162" fill="rgb(88,166,255)" textLength="109.2" lengthAdjust="spacingAndGlyphs">[t] stash: on</text>
+<text x="919.2" y="162" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="927.6" y="162" fill="rgb(201,209,217)" textLength="184.8" lengthAdjust="spacingAndGlyphs">[d] divergence: rebase</text>
+<text x="1112.4" y="162" fill="rgb(255,255,255)" textLength="235.2" lengthAdjust="spacingAndGlyphs">                            </text>
 <text x="1347.6" y="162" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="179" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="179" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>

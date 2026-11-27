@@ -15,7 +15,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { Dashboard } from "../src/components/Dashboard.tsx";
-import { testRender } from "../tests/helpers/render.tsx";
+import { settleRender as settle, testRender } from "../tests/helpers/render.tsx";
 import {
   buildFixtureWorkspace,
   makeScreenshotStore,
@@ -147,11 +147,6 @@ export function frameToSvg(frame: FrameLike, slug: string, charRows: readonly st
 
 type Tools = Awaited<ReturnType<typeof testRender>>;
 
-async function settle(setup: Tools): Promise<void> {
-  await new Promise((resolve) => setTimeout(resolve, 90));
-  await setup.flush({ maxPasses: 6 });
-}
-
 async function waitFor(predicate: () => boolean, timeoutMs = 4000): Promise<void> {
   const start = Date.now();
   while (!predicate()) {
@@ -198,9 +193,17 @@ async function main(): Promise<void> {
     process.stdout.write(`shot ${slug}\n`);
   };
 
-  const shot = async (slug: string): Promise<void> => {
-    await settle(setup);
-    captureFrom(setup, slug);
+  const shot = async (slug: string, markers: readonly string[] = []): Promise<void> => {
+    const deadline = Date.now() + 4000;
+    do {
+      await settle(setup);
+      const frame = setup.captureCharFrame();
+      if (markers.every((marker) => frame.includes(marker))) {
+        captureFrom(setup, slug);
+        return;
+      }
+    } while (Date.now() < deadline);
+    throw new Error(`${slug}: expected to see ${markers.join(", ")} in the captured frame`);
   };
 
   // State helpers shared by scenes.
@@ -256,6 +259,40 @@ async function main(): Promise<void> {
   });
   store.setView("sync");
   await shot("sync-center");
+
+  await settle(setup, async () => store.setView("gists"));
+  await shot("gists", [
+    "public  clean  Deployment checklist",
+    "secret  dirty  Workspace handoff notes",
+    "public  missing  TypeScript error formatter",
+  ]);
+  setup.mockInput.pressEnter();
+  await shot("gist-detail", ["checklist.md", "health-check.sh", "Verify artifact checksums"]);
+  setup.mockInput.pressEscape();
+  await settle(setup);
+  setup.mockInput.pressKey("e");
+  await shot("gist-edit", ["Edit Gist on GitHub", "File 1/2", "checklist.md"]);
+  setup.mockInput.pressEscape();
+  await settle(setup);
+  setup.mockInput.pressKey("n");
+  await settle(setup);
+  await setup.mockInput.typeText("Release review checklist");
+  setup.mockInput.pressTab();
+  await settle(setup);
+  await setup.mockInput.typeText("review.md");
+  setup.mockInput.pressTab();
+  await settle(setup);
+  await setup.mockInput.typeText("# Release review");
+  setup.mockInput.pressEnter();
+  await setup.mockInput.typeText("- Check the release notes and run the smoke tests.");
+  setup.mockInput.pressKey("n", { ctrl: true });
+  await settle(setup);
+  await setup.mockInput.typeText("smoke-results.txt");
+  setup.mockInput.pressTab();
+  await settle(setup);
+  await setup.mockInput.typeText("All smoke checks passed.");
+  await shot("gist-create", ["Create GitHub Gist", "File 2/2", "smoke-results.txt"]);
+  setup.mockInput.pressEscape();
 
   store.updateDiscoverPage({ query: "mcp mirror-svc" });
   await store.discoverSearch();

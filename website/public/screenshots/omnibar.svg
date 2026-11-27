@@ -18,8 +18,8 @@
 <text x="642.0" y="43" fill="rgb(255,255,255)" textLength="705.6" lengthAdjust="spacingAndGlyphs">                                                                                    </text>
 <text x="1347.6" y="43" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="60" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="60" fill="rgb(88,166,255)" textLength="840.0" lengthAdjust="spacingAndGlyphs"> repotruck · devuser (auth: gh-cli) · preset: categorized · root: /tmp/repotruck-shots-ws · 13 repos</text>
-<text x="860.4" y="60" fill="rgb(255,255,255)" textLength="487.2" lengthAdjust="spacingAndGlyphs">                                                          </text>
+<text x="20.4" y="60" fill="rgb(88,166,255)" textLength="873.6" lengthAdjust="spacingAndGlyphs"> repotruck · devuser (auth: gh-cli) · preset: categorized · root: /var/tmp/repotruck-shots-ws · 13 repos</text>
+<text x="894.0" y="60" fill="rgb(255,255,255)" textLength="453.6" lengthAdjust="spacingAndGlyphs">                                                      </text>
 <text x="1347.6" y="60" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="77" fill="rgb(48,54,61)" textLength="1344.0" lengthAdjust="spacingAndGlyphs">└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘</text>
 <text x="12.0" y="94" fill="rgb(88,166,255)" textLength="1344.0" lengthAdjust="spacingAndGlyphs">┌─Omnibar──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐</text>
@@ -55,7 +55,7 @@
 <text x="1347.6" y="179" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="196" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="196" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="196" fill="rgb(110,118,129)" textLength="235.2" lengthAdjust="spacingAndGlyphs">1/20 commands (showing 1–20)</text>
+<text x="28.8" y="196" fill="rgb(110,118,129)" textLength="235.2" lengthAdjust="spacingAndGlyphs">1/22 commands (showing 1–22)</text>
 <text x="264.0" y="196" fill="rgb(255,255,255)" textLength="1083.6" lengthAdjust="spacingAndGlyphs">                                                                                                                                 </text>
 <text x="1347.6" y="196" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="213" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
@@ -96,74 +96,78 @@
 <text x="1347.6" y="315" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="332" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="332" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="332" fill="rgb(201,209,217)" textLength="655.2" lengthAdjust="spacingAndGlyphs">  [Go] Go to Sync Center — bulk sync with every flag plus watch mode  —  [v s]</text>
-<text x="684.0" y="332" fill="rgb(255,255,255)" textLength="663.6" lengthAdjust="spacingAndGlyphs">                                                                               </text>
+<text x="28.8" y="332" fill="rgb(201,209,217)" textLength="294.0" lengthAdjust="spacingAndGlyphs">  [Workspace] gist sync — Gist sync</text>
+<text x="322.8" y="332" fill="rgb(255,255,255)" textLength="1024.8" lengthAdjust="spacingAndGlyphs">                                                                                                                          </text>
 <text x="1347.6" y="332" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="349" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="349" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="349" fill="rgb(201,209,217)" textLength="546.0" lengthAdjust="spacingAndGlyphs">  [Workspace] Regenerate workspace AGENTS.md map  —  instructions</text>
-<text x="574.8" y="349" fill="rgb(255,255,255)" textLength="772.8" lengthAdjust="spacingAndGlyphs">                                                                                            </text>
+<text x="28.8" y="349" fill="rgb(201,209,217)" textLength="655.2" lengthAdjust="spacingAndGlyphs">  [Go] Go to Sync Center — bulk sync with every flag plus watch mode  —  [v s]</text>
+<text x="684.0" y="349" fill="rgb(255,255,255)" textLength="663.6" lengthAdjust="spacingAndGlyphs">                                                                               </text>
 <text x="1347.6" y="349" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="366" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="366" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="366" fill="rgb(201,209,217)" textLength="268.8" lengthAdjust="spacingAndGlyphs">  [Search] changelog — Changelog</text>
-<text x="297.6" y="366" fill="rgb(255,255,255)" textLength="1050.0" lengthAdjust="spacingAndGlyphs">                                                                                                                             </text>
+<text x="28.8" y="366" fill="rgb(201,209,217)" textLength="546.0" lengthAdjust="spacingAndGlyphs">  [Workspace] Regenerate workspace AGENTS.md map  —  instructions</text>
+<text x="574.8" y="366" fill="rgb(255,255,255)" textLength="772.8" lengthAdjust="spacingAndGlyphs">                                                                                            </text>
 <text x="1347.6" y="366" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="383" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="383" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="383" fill="rgb(201,209,217)" textLength="646.8" lengthAdjust="spacingAndGlyphs">  [Go] Go to Settings — configuration, auth, update and completions  —  [v a]</text>
-<text x="675.6" y="383" fill="rgb(255,255,255)" textLength="672.0" lengthAdjust="spacingAndGlyphs">                                                                                </text>
+<text x="28.8" y="383" fill="rgb(201,209,217)" textLength="562.8" lengthAdjust="spacingAndGlyphs">  [Go] Go to Gists — browse, sync and manage GitHub Gists  —  [v j]</text>
+<text x="591.6" y="383" fill="rgb(255,255,255)" textLength="756.0" lengthAdjust="spacingAndGlyphs">                                                                                          </text>
 <text x="1347.6" y="383" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="400" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="400" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="400" fill="rgb(201,209,217)" textLength="630.0" lengthAdjust="spacingAndGlyphs">  [Go] Go to Agents — AGENTS.md templates, exports and MCP server  —  [v g]</text>
-<text x="658.8" y="400" fill="rgb(255,255,255)" textLength="688.8" lengthAdjust="spacingAndGlyphs">                                                                                  </text>
+<text x="28.8" y="400" fill="rgb(201,209,217)" textLength="268.8" lengthAdjust="spacingAndGlyphs">  [Search] changelog — Changelog</text>
+<text x="297.6" y="400" fill="rgb(255,255,255)" textLength="1050.0" lengthAdjust="spacingAndGlyphs">                                                                                                                             </text>
 <text x="1347.6" y="400" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="417" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="417" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="417" fill="rgb(201,209,217)" textLength="579.6" lengthAdjust="spacingAndGlyphs">  [Go] Go to About — about Repotruck and its GitHub project  —  [v o]</text>
-<text x="608.4" y="417" fill="rgb(255,255,255)" textLength="739.2" lengthAdjust="spacingAndGlyphs">                                                                                        </text>
+<text x="28.8" y="417" fill="rgb(201,209,217)" textLength="646.8" lengthAdjust="spacingAndGlyphs">  [Go] Go to Settings — configuration, auth, update and completions  —  [v a]</text>
+<text x="675.6" y="417" fill="rgb(255,255,255)" textLength="672.0" lengthAdjust="spacingAndGlyphs">                                                                                </text>
 <text x="1347.6" y="417" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="434" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="434" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="434" fill="rgb(201,209,217)" textLength="655.2" lengthAdjust="spacingAndGlyphs">  [Go] Go to Log — captured errors, warnings and runtime diagnostics  —  [v l]</text>
-<text x="684.0" y="434" fill="rgb(255,255,255)" textLength="663.6" lengthAdjust="spacingAndGlyphs">                                                                               </text>
+<text x="28.8" y="434" fill="rgb(201,209,217)" textLength="630.0" lengthAdjust="spacingAndGlyphs">  [Go] Go to Agents — AGENTS.md templates, exports and MCP server  —  [v g]</text>
+<text x="658.8" y="434" fill="rgb(255,255,255)" textLength="688.8" lengthAdjust="spacingAndGlyphs">                                                                                  </text>
 <text x="1347.6" y="434" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="451" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="451" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="451" fill="rgb(201,209,217)" textLength="504.0" lengthAdjust="spacingAndGlyphs">  [Mode] Workspace Code Search (AST symbols &amp; text:)  —  [@]</text>
-<text x="532.8" y="451" fill="rgb(255,255,255)" textLength="814.8" lengthAdjust="spacingAndGlyphs">                                                                                                 </text>
+<text x="28.8" y="451" fill="rgb(201,209,217)" textLength="579.6" lengthAdjust="spacingAndGlyphs">  [Go] Go to About — about Repotruck and its GitHub project  —  [v o]</text>
+<text x="608.4" y="451" fill="rgb(255,255,255)" textLength="739.2" lengthAdjust="spacingAndGlyphs">                                                                                        </text>
 <text x="1347.6" y="451" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="468" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="468" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="468" fill="rgb(201,209,217)" textLength="646.8" lengthAdjust="spacingAndGlyphs">  [Go] Go to Cockpit — scope, repository list and activity  —  active · [Esc]</text>
-<text x="675.6" y="468" fill="rgb(255,255,255)" textLength="672.0" lengthAdjust="spacingAndGlyphs">                                                                                </text>
+<text x="28.8" y="468" fill="rgb(201,209,217)" textLength="655.2" lengthAdjust="spacingAndGlyphs">  [Go] Go to Log — captured errors, warnings and runtime diagnostics  —  [v l]</text>
+<text x="684.0" y="468" fill="rgb(255,255,255)" textLength="663.6" lengthAdjust="spacingAndGlyphs">                                                                               </text>
 <text x="1347.6" y="468" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="485" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="485" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="485" fill="rgb(201,209,217)" textLength="655.2" lengthAdjust="spacingAndGlyphs">  [Go] Go to Code Search — tree-sitter symbol, text and regex search  —  [v e]</text>
-<text x="684.0" y="485" fill="rgb(255,255,255)" textLength="663.6" lengthAdjust="spacingAndGlyphs">                                                                               </text>
+<text x="28.8" y="485" fill="rgb(201,209,217)" textLength="504.0" lengthAdjust="spacingAndGlyphs">  [Mode] Workspace Code Search (AST symbols &amp; text:)  —  [@]</text>
+<text x="532.8" y="485" fill="rgb(255,255,255)" textLength="814.8" lengthAdjust="spacingAndGlyphs">                                                                                                 </text>
 <text x="1347.6" y="485" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="502" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="502" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="502" fill="rgb(201,209,217)" textLength="302.4" lengthAdjust="spacingAndGlyphs">  [Lifecycle] status — Status Matrix</text>
-<text x="331.2" y="502" fill="rgb(255,255,255)" textLength="1016.4" lengthAdjust="spacingAndGlyphs">                                                                                                                         </text>
+<text x="28.8" y="502" fill="rgb(201,209,217)" textLength="646.8" lengthAdjust="spacingAndGlyphs">  [Go] Go to Cockpit — scope, repository list and activity  —  active · [Esc]</text>
+<text x="675.6" y="502" fill="rgb(255,255,255)" textLength="672.0" lengthAdjust="spacingAndGlyphs">                                                                                </text>
 <text x="1347.6" y="502" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="519" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="519" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="519" fill="rgb(201,209,217)" textLength="546.0" lengthAdjust="spacingAndGlyphs">  [Repo] Archive repository on GitHub + move to archived/  —  [A]</text>
-<text x="574.8" y="519" fill="rgb(255,255,255)" textLength="772.8" lengthAdjust="spacingAndGlyphs">                                                                                            </text>
+<text x="28.8" y="519" fill="rgb(201,209,217)" textLength="655.2" lengthAdjust="spacingAndGlyphs">  [Go] Go to Code Search — tree-sitter symbol, text and regex search  —  [v e]</text>
+<text x="684.0" y="519" fill="rgb(255,255,255)" textLength="663.6" lengthAdjust="spacingAndGlyphs">                                                                               </text>
 <text x="1347.6" y="519" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="536" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="536" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
-<text x="28.8" y="536" fill="rgb(201,209,217)" textLength="453.6" lengthAdjust="spacingAndGlyphs">  [Search] instructions template — AGENTS.md templates</text>
-<text x="482.4" y="536" fill="rgb(255,255,255)" textLength="865.2" lengthAdjust="spacingAndGlyphs">                                                                                                       </text>
+<text x="28.8" y="536" fill="rgb(201,209,217)" textLength="302.4" lengthAdjust="spacingAndGlyphs">  [Lifecycle] status — Status Matrix</text>
+<text x="331.2" y="536" fill="rgb(255,255,255)" textLength="1016.4" lengthAdjust="spacingAndGlyphs">                                                                                                                         </text>
 <text x="1347.6" y="536" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="553" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="553" fill="rgb(255,255,255)" textLength="1327.2" lengthAdjust="spacingAndGlyphs">                                                                                                                                                              </text>
+<text x="20.4" y="553" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="28.8" y="553" fill="rgb(201,209,217)" textLength="546.0" lengthAdjust="spacingAndGlyphs">  [Repo] Archive repository on GitHub + move to archived/  —  [A]</text>
+<text x="574.8" y="553" fill="rgb(255,255,255)" textLength="772.8" lengthAdjust="spacingAndGlyphs">                                                                                            </text>
 <text x="1347.6" y="553" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="570" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="570" fill="rgb(255,255,255)" textLength="1327.2" lengthAdjust="spacingAndGlyphs">                                                                                                                                                              </text>
+<text x="20.4" y="570" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
+<text x="28.8" y="570" fill="rgb(201,209,217)" textLength="453.6" lengthAdjust="spacingAndGlyphs">  [Search] instructions template — AGENTS.md templates</text>
+<text x="482.4" y="570" fill="rgb(255,255,255)" textLength="865.2" lengthAdjust="spacingAndGlyphs">                                                                                                       </text>
 <text x="1347.6" y="570" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="587" fill="rgb(88,166,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="20.4" y="587" fill="rgb(255,255,255)" textLength="1327.2" lengthAdjust="spacingAndGlyphs">                                                                                                                                                              </text>

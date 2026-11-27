@@ -1,6 +1,6 @@
 /**
  * Screenshot scene metadata — the single list shared by the capture driver
- * (scripts/capture-screens.ts), the generated website manifest and the
+ * (scripts/capture-screens.tsx), the generated website manifest and the
  * README gallery. Pure data + pure text builders so docs-check can verify
  * drift without spinning up a renderer.
  */
@@ -66,6 +66,12 @@ export const SCENES: readonly SceneSpec[] = [
     slug: "sync-center",
     title: "Sync Center",
     caption: "v s — every sync flag, watch mode and the equivalent CLI command",
+    group: "Pages",
+  },
+  {
+    slug: "gists",
+    title: "Gists",
+    caption: "v j — account Gists, local checkout status and sync actions",
     group: "Pages",
   },
   {
@@ -181,6 +187,24 @@ export const SCENES: readonly SceneSpec[] = [
     slug: "create-wizard",
     title: "Create wizard",
     caption: "n — new repository, step by step",
+    group: "Modals & dialogs",
+  },
+  {
+    slug: "gist-detail",
+    title: "Gist details",
+    caption: "Enter on a Gist — visibility, filenames and file contents",
+    group: "Modals & dialogs",
+  },
+  {
+    slug: "gist-create",
+    title: "Create Gist",
+    caption: "n in Gists — draft a public or secret Gist with multiple files",
+    group: "Modals & dialogs",
+  },
+  {
+    slug: "gist-edit",
+    title: "Edit Gist",
+    caption: "e on an owned Gist — edit the description and switch between files",
     group: "Modals & dialogs",
   },
   {

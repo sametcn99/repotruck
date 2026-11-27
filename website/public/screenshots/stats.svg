@@ -18,8 +18,8 @@
 <text x="642.0" y="43" fill="rgb(255,255,255)" textLength="705.6" lengthAdjust="spacingAndGlyphs">                                                                                    </text>
 <text x="1347.6" y="43" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="60" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="20.4" y="60" fill="rgb(88,166,255)" textLength="957.6" lengthAdjust="spacingAndGlyphs"> repotruck · devuser (auth: gh-cli) · preset: categorized · root: /tmp/repotruck-shots-ws · 13 repos · view: Stats</text>
-<text x="978.0" y="60" fill="rgb(255,255,255)" textLength="369.6" lengthAdjust="spacingAndGlyphs">                                            </text>
+<text x="20.4" y="60" fill="rgb(88,166,255)" textLength="991.2" lengthAdjust="spacingAndGlyphs"> repotruck · devuser (auth: gh-cli) · preset: categorized · root: /var/tmp/repotruck-shots-ws · 13 repos · view: Stats</text>
+<text x="1011.6" y="60" fill="rgb(255,255,255)" textLength="336.0" lengthAdjust="spacingAndGlyphs">                                        </text>
 <text x="1347.6" y="60" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="12.0" y="77" fill="rgb(48,54,61)" textLength="1344.0" lengthAdjust="spacingAndGlyphs">└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘</text>
 <text x="12.0" y="94" fill="rgb(210,168,255)" textLength="1344.0" lengthAdjust="spacingAndGlyphs">┌─Stats (v i)──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐</text>
@@ -136,7 +136,7 @@
 <text x="675.6" y="298" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="684.0" y="298" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
 <text x="692.4" y="298" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
-<text x="700.8" y="298" fill="rgb(227,179,65)" textLength="630.0" lengthAdjust="spacingAndGlyphs">[warn] trash: 2 trashed repo(s) in /tmp/repotruck-shots-ws (1.0 MB)   -&gt; r…</text>
+<text x="700.8" y="298" fill="rgb(227,179,65)" textLength="630.0" lengthAdjust="spacingAndGlyphs">[warn] trash: 2 trashed repo(s) in /var/tmp/repotruck-shots-ws (1.0 MB)   …</text>
 <text x="1330.8" y="298" fill="rgb(48,54,61)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>
 <text x="1339.2" y="298" fill="rgb(255,255,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs"> </text>
 <text x="1347.6" y="298" fill="rgb(210,168,255)" textLength="8.4" lengthAdjust="spacingAndGlyphs">│</text>

@@ -64,6 +64,12 @@ export const SCREENSHOTS: readonly ScreenshotEntry[] = [
     group: "Pages",
   },
   {
+    slug: "gists",
+    title: "Gists",
+    caption: "v j — account Gists, local checkout status and sync actions",
+    group: "Pages",
+  },
+  {
     slug: "discover",
     title: "Discover",
     caption: "v d — qualified GitHub search, tracked markers, bulk clone",
@@ -175,6 +181,24 @@ export const SCREENSHOTS: readonly ScreenshotEntry[] = [
     slug: "create-wizard",
     title: "Create wizard",
     caption: "n — new repository, step by step",
+    group: "Modals & dialogs",
+  },
+  {
+    slug: "gist-detail",
+    title: "Gist details",
+    caption: "Enter on a Gist — visibility, filenames and file contents",
+    group: "Modals & dialogs",
+  },
+  {
+    slug: "gist-create",
+    title: "Create Gist",
+    caption: "n in Gists — draft a public or secret Gist with multiple files",
+    group: "Modals & dialogs",
+  },
+  {
+    slug: "gist-edit",
+    title: "Edit Gist",
+    caption: "e on an owned Gist — edit the description and switch between files",
     group: "Modals & dialogs",
   },
   {

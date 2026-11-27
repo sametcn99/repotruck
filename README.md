@@ -72,6 +72,7 @@ The `categorized` preset groups forks by the GitHub account they were forked fro
 
   <h4>Pages</h4>
     <p><sub><b>Sync Center</b> — v s — every sync flag, watch mode and the equivalent CLI command</sub><br /><img src="website/public/screenshots/sync-center.svg" alt="Sync Center — v s — every sync flag, watch mode and the equivalent CLI command" width="880" /></p>
+    <p><sub><b>Gists</b> — v j — account Gists, local checkout status and sync actions</sub><br /><img src="website/public/screenshots/gists.svg" alt="Gists — v j — account Gists, local checkout status and sync actions" width="880" /></p>
     <p><sub><b>Discover</b> — v d — qualified GitHub search, tracked markers, bulk clone</sub><br /><img src="website/public/screenshots/discover.svg" alt="Discover — v d — qualified GitHub search, tracked markers, bulk clone" width="880" /></p>
     <p><sub><b>Scan & Adopt</b> — v n — unregistered repositories with adopt (scan --move)</sub><br /><img src="website/public/screenshots/scan.svg" alt="Scan & Adopt — v n — unregistered repositories with adopt (scan --move)" width="880" /></p>
     <p><sub><b>Conflicts</b> — v x — failed-sync candidates with continue/abort actions</sub><br /><img src="website/public/screenshots/conflicts.svg" alt="Conflicts — v x — failed-sync candidates with continue/abort actions" width="880" /></p>
@@ -93,6 +94,9 @@ The `categorized` preset groups forks by the GitHub account they were forked fro
   <h4>Modals & dialogs</h4>
     <p><sub><b>Clone</b> — c — clone by URL or owner/name</sub><br /><img src="website/public/screenshots/clone-modal.svg" alt="Clone — c — clone by URL or owner/name" width="880" /></p>
     <p><sub><b>Create wizard</b> — n — new repository, step by step</sub><br /><img src="website/public/screenshots/create-wizard.svg" alt="Create wizard — n — new repository, step by step" width="880" /></p>
+    <p><sub><b>Gist details</b> — Enter on a Gist — visibility, filenames and file contents</sub><br /><img src="website/public/screenshots/gist-detail.svg" alt="Gist details — Enter on a Gist — visibility, filenames and file contents" width="880" /></p>
+    <p><sub><b>Create Gist</b> — n in Gists — draft a public or secret Gist with multiple files</sub><br /><img src="website/public/screenshots/gist-create.svg" alt="Create Gist — n in Gists — draft a public or secret Gist with multiple files" width="880" /></p>
+    <p><sub><b>Edit Gist</b> — e on an owned Gist — edit the description and switch between files</sub><br /><img src="website/public/screenshots/gist-edit.svg" alt="Edit Gist — e on an owned Gist — edit the description and switch between files" width="880" /></p>
     <p><sub><b>Move</b> — m — custom path, undoable with z</sub><br /><img src="website/public/screenshots/move-modal.svg" alt="Move — m — custom path, undoable with z" width="880" /></p>
     <p><sub><b>Alias</b> — r — short names usable everywhere</sub><br /><img src="website/public/screenshots/alias-modal.svg" alt="Alias — r — short names usable everywhere" width="880" /></p>
     <p><sub><b>Open in app</b> — o — detected editors and agent CLIs</sub><br /><img src="website/public/screenshots/open-modal.svg" alt="Open in app — o — detected editors and agent CLIs" width="880" /></p>

@@ -13,9 +13,12 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { Store, type StoreDeps } from "../src/components/store.ts";
 import type { CodeSearchMatch, CodeSearchResult } from "../src/services/codeSearch.ts";
+import { gistPath } from "../src/services/gistGit.ts";
 import type { RepoInfo } from "../src/services/github.ts";
 import type { RepoStatusLine } from "../src/services/lifecycle.ts";
 import type { RunInReposResult } from "../src/services/runner.ts";
+import { readVersion } from "../src/services/version.ts";
+import { gistApiFixture, gistPayload, PUBLIC_ID, SECRET_ID } from "../tests/helpers/gists.ts";
 
 /** Fixed path so the header's root: line is stable across runs. */
 export const FIXTURE_ROOT = path.join(tmpdir(), "repotruck-shots-ws");
@@ -37,6 +40,40 @@ const ORG_A = "acme-labs";
 const ORG_B = "vertex-soft";
 const ALIAS_MAIN = "main"; // alias for the "primary" repo
 const ALIAS_API = "api"; // alias for the api repo
+
+const GISTS = [
+  {
+    ...gistPayload(PUBLIC_ID, { public: true, owner: USER }),
+    description: "Deployment checklist",
+    files: {
+      "checklist.md": {
+        content:
+          "# Deployment checklist\n\n- Review release notes\n- Verify artifact checksums\n- Confirm the smoke tests passed\n",
+      },
+      "health-check.sh": {
+        content: "#!/bin/sh\ncurl --fail --silent --show-error https://example.com/health\n",
+      },
+    },
+  },
+  {
+    ...gistPayload(SECRET_ID, { owner: USER }),
+    description: "Workspace handoff notes",
+    files: {
+      "handoff.md": {
+        content: "# Workspace handoff\n\nReview the sync plan before updating local checkouts.\n",
+      },
+    },
+  },
+  {
+    ...gistPayload("e".repeat(32), { public: true, owner: USER }),
+    description: "TypeScript error formatter",
+    files: {
+      "format-error.ts": {
+        content: "export const formatError = (error: Error) => error.message;\n",
+      },
+    },
+  },
+];
 
 interface FixtureRepo {
   owner: string;
@@ -160,6 +197,19 @@ export function buildFixtureWorkspace(): string {
   git(stray, ["commit", "-q", "-m", "fork"]);
   git(stray, ["remote", "add", "origin", `https://github.com/${USER}/orphan-tool.git`]);
 
+  for (const gist of GISTS.slice(0, 2)) {
+    const directory = gistPath(root, gist.id);
+    mkdirSync(directory, { recursive: true });
+    git(directory, ["init", "-q", "-b", "main"]);
+    git(directory, ["remote", "add", "origin", `https://gist.github.com/${gist.id}.git`]);
+    for (const [name, file] of Object.entries(gist.files)) {
+      writeFileSync(path.join(directory, name), file.content, "utf8");
+    }
+    git(directory, ["add", "."]);
+    git(directory, ["commit", "-q", "-m", "Add Gist files"]);
+    if (gist.id === SECRET_ID) writeFileSync(path.join(directory, "draft.md"), "In progress\n");
+  }
+
   // Soft-deleted entries for the Trash page (with realistic sizes).
   const trash = path.join(root, ".repotruck", "trash");
   const filler = "x".repeat(1024);
@@ -211,6 +261,7 @@ export function buildFixtureWorkspace(): string {
           [ALIAS_API]: "acme-labs/source/core-api",
         },
         pinned: [`${USER}/primary`, `${USER}/worker`],
+        gists: [{ id: PUBLIC_ID }, { id: SECRET_ID }],
         profiles: {
           backend: [`${USER}/primary`, `${USER}/worker`, `${ORG_A}/core-api`],
         },
@@ -327,9 +378,11 @@ function codeSearchMatches(): CodeSearchMatch[] {
 }
 
 export function makeScreenshotStore(root: string): Store {
+  const { github: gistGithub } = gistApiFixture(GISTS);
   const deps: StoreDeps = {
     auth: async () => ({ token: "shot-token", method: "gh-cli" }),
     github: () => ({
+      gists: gistGithub.gists,
       isProjectStarred: async () => false,
       starProject: async () => {},
       getUserLogin: async () => USER,
@@ -437,7 +490,11 @@ export function makeScreenshotStore(root: string): Store {
       userCode: "XLQW-TRHD",
       completion: new Promise(() => {}),
     }),
-    updater: async () => ({ currentVersion: "0.4.1", latestVersion: null, updateAvailable: false }),
+    updater: async () => ({
+      currentVersion: await readVersion(),
+      latestVersion: null,
+      updateAvailable: false,
+    }),
     readUpdateStateFn: async () => ({
       lastCheck: null,
       latestVersion: null,
