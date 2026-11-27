@@ -1,5 +1,6 @@
 import { useKeyboard, useTerminalDimensions } from "@opentui/react";
 import { useEffect, useState, useSyncExternalStore } from "react";
+import { standaloneUpdateCommand, standaloneVersion } from "../../services/distribution.ts";
 import { normalizeBaseUrl, validateRootInput } from "../../services/settings.ts";
 import type { Store } from "../store.ts";
 import { theme } from "../theme.ts";
@@ -8,6 +9,9 @@ import { PaneTabs } from "../ui/PaneTabs.tsx";
 import { clampBoxLine, visibleSlice } from "../windowing.ts";
 
 const SHELLS = ["bash", "zsh", "fish", "powershell"] as const;
+const UPDATE_COMMAND = standaloneVersion
+  ? (standaloneUpdateCommand() ?? "repotruck update --check")
+  : "npm i -g repotruck@latest";
 
 const SETTING_KEYS = [
   { key: "sync.concurrency", label: "sync concurrency", type: "int" },
@@ -171,7 +175,7 @@ export function SettingsView({
     if (shell !== undefined) {
       copyCommand("completions", `repotruck completions ${shell}`);
     } else if (key.name === "y") {
-      copyCommand("update", "npm i -g repotruck@latest");
+      copyCommand("update", UPDATE_COMMAND);
     } else if (key.name === "x") {
       logout();
     } else if (key.name === "r") {
@@ -334,7 +338,7 @@ export function SettingsView({
               <text
                 fg={theme.accent()}
                 wrapMode="none"
-                onMouseDown={() => copyCommand("update", "npm i -g repotruck@latest")}
+                onMouseDown={() => copyCommand("update", UPDATE_COMMAND)}
               >
                 {"[y] Copy update command"}
               </text>
@@ -424,7 +428,7 @@ export function SettingsView({
                     flexShrink={0}
                     onMouseDown={(event) => {
                       event.stopPropagation?.();
-                      copyCommand("update", "npm i -g repotruck@latest");
+                      copyCommand("update", UPDATE_COMMAND);
                     }}
                   >
                     {"[y] Copy update command"}

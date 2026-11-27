@@ -5,22 +5,28 @@ import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSy
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-const packageDir = path.resolve(process.argv[2]);
+const standalone = process.argv[2] === "--binary";
+const packageDir = path.resolve(standalone ? path.dirname(process.argv[3]) : process.argv[2]);
+const expectedVersion = standalone
+  ? process.argv[4]
+  : JSON.parse(readFileSync(path.join(packageDir, "package.json"), "utf8")).version;
+const command = standalone ? path.resolve(process.argv[3]) : process.execPath;
+const entryArgs = standalone ? [] : [path.join(packageDir, "bin/repotruck.js")];
 const temporaryBase = mkdtempSync(path.join(tmpdir(), "repotruck-installed-"));
 const base = realpathSync.native(temporaryBase);
 const root = path.join(base, "workspace with spaces"),
   configDir = path.join(base, "config"),
   relativePath = "acme/source/fixture";
-const cli = path.join(packageDir, "bin/repotruck.js");
 const env = {
   ...process.env,
   REPOTRUCK_CONFIG_DIR: configDir,
   REPOTRUCK_OFFLINE: "1",
   REPOTRUCK_TOKEN: "",
+  ...(standalone && process.platform !== "win32" ? { PATH: "/usr/bin:/bin" } : {}),
   NO_COLOR: "1",
 };
 const run = (...args) =>
-  execFileSync(process.execPath, [cli, ...args], {
+  execFileSync(command, [...entryArgs, ...args], {
     cwd: base,
     env,
     encoding: "utf8",
@@ -56,10 +62,8 @@ try {
       ],
     }),
   );
-  assert.equal(
-    run("--version").trim(),
-    JSON.parse(readFileSync(path.join(packageDir, "package.json"))).version,
-  );
+  assert.equal(run("--version").trim(), expectedVersion);
+  assert.match(run("--help"), /Usage: repotruck/);
   for (const argument of ["--about", "about"]) {
     const about = run(argument);
     assert.match(about, /Clone, organize and sync/);
@@ -92,7 +96,7 @@ try {
     run("search-code", "fixture_.*", "--regex", "--offline", "--dir", root, "--json"),
   );
   assert.equal(regex.matches.length, 6);
-  const child = spawn(process.execPath, [cli, "mcp"], {
+  const child = spawn(command, [...entryArgs, "mcp"], {
     cwd: base,
     env,
     stdio: ["pipe", "pipe", "pipe"],

@@ -261,6 +261,7 @@ describe("acceptance: page callbacks through TUI input", () => {
       const persisted = JSON.parse(readFileSync(`${f.configDir}/${SETTINGS_FILENAME}`, "utf8"));
       expect(persisted.sync.blobless).toBe(true);
       await clickText(setup, "[Enter] Edit");
+      await drainPendingWriters(store);
       expect(
         (store.getSnapshot().settingsPage?.settings?.sync as { concurrency?: number } | undefined)
           ?.concurrency,

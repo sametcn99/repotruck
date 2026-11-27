@@ -901,10 +901,14 @@ export const COMMAND_GROUPS: readonly CommandGroup[] = [
       },
       {
         name: "update",
-        summary: "Check npm for a newer release and self-update",
+        summary: "Check for a newer release or update a global package install",
         usage: "repotruck update [options]",
         examples: ["repotruck update", "repotruck update --json"],
         flags: [
+          {
+            flag: "--check",
+            description: "check without installing",
+          },
           {
             flag: "--json",
             description: "machine-readable JSON output",

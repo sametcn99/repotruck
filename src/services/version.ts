@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { standaloneVersion } from "./distribution.ts";
 
 export async function readPackageVersion(dir: string): Promise<string | null> {
   try {
@@ -22,6 +23,7 @@ export async function readPackageVersion(dir: string): Promise<string | null> {
 let cachedVersion: string | null = null;
 
 export async function readVersion(): Promise<string> {
+  if (standaloneVersion !== undefined) return standaloneVersion;
   if (cachedVersion !== null) return cachedVersion;
   let dir = path.dirname(fileURLToPath(import.meta.url));
   for (let depth = 0; depth < 8; depth += 1) {

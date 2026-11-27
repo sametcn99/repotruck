@@ -24,11 +24,14 @@ export const SETTINGS_COMMANDS: readonly CommandSpec[] = [
     path: "update",
     title: "Self-update",
     group: "Settings",
-    summary: "Check npm for a newer release and self-update",
+    summary: "Check for a newer release or update a global package install",
     args: [],
     surface: { kind: "planned", ticket: "t10" },
     requires: [],
-    flags: [jsonFlag("result as JSON copy")],
+    flags: [
+      f("--check", "bool", "check without installing", "update notification"),
+      jsonFlag("result as JSON copy"),
+    ],
   },
   {
     id: "mcp",

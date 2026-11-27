@@ -74,6 +74,20 @@ function fetchFailing(): typeof fetch {
 }
 
 describe("fetchLatestVersion", () => {
+  test("uses the stable GitHub release tag for standalone installs", async () => {
+    const fetchImpl = (async (url: string) => {
+      expect(url).toBe("https://api.github.com/repos/sametcn99/repotruck/releases/latest");
+      return new Response(JSON.stringify({ tag_name: "v1.0.7" }));
+    }) as typeof fetch;
+    expect(await fetchLatestVersion({ standalone: true, fetchImpl })).toBe("1.0.7");
+    expect(
+      await fetchLatestVersion({
+        standalone: true,
+        fetchImpl: fetchReturning({ tag_name: "v1.0.7-rc.1" }),
+      }),
+    ).toBeNull();
+  });
+
   test("parses the version from the registry payload", async () => {
     const version = await fetchLatestVersion({
       fetchImpl: fetchReturning({ version: "9.9.9" }),

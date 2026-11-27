@@ -110,11 +110,43 @@ The `categorized` preset groups forks by the GitHub account they were forked fro
 
 ## Install
 
+The standalone distribution includes the dashboard, CLI, and MCP server and runs without Node.js, Bun, or npm. It supports x64 and ARM64 on Linux with glibc, macOS, and Windows.
+
+**Linux, macOS, or Git Bash on Windows**
+
+```sh
+curl -fsSL https://github.com/sametcn99/repotruck/releases/latest/download/install.sh | sh
+```
+
+**Windows PowerShell**
+
+```powershell
+irm https://github.com/sametcn99/repotruck/releases/latest/download/install.ps1 | iex
+```
+
+The installer selects your platform, verifies the archive against the release checksum, and installs for your user. Open a new terminal and run `repotruck --version`. Run the same command to upgrade, or use `repotruck update --check` to check for a new version.
+
+**Homebrew on macOS**
+
+```sh
+brew tap sametcn99/repotruck https://github.com/sametcn99/repotruck.git && brew install sametcn99/repotruck/repotruck
+```
+
+**Scoop on Windows**
+
+```powershell
+scoop bucket add repotruck https://github.com/sametcn99/repotruck.git; if ($LASTEXITCODE -eq 0) { scoop install repotruck/repotruck }
+```
+
+Upgrade with `brew update && brew upgrade sametcn99/repotruck/repotruck` or `scoop update; scoop update repotruck`. To install manually, extract a matching archive from [GitHub Releases](https://github.com/sametcn99/repotruck/releases/latest) and keep its `assets` directory beside the executable.
+
+### npm and Bun
+
 ```bash
 npm i -g repotruck     # or try it first: npx repotruck (bunx repotruck on Bun)
 ```
 
-### Headless vs. dashboard runtime
+#### npm package runtime requirements
 
 | Surface | Runtime requirement |
 | --- | --- |
