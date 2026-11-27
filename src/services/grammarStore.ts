@@ -3,6 +3,7 @@ import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { appConfigDir } from "./config.ts";
+import { distributionDirectory } from "./distribution.ts";
 
 export const GRAMMAR_CACHE_DIRECTORY = "grammars-v2";
 export const GRAMMAR_ASSET_BASE_URL =
@@ -159,7 +160,9 @@ export interface GrammarStoreOptions {
 
 const MODULE_DIR = path.dirname(fileURLToPath(import.meta.url));
 
+const distribution = distributionDirectory();
 export const DEFAULT_BUNDLED_GRAMMAR_DIRS: readonly string[] = [
+  ...(distribution ? [path.join(distribution, "assets", "grammars")] : []),
   path.join(MODULE_DIR, "grammars"),
   path.join(MODULE_DIR, "..", "grammars"),
   path.join(MODULE_DIR, "..", "vendor", "grammars"),

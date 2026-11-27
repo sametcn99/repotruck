@@ -1,6 +1,7 @@
 import { deleteWorkspaceProfile, saveWorkspaceProfile } from "../../core/profiles.ts";
 import { validateCustomPreset } from "../../presets/index.ts";
 import type { GenerateAgentsMdInput } from "../../services/agentsMd.ts";
+import { standaloneVersion } from "../../services/distribution.ts";
 import { exportInstructionsFile } from "../../services/instructionExport.ts";
 import { readSettings, writeSettings } from "../../services/settings.ts";
 import { applyAgentsMdTemplate, clearAgentsMdTemplate } from "../../services/templates.ts";
@@ -271,10 +272,14 @@ export class StorePages extends StoreDataPages {
   startMcpServer = async (port: number): Promise<void> => {
     if (this.taskLabel("mcp") !== null) return;
     try {
-      const child = Bun.spawn(
-        [process.execPath, process.argv[1] ?? "repotruck", "mcp", "--http", "--port", String(port)],
-        { stdout: "ignore", stderr: "ignore", stdin: "ignore" },
-      );
+      const entry = standaloneVersion
+        ? [process.execPath]
+        : [process.execPath, process.argv[1] ?? "repotruck"];
+      const child = Bun.spawn([...entry, "mcp", "--http", "--port", String(port)], {
+        stdout: "ignore",
+        stderr: "ignore",
+        stdin: "ignore",
+      });
       this.beginTask("mcp", `mcp --http --port ${port}`, () => child.kill());
       this.pushStatus("DONE", "[mcp]", `serving on http://127.0.0.1:${port}/mcp`);
     } catch (error) {

@@ -1,4 +1,5 @@
 import type { Command } from "commander";
+import { standaloneUpdateInstructions, standaloneVersion } from "../../services/distribution.ts";
 import { checkForUpdate, performSelfUpdate } from "../../services/updater.ts";
 import { readVersion } from "../../services/version.ts";
 import { type CliContext, exitFail, runAction } from "../shared.ts";
@@ -7,8 +8,9 @@ export function register(program: Command, _ctx: CliContext): void {
   program
     .command("update")
     .description("Check for a newer repotruck release and self-update global installs.")
+    .option("--check", "Check for a newer release without installing")
     .option("--json", "Output the check result as JSON")
-    .action(async (options: { json?: boolean }) => {
+    .action(async (options: { json?: boolean; check?: boolean }) => {
       await runAction(
         async () => {
           if (process.env.REPOTRUCK_NO_UPDATE_CHECK) {
@@ -36,6 +38,20 @@ export function register(program: Command, _ctx: CliContext): void {
               return;
             }
             process.stdout.write(`already up to date (${result.currentVersion})\n`);
+            return;
+          }
+          if (options.check || standaloneVersion !== undefined) {
+            const message = standaloneUpdateInstructions();
+            if (options.json) {
+              process.stdout.write(
+                `${JSON.stringify({ command: "update", ok: true, ...result, updated: false, ...(message ? { message } : {}) })}\n`,
+              );
+            } else {
+              process.stdout.write(
+                `Update available: ${result.currentVersion} -> ${result.latestVersion}\n`,
+              );
+              if (message) process.stdout.write(`${message}\n`);
+            }
             return;
           }
           if (!options.json) {

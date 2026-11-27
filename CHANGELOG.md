@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.7] - 2026-11-27
+
+### Added
+
+- Install Repotruck with one command on Linux, macOS, Windows PowerShell or Git Bash.
+- Download standalone x64 and ARM64 archives from GitHub Releases. Each archive includes the terminal dashboard, CLI, MCP server, and offline code-search assets.
+- Install and upgrade through the Repotruck Homebrew tap and Scoop bucket.
+
 ## [1.0.6] - 2026-11-27
 
 ### Added

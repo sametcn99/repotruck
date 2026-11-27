@@ -11,6 +11,7 @@ export { extractSymbols } from "./codeSearchSymbols.ts";
 import { BoundedRegex } from "./codeSearchRegex.ts";
 import { walkSourceFiles } from "./codeSearchWalk.ts";
 import type { RepotruckConfig } from "./config.ts";
+import { distributionDirectory } from "./distribution.ts";
 import { writeFileAtomic } from "./fsUtils.ts";
 import {
   GrammarDownloadError,
@@ -130,7 +131,12 @@ export function codeIndexPath(root: string): string {
 let parserInit: Promise<void> | null = null;
 
 function ensureParserInit(): Promise<void> {
-  parserInit ??= Parser.init();
+  const distribution = distributionDirectory();
+  parserInit ??= Parser.init(
+    distribution
+      ? { locateFile: () => path.join(distribution, "assets", "web-tree-sitter.wasm") }
+      : undefined,
+  );
   return parserInit;
 }
 

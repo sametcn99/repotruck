@@ -5,6 +5,11 @@ import { migrateAppData } from "./appDataMigration.ts";
 import { firstErrorLine } from "./cloner.ts";
 import { appConfigDir, type EnvLike } from "./config.ts";
 import { warnQuiet } from "./diagnostics.ts";
+import {
+  LATEST_RELEASE_API,
+  standaloneUpdateInstructions,
+  standaloneVersion,
+} from "./distribution.ts";
 import { writeFileAtomic } from "./fsUtils.ts";
 import { quoteForShell } from "./shellQuote.ts";
 import { isNewerVersion, readVersion } from "./version.ts";
@@ -41,7 +46,10 @@ function isUpdateState(value: unknown): value is UpdateState {
 }
 
 export function updateStatePath(env: EnvLike): string {
-  return path.join(appConfigDir(env), UPDATE_STATE_FILENAME);
+  return path.join(
+    appConfigDir(env),
+    standaloneVersion ? "update-standalone.json" : UPDATE_STATE_FILENAME,
+  );
 }
 
 export async function readUpdateState(env: EnvLike): Promise<UpdateState> {
@@ -69,6 +77,7 @@ export interface FetchLatestVersionOptions {
   fetchImpl?: typeof fetch;
   registry?: string;
   timeoutMs?: number;
+  standalone?: boolean;
 }
 
 export async function fetchLatestVersion(
@@ -80,12 +89,19 @@ export async function fetchLatestVersion(
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const response = await doFetch(`${registry}/repotruck/latest`, {
-      signal: controller.signal,
-    });
+    const response = await doFetch(
+      options.standalone ? LATEST_RELEASE_API : `${registry}/repotruck/latest`,
+      {
+        signal: controller.signal,
+      },
+    );
     if (!response.ok) return null;
     const data: unknown = await response.json();
     if (data === null || typeof data !== "object") return null;
+    if (options.standalone) {
+      const tag = (data as { tag_name?: unknown }).tag_name;
+      return typeof tag === "string" && /^v\d+\.\d+\.\d+$/.test(tag) ? tag.slice(1) : null;
+    }
     const version = (data as { version?: unknown }).version;
     return typeof version === "string" && version.length > 0 ? version : null;
   } catch {
@@ -130,7 +146,10 @@ export async function checkForUpdate(
       fromCache: true,
     };
   }
-  const latestVersion = await fetchLatestVersion({ fetchImpl: options.fetchImpl });
+  const latestVersion = await fetchLatestVersion({
+    fetchImpl: options.fetchImpl,
+    standalone: standaloneVersion !== undefined,
+  });
   if (latestVersion === null) {
     // A failed registry lookup must not open the 24h throttle window; keep the
     // previous state so the next run retries the check.
@@ -230,6 +249,9 @@ export interface PerformSelfUpdateOptions {
 export async function performSelfUpdate(
   options: PerformSelfUpdateOptions = {},
 ): Promise<SelfUpdateResult> {
+  if (standaloneVersion !== undefined) {
+    return { updated: false, message: standaloneUpdateInstructions() };
+  }
   const exec = options.execImpl ?? defaultExecImpl;
   const which = options.whichImpl ?? defaultWhichImpl;
   const realpathFn = options.realpathImpl ?? realpath;
