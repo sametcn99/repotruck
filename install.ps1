@@ -5,6 +5,7 @@ param(
 $ErrorActionPreference = 'Stop'
 
 function Install-Repotruck {
+    $ProgressPreference = 'SilentlyContinue'
     $releaseUrl = $env:REPOTRUCK_INSTALL_RELEASES_URL
     if (-not $releaseUrl) { $releaseUrl = 'https://github.com/sametcn99/repotruck/releases' }
     $releaseUrl = $releaseUrl.TrimEnd('/')
@@ -80,11 +81,11 @@ function Install-Repotruck {
 
         if (-not $NoPath) {
             $userPath = [Environment]::GetEnvironmentVariable('Path', 'User')
-            if (($userPath -split ';').TrimEnd('\') -notcontains $current.TrimEnd('\')) {
+            if (@($userPath -split ';' | ForEach-Object { $_.TrimEnd('\') }) -notcontains $current) {
                 $newPath = if ($userPath) { $userPath.TrimEnd(';') + ';' + $current } else { $current }
                 [Environment]::SetEnvironmentVariable('Path', $newPath, 'User')
             }
-            if (($env:Path -split ';').TrimEnd('\') -notcontains $current.TrimEnd('\')) {
+            if (@($env:Path -split ';' | ForEach-Object { $_.TrimEnd('\') }) -notcontains $current) {
                 $env:Path += ";$current"
             }
         }

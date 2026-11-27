@@ -39,11 +39,14 @@ class Release(BaseHTTPRequestHandler):
             self.send_error(404)
             return
         source = files[file]
+        invalid_checksum = file == "SHA256SUMS" and changed_checksum
+        checksum = f"{'0' * 64}  {archive.name}\n".encode()
         self.send_response(200)
         self.send_header("Content-Type", "application/octet-stream")
+        self.send_header("Content-Length", str(len(checksum) if invalid_checksum else source.stat().st_size))
         self.end_headers()
-        if file == "SHA256SUMS" and changed_checksum:
-            self.wfile.write(f"{'0' * 64}  {archive.name}\n".encode())
+        if invalid_checksum:
+            self.wfile.write(checksum)
         else:
             with source.open("rb") as content:
                 shutil.copyfileobj(content, self.wfile)
@@ -61,6 +64,23 @@ def checked(args, env=None):
         print(result.stdout, file=sys.stderr)
         result.check_returncode()
     return result.stdout.strip()
+
+
+def user_path():
+    import winreg
+
+    try:
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, "Environment") as key:
+            return winreg.QueryValueEx(key, "Path")[0]
+    except FileNotFoundError:
+        return ""
+
+
+def verify_path(binary):
+    expected = os.path.normcase(str(binary.parent))
+    entries = user_path().split(";")
+    matches = [entry for entry in entries if os.path.normcase(entry.rstrip("\\")) == expected]
+    assert len(matches) == 1, f"Expected one user PATH entry for {expected}. Found {entries!r}"
 
 
 server = None
@@ -86,9 +106,9 @@ try:
         if os.name == "nt":
             binary = install_root / "current" / "repotruck.exe"
             install = ["powershell.exe", "-NoProfile", "-NonInteractive", "-Command",
-                       f"$ErrorActionPreference = 'Stop'; irm '{script_url}.ps1' | iex"]
-            initial_user_path = checked(["powershell.exe", "-NoProfile", "-Command",
-                                         "[Environment]::GetEnvironmentVariable('Path','User')"])
+                       f"$ErrorActionPreference = 'Stop'; irm '{script_url}.ps1' | iex; "
+                       f"if ((repotruck --version) -cne '{version}') {{ throw 'Session PATH version mismatch' }}"]
+            initial_user_path = user_path()
         else:
             env.update(HOME=str(base), REPOTRUCK_INSTALL_BIN=str(install_bin),
                        REPOTRUCK_INSTALL_PROFILE=str(profile))
@@ -102,17 +122,17 @@ try:
             print(checked(install, env))
             verify()
             if os.name == "nt":
+                verify_path(binary)
                 if not public:
+                    print("Reinstalling through PowerShell")
                     print(checked(install, env))
                 git = Path(shutil.which("git")).resolve()
                 git_bash = next(parent / "bin" / "bash.exe" for parent in git.parents
                                 if (parent / "bin" / "bash.exe").is_file())
+                print("Reinstalling through Git Bash")
                 print(checked([git_bash, "-lc", install_sh + " -s -- --no-path"], env))
                 verify()
-                path_count = checked(["powershell.exe", "-NoProfile", "-Command",
-                                      "$path = [Environment]::GetEnvironmentVariable('Path','User'); "
-                                      "($path.Split(';').Where({$_ -eq ($env:REPOTRUCK_INSTALL_ROOT + '\\current')})).Count"], env)
-                assert path_count == "1", path_count
+                verify_path(binary)
             else:
                 if not public:
                     first = binary.resolve()
@@ -123,6 +143,7 @@ try:
                                env) == str(binary)
                 verify()
             if not public:
+                print("Verifying that a corrupt checksum preserves the installation")
                 changed_checksum = True
                 try:
                     subprocess.check_output(install, env=env, text=True, stderr=subprocess.STDOUT, timeout=180)
@@ -131,8 +152,10 @@ try:
                 else:
                     raise AssertionError("Corrupt checksum accepted")
                 verify()
+            print("Exercising the installed CLI, offline search, and MCP server")
             print(checked(["node", repository / "scripts" / "smoke-installed.mjs",
                            "--binary", binary, version]))
+            print("Opening the installed TUI in a pseudoterminal")
             print(checked([sys.executable, repository / "scripts" / "smoke-standalone-tui.py", binary]))
         finally:
             if os.name == "nt":

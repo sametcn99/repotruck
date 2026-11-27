@@ -122,7 +122,7 @@ jobs:
           python-version: "3.13"
       - name: Install from GitHub Releases
         shell: bash
-        run: python scripts/test-standalone-install.py --public "${GITHUB_REF_NAME#v}"
+        run: python -u scripts/test-standalone-install.py --public "${GITHUB_REF_NAME#v}"
       - name: Install from Homebrew
         if: matrix.manager == 'brew'
         run: |

@@ -90,7 +90,7 @@ jobs:
           case "$STANDALONE_TARGET" in windows-*) extension=zip ;; *) extension=tar.gz ;; esac
           archive="out/archives/repotruck-$version-$STANDALONE_TARGET.$extension"
           python scripts/archive-standalone.py "$package" out/archives
-          python scripts/test-standalone-install.py "$archive" "$version"
+          python -u scripts/test-standalone-install.py "$archive" "$version"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: standalone-${{ matrix.target }}

@@ -29,7 +29,7 @@ const modernTreeSitter = fileURLToPath(import.meta.resolve("web-tree-sitter/web-
 
 await mkdir(directory, { recursive: true });
 const result = await Bun.build({
-  entrypoints: [path.join(root, "src", "standalone.ts")],
+  entrypoints: [path.join(import.meta.dir, "standalone.ts")],
   compile: { outfile: executable },
   define: {
     REPOTRUCK_BUILD_VERSION: JSON.stringify(version),
